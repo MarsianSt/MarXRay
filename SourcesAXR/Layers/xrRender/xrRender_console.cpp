@@ -414,7 +414,7 @@ float ps_r2_img_saturation = 1.0f;
 Fvector ps_r2_img_cg = READ_IF_EXISTS(pAdvancedSettings, r_fvector3, "start_settings", "color_grading_es", Fvector3().set(0.5f, 0.5f, 0.5f));
 
 float ps_r2_aref_strength = READ_IF_EXISTS(pAdvancedSettings, r_float, "start_settings", "r2_aref_strength", 300.f);
-Fvector4 ps_r4_normal_strength = READ_IF_EXISTS(pAdvancedSettings, r_fvector4, "start_settings", "r4_normal_strength", Fvector4().set(0.25f, 0.25f, 0.85f, 0.5f)); //x - world, y - hud, z - terrain, w - trees
+Fvector4 ps_r4_normal_strength = READ_IF_EXISTS(pAdvancedSettings, r_fvector4, "start_settings", "r4_normal_strength", Fvector4().set(0.4f, 0.25f, 0.85f, 0.5f)); //x - world, y - hud, z - terrain, w - trees
 
 // Ascii1457's Screen Space Shaders
 extern ENGINE_API Fvector3 ps_ssfx_shadow_cascades;
