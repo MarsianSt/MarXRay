@@ -539,6 +539,9 @@ bool CArtefact::CanTake() const
 {
 	if (!inherited::CanTake())
 		return false;
+
+	if (m_detectorObj && !m_detectorObj->m_parent->getVisible())
+		return false;
 	
 	if (m_activationObj && m_activationObj->IsInProgress())
 		return false;
