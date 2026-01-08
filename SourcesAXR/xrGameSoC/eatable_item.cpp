@@ -362,7 +362,7 @@ bool CEatableItem::UseBy (CEntityAlive* entity_alive)
 	R_ASSERT		(m_pInventory==IO->m_inventory);
 	R_ASSERT		(object().H_Parent()->ID()==entity_alive->ID());
 	
-	if (pSettings->line_exist(m_physic_item->cNameSect().c_str(), "use_sound"))
+	if (ParentIsActor() && pSettings->line_exist(m_physic_item->cNameSect().c_str(), "use_sound"))
 	{
 		if (m_using_sound._feedback())
 			m_using_sound.stop();
