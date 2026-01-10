@@ -147,6 +147,10 @@ void xrDebug::do_exit	(const std::string &message)
 {
 	FlushLog			();
 	MessageBox			(NULL,message.c_str(),"Error",MB_OK|MB_ICONERROR|MB_SYSTEMMODAL);
+
+	if (strstr(GetCommandLine(), "-show_log"))
+		ShellExecute(nullptr, "open", logFullName(), nullptr, nullptr, SW_SHOWNORMAL);
+
 	TerminateProcess	(GetCurrentProcess(),1);
 }
 
@@ -537,6 +541,9 @@ LONG WINAPI UnhandledFilter	(_EXCEPTION_POINTERS *pExceptionInfo)
 #	endif // USE_OWN_MINI_DUMP
 
 		MessageBox			(NULL,"Fatal error occured\n\nPress OK to abort program execution","Fatal error",MB_OK|MB_ICONERROR|MB_SYSTEMMODAL);
+
+		if (strstr(GetCommandLine(), "-show_log"))
+			ShellExecute(nullptr, "open", logFullName(), nullptr, nullptr, SW_SHOWNORMAL);
 	}
 #endif // USE_OWN_ERROR_MESSAGE_WINDOW
 
@@ -622,6 +629,9 @@ LONG WINAPI UnhandledFilter	(_EXCEPTION_POINTERS *pExceptionInfo)
 			"Fatal Error",
 			MB_OK|MB_ICONERROR|MB_SYSTEMMODAL
 		);
+
+		if (strstr(GetCommandLine(), "-show_log"))
+			ShellExecute(nullptr, "open", logFullName(), nullptr, nullptr, SW_SHOWNORMAL);
 		
 		std::exit(0);
 	//	FATAL					("Unexpected application termination");
