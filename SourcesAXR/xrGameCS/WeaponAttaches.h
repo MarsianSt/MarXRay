@@ -8,7 +8,8 @@ class WeaponAttach
 public:
 	WeaponAttach();
 	~WeaponAttach() {};
-	IRenderVisual* attach_hud_visual;
+	IRenderVisual*	attach_hud_visual;
+	IRenderVisual*	attach_world_visual;
 	Fvector			hud_attach_pos[2];
 	Fvector			world_attach_pos[2];
 	Fmatrix			m_hud_attach_pos;
@@ -16,9 +17,10 @@ public:
 	Fmatrix			m_world_attach_pos;
 	Fmatrix			m_world_attach_offset;
 
-	shared_str		m_attach_bone_name;		//позиция кости которая будет использоваться для аттача, если пусто то аттачим к кости wpn_body
-	shared_str		m_visualHUDName;		//путь до меша
-	shared_str		m_section;				//название секции
+	shared_str		m_attach_bone_name;		// Позиция кости которая будет использоваться для аттача, если пусто то аттачим к кости wpn_body
+	shared_str		m_visualHUDName;		// Путь до меша
+	shared_str		m_visualWorldName;		// Путь до меша мировой модели (опционально)
+	shared_str		m_section;				// Название секции
 
 	WeaponAttach* CreateAttach(shared_str attach_section, xr_vector<WeaponAttach*>& m_attaches);
 	void RemoveAttach(shared_str attach_section, xr_vector<WeaponAttach*>& m_attaches);

@@ -5,8 +5,10 @@
 WeaponAttach::WeaponAttach()
 {
 	attach_hud_visual = nullptr;
+	attach_world_visual = nullptr;
 	m_attach_bone_name = nullptr;
 	m_visualHUDName = nullptr;
+	m_visualWorldName = nullptr;
 	m_section = nullptr;
 	m_hud_attach_pos.identity();
 	m_world_attach_pos.identity();
@@ -74,21 +76,41 @@ void WeaponAttach::UpdateAttachesPosition(IRenderVisual* model, const Fmatrix& p
 			hudKinematics->CalculateBones(TRUE);
 		}
 	}
+
+	if (attach_world_visual)
+	{
+		auto worldKinematics = attach_world_visual->dcast_PKinematics();
+
+		if (worldKinematics)
+		{
+			worldKinematics->CalculateBones_Invalidate();
+			worldKinematics->CalculateBones(TRUE);
+		}
+	}
 }
 
 void WeaponAttach::RenderAttach(bool hud_mode)
 {
-	if (attach_hud_visual)
+	if (hud_mode)
 	{
-		if (hud_mode)
+		if (attach_hud_visual)
+		{
 			::Render->set_Transform(&m_hud_attach_pos);
+			::Render->add_Visual(attach_hud_visual, true);
+		}
 		else
-			::Render->set_Transform(&m_world_attach_pos);
-
-		::Render->add_Visual(attach_hud_visual, true);
+			attach_hud_visual = ::Render->model_Create(m_visualHUDName.c_str());
 	}
 	else
-		attach_hud_visual = ::Render->model_Create(m_visualHUDName.c_str());
+	{
+		if (attach_world_visual)
+		{
+			::Render->set_Transform(&m_world_attach_pos);
+			::Render->add_Visual(attach_world_visual, true);
+		}
+		else
+			attach_world_visual = ::Render->model_Create(m_visualWorldName.c_str());
+	}
 }
 
 void WeaponAttach::Load(shared_str attach_sect)
@@ -100,4 +122,5 @@ void WeaponAttach::Load(shared_str attach_sect)
 	hud_attach_pos[0] = READ_IF_EXISTS(pSettings, r_fvector3, attach_sect, "hud_attach_offset", Fvector({ 0.f, 0.f, 0.f }));
 	hud_attach_pos[1] = READ_IF_EXISTS(pSettings, r_fvector3, attach_sect, "hud_attach_rotation", Fvector({ 0.f, 0.f, 0.f }));
 	m_visualHUDName = READ_IF_EXISTS(pSettings, r_string, attach_sect, "attach_hud_visual", nullptr);
+	m_visualWorldName = READ_IF_EXISTS(pSettings, r_string, attach_sect, "attach_world_visual", m_visualHUDName);
 }
