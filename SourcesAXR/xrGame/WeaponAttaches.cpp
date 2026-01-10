@@ -12,6 +12,8 @@ WeaponAttach::WeaponAttach()
 	m_section = nullptr;
 	m_hud_attach_pos.identity();
 	m_world_attach_pos.identity();
+	hud_attach_scale = 1.0f;
+	world_attach_scale = 1.0f;
 }
 
 WeaponAttach* WeaponAttach::CreateAttach(shared_str attach_section, xr_vector<WeaponAttach*>& m_attaches)
@@ -41,7 +43,6 @@ void WeaponAttach::UpdateAttachesPosition(IRenderVisual* model, const Fmatrix& p
 		return;
 
 	u16 boneID = kinematics->LL_BoneID(m_attach_bone_name);
-	const Fmatrix& boneMatrix = kinematics->LL_GetTransform(boneID);
 	
 	if (hud_mode)
 	{
@@ -95,6 +96,15 @@ void WeaponAttach::RenderAttach(bool hud_mode)
 	{
 		if (attach_hud_visual)
 		{
+			if (hud_attach_scale != 1.0f)
+			{
+				Fmatrix scale, trans;
+				trans = m_hud_attach_pos;
+				float cur_scale = hud_attach_scale;
+				scale.scale(cur_scale, cur_scale, cur_scale);
+				m_hud_attach_pos.mul(trans, scale);
+			}
+
 			::Render->set_Transform(&m_hud_attach_pos);
 			::Render->add_Visual(attach_hud_visual, true);
 		}
@@ -105,6 +115,15 @@ void WeaponAttach::RenderAttach(bool hud_mode)
 	{
 		if (attach_world_visual)
 		{
+			if (world_attach_scale != 1.0f)
+			{
+				Fmatrix scale, trans;
+				trans = m_world_attach_pos;
+				float cur_scale = world_attach_scale;
+				scale.scale(cur_scale, cur_scale, cur_scale);
+				m_world_attach_pos.mul(trans, scale);
+			}
+
 			::Render->set_Transform(&m_world_attach_pos);
 			::Render->add_Visual(attach_world_visual, true);
 		}
@@ -121,6 +140,8 @@ void WeaponAttach::Load(shared_str attach_sect)
 	world_attach_pos[1] = READ_IF_EXISTS(pSettings, r_fvector3, attach_sect, "world_attach_rotation", Fvector({ 0.f, 0.f, 0.f }));
 	hud_attach_pos[0] = READ_IF_EXISTS(pSettings, r_fvector3, attach_sect, "hud_attach_offset", Fvector({ 0.f, 0.f, 0.f }));
 	hud_attach_pos[1] = READ_IF_EXISTS(pSettings, r_fvector3, attach_sect, "hud_attach_rotation", Fvector({ 0.f, 0.f, 0.f }));
+	hud_attach_scale = READ_IF_EXISTS(pSettings, r_float, attach_sect, "hud_attach_scale", 1.0f);
+	world_attach_scale = READ_IF_EXISTS(pSettings, r_float, attach_sect, "world_attach_scale", hud_attach_scale);
 	m_visualHUDName = READ_IF_EXISTS(pSettings, r_string, attach_sect, "attach_hud_visual", nullptr);
 	m_visualWorldName = READ_IF_EXISTS(pSettings, r_string, attach_sect, "attach_world_visual", m_visualHUDName);
 }

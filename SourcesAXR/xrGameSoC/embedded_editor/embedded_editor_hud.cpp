@@ -1,7 +1,7 @@
 ////////////////////////////////////////////////////////////////////////////
 //	Module 		: embedded_editor_hud.cpp
 //	Created 	: 05.05.2021
-//  Modified 	: 20.10.2025
+//  Modified 	: 10.01.2026
 //	Author		: Dance Maniac (M.F.S. Team)
 //	Description : ImGui Hud Editor
 ////////////////////////////////////////////////////////////////////////////
@@ -185,12 +185,16 @@ void ShowHudEditor(bool& show)
 			{
 				auto mesh = Wpn->m_weapon_attaches[i];
 
-				string256 pos_name, orient_name;
+				string256 pos_name, orient_name, hud_scale_name, world_scale_name;
 				strconcat(sizeof(pos_name), pos_name, mesh->m_section.c_str(), "_position");
 				strconcat(sizeof(orient_name), orient_name, mesh->m_section.c_str(), "_orientation");
+				strconcat(sizeof(hud_scale_name), hud_scale_name, mesh->m_section.c_str(), "_hud_attach_scale");
+				strconcat(sizeof(world_scale_name), world_scale_name, mesh->m_section.c_str(), "_world_attach_scale");
 
 				ImGui::DragFloat3(pos_name,			(float*)&mesh->hud_attach_pos[0],		drag_intensity, NULL, NULL, "%.6f");
 				ImGui::DragFloat3(orient_name,		(float*)&mesh->hud_attach_pos[1],		drag_intensity, NULL, NULL, "%.6f");
+				ImGui::DragFloat(hud_scale_name,	(float*)&mesh->hud_attach_scale,		drag_intensity, NULL, NULL, "%.6f");
+				ImGui::DragFloat(world_scale_name,	(float*)&mesh->world_attach_scale,		drag_intensity, NULL, NULL, "%.6f");
 			}
 		}
 	}
