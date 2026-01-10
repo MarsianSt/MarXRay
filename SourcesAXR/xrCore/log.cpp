@@ -188,15 +188,23 @@ void CreateLog			(BOOL nl)
 	ZoneScoped;
 
     no_log				= nl;
-	strconcat			(sizeof(log_file_name),log_file_name,Core.ApplicationName,"_",Core.UserName,".log");
+	string64			t_stemp;
+
+	strconcat			(sizeof(log_file_name), log_file_name, Core.ApplicationName, "_", Core.UserName, "_", timestamp(t_stemp), ".log");
+	
 	if (FS.path_exist("$logs$"))
 		FS.update_path	(logFName,"$logs$",log_file_name);
-	if (!no_log){
+
+	if (!no_log)
+	{
         IWriter *f		= FS.w_open	(logFName);
-        if (f==NULL){
+
+        if (f==NULL)
+		{
         	MessageBox	(NULL,"Can't create log file.","Error",MB_ICONERROR);
         	abort();
         }
+
         FS.w_close		(f);
     }
 }
