@@ -1,7 +1,7 @@
 ////////////////////////////////////////////////////////////////////////////
 //	Module 		: embedded_editor_hud.cpp
 //	Created 	: 05.05.2021
-//  Modified 	: 10.01.2026
+//  Modified 	: 11.01.2026
 //	Author		: Dance Maniac (M.F.S. Team)
 //	Description : ImGui Hud Editor
 ////////////////////////////////////////////////////////////////////////////
@@ -97,8 +97,10 @@ void ShowHudEditor(bool& show)
 	auto Grenade = smart_cast<CGrenade*>(Actor()->inventory().ActiveItem());
 
 	static float drag_intensity = 0.0001f;
+	static bool draw_markers = true;
 
 	ImGui::DragFloat(toUtf8(CStringTable().translate("st_editor_imgui_drag_intensity").c_str()).c_str(), &drag_intensity, 0.000001f, 0.000001f, 1.0f, "%.6f");
+	ImGui::Checkbox(toUtf8(CStringTable().translate("st_editor_imgui_draw_markers").c_str()).c_str(), &draw_markers);
 
 	if (item)
 	{
@@ -127,20 +129,23 @@ void ShowHudEditor(bool& show)
 			ImGui::DragFloat3("hud_collision_offset_rot 0",	(float*)&item->m_measures.m_collision_offset[1],	drag_intensity, NULL, NULL, "%.6f");
 		}
 
-		firedeps fd;
-		item->setup_firedeps(fd);
+		if (draw_markers)
+		{
+			firedeps fd;
+			item->setup_firedeps(fd);
 
-		DrawPointText(fd.vLastFP, "fire_point", color_rgba(255, 255, 0, 255));
-		Level().debug_renderer().draw_aabb(fd.vLastFP, 0.002f, 0.002f, 0.002f, color_rgba(0, 255, 0, 255), true);
+			DrawPointText(fd.vLastFP, "fire_point", color_rgba(255, 255, 0, 255));
+			Level().debug_renderer().draw_aabb(fd.vLastFP, 0.002f, 0.002f, 0.002f, color_rgba(0, 255, 0, 255), true);
 
-		DrawPointText(fd.vLastFP2, "fire_point2", color_rgba(255, 255, 0, 255));
-		Level().debug_renderer().draw_aabb(fd.vLastFP2, 0.002f, 0.002f, 0.002f, color_rgba(0, 255, 0, 255), true);
+			DrawPointText(fd.vLastFP2, "fire_point2", color_rgba(255, 255, 0, 255));
+			Level().debug_renderer().draw_aabb(fd.vLastFP2, 0.002f, 0.002f, 0.002f, color_rgba(0, 255, 0, 255), true);
 
-		DrawPointText(fd.vLastSP, "shell_point", color_rgba(255, 255, 0, 255));
-		Level().debug_renderer().draw_aabb(fd.vLastSP, 0.002f, 0.002f, 0.002f, color_rgba(0, 255, 0, 255), true);
+			DrawPointText(fd.vLastSP, "shell_point", color_rgba(255, 255, 0, 255));
+			Level().debug_renderer().draw_aabb(fd.vLastSP, 0.002f, 0.002f, 0.002f, color_rgba(0, 255, 0, 255), true);
 
-		DrawPointText(fd.vLastOSP, "overheating_smoke_point", color_rgba(255, 255, 0, 255));
-		Level().debug_renderer().draw_aabb(fd.vLastOSP, 0.002f, 0.002f, 0.002f, color_rgba(0, 255, 0, 255), true);
+			DrawPointText(fd.vLastOSP, "overheating_smoke_point", color_rgba(255, 255, 0, 255));
+			Level().debug_renderer().draw_aabb(fd.vLastOSP, 0.002f, 0.002f, 0.002f, color_rgba(0, 255, 0, 255), true);
+		}
 
 		if (Wpn)
 		{
@@ -156,9 +161,12 @@ void ShowHudEditor(bool& show)
 					Wpn->GetBoneOffsetPosDir(Wpn->laserdot_attach_bone, laser_pos, laser_dir, Wpn->laserdot_attach_offset, Wpn->laserdot_attach_rot);
 					Wpn->CorrectDirFromWorldToHud(laser_dir);
 
-					DrawPointText(laser_pos, "laserdot_attach_offset", color_rgba(255, 255, 0, 255));
-					Level().debug_renderer().draw_aabb(laser_pos, 0.002f, 0.002f, 0.002f, color_rgba(0, 255, 0, 255), true);
-					DrawLightCone(laser_pos, laser_dir, 0.5f, 0.002f, color_rgba(255, 0, 0, 255));
+					if (draw_markers)
+					{
+						DrawPointText(laser_pos, "laserdot_attach_offset", color_rgba(255, 255, 0, 255));
+						Level().debug_renderer().draw_aabb(laser_pos, 0.002f, 0.002f, 0.002f, color_rgba(0, 255, 0, 255), true);
+						DrawLightCone(laser_pos, laser_dir, 0.5f, 0.002f, color_rgba(255, 0, 0, 255));
+					}
 				}
 			}
 
@@ -175,9 +183,12 @@ void ShowHudEditor(bool& show)
 					Wpn->GetBoneOffsetPosDir(Wpn->flashlight_attach_bone, flashlight_pos, flashlight_dir, Wpn->flashlight_attach_offset, Wpn->flashlight_attach_rot);
 					Wpn->CorrectDirFromWorldToHud(flashlight_dir);
 
-					DrawPointText(flashlight_pos, "torch_attach_offset", color_rgba(255, 255, 0, 255));
-					Level().debug_renderer().draw_aabb(flashlight_pos, 0.002f, 0.002f, 0.002f, color_rgba(0, 255, 0, 255), true);
-					DrawLightCone(flashlight_pos, flashlight_dir, 0.5f, 0.1f, color_rgba(255, 255, 255, 255));
+					if (draw_markers)
+					{
+						DrawPointText(flashlight_pos, "torch_attach_offset", color_rgba(255, 255, 0, 255));
+						Level().debug_renderer().draw_aabb(flashlight_pos, 0.002f, 0.002f, 0.002f, color_rgba(0, 255, 0, 255), true);
+						DrawLightCone(flashlight_pos, flashlight_dir, 0.5f, 0.1f, color_rgba(255, 255, 255, 255));
+					}
 				}
 			}
 
@@ -225,7 +236,7 @@ void ShowHudEditor(bool& show)
 
 		/*if (Det)
 		{
-			if (Det->m_bLightsEnabled)
+			if (draw_markers && Det->m_bLightsEnabled)
 			{
 				firedeps fd;
 				item->setup_firedeps(fd);
