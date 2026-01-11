@@ -35,6 +35,8 @@
 #include "PostprocessAnimator.h"
 #include "../xrEngine/CameraBase.h"
 #include "CharacterPhysicsSupport.h"
+
+#include "embedded_editor/embedded_editor_main.h"
 #include "AdvancedXrayGameConstants.h"
 
 constexpr auto WEAPON_REMOVE_TIME = 60000;
@@ -3289,10 +3291,11 @@ bool CWeapon::ParentIsActor	()
 }
 
 extern int hud_adj_mode;
+extern bool show_hud_editor;
 
 bool CWeapon::ZoomHideCrosshair()
 {
-	if (hud_adj_mode != 0)
+	if (hud_adj_mode != 0 || show_hud_editor)
 		return false;
 
 	return m_zoom_params.m_bHideCrosshairInZoom || ZoomTexture();
