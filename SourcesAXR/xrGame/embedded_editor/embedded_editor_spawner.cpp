@@ -1,7 +1,7 @@
 ////////////////////////////////////////////////////////////////////////////
 //	Module 		: embedded_editor_spawner.cpp
 //	Created 	: 17.02.2024
-//  Modified 	: 24.09.2025
+//  Modified 	: 11.01.2026
 //	Author		: Dance Maniac (M.F.S. Team)
 //	Description : ImGui Spawn Menu
 ////////////////////////////////////////////////////////////////////////////
@@ -234,7 +234,7 @@ void FillSectionsList()
 	}
 }
 
-void DrawObjectsList(int mode)
+void DrawObjectsList(xr_string searchTextLower, int mode)
 {
 	static const std::vector<xr_map<xr_string, xr_string>*> itemLists = {
 		&m_CarsVec, &m_WeaponsVec, &m_FoodVec, &m_DevicesVec,
@@ -244,36 +244,33 @@ void DrawObjectsList(int mode)
 
 	auto& itemsList = *itemLists[mode >= 0 && mode < 10 ? mode : 10];
 
-	// Поиск
-	ImGui::InputText(toUtf8(CStringTable().translate("st_spawner_search").c_str()).c_str(), m_sSearchText, 512);
-	xr_string searchTextLower = m_sSearchText;
-	ToLowerUtf8RU(searchTextLower);
+	const auto surfaceParams = ::Render->getSurface(EQUIPMENT_ICONS);
+	const float iconsKx = UI().get_icons_kx();
+	const float invGridKx = UI().inv_grid_kx();
+	const float padding = 8.0f;
+	const float textLineHeight = ImGui::GetTextLineHeight();
 
-	const auto surfaceParams	= ::Render->getSurface(EQUIPMENT_ICONS);
-	const float iconsKx			= UI().get_icons_kx();
-	const float invGridKx		= UI().inv_grid_kx();
-	const float padding			= 8.0f;
-	const float textHeight		= ImGui::GetTextLineHeight();
-
-	float maxIconWidth			= 2.0f * invGridKx / iconsKx;
-	float maxIconHeight			= maxIconWidth;
+	float maxIconWidth = 2.0f * invGridKx / iconsKx;
+	float maxIconHeight = maxIconWidth;
 
 	for (auto& item : itemsList)
 	{
 		if (pSettings->line_exist(item.first.c_str(), "inv_grid_width") && pSettings->line_exist(item.first.c_str(), "inv_grid_height"))
 		{
-			float w				= pSettings->r_float(item.first.c_str(), "inv_grid_width") * invGridKx / iconsKx;
-			float h				= pSettings->r_float(item.first.c_str(), "inv_grid_height") * invGridKx / iconsKx;
-			maxIconWidth		= std::max(maxIconWidth, w);
-			maxIconHeight		= std::max(maxIconHeight, h);
+			float w = pSettings->r_float(item.first.c_str(), "inv_grid_width") * invGridKx / iconsKx;
+			float h = pSettings->r_float(item.first.c_str(), "inv_grid_height") * invGridKx / iconsKx;
+			maxIconWidth = std::max(maxIconWidth, w);
+			maxIconHeight = std::max(maxIconHeight, h);
 		}
 	}
 
-	const float cellWidth		= maxIconWidth + padding * 2;
-	const float cellHeight		= std::max(100.0f, maxIconHeight + textHeight + padding * 3);
-	const int columns			= std::max(1, (int)((ImGui::GetContentRegionAvail().x - ImGui::GetStyle().ScrollbarSize) / cellWidth));
+	const float iconAreaWidth = maxIconWidth + padding * 2;
+	const float iconAreaHeight = maxIconHeight + padding * 2;
+	const float cellWidth = iconAreaWidth;
+	const float cellHeight = iconAreaHeight + textLineHeight * 2 + padding * 2; // До 2 строк текста
+	const int columns = std::max(1, (int)((ImGui::GetContentRegionAvail().x - ImGui::GetStyle().ScrollbarSize) / cellWidth));
 
-	ImGui::PushStyleVar(ImGuiStyleVar_CellPadding, { padding, padding });
+	ImGui::PushStyleVar(ImGuiStyleVar_CellPadding, { 0, padding });
 	ImGui::PushStyleColor(ImGuiCol_TableRowBgAlt, { 0.1f, 0.1f, 0.1f, 0.5f });
 
 	if (ImGui::BeginTable("ItemsGrid", columns, ImGuiTableFlags_NoBordersInBody | ImGuiTableFlags_RowBg | ImGuiTableFlags_SizingFixedFit))
@@ -282,6 +279,8 @@ void DrawObjectsList(int mode)
 			ImGui::TableSetupColumn(nullptr, ImGuiTableColumnFlags_WidthFixed, cellWidth);
 
 		std::unordered_set<std::string> displayedItems;
+		int columnIndex = 0;
+		bool rowStarted = false;
 
 		for (auto& [section, name] : itemsList)
 		{
@@ -292,62 +291,128 @@ void DrawObjectsList(int mode)
 				continue;
 
 			displayedItems.insert(name.c_str());
-			ImGui::TableNextColumn();
+
+			if (columnIndex == 0)
+			{
+				ImGui::TableNextRow();
+				rowStarted = true;
+			}
+
+			ImGui::TableSetColumnIndex(columnIndex);
 
 			shared_str displayName = toUtf8(name.c_str()).c_str();
-			const float frameWidth = maxIconWidth + padding * 2;
-			const float frameHeight = maxIconHeight + padding * 2;
+			ImVec2 itemStartPos = ImGui::GetCursorScreenPos();
 
-			ImGui::BeginChildFrame(ImGui::GetID((void*)(intptr_t)section.c_str()), { frameWidth, frameHeight }, ImGuiWindowFlags_NoScrollbar);
-			{
-				bool has_icon = (pSettings->line_exist(section.c_str(), "inv_grid_x") &&
-					pSettings->line_exist(section.c_str(), "inv_grid_y") &&
-					pSettings->line_exist(section.c_str(), "inv_grid_width") &&
-					pSettings->line_exist(section.c_str(), "inv_grid_height"));
-
-				if (has_icon)
-				{
-					// Отображение иконки
-					float x = pSettings->r_float(section.c_str(), "inv_grid_x") * invGridKx;
-					float y = pSettings->r_float(section.c_str(), "inv_grid_y") * invGridKx;
-					float w = pSettings->r_float(section.c_str(), "inv_grid_width") * invGridKx;
-					float h = pSettings->r_float(section.c_str(), "inv_grid_height") * invGridKx;
-
-					ImVec2 uv0(x / surfaceParams.w, y / surfaceParams.h);
-					ImVec2 uv1((x + w) / surfaceParams.w, (y + h) / surfaceParams.h);
-					ImVec2 size(w / iconsKx, h / iconsKx);
-
-					ImGui::SetCursorPosX((ImGui::GetContentRegionAvail().x - size.x) * 0.5f);
-					ImGui::SetCursorPosY((ImGui::GetContentRegionAvail().y - size.y) * 0.5f);
-					ImGui::Image(surfaceParams.Surface, size, uv0, uv1);
-				}
-				else
-				{
-					// Элементы без иконки
-					const float size = maxIconWidth;
-					ImGui::SetCursorPosX((ImGui::GetContentRegionAvail().x - size) * 0.5f);
-					ImGui::SetCursorPosY((ImGui::GetContentRegionAvail().y - size) * 0.5f);
-
-					const char* text = "N";
-					ImVec2 textSize = ImGui::CalcTextSize(text);
-					ImVec2 pos = ImGui::GetCursorScreenPos();
-					pos.x += (size - textSize.x) * 0.5f;
-					pos.y += (size - textSize.y) * 0.5f;
-
-					ImGui::GetWindowDrawList()->AddText(pos, ImGui::GetColorU32({ 1,1,1,0.9f }), text);
-					ImGui::Dummy({ size, size });
-				}
-			}
-			ImGui::EndChildFrame();
-
-			DrawTextWithEllipsis(displayName.c_str(), cellWidth - padding * 2);
-			
-			if (ImGui::IsItemClicked())
+			// Невидимая кнопка
+			if (ImGui::InvisibleButton(("##btn_" + section).c_str(), ImVec2(cellWidth, cellHeight)))
 			{
 				m_sSelectedName = displayName.c_str();
 				m_sSelectedSection = section.c_str();
 			}
+
+			bool isHovered = ImGui::IsItemHovered();
+			bool isSelected = (m_sSelectedSection && section == m_sSelectedSection);
+
+			ImGui::SetCursorScreenPos(itemStartPos);
+
+			// Область для иконки
+			ImVec2 iconAreaStart = ImVec2(itemStartPos.x, itemStartPos.y);
+			ImVec2 iconAreaSize = ImVec2(cellWidth, iconAreaHeight);
+
+			ImDrawList* drawList = ImGui::GetWindowDrawList();
+
+			bool has_icon = (pSettings->line_exist(section.c_str(), "inv_grid_x") &&
+				pSettings->line_exist(section.c_str(), "inv_grid_y") &&
+				pSettings->line_exist(section.c_str(), "inv_grid_width") &&
+				pSettings->line_exist(section.c_str(), "inv_grid_height"));
+
+			if (has_icon)
+			{
+				float x = pSettings->r_float(section.c_str(), "inv_grid_x") * invGridKx;
+				float y = pSettings->r_float(section.c_str(), "inv_grid_y") * invGridKx;
+				float w = pSettings->r_float(section.c_str(), "inv_grid_width") * invGridKx;
+				float h = pSettings->r_float(section.c_str(), "inv_grid_height") * invGridKx;
+
+				ImVec2 uv0(x / surfaceParams.w, y / surfaceParams.h);
+				ImVec2 uv1((x + w) / surfaceParams.w, (y + h) / surfaceParams.h);
+				ImVec2 iconSize(w / iconsKx, h / iconsKx);
+
+				// Центрирование иконки в области
+				float iconX = iconAreaStart.x + (iconAreaSize.x - iconSize.x) * 0.5f;
+				float iconY = iconAreaStart.y + (iconAreaSize.y - iconSize.y) * 0.5f;
+
+				drawList->AddImage(surfaceParams.Surface, ImVec2(iconX, iconY), ImVec2(iconX + iconSize.x, iconY + iconSize.y), uv0, uv1);
+			}
+			else
+			{
+				const char* text = "N";
+				ImVec2 textSize = ImGui::CalcTextSize(text);
+
+				// Центрирование текста "N" в области иконки
+				float textX = iconAreaStart.x + (iconAreaSize.x - textSize.x) * 0.5f;
+				float textY = iconAreaStart.y + (iconAreaSize.y - textSize.y) * 0.5f;
+
+				drawList->AddText(ImVec2(textX, textY), ImGui::GetColorU32(ImGuiCol_Text), text);
+			}
+
+			// Область текста
+			ImVec2 textAreaStart = ImVec2(itemStartPos.x, itemStartPos.y + iconAreaHeight);
+			ImVec2 textAreaSize = ImVec2(cellWidth, cellHeight - iconAreaHeight);
+
+			ImGui::SetCursorScreenPos(textAreaStart);
+
+			ImGui::BeginGroup();
+			{
+				float textAvailableWidth = cellWidth - padding * 2;
+				ImGui::PushTextWrapPos(ImGui::GetCursorPos().x + textAvailableWidth);
+
+				ImVec2 textSize = ImGui::CalcTextSize(displayName.c_str(), nullptr, false, textAvailableWidth);
+
+				// Центрирование текста по горизонтали
+				float textOffsetX = (cellWidth - textSize.x) * 0.5f;
+				textOffsetX = std::max(textOffsetX, padding); // Не меньше padding
+
+				// Центрирование текста по вертикали
+				float textOffsetY = (textAreaSize.y - textSize.y) * 0.5f;
+				textOffsetY = std::max(textOffsetY, 0.0f);
+
+				ImGui::SetCursorPosX(ImGui::GetCursorPosX() + textOffsetX);
+				ImGui::SetCursorPosY(ImGui::GetCursorPosY() + textOffsetY);
+				ImGui::TextUnformatted(displayName.c_str());
+
+				ImGui::PopTextWrapPos();
+			}
+			ImGui::EndGroup();
+
+			ImVec2 itemEndPos = ImVec2(itemStartPos.x + cellWidth, itemStartPos.y + cellHeight);
+
+			// Рамки
+			if (isHovered)
+			{
+				drawList->AddRect(itemStartPos, itemEndPos, ImGui::GetColorU32(ImGuiCol_ButtonHovered), 0.0f, 0, 2.0f);
+			}
+
+			if (isSelected)
+			{
+				drawList->AddRect(itemStartPos, itemEndPos, ImGui::GetColorU32(ImGuiCol_ButtonActive), 0.0f, 0, 3.0f);
+			}
+
+			drawList->AddRect(itemStartPos, itemEndPos, ImGui::GetColorU32(ImVec4(0.3f, 0.3f, 0.3f, 0.3f)), 0.0f, 0, 1.0f);
+			columnIndex++;
+
+			if (columnIndex >= columns)
+				columnIndex = 0;
 		}
+
+		if (rowStarted && columnIndex > 0 && columnIndex < columns)
+		{
+			while (columnIndex < columns)
+			{
+				ImGui::TableSetColumnIndex(columnIndex);
+				columnIndex++;
+			}
+		}
+
 		ImGui::EndTable();
 	}
 	ImGui::PopStyleColor();
@@ -361,14 +426,21 @@ void ShowSpawner(bool& show)
 	if (wnd.Collapsed)
 		return;
 
-	ImGui::BeginChild(toUtf8(CStringTable().translate("st_spawner_objects_to_spawn").c_str()).c_str(), ImVec2(700, 420), true);
-		DrawObjectsList(objects_type);
+	ImGui::SetNextItemWidth(350);
+
+	// Поиск
+	ImGui::InputText(toUtf8(CStringTable().translate("st_spawner_search").c_str()).c_str(), m_sSearchText, 512);
+	xr_string searchTextLower = m_sSearchText;
+	ToLowerUtf8RU(searchTextLower);
+
+	ImGui::BeginChild(toUtf8(CStringTable().translate("st_spawner_objects_to_spawn").c_str()).c_str(), ImVec2(700, 450), true);
+		DrawObjectsList(searchTextLower, objects_type);
 
 	ImGui::EndChild();
 
 	ImGui::SameLine();
 
-	ImGui::BeginChild(toUtf8(CStringTable().translate("st_spawner_spawn_options").c_str()).c_str(), ImVec2(400, 420), true);
+	ImGui::BeginChild(toUtf8(CStringTable().translate("st_spawner_spawn_options").c_str()).c_str(), ImVec2(400, 450), true);
 	{
 		//Название 
 		if (m_sSelectedName)
@@ -408,7 +480,11 @@ void ShowSpawner(bool& show)
 				item_descr = CStringTable().translate(pSettings->r_string(m_sSelectedSection, "description")).c_str();
 
 			if (item_descr)
+			{
+				ImGui::BeginChild("description_frame", ImVec2(0, 250), true, ImGuiWindowFlags_AlwaysVerticalScrollbar);
 				ImGui::TextWrapped(toUtf8(item_descr).c_str());
+				ImGui::EndChild();
+			}
 		}
 
 		ImGui::Separator();
@@ -479,7 +555,7 @@ void ShowSpawner(bool& show)
 	for (const auto& str : items_types)
 		items_types_cstr.push_back(str.c_str());
 
-	ImGui::SetNextItemWidth(300);
+	ImGui::SetNextItemWidth(350);
 	ImGui::SetNextWindowPos(ImVec2(0.0f, 420.0f), ImGuiCond_Once);
 
 	if (ImGui::Combo(toUtf8(CStringTable().translate("st_spawner_objects_type").c_str()).c_str(), &objects_type, items_types_cstr.data(), items_types_cstr.size())) {}

@@ -2,5 +2,5 @@
 
 void FillSectionsList();
 void ShowSpawner(bool& show);
-void DrawObjectsList(int mode = 0);
+void DrawObjectsList(xr_string searchTextLower, int mode = 0);
 bool Spawner_MouseWheel(float wheel);
