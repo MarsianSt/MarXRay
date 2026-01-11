@@ -1057,7 +1057,7 @@ bool CScriptGameObject::weapon_reloading() const
 		return false;
 	}
 
-	return stalker->weapon_shooting();
+	return stalker->weapon_reloading();
 }
 
 bool CScriptGameObject::path_completed	() const

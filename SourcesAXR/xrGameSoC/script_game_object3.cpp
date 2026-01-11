@@ -762,7 +762,7 @@ bool CScriptGameObject::weapon_reloading() const
 		return false;
 	}
 
-	return stalker->weapon_shooting();
+	return stalker->weapon_reloading();
 }
 
 void CScriptGameObject::start_weapon_shoot()
