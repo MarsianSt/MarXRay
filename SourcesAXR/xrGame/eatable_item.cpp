@@ -149,6 +149,12 @@ void CEatableItem::load(IReader &packet)
 
 	if (!g_actor_allow_ladder)
 		g_actor_allow_ladder = true;
+
+	if (last_hud_fov > 0.0f)
+	{
+		psHUD_FOV_def = last_hud_fov;
+		last_hud_fov = 0.0f;
+	}
 }
 
 void CEatableItem::UpdateInRuck(CActor* actor)
@@ -291,7 +297,10 @@ void CEatableItem::UpdateUseAnim(CActor* actor)
 		m_using_sound.stop();
 
 		if (pSettings->line_exist(cur_section, "hud_fov") && last_hud_fov > 0.0f)
+		{
 			psHUD_FOV_def = last_hud_fov;
+			last_hud_fov = 0.0f;
+		}
 	}
 
 	if (m_bActivated)
@@ -310,7 +319,10 @@ void CEatableItem::UpdateUseAnim(CActor* actor)
 			actor->m_bActionAnimInProcess = false;
 
 			if (pSettings->line_exist(cur_section, "hud_fov") && last_hud_fov > 0.0f)
+			{
 				psHUD_FOV_def = last_hud_fov;
+				last_hud_fov = 0.0f;
+			}
 
 			if (effector)
 				RemoveEffector(actor, effUseItem);
