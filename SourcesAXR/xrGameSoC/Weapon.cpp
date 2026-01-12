@@ -2237,7 +2237,7 @@ BOOL CWeapon::CheckForMisfire	()
 	float mp = GetConditionMisfireProbability();
 	mp += m_fOverheatingMisfire * m_fWeaponOverheating;
 
-	if ((rnd < mp) && (!m_bMisfireBulletRemove || iAmmoElapsed > 1))
+	if ((rnd < mp) && iAmmoElapsed > 1)
 	{
 		FireEnd();
 
