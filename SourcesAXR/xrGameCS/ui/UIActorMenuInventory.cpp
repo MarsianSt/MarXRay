@@ -252,7 +252,7 @@ bool CUIActorMenu::DropAllItemsFromRuck( bool quest_force )
 	return true;
 }
 
-bool FindItemInList(CUIDragDropListEx* lst, PIItem pItem, CUICellItem*& ci_res)
+bool CUIActorMenu::FindItemInList(CUIDragDropListEx* lst, PIItem pItem, CUICellItem*& ci_res)
 {
 	u32 count = lst->ItemsCount();
 	for (u32 i=0; i<count; ++i)
@@ -280,7 +280,7 @@ bool FindItemInList(CUIDragDropListEx* lst, PIItem pItem, CUICellItem*& ci_res)
 	return false;
 }
 
-bool RemoveItemFromList(CUIDragDropListEx* lst, PIItem pItem)
+bool CUIActorMenu::RemoveItemFromList(CUIDragDropListEx* lst, PIItem pItem)
 {// fixme
 	CUICellItem*	ci	= NULL;
 	if(FindItemInList(lst, pItem, ci))

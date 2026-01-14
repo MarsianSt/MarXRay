@@ -366,6 +366,9 @@ public:
 	PIItem						get_upgrade_item			();
 	bool						DropAllItemsFromRuck		(bool quest_force = false); //debug func
 
+	bool						FindItemInList				(CUIDragDropListEx* lst, PIItem pItem, CUICellItem*& ci_res);
+	bool						RemoveItemFromList			(CUIDragDropListEx* lst, PIItem pItem);
+
 	void						UpdateActor					();
 	void						UpdatePartnerBag			();
 	void						UpdateDeadBodyBag			();

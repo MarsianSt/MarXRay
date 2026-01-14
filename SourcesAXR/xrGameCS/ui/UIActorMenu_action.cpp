@@ -101,6 +101,9 @@ bool CUIActorMenu::OnItemDrop(CUICellItem* itm)
 			{
 				pAfContainer->PutArtefactToContainer(*pArtefact);
 
+				if (m_currMenuMode == mmDeadBodySearch)
+					RemoveItemFromList(m_pDeadBodyBagList, CurrentIItem());
+
 				pArtefact->DestroyObject();
 				return true;	
 			}

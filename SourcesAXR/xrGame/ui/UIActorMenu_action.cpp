@@ -30,6 +30,7 @@
 #include <dinput.h>
 
 #include "AdvancedXrayGameConstants.h"
+#include "UICellCustomItems.h"
 
 bool  CUIActorMenu::AllowItemDrops(EDDListType from, EDDListType to)
 {
@@ -64,6 +65,7 @@ public:
 	}
 
 };
+
 void CUIActorMenu::OnDragItemOnTrash(CUIDragItem* item, bool b_receive)
 {
 	if(b_receive && !CurrentIItem()->IsQuestItem())
@@ -99,6 +101,9 @@ bool CUIActorMenu::OnItemDrop(CUICellItem* itm)
 			if (pAfContainer && !pAfContainer->IsFull())
 			{
 				pAfContainer->PutArtefactToContainer(*pArtefact);
+
+				if (m_currMenuMode == mmDeadBodySearch)
+					RemoveItemFromList(m_pDeadBodyBagList, CurrentIItem());
 
 				pArtefact->DestroyObject();
 				return true;	
