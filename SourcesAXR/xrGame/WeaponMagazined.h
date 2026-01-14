@@ -41,6 +41,8 @@ protected:
 	bool            m_bNeedBulletInGun;
 
 	bool            m_bCustomShotSounds;
+	bool			m_bPerformFullUnload;
+
 protected:
 	virtual void	OnMagazineEmpty	();
 

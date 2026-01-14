@@ -59,6 +59,7 @@ CWeaponMagazined::CWeaponMagazined(LPCSTR name, ESoundTypes eSoundType) : CWeapo
 	m_opened				= false;
 	m_bUseFiremodeChangeAnim = true;
 	bHasBulletsToHide		= false;
+	m_bPerformFullUnload	= false;
 
 	m_iMagClickStartRound	= 0;
 }
@@ -217,6 +218,8 @@ void CWeaponMagazined::Load	(LPCSTR section)
 		m_sounds.LoadSound(section, "snd_sprint_idle", "sndSprintIdle", true, m_eSoundEmptyClick);
 
 	m_iMagClickStartRound = READ_IF_EXISTS(pSettings, r_u32, section, "mag_click_start_round", 0);
+
+	m_bPerformFullUnload = READ_IF_EXISTS(pSettings, r_bool, section, "perform_full_unload", false);
 
 	//  [7/20/2005]
 	if (pSettings->line_exist(section, "dispersion_start"))
@@ -1286,7 +1289,7 @@ void CWeaponMagazined::OnAnimationEnd(u32 state)
 
 			CCartridge FirstBulletInGun;
 
-			bool bNeedputBullet = iAmmoElapsed > 0;
+			bool bNeedputBullet = !m_bPerformFullUnload && (iAmmoElapsed > 0);
 
 			if (!m_bIsRevolver && m_bNeedBulletInGun && bNeedputBullet)
 			{

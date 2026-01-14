@@ -63,6 +63,7 @@ CWeaponMagazined::CWeaponMagazined(ESoundTypes eSoundType) : CWeapon()
 	m_opened					= false;
 	m_bUseFiremodeChangeAnim	= true;
 	bHasBulletsToHide			= false;
+	m_bPerformFullUnload		= false;
 
 	m_sSndShotCurrent			= nullptr;
 
@@ -224,6 +225,8 @@ void CWeaponMagazined::Load	(LPCSTR section)
 	m_fBaseDispersionedBulletsSpeed = READ_IF_EXISTS(pSettings, r_float, section, "base_dispersioned_bullets_speed", m_fStartBulletSpeed);
 
 	m_iMagClickStartRound = READ_IF_EXISTS(pSettings, r_u32, section, "mag_click_start_round", 0);
+
+	m_bPerformFullUnload = READ_IF_EXISTS(pSettings, r_bool, section, "perform_full_unload", false);
 
 	if (pSettings->line_exist(section, "fire_modes"))
 	{
@@ -1341,7 +1344,7 @@ void CWeaponMagazined::OnAnimationEnd(u32 state)
 
 			CCartridge FirstBulletInGun;
 
-			bool bNeedputBullet = iAmmoElapsed > 0;
+			bool bNeedputBullet = !m_bPerformFullUnload && (iAmmoElapsed > 0);
 
 			if (!m_bIsRevolver && m_bNeedBulletInGun && bNeedputBullet)
 			{
