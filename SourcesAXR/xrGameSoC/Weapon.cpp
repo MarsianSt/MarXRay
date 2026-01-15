@@ -156,6 +156,7 @@ CWeapon::CWeapon(LPCSTR name)
 
 	m_bIndoorSoundsEnabled	= false;
 	m_bMisfireBulletRemove	= false;
+	m_bVisualAmmoVariation	= false;
 }
 
 const shared_str CWeapon::GetScopeName() const
@@ -638,32 +639,38 @@ void CWeapon::Load		(LPCSTR section)
 
 	m_bIndoorSoundsEnabled	= READ_IF_EXISTS(pSettings, r_bool, section, "indoor_sounds_enabled", false);
 	m_bMisfireBulletRemove	= READ_IF_EXISTS(pSettings, r_bool, section, "misfire_bullet_remove", true);
+	m_bVisualAmmoVariation	= READ_IF_EXISTS(pSettings, r_bool, section, "visual_ammo_variation", false);
 
 	m_bBulletsVisualization = pSettings->line_exist(section, "bullet_bones");
 
-	if (pSettings->line_exist(section, "bullet_textures_in_model"))
+	if (m_bVisualAmmoVariation)
+		LoadBulletBonesConfig(section);
+	else
 	{
-		const char* str = pSettings->r_string(section, "bullet_textures_in_model");
-
-		for (int i{}, count = _GetItemCount(str); i < count;)
+		if (pSettings->line_exist(section, "bullet_textures_in_model"))
 		{
-			xr_string bullet_tex;
-			_GetItem(str, i++, bullet_tex);
-			bullet_textures_in_model.emplace_back(std::move(bullet_tex));
+			const char* str = pSettings->r_string(section, "bullet_textures_in_model");
+
+			for (int i{}, count = _GetItemCount(str); i < count;)
+			{
+				xr_string bullet_tex;
+				_GetItem(str, i++, bullet_tex);
+				bullet_textures_in_model.emplace_back(std::move(bullet_tex));
+			}
 		}
-	}
 
-	if (pSettings->line_exist(section, "bullet_textures_for_ammos"))
-	{
-		const char* str = pSettings->r_string(section, "bullet_textures_for_ammos");
-
-		for (int i{}, count = _GetItemCount(str); i < count;)
+		if (pSettings->line_exist(section, "bullet_textures_for_ammos"))
 		{
-			xr_string ammo_section, bullet_tex;
-			_GetItem(str, i++, ammo_section);
-			R_ASSERT2(i < count, make_string("Incorrect [bullet_textures_for_ammos] in section [%s]", section).c_str());
-			_GetItem(str, i++, bullet_tex);
-			bullet_textures_for_ammos.emplace(std::move(ammo_section), std::move(bullet_tex));
+			const char* str = pSettings->r_string(section, "bullet_textures_for_ammos");
+
+			for (int i{}, count = _GetItemCount(str); i < count;)
+			{
+				xr_string ammo_section, bullet_tex;
+				_GetItem(str, i++, ammo_section);
+				R_ASSERT2(i < count, make_string("Incorrect [bullet_textures_for_ammos] in section [%s]", section).c_str());
+				_GetItem(str, i++, bullet_tex);
+				bullet_textures_for_ammos.emplace(std::move(ammo_section), std::move(bullet_tex));
+			}
 		}
 	}
 
@@ -1275,6 +1282,27 @@ void CWeapon::Load3DScopeParams(LPCSTR section)
 		m_zoom_params.m_fSecondVPFovFactor = READ_IF_EXISTS(pSettings, r_float, section, "3d_fov", 0.0f);
 	else
 		m_zoom_params.m_fSecondVPFovFactor = 0.0f;
+}
+
+void CWeapon::LoadBulletBonesConfig(LPCSTR section)
+{
+	bullet_bones_in_model.clear();
+	bullet_bones_sets.clear();
+
+	if (pSettings->line_exist(section, "bullet_bones_in_model"))
+	{
+		const char* str = pSettings->r_string(section, "bullet_bones_in_model");
+
+		for (int i = 0, count = _GetItemCount(str); i < count;)
+		{
+			xr_string bone_name;
+			_GetItem(str, i++, bone_name);
+			bullet_bones_in_model.emplace_back(std::move(bone_name));
+		}
+	}
+
+	for (int i = 0; i < m_ammoTypes.size(); ++i)
+		bullet_bones_sets.push_back(pSettings->r_string(section, make_string("bullet_bones_set_%d", i).c_str()));
 }
 
 BOOL CWeapon::net_Spawn		(CSE_Abstract* DC)
@@ -3867,6 +3895,12 @@ void CWeapon::WpnExplosion()
 
 void CWeapon::update_visual_bullet_textures(const bool forced)
 {
+	if (m_bVisualAmmoVariation)
+	{
+		update_visual_bullet_bones(forced);
+		return;
+	}
+
 	if (bullet_textures_in_model.empty())
 		return;
 
@@ -3895,6 +3929,53 @@ void CWeapon::update_visual_bullet_textures(const bool forced)
 		tex->Unload();
 		tex->Load(bullet_texrure_name.c_str());
 		current_bullet_texture = bullet_texrure_name;
-		//Msg("--[%s] replaced texture [%s] --> [%s] for [%s]", __FUNCTION__, tex_name.c_str(), current_bullet_texture.c_str(), cNameSect().c_str());
 	}
+}
+
+void CWeapon::update_visual_bullet_bones(const bool forced)
+{
+	if (bullet_bones_in_model.empty() || bullet_bones_sets.empty())
+		return;
+
+	if (!GetHUDmode())
+		return;
+
+	const u32 id = (m_set_next_ammoType_on_reload != u32(-1)) ? m_set_next_ammoType_on_reload : m_ammoType;
+
+	if (id >= bullet_bones_sets.size())
+	{
+		Msg("!! [%s] No bone set for ammoType %d (max: %d)", __FUNCTION__, id, bullet_bones_sets.size() - 1);
+		return;
+	}
+
+	const auto& bones_to_show = bullet_bones_sets[id];
+
+	if (!forced && current_bullet_bones == bones_to_show)
+		return;
+
+	// Cкрываем все кости из bullet_bones_in_model
+	for (u8 i = 0; i < bullet_bones_in_model.size(); i++)
+	{
+		u16 bone_id = HudItemData()->m_model->LL_BoneID(bullet_bones_in_model[i].c_str());
+
+		if (bone_id != BI_NONE)
+			HudItemData()->set_bone_visible(bullet_bones_in_model[i].c_str(), false, TRUE);
+	}
+
+	// Показываем кости из текущего набора
+	xr_string temp = bones_to_show.c_str();
+	for (int i = 0, count = _GetItemCount(temp.c_str()); i < count; ++i)
+	{
+		string64 bone_name;
+		_GetItem(temp.c_str(), i, bone_name);
+
+		u16 bone_id = HudItemData()->m_model->LL_BoneID(bone_name);
+
+		if (bone_id != BI_NONE)
+			HudItemData()->set_bone_visible(bone_name, true, TRUE);
+		else
+			Msg("!! [%s] Bone [%s] not found in model for ammoType %d", __FUNCTION__, bone_name, id);
+	}
+
+	current_bullet_bones = bones_to_show;
 }

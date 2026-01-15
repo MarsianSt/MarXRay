@@ -75,6 +75,7 @@ public:
 	void					LoadLaserLightParams(LPCSTR section);
 	void					LoadTacticalTorchParams(LPCSTR section);
 	void					LoadTacticalTorchLightParams(LPCSTR section);
+	void					LoadBulletBonesConfig(LPCSTR section);
 	void					GetZoomData(const float scope_factor, float& delta, float& min_zoom_factor);
 	void					ZoomDynamicMod(bool bIncrement, bool bForceLimit);
 	void					UpdateAltScope();
@@ -757,8 +758,15 @@ private:
 	xr_vector<xr_string>	bullet_textures_in_model;
 	string_unordered_map<xr_string, xr_string> bullet_textures_for_ammos;
 
+	// Dance Maniac: Альтернатива на системе скрытия костей
+	bool					m_bVisualAmmoVariation;
+	xr_string				current_bullet_bones;
+	xr_vector<xr_string>	bullet_bones_in_model;
+	xr_vector<xr_string>	bullet_bones_sets;
+
 public:
 	void					update_visual_bullet_textures(const bool forced = false);
+	void					update_visual_bullet_bones(const bool forced = false);
 
 private:
 	float hud_recalc_koef;
