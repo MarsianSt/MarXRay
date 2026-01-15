@@ -452,22 +452,32 @@ void CWeaponMagazined::OnMotionMark(u32 state, const motion_marks& M)
 {
 	inherited::OnMotionMark(state, M);
 	
-	if ((state == eReload && (xr_strcmp(M.name.c_str(), "lmg_reload") == 0)) || ((xr_strcmp(M.name.c_str(), "shotgun_reload") == 0) && ((iAmmoElapsed + 1) == iMagazineSize)))
+	if (state == eReload)
 	{
-		u8 ammo_type = m_ammoType;
-		int ae = CheckAmmoBeforeReload(ammo_type);
+		const char* anim_name = M.name.c_str();
+		bool is_lmg_reload = (xr_strcmp(anim_name, "lmg_reload") == 0);
+		bool is_shotgun_reload = (xr_strcmp(anim_name, "shotgun_reload") == 0);
 
-		if (ammo_type == m_ammoType)
+		if (is_lmg_reload || (is_shotgun_reload && ((iAmmoElapsed + 1) == iMagazineSize)))
 		{
-			Msg("Ammo elapsed: %d", iAmmoElapsed);
-			ae += iAmmoElapsed;
+			u8 ammo_type = m_ammoType;
+			int ae = CheckAmmoBeforeReload(ammo_type);
+
+			if (ammo_type == m_ammoType)
+			{
+				Msg("Ammo elapsed: %d", iAmmoElapsed);
+				ae += iAmmoElapsed;
+			}
+
+			last_hide_bullet = ae >= bullet_cnt ? bullet_cnt : bullet_cnt - ae - 1;
+
+			Msg("Next reload: count %d with type %d", ae, ammo_type);
+
+			HUD_VisualBulletUpdate();
+			update_visual_bullet_textures();
 		}
-
-		last_hide_bullet = ae >= bullet_cnt ? bullet_cnt : bullet_cnt - ae - 1;
-
-		Msg("Next reload: count %d with type %d", ae, ammo_type);
-
-		HUD_VisualBulletUpdate();
+		else if (is_shotgun_reload)
+			update_visual_bullet_textures();
 	}
 
 	EngineMotionMarksUpdate(state, M);

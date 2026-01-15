@@ -18,6 +18,7 @@ class CHUDState
 public:
 enum EHudStates {
 		eIdle		= 0,
+		eReload,
 		eShowing,
 		eHiding,
 		eHidden,

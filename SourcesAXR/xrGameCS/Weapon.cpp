@@ -679,6 +679,32 @@ void CWeapon::Load		(LPCSTR section)
 
 	m_bBulletsVisualization = pSettings->line_exist(section, "bullet_bones");
 
+	if (pSettings->line_exist(section, "bullet_textures_in_model"))
+	{
+		const char* str = pSettings->r_string(section, "bullet_textures_in_model");
+
+		for (int i{}, count = _GetItemCount(str); i < count;)
+		{
+			xr_string bullet_tex;
+			_GetItem(str, i++, bullet_tex);
+			bullet_textures_in_model.emplace_back(std::move(bullet_tex));
+		}
+	}
+
+	if (pSettings->line_exist(section, "bullet_textures_for_ammos"))
+	{
+		const char* str = pSettings->r_string(section, "bullet_textures_for_ammos");
+
+		for (int i{}, count = _GetItemCount(str); i < count;)
+		{
+			xr_string ammo_section, bullet_tex;
+			_GetItem(str, i++, ammo_section);
+			R_ASSERT2(i < count, make_string("Incorrect [bullet_textures_for_ammos] in section [%s]", section).c_str());
+			_GetItem(str, i++, bullet_tex);
+			bullet_textures_for_ammos.emplace(std::move(ammo_section), std::move(bullet_tex));
+		}
+	}
+
 	string256						temp;
 	for (int i=egdNovice; i<egdCount; ++i) 
 	{
@@ -3967,4 +3993,38 @@ void CWeapon::WpnExplosion()
 	// Уничтожаем оружие
 	if (m_bWpnDestroyAfterExplode)
 		DestroyObject();
+}
+
+void CWeapon::update_visual_bullet_textures(const bool forced)
+{
+	if (bullet_textures_in_model.empty())
+		return;
+
+	if (!GetHUDmode())
+		return;
+
+	const u32 id = m_set_next_ammoType_on_reload != u32(-1) ? m_set_next_ammoType_on_reload : m_ammoType;
+	const auto& current_ammo_sect = m_ammoTypes[id];
+	const auto bullet_texrure_find_it = bullet_textures_for_ammos.find(current_ammo_sect.c_str());
+	R_ASSERT2(bullet_texrure_find_it != bullet_textures_for_ammos.end(), make_string("!!Can't find [%s] in [bullet_textures_for_ammos] of [%s]", current_ammo_sect.c_str(), cNameSect().c_str()).c_str());
+	const auto& bullet_texrure_name = bullet_texrure_find_it->second;
+
+	if (!forced && current_bullet_texture == bullet_texrure_name)
+		return;
+
+	for (const auto& tex_name : bullet_textures_in_model)
+	{
+		const auto textures = Device.m_pRender->GetResourceManager()->FindTexture(tex_name.c_str());
+		if (textures.empty())
+		{
+			Msg("!![%s] can't find texture [%s] for [%s]", __FUNCTION__, tex_name.c_str(), cNameSect().c_str());
+			continue;
+		}
+
+		auto* tex = textures.front();
+		tex->Unload();
+		tex->Load(bullet_texrure_name.c_str());
+		current_bullet_texture = bullet_texrure_name;
+		//Msg("--[%s] replaced texture [%s] --> [%s] for [%s]", __FUNCTION__, tex_name.c_str(), current_bullet_texture.c_str(), cNameSect().c_str());
+	}
 }

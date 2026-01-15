@@ -176,7 +176,6 @@ public:
 	{
 		eFire		= eLastBaseState+1,
 		eFire2,
-		eReload,
 		eMisfire,
 		eMagEmpty,
 		eSwitch,
@@ -748,6 +747,14 @@ public:
 	void GetBoneOffsetPosDir(const shared_str& bone_name, Fvector& dest_pos, Fvector& dest_dir, const Fvector& offset, const Fvector& rotation = Fvector().set(0.f, 0.f, 1.f));
 	//Функция из ганслингера для приблизительной коррекции разности фовов худа и мира. Так себе на самом деле, но более годных способов я не нашел.
 	void CorrectDirFromWorldToHud(Fvector& dir);
+
+private:
+	xr_string				current_bullet_texture;
+	xr_vector<xr_string>	bullet_textures_in_model;
+	string_unordered_map<xr_string, xr_string> bullet_textures_for_ammos;
+
+public:
+	void					update_visual_bullet_textures(const bool forced = false);
 
 private:
 	float hud_recalc_koef;

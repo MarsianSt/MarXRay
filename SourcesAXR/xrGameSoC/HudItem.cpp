@@ -1654,14 +1654,25 @@ float CHudItem::GetHudFov()
 
 void CHudItem::TimeLockAnimation()
 {
-	if (GetState() != eDeviceSwitch && GetState() != eLaserSwitch && GetState() != eFlashlightSwitch)
-		return;
+	const u32 state = GetState();
+	if ((state == eDeviceSwitch || state == eLaserSwitch || state == eFlashlightSwitch || state == eReload) && GetHUDmode())
+	{
+		string128 anm_time_param;
+		xr_strconcat(anm_time_param, "lock_time_", m_current_motion.c_str(), "_end");
+		const float time = READ_IF_EXISTS(pSettings, r_float, HudSection(), anm_time_param, 0) * 1000.f; // Читаем с конфига время анимации (например, lock_time_end_anm_reload)
+		const float current_time = Device.dwTimeGlobal - m_dwMotionStartTm;
 
-	string128 anm_time_param;
-	xr_strconcat(anm_time_param, "lock_time_", m_current_motion.c_str(), "_end");
-	const float time = READ_IF_EXISTS(pSettings, r_float, HudSection(), anm_time_param, 0) * 1000.f; // Читаем с конфига время анимации (например, lock_time_end_anm_reload)
-	const float current_time = Device.dwTimeGlobal - m_dwMotionStartTm;
-
-	if (time && current_time >= time)
-		DeviceUpdate();
+		if (time && current_time >= time)
+		{
+			if (state == eDeviceSwitch || state == eLaserSwitch || state == eFlashlightSwitch)
+			{
+				DeviceUpdate();
+			}
+			else if (state == eReload)
+			{
+				if (auto wpn = smart_cast<CWeapon*>(this))
+					wpn->update_visual_bullet_textures();
+			}
+		}
+	}
 }
