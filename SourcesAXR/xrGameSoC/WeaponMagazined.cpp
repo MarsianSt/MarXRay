@@ -261,7 +261,6 @@ void CWeaponMagazined::Load	(LPCSTR section)
 			bullets_bones.push_back(bullet_bone_name);
 			bullet_cnt++;
 		}
-
 	}
 }
 
@@ -457,6 +456,7 @@ void CWeaponMagazined::OnMotionMark(u32 state, const motion_marks& M)
 		const char* anim_name = M.name.c_str();
 		bool is_lmg_reload = (xr_strcmp(anim_name, "lmg_reload") == 0);
 		bool is_shotgun_reload = (xr_strcmp(anim_name, "shotgun_reload") == 0);
+		bool is_gun_load = (xr_strcmp(anim_name, "vbs_gun_load") == 0);
 
 		if (is_lmg_reload || (is_shotgun_reload && ((iAmmoElapsed + 1) == iMagazineSize)))
 		{
@@ -475,6 +475,11 @@ void CWeaponMagazined::OnMotionMark(u32 state, const motion_marks& M)
 
 			HUD_VisualBulletUpdate();
 			update_visual_bullet_textures();
+		}
+		else if (is_gun_load)
+		{
+			if (m_bVisualBulletSystem)
+				m_bVisualBulletSystem->Update(false, false);
 		}
 		else if (is_shotgun_reload)
 			update_visual_bullet_textures();
@@ -497,31 +502,8 @@ bool CWeaponMagazined::TryReload()
 			return				true;
 		}
 
-		if (GetHUDmode() && !bullets_bones.empty())
-		{
-			u8 visible_bullets = iAmmoElapsed;
-
-			for (size_t i = 0; i < bullets_bones.size(); ++i)
-			{
-				u16 bone_id = HudItemData()->m_model->LL_BoneID(bullets_bones[i]);
-				if (bone_id == BI_NONE)
-					continue;
-
-				bool should_show = (i < visible_bullets);
-				HudItemData()->set_bone_visible(bullets_bones[i], should_show);
-
-				string64 spring_bone_name{};
-				strconcat(sizeof(spring_bone_name), spring_bone_name, "prujina", std::to_string(i + 1).c_str());
-
-				u16 spring_bone_id = HudItemData()->m_model->LL_BoneID(spring_bone_name);
-
-				if (spring_bone_id != BI_NONE)
-				{
-					bool spring_visible = !(i < visible_bullets);
-					HudItemData()->set_bone_visible(spring_bone_name, spring_visible);
-				}
-			}
-		}
+		if (m_bVisualBulletSystem)
+			m_bVisualBulletSystem->Update(true, true);
 
 		if (m_pAmmo || unlimited_ammo())
 		{
@@ -1325,7 +1307,16 @@ void CWeaponMagazined::OnAnimationEnd(u32 state)
 			ResetShootingEffect();
 			break;	// End of Hide
 		}
-		case eShowing:	SwitchState(eIdle);		break;	// End of Show
+		case eShowing:
+		{
+			if (m_bVisualBulletSystem)
+				m_bVisualBulletSystem->Update(false, false);
+			else
+				update_visual_bullet_textures(true);
+
+			SwitchState(eIdle);
+			break;	// End of Show
+		}
 		case eIdle:
 		{
 			switch2_Idle();

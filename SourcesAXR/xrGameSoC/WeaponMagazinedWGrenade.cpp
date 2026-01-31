@@ -84,20 +84,6 @@ void CWeaponMagazinedWGrenade::Load	(LPCSTR section)
 			_GetItem(grenade_sect, it, _ammoItem);
 			m_ammoTypes2.push_back(_ammoItem);
 		}
-
-		if (pSettings->line_exist(section, "grenades_bones_by_type"))
-		{
-			const char* str = pSettings->r_string(section, "grenades_bones_by_type");
-
-			for (int i{}, count = _GetItemCount(str); i < count;)
-			{
-				xr_string ammo_section, grenade_bone;
-				_GetItem(str, i++, ammo_section);
-				R_ASSERT2(i < count, make_string("Incorrect [grenades_bones_by_type] in section [%s]", section).c_str());
-				_GetItem(str, i++, grenade_bone);
-				grenades_bones_by_type.emplace(std::move(ammo_section), std::move(grenade_bone));
-			}
-		}
 	}
 	else
 		m_ammoName2 = 0;
@@ -228,10 +214,10 @@ void CWeaponMagazinedWGrenade::OnMotionMark(u32 state, const motion_marks& M)
 	if (state == eReload && m_bGrenadeMode)
 	{
 		const char* anim_name = M.name.c_str();
-		bool is_gl_reload = (xr_strcmp(anim_name, "gl_reload") == 0);
+		bool is_gl_reload = (xr_strcmp(anim_name, "vbs_gl_load") == 0);
 
-		if (is_gl_reload)
-			update_visual_grenade_bones();
+		if (m_bVisualBulletSystem && is_gl_reload)
+			m_bVisualBulletSystem->Update(false, false);
 	}
 }
 
@@ -645,10 +631,17 @@ void CWeaponMagazinedWGrenade::PlayAnimShow()
 		if (!m_bGrenadeMode)
 		{
 			HUD_VisualBulletUpdate();
-			update_visual_bullet_textures();
+
+			if (m_bVisualBulletSystem)
+				m_bVisualBulletSystem->Update(false, false);
+			else
+				update_visual_bullet_textures();
 		}
 		else
-			update_visual_grenade_bones();
+		{
+			if (m_bVisualBulletSystem)
+				m_bVisualBulletSystem->Update(false, false);
+		}
 
 		if (!m_bGrenadeMode)
 		{
@@ -1478,40 +1471,4 @@ void CWeaponMagazinedWGrenade::CheckMagazine()
 	{
 		m_bNeedBulletInGun = false;
 	}
-}
-
-void CWeaponMagazinedWGrenade::update_visual_grenade_bones(const bool forced)
-{
-	if (!GetHUDmode())
-		return;
-
-	if (grenades_bones_by_type.empty())
-		return;
-
-	const u32 id = (m_set_next_ammoType_on_reload != u32(-1)) ? m_set_next_ammoType_on_reload : m_ammoType;
-	const auto& current_ammo_sect = m_ammoTypes[id];
-	const auto grenade_bone_find_it = grenades_bones_by_type.find(current_ammo_sect.c_str());
-	R_ASSERT2(grenade_bone_find_it != grenades_bones_by_type.end(), make_string("!!Can't find [%s] in [grenades_bones_by_type] of [%s]", current_ammo_sect.c_str(), cNameSect().c_str()).c_str());
-	const auto& grenade_bone_name = grenade_bone_find_it->second;
-
-	if (!forced && current_grenade_bone == grenade_bone_name)
-		return;
-
-	for (const auto& bone_pair : grenades_bones_by_type)
-	{
-		const auto& bone_name = bone_pair.second;
-		u16 bone_id = HudItemData()->m_model->LL_BoneID(bone_name.c_str());
-
-		if (bone_id != BI_NONE)
-			HudItemData()->set_bone_visible(bone_name.c_str(), FALSE, TRUE);
-	}
-
-	u16 current_bone_id = HudItemData()->m_model->LL_BoneID(grenade_bone_name.c_str());
-
-	if (current_bone_id != BI_NONE)
-		HudItemData()->set_bone_visible(grenade_bone_name.c_str(), TRUE, TRUE);
-	else
-		Msg("!! [%s] Grenade bone [%s] not found in model", __FUNCTION__, grenade_bone_name.c_str());
-
-	current_grenade_bone = grenade_bone_name;
 }

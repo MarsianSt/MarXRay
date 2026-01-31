@@ -6752,6 +6752,9 @@
     <ClInclude Include="embedded_editor\embedded_editor_postprocess.h">
       <Filter>EmbeddedEditor</Filter>
     </ClInclude>
+    <ClInclude Include="VisualBulletSystem.h">
+      <Filter>Core\Client\Objects\items &amp; weapons\Weapons\Custom Weapon\Weapon Generic</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="damage_manager.cpp">
@@ -10053,6 +10056,9 @@
     </ClCompile>
     <ClCompile Include="embedded_editor\embedded_editor_postprocess.cpp">
       <Filter>EmbeddedEditor</Filter>
+    </ClCompile>
+    <ClCompile Include="VisualBulletSystem.cpp">
+      <Filter>Core\Client\Objects\items &amp; weapons\Weapons\Custom Weapon\Weapon Generic</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

@@ -1548,6 +1548,7 @@
     <ClInclude Include="ui\UIBoosterInfo.h" />
     <ClInclude Include="ui\UIHudStatesWnd.h" />
     <ClInclude Include="ui\UIInventoryItemParams.h" />
+    <ClInclude Include="VisualBulletSystem.h" />
     <ClInclude Include="WeaponAttaches.h" />
     <ClInclude Include="WeaponAutomaticShotgun.h" />
     <ClInclude Include="xrClientsPool.h" />
@@ -2236,6 +2237,7 @@
     <ClCompile Include="ui\UILoadingScreen.cpp" />
     <ClCompile Include="ui\UIOutfitInfo.cpp" />
     <ClCompile Include="ui\UITradeWndHighlights.cpp" />
+    <ClCompile Include="VisualBulletSystem.cpp" />
     <ClCompile Include="visual_memory_manager.cpp">
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">pch_script.h</PrecompiledHeaderFile>
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">pch_script.h</PrecompiledHeaderFile>

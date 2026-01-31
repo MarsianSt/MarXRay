@@ -106,11 +106,6 @@ public:
 
 	int						iAmmoElapsedMain;
 
-	xr_string				current_grenade_bone{};
-	string_unordered_map<xr_string, xr_string> grenades_bones_by_type;
-
-	void					update_visual_grenade_bones(const bool forced = false);
-
 	bool					IsMainMagazineEmpty() { return iAmmoElapsedMain <= 0; }
 
 	virtual void UpdateGrenadeVisibility(bool visibility);
