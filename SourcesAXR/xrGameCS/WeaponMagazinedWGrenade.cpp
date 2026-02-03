@@ -43,9 +43,10 @@ void CWeaponMagazinedWGrenade::Load	(LPCSTR section)
 	SetAnimFlag(ANM_MISFIRE_GL,			"anm_reload_misfire_w_gl");
 	
 	//// Sounds
-	m_sounds.LoadSound(section,"snd_shoot_grenade", "sndShotG", false, m_eSoundShot);
-	m_sounds.LoadSound(section,"snd_reload_grenade"	, "sndReloadG"	, true, m_eSoundReload);
-	m_sounds.LoadSound(section,"snd_switch"			, "sndSwitch"		, true, m_eSoundReload);
+	m_sounds.LoadSound(section,	"snd_shoot_grenade",	"sndShotG",			false, m_eSoundShot);
+	m_sounds.LoadSound(section,	"snd_reload_grenade",	"sndReloadG",		true, m_eSoundReload);
+	m_sounds.LoadSound(section, "snd_ammochange_g",		"sndAmmoChangeG",	true, m_eSoundReload);
+	m_sounds.LoadSound(section,	"snd_switch",			"sndSwitch",		true, m_eSoundReload);
 	
 	if (m_bIndoorSoundsEnabled)
 		m_sounds.LoadSound(section, "snd_shoot_grenade_indoor", "sndShotG_Indoor", false, m_eSoundShot);
@@ -144,16 +145,17 @@ BOOL CWeaponMagazinedWGrenade::net_Spawn(CSE_Abstract* DC)
 void CWeaponMagazinedWGrenade::switch2_Reload()
 {
 	VERIFY(GetState()==eReload);
+
 	if(m_bGrenadeMode) 
 	{
-		PlaySound("sndReloadG", get_LastFP2());
+		bool isAmmoChange = !m_bCheckAmmoChangeLockGL && m_set_next_ammoType_on_reload != u32(-1);
 
-		if (IsMisfire())
-			PlayHUDMotionIfExists({ "anm_reload_g_jammed", "anm_reload_jammed_g", "anm_reload_g" }, true, GetState());
-		else if (IsMainMagazineEmpty())
-			PlayHUDMotionIfExists({ "anm_reload_g_empty", "anm_reload_empty_g", "anm_reload_g" }, true, GetState());
-		else
-			PlayHUDMotion("anm_reload_g", FALSE, this, GetState());
+		string128 anmAmmoChangeReloadName{}, anmReloadName{};
+		strconcat(sizeof(anmAmmoChangeReloadName), anmAmmoChangeReloadName, isAmmoChange ? "anm_ammochange_g" : "anm_reload_g", IsMisfire() ? "_jammed" : IsMainMagazineEmpty() ? "_empty" : "");
+		strconcat(sizeof(anmReloadName), anmReloadName, "anm_reload_g", IsMisfire() ? "_jammed" : IsMainMagazineEmpty() ? "_empty" : "");
+
+		PlaySound((isAmmoChange && m_sounds.FindSoundItem("sndAmmoChangeG", false)) ? "sndAmmoChangeG" : "sndReloadG", get_LastFP2());
+		PlayHUDMotionIfExists({ anmReloadName, anmReloadName, "anm_reload_g" }, true, GetState());
 
 		SetPending			(TRUE);
 	}
