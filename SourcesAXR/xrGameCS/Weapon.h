@@ -667,6 +667,7 @@ public:
 	bool					m_bUseAimScopeAnims;
 	bool					m_bUseScopeAimMoveAnims;
 	bool					m_bUseAimAnmDirDependency;
+	bool					m_bCheckAmmoChangeLockGL;
 	u8						m_u8TracerColorID;
 	u32						m_set_next_ammoType_on_reload;
 	// Multitype ammo support
