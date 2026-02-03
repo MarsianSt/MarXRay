@@ -1671,7 +1671,7 @@ void CWeaponMagazined::PlayReloadSound()
 			u8 bullets_to_load = iMagazineSize - GetAvailableCartridgesToLoad(!iAmmoElapsed);
 
 			string128 sndReloadName;
-			strconcat(sizeof(sndReloadName), sndReloadName, "sndReload", (bullets_to_load > 0) ? std::to_string(bullets_to_load).c_str() : "Empty");
+			strconcat(sizeof(sndReloadName), sndReloadName, "sndReload", (bullets_to_load > 0 && m_set_next_ammoType_on_reload == u32(-1)) ? std::to_string(bullets_to_load).c_str() : "Empty");
 
 			if (m_sounds.FindSoundItem(sndReloadName, false))
 				m_sounds.PlaySound(sndReloadName, get_LastFP(), H_Root(), !!GetHUDmode(), false, (u8)-1);
@@ -2403,7 +2403,7 @@ void CWeaponMagazined::PlayAnimReload()
 		u8 bullets_to_load = iMagazineSize - GetAvailableCartridgesToLoad(!iAmmoElapsed);
 
 		string128 anmReloadName;
-		strconcat(sizeof(anmReloadName), anmReloadName, "anm_reload_", (bullets_to_load > 0) ? std::to_string(bullets_to_load).c_str() : "empty");
+		strconcat(sizeof(anmReloadName), anmReloadName, "anm_reload_", (bullets_to_load > 0 && m_set_next_ammoType_on_reload == u32(-1)) ? std::to_string(bullets_to_load).c_str() : "empty");
 
 		if (isHUDAnimationExist(anmReloadName))
 			PlayHUDMotionIfExists({ anmReloadName, "anm_reload" }, true, GetState());
