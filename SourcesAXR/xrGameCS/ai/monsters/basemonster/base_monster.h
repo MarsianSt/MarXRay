@@ -27,6 +27,8 @@
 
 #include "../monster_aura.h"
 
+#include "AdvancedXrayGameConstants.h"
+
 class CCharacterPhysicsSupport;
 class CMonsterCorpseCoverEvaluator;
 class CCoverEvaluatorFarFromEnemy;
@@ -77,7 +79,7 @@ public:
 	virtual CScriptEntity*				cast_script_entity			()	{return this;}
 	virtual CBaseMonster*				cast_base_monster			()	{return this;}
 
-	virtual CInventoryOwner				*cast_inventory_owner		() {return this;}
+	virtual CInventoryOwner*			cast_inventory_owner		() { return GameConstants::GetMonstersInventory() ? this : nullptr; }
 	virtual bool						unlimited_ammo				() {return false;}
 	virtual CGameObject*				cast_game_object			() {return this;}
 

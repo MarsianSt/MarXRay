@@ -64,6 +64,7 @@ bool	m_bGlobalAchEnabled = false;
 BOOL	m_b_animated_backpack = 0;
 bool	m_b_smooth_scroll = false;
 bool	m_b_centering_cursor_global_disable = false;
+bool	m_bMonstersInventory = false;
 int		m_iArtefactsCount = 5;
 int		m_i_CMD_Count = 1;
 int		m_B_CMD_Count = 1;
@@ -151,6 +152,7 @@ namespace GameConstants
 		m_bGlobalAchEnabled = READ_IF_EXISTS(pAdvancedSettings, r_bool, "gameplay", "enable_global_achievements", false);
 		m_b_smooth_scroll = READ_IF_EXISTS(pAdvancedSettings, r_bool, "ui_settings", "enable_smooth_scrolling", false);
 		m_b_centering_cursor_global_disable = READ_IF_EXISTS(pAdvancedSettings, r_bool, "ui_settings", "disable_cursor_global_centering", false);
+		m_bMonstersInventory = READ_IF_EXISTS(pAdvancedSettings, r_bool, "ui_settings", "enable_monsters_inventory", true);
 
 		Msg("# Advanced X-Ray GameConstants are loaded");
 	}
@@ -506,5 +508,10 @@ namespace GameConstants
 	bool GetCursorGlobalCenteringDisabled()
 	{
 		return m_b_centering_cursor_global_disable;
+	}
+
+	bool GetMonstersInventory()
+	{
+		return m_bMonstersInventory;
 	}
 }

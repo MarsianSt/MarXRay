@@ -52,6 +52,7 @@ namespace GameConstants
 	bool GetShowSaveName();
 	bool GetLimitedInvBoxes();
 	bool GetGlobalAchEnabled();
+	bool GetMonstersInventory();
 	int  GetArtefactsCount();
 	int  GetIntScriptCMDCount();
 	int  GetBOOLScriptCMDCount();
