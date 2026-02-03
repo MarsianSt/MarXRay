@@ -1540,7 +1540,7 @@ void CActor::shedule_Update	(u32 DT)
 		CGameObject						*game_object = smart_cast<CGameObject*>(RQ.O);
 		m_pUsableObject					= smart_cast<CUsableScriptObject*>(game_object);
 		m_pInvBoxWeLookingAt			= smart_cast<CInventoryBox*>(game_object);
-		m_pPersonWeLookingAt			= smart_cast<CInventoryOwner*>(game_object);
+		m_pPersonWeLookingAt			= game_object->cast_inventory_owner();
 		m_pVehicleWeLookingAt			= smart_cast<CHolderCustom*>(game_object);
 		CEntityAlive* pEntityAlive		= smart_cast<CEntityAlive*>(game_object);
 		
@@ -1565,7 +1565,7 @@ void CActor::shedule_Update	(u32 DT)
 					else
 					{
 						bool b_allow_drag = !!pSettings->line_exist("ph_capture_visuals",pEntityAlive->cNameVisual());				
-					if (b_allow_drag)
+						if (b_allow_drag)
 						{
 							m_sDefaultObjAction = m_sDeadCharacterUseOrDragAction;
 						}
@@ -1579,9 +1579,7 @@ void CActor::shedule_Update	(u32 DT)
 				{
 					m_sDefaultObjAction = m_sCarCharacterUseAction;
 				}
-				else if (	m_pObjectWeLookingAt && 
-							m_pObjectWeLookingAt->cast_inventory_item() && 
-							m_pObjectWeLookingAt->cast_inventory_item()->CanTake() )
+				else if (m_pObjectWeLookingAt && m_pObjectWeLookingAt->cast_inventory_item() && m_pObjectWeLookingAt->cast_inventory_item()->CanTake() )
 				{
 					m_sDefaultObjAction = m_sInventoryItemUseAction;
 				}

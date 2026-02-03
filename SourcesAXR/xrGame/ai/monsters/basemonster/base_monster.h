@@ -23,6 +23,7 @@
 #include "../control_manager_custom.h"
 #include "../ai_monster_shared_data.h"
 #include "../monster_sound_defs.h"
+#include "../../../inventoryowner.h"
 
 #include "../monster_aura.h"
 
@@ -55,7 +56,7 @@ namespace debug { class text_tree; }
 
 class anti_aim_ability;
 
-class CBaseMonster : public CCustomMonster, public CStepManager
+class CBaseMonster : public CCustomMonster, public CStepManager, public CInventoryOwner
 {
 	typedef	CCustomMonster								inherited;
 	
@@ -77,6 +78,7 @@ public:
 	virtual CBaseMonster*				cast_base_monster			()	{return this;}
 
 	virtual CGameObject*				cast_game_object			() {return this;}
+	virtual CInventoryOwner*			cast_inventory_owner		() override { return this; }
 
 public:
 	
@@ -157,6 +159,7 @@ public:
 	virtual	void			HitEntityInJump					(const CEntity *pEntity) {}
 
 	virtual	void			on_before_sell					(CInventoryItem *item);
+	virtual bool			unlimited_ammo					() override { return false; }
 			float			GetSatiety						()							{return 0.5f;}
 			void			ChangeSatiety					(float v)					{}
 	// ---------------------------------------------------------------------------------

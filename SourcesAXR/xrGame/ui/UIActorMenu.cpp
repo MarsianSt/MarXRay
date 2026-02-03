@@ -82,16 +82,31 @@ void CUIActorMenu::SetPartner(CInventoryOwner* io)
 {
 	R_ASSERT			(!IsShown());
 	m_pPartnerInvOwner	= io;
-	if ( m_pPartnerInvOwner )
+
+	if (m_pPartnerInvOwner)
 	{
-		if (m_pPartnerInvOwner->use_simplified_visual() ) 
+		CBaseMonster* monster = smart_cast<CBaseMonster*>(m_pPartnerInvOwner);
+		if (monster || m_pPartnerInvOwner->use_simplified_visual())
+		{
 			m_PartnerCharacterInfo->ClearInfo();
-		else 
+			if (monster)
+			{
+				shared_str monster_tex_name = pSettings->r_string(monster->cNameSect(), "icon");
+				m_PartnerCharacterInfo->UIIcon().InitTexture(monster_tex_name.c_str());
+				m_PartnerCharacterInfo->UIIcon().SetStretchTexture(true);
+			}
+		}
+		else
+		{
 			m_PartnerCharacterInfo->InitCharacter(m_pPartnerInvOwner);
+		}
 
 		SetInvBox( NULL );
-	}else
+	}
+	else
+	{
 		m_PartnerCharacterInfo->ClearInfo();
+	}
 }
 
 void CUIActorMenu::SetInvBox(CInventoryBox* box)
