@@ -16,16 +16,32 @@ void CSE_ALifeMonsterBase::on_spawn				()
 {
 	inherited1::on_spawn		();
 
-	if (!pSettings->line_exist(s_name,"Spawn_Inventory_Item_Section"))
-		return;
+    if (pSettings->line_exist(s_name, "Spawn_Inventory_Item_Section"))
+    {
+        LPCSTR str = pSettings->r_string(s_name, "Spawn_Inventory_Item_Section");
+        float spawn_probability = 0.0f;
 
-	LPCSTR						item_section = pSettings->r_string(s_name,"Spawn_Inventory_Item_Section");
-	float						spawn_probability = pSettings->r_float(s_name,"Spawn_Inventory_Item_Probability");
-	float						probability = randF();
-	if ((probability >= spawn_probability) && !fsimilar(spawn_probability,1.f))
-		return;
+        if (pSettings->line_exist(s_name, "Spawn_Inventory_Item_Probability"))
+        {
+            spawn_probability = pSettings->r_float(s_name, "Spawn_Inventory_Item_Probability");
 
-	alife().spawn_item(item_section,o_Position,m_tNodeID,m_tGraphID,ID)->ID_Parent = ID;
+            if (randF() < spawn_probability || fsimilar(spawn_probability, 1.f))
+                alife().spawn_item(str, o_Position, m_tNodeID, m_tGraphID, ID)->ID_Parent = ID;
+
+            return;
+        }
+
+        for (int i = 0, count = _GetItemCount(str); i < count;)
+        {
+            xr_string item_section, tmp_prob;
+            _GetItem(str, i++, item_section);
+            R_ASSERT2(i < count, make_string("Incorrect [Spawn_Inventory_Item_Section] in section [%s]", s_name).c_str());
+            spawn_probability = atof(_GetItem(str, i++, tmp_prob));
+
+            if (randF() < spawn_probability || fsimilar(spawn_probability, 1.f))
+                alife().spawn_item(item_section.c_str(), o_Position, m_tNodeID, m_tGraphID, ID)->ID_Parent = ID;
+        }
+    }
 }
 
 extern void add_online_impl		(CSE_ALifeDynamicObject *object, const bool &update_registries);
