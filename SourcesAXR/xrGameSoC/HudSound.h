@@ -72,6 +72,18 @@ struct HUD_SOUND_ITEM
 	xr_vector<SSnd> sounds;
 
 	bool operator == (LPCSTR alias) const{return 0==stricmp(m_alias.c_str(),alias);}
+
+	void SetVolume(float new_volume)
+	{
+		for (auto& sound : sounds)
+			sound.snd.set_volume(new_volume);
+	}
+
+	void SetFreq(float new_freq)
+	{
+		for (auto& sound : sounds)
+			sound.snd.set_frequency(new_freq);
+	}
 };
 
 class HUD_SOUND_COLLECTION
@@ -102,6 +114,9 @@ public:
 													int type = sg_SourceType);
 
 	void						SetPosition		(	LPCSTR alias, 	const Fvector& pos);
+	void						SetVolume		(LPCSTR alias, float volume);
+	void						SetFreq			(LPCSTR alias, float freq);
+
 	void						StopAllSounds	();
 };
 
@@ -119,6 +134,9 @@ public:
 	void LoadSound(LPCSTR section, LPCSTR line, LPCSTR alias, bool exclusive = false, int type = sg_SourceType);
 	void LoadSound(CInifile const* ini, LPCSTR section, LPCSTR line, LPCSTR alias, bool exclusive = false,
 		int type = sg_SourceType);
+
 	void SetPosition(LPCSTR alias, const Fvector& pos);
+	void SetVolume(LPCSTR alias, float volume);
+	void SetFreq(LPCSTR alias, float freq);
 };
 //-Alundaio

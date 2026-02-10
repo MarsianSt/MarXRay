@@ -225,9 +225,26 @@ void HUD_SOUND_COLLECTION::StopSound(LPCSTR alias)
 
 void HUD_SOUND_COLLECTION::SetPosition(LPCSTR alias, const Fvector& pos)
 {
-	HUD_SOUND_ITEM* snd_item		= FindSoundItem(alias, true);
-	if(snd_item && snd_item->playing())
-		snd_item->set_position		(pos);
+	HUD_SOUND_ITEM* snd_item = FindSoundItem(alias, true);
+
+	if (snd_item && snd_item->playing())
+		snd_item->set_position(pos);
+}
+
+void HUD_SOUND_COLLECTION::SetFreq(LPCSTR alias, float freq)
+{
+	xr_vector<HUD_SOUND_ITEM>::iterator it = std::find(m_sound_items.begin(), m_sound_items.end(), alias);
+
+	if (it != m_sound_items.end())
+		it->SetFreq(freq);
+}
+
+void HUD_SOUND_COLLECTION::SetVolume(LPCSTR alias, float volume)
+{
+	xr_vector<HUD_SOUND_ITEM>::iterator it = std::find(m_sound_items.begin(), m_sound_items.end(), alias);
+
+	if (it != m_sound_items.end())
+		it->SetVolume(volume);
 }
 
 void HUD_SOUND_COLLECTION::StopAllSounds()
@@ -311,6 +328,30 @@ void HUD_SOUND_COLLECTION_LAYERED::SetPosition(LPCSTR alias, const Fvector& pos)
 	{
 		if (it->m_alias == alias)
 			it->SetPosition(alias, pos);
+	}
+}
+
+void HUD_SOUND_COLLECTION_LAYERED::SetFreq(LPCSTR alias, float freq)
+{
+	xr_vector<HUD_SOUND_COLLECTION>::iterator it = m_sound_items.begin();
+	xr_vector<HUD_SOUND_COLLECTION>::iterator it_e = m_sound_items.end();
+
+	for (; it != it_e; ++it)
+	{
+		if (it->m_alias == alias)
+			it->SetFreq(alias, freq);
+	}
+}
+
+void HUD_SOUND_COLLECTION_LAYERED::SetVolume(LPCSTR alias, float volume)
+{
+	xr_vector<HUD_SOUND_COLLECTION>::iterator it = m_sound_items.begin();
+	xr_vector<HUD_SOUND_COLLECTION>::iterator it_e = m_sound_items.end();
+
+	for (; it != it_e; ++it)
+	{
+		if (it->m_alias == alias)
+			it->SetVolume(alias, volume);
 	}
 }
 
