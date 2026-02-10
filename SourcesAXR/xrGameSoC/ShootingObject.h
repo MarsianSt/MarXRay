@@ -155,11 +155,10 @@ protected:
 	virtual void			StartShotParticles	();
 
 	//партиклы гильз
-	virtual void			OnShellDrop			(const Fvector& play_pos,
-												 const Fvector& parent_vel);
+	virtual void			OnShellDrop			(const Fvector& play_pos, const Fvector& parent_vel, u8 cur_ammo_type = 0);
 protected:
 	//имя пратиклов для гильз
-	shared_str				m_sShellParticles;
+	xr_vector<shared_str>	m_sShellParticles;
 public:
 	Fvector					vLoadedShellPoint;
 	Fvector					vLoadedOverheatingSmokePoint;

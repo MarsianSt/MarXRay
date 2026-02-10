@@ -9,6 +9,7 @@
 
 #include "ParticlesObject.h"
 #include "WeaponAmmo.h"
+#include "Weapon.h"
 
 #include "actor.h"
 #include "spectator.h"
@@ -47,7 +48,8 @@ CShootingObject::CShootingObject(void)
 	m_sSmokeParticlesCurrent		= m_sSmokeParticles = nullptr;
 	m_sOverheatingSmokeParticles	= nullptr;
 	m_sOverheatingSmokeParticles_2	= nullptr;
-	m_sShellParticles				= nullptr;
+
+	m_sShellParticles.clear();
 	
 	bWorking						= false;
 	bCycleDown						= false;
@@ -55,8 +57,8 @@ CShootingObject::CShootingObject(void)
 	light_render					= 0;
 
 	reinit();
-
 }
+
 CShootingObject::~CShootingObject(void)
 {
 }
@@ -289,12 +291,29 @@ void CShootingObject::UpdateParticles (CParticlesObject*& pParticles,
 
 void CShootingObject::LoadShellParticles (LPCSTR section, LPCSTR prefix)
 {
-	string256 full_name;
+	u32 ammo_types{};
+
+	if (auto m_pWeapon = smart_cast<CWeapon*>(this))
+		ammo_types = m_pWeapon->m_ammoTypes.size();
+
+	string256 full_name{};
 	strconcat(sizeof(full_name),full_name, prefix, "shell_particles");
 
-	if(pSettings->line_exist(section,full_name)) 
+	if (pSettings->line_exist(section,full_name)) 
 	{
-		m_sShellParticles	= pSettings->r_string	(section,full_name);
+		for (u32 i_ammo = 0; i_ammo <= ammo_types; ++i_ammo)
+		{
+			string256 full_name_alt{};
+
+			if (i_ammo)
+				strconcat(sizeof(full_name_alt), full_name_alt, prefix, "shell_particles", "_", std::to_string(i_ammo).c_str());
+			else
+				strconcat(sizeof(full_name_alt), full_name_alt, prefix, "shell_particles");
+
+			if (pSettings->line_exist(section, full_name_alt))
+				m_sShellParticles.push_back(pSettings->r_string(section, full_name_alt));
+		}
+
 		vLoadedShellPoint	= pSettings->r_fvector3	(section,strconcat(sizeof(full_name),full_name, prefix, "shell_point"));
 	}
 }
@@ -323,13 +342,16 @@ void CShootingObject::LoadFlameParticles (LPCSTR section, LPCSTR prefix)
 }
 
 
-void CShootingObject::OnShellDrop	(const Fvector& play_pos,
-									 const Fvector& parent_vel)
+void CShootingObject::OnShellDrop	(const Fvector& play_pos, const Fvector& parent_vel, u8 cur_ammo_type)
 {
-	if(!m_sShellParticles) return;
-	if( Device.vCameraPosition.distance_to_sqr(play_pos)>10*4) return;
+	if(!m_sShellParticles.size())
+		return;
 
-	CParticlesObject* pShellParticles	= CParticlesObject::Create(*m_sShellParticles,TRUE);
+	if (Device.vCameraPosition.distance_to_sqr(play_pos) > 10 * 4)
+		return;
+
+	bool use_one_ammo_type = cur_ammo_type > (m_sShellParticles.size() - 1);
+	CParticlesObject* pShellParticles	= CParticlesObject::Create(*m_sShellParticles[use_one_ammo_type ? 0 : cur_ammo_type], TRUE);
 
 	Fmatrix particles_pos; 
 	particles_pos.set		(get_ParticlesXFORM());

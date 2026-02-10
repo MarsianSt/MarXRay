@@ -476,8 +476,25 @@ LPCSTR wpn_torch_def_bone = "wpn_torch";
 void CWeapon::Load		(LPCSTR section)
 {
 	inherited::Load					(section);
-	CShootingObject::Load			(section);
 
+	// load ammo classes
+	m_ammoTypes.clear();
+	LPCSTR				S = pSettings->r_string(section, "ammo_class");
+	if (S && S[0])
+	{
+		string128		_ammoItem;
+		int				count = _GetItemCount(S);
+		for (int it = 0; it < count; ++it)
+		{
+			_GetItem(S, it, _ammoItem);
+			m_ammoTypes.push_back(_ammoItem);
+		}
+		m_ammoName = pSettings->r_string(*m_ammoTypes[0], "inv_name_short");
+	}
+	else
+		m_ammoName = 0;
+
+	CShootingObject::Load			(section);
 	
 	if(pSettings->line_exist(section, "flame_particles_2"))
 		m_sFlameParticles2 = pSettings->r_string(section, "flame_particles_2");
@@ -504,23 +521,6 @@ void CWeapon::Load		(LPCSTR section)
 		m_StrapOffset.translate_over	(pos);
 	}
 #endif
-
-	// load ammo classes
-	m_ammoTypes.clear	(); 
-	LPCSTR				S = pSettings->r_string(section,"ammo_class");
-	if (S && S[0]) 
-	{
-		string128		_ammoItem;
-		int				count		= _GetItemCount	(S);
-		for (int it=0; it<count; ++it)	
-		{
-			_GetItem				(S,it,_ammoItem);
-			m_ammoTypes.push_back	(_ammoItem);
-		}
-		m_ammoName = pSettings->r_string(*m_ammoTypes[0],"inv_name_short");
-	}
-	else
-		m_ammoName = 0;
 
 	iAmmoElapsed		= pSettings->r_s32		(section,"ammo_elapsed"		);
 	iMagazineSize		= pSettings->r_s32		(section,"ammo_mag_size"	);

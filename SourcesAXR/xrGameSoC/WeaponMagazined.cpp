@@ -1086,7 +1086,7 @@ void CWeaponMagazined::OnShot		()
 	// Shell Drop
 	Fvector vel; 
 	PHGetLinearVell(vel);
-	OnShellDrop					(get_LastSP(), vel);
+	OnShellDrop					(get_LastSP(), vel, m_ammoType);
 	
 	// Огонь из ствола
 	StartFlameParticles	();
