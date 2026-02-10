@@ -1583,14 +1583,27 @@ void CWeapon::shedule_Update	(u32 dT)
 					PHGetLinearVell(vel);
 					StartOverheatingParticles(get_LastOSP(), vel);
 					UpdateOverheatingParticles();
+
+					float volume = smoothstep(0.5f, 1.0f, m_fWeaponOverheating);
+					m_sounds.SetVolume("sndOverheatingIdle", volume);
 				}
 				else
+				{
 					StopOverheatingParticles();
+
+					if (m_sounds.FindSoundItem("sndOverheatingIdle", false))
+						m_sounds.StopSound("sndOverheatingIdle");
+				}
 			}
 			else
 			{
 				if (this == pA->inventory().ActiveItem())
+				{
 					StopOverheatingParticles();
+
+					if (m_sounds.FindSoundItem("sndOverheatingIdle", false))
+						m_sounds.StopSound("sndOverheatingIdle");
+				}
 			}
 
 			if (this == pA->inventory().ActiveItem())

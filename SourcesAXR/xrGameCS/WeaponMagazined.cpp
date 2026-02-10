@@ -221,6 +221,9 @@ void CWeaponMagazined::Load	(LPCSTR section)
 	if (WeaponSoundExist(section, "snd_sprint_idle", true))
 		m_sounds.LoadSound(section, "snd_sprint_idle", "sndSprintIdle", true, m_eSoundEmptyClick);
 
+	if (WeaponSoundExist(section, "snd_overheating_idle", true))
+		m_sounds.LoadSound(section, "snd_overheating_idle", "sndOverheatingIdle", true, m_eSoundEmptyClick);
+
 	m_iBaseDispersionedBulletsCount = READ_IF_EXISTS(pSettings, r_u8, section, "base_dispersioned_bullets_count", 0);
 	m_fBaseDispersionedBulletsSpeed = READ_IF_EXISTS(pSettings, r_float, section, "base_dispersioned_bullets_speed", m_fStartBulletSpeed);
 
@@ -994,6 +997,8 @@ void CWeaponMagazined::UpdateSounds	()
 		m_sounds.SetPosition("sndSprintEnd", P);
 	if (WeaponSoundExist(m_section_id.c_str(), "snd_sprint_idle"))
 		m_sounds.SetPosition("sndSprintIdle", P);
+	if (WeaponSoundExist(m_section_id.c_str(), "snd_overheating_idle"))
+		m_sounds.SetPosition("sndOverheatingIdle", P);
 
 //. nah	m_sounds.SetPosition("sndShot", P);
 	m_sounds.SetPosition("sndReload", P);
@@ -1215,6 +1220,14 @@ void CWeaponMagazined::OnShot()
 				m_sounds.PlaySound("sndMagShot", get_LastFP(), H_Root(), !!GetHUDmode(), false, (u8)-1);
 				mag_shot_snd->m_activeSnd->volume = volume;
 			}
+		}
+
+		if (m_sounds.FindSoundItem("sndOverheatingIdle", false))
+		{
+			m_sounds.PlaySound("sndOverheatingIdle", get_LastFP(), H_Root(), !!GetHUDmode(), true, (u8)-1);
+
+			float volume = smoothstep(0.5f, 1.0f, m_fWeaponOverheating);
+			m_sounds.SetVolume("sndOverheatingIdle", volume);
 		}
 
 		string128 sndName;

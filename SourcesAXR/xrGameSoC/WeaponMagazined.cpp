@@ -217,6 +217,9 @@ void CWeaponMagazined::Load	(LPCSTR section)
 	if (WeaponSoundExist(section, "snd_sprint_idle", true))
 		m_sounds.LoadSound(section, "snd_sprint_idle", "sndSprintIdle", true, m_eSoundEmptyClick);
 
+	if (WeaponSoundExist(section, "snd_overheating_idle", true))
+		m_sounds.LoadSound(section, "snd_overheating_idle", "sndOverheatingIdle", true, m_eSoundEmptyClick);
+
 	m_iMagClickStartRound = READ_IF_EXISTS(pSettings, r_u32, section, "mag_click_start_round", 0);
 
 	m_bPerformFullUnload = READ_IF_EXISTS(pSettings, r_bool, section, "perform_full_unload", false);
@@ -982,6 +985,8 @@ void CWeaponMagazined::UpdateSounds	()
 		m_sounds.SetPosition("sndSprintEnd", get_LastFP());
 	if (WeaponSoundExist(m_section_id.c_str(), "snd_sprint_idle"))
 		m_sounds.SetPosition("sndSprintIdle", get_LastFP());
+	if (WeaponSoundExist(m_section_id.c_str(), "snd_overheating_idle"))
+		m_sounds.SetPosition("sndOverheatingIdle", get_LastFP());
 }
 
 void CWeaponMagazined::state_Fire	(float dt)
@@ -1161,6 +1166,14 @@ void CWeaponMagazined::OnShot		()
 				m_sounds.PlaySound("sndMagShot", get_LastFP(), H_Root(), !!GetHUDmode(), false, (u8)-1);
 				mag_shot_snd->m_activeSnd->volume = volume;
 			}
+		}
+
+		if (m_sounds.FindSoundItem("sndOverheatingIdle", false))
+		{
+			m_sounds.PlaySound("sndOverheatingIdle", get_LastFP(), H_Root(), !!GetHUDmode(), true, (u8)-1);
+
+			float volume = smoothstep(0.5f, 1.0f, m_fWeaponOverheating);
+			m_sounds.SetVolume("sndOverheatingIdle", volume);
 		}
 
 		string128 sndName;
