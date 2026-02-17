@@ -1056,8 +1056,10 @@ void CWeaponMagazined::state_Fire(float dt)
 			//Alundaio: Cycle down RPM after two shots; used for Abakan/AN-94
 			bool b_mod_shot_time = (GetCurrentFireMode() == 3 || GetCurrentFireMode() == 2 || (bCycleDown == true && m_iShotNum < 1));
 
-			fShotTimeCounter		+=	b_mod_shot_time ? fModeShotTime : fOneShotTime;
-			fShotTimeCounter		+= ((b_mod_shot_time ? fModeShotTime : fOneShotTime) * (m_fOverheatingSubRpm / 100.f)) * m_fWeaponOverheating;
+			bool b_fast_mode = (m_bIsDoubleBarrelShotgun && (iAmmoElapsed % 2 == 0));
+
+			fShotTimeCounter		+=	b_mod_shot_time ? fModeShotTime : b_fast_mode ? fFastShotTime : fOneShotTime;
+			fShotTimeCounter		+= ((b_mod_shot_time ? fModeShotTime : b_fast_mode ? fFastShotTime : fOneShotTime) * (m_fOverheatingSubRpm / 100.f)) * m_fWeaponOverheating;
 
 			++m_iShotNum;
 			
@@ -1231,7 +1233,7 @@ void CWeaponMagazined::OnShot()
 		}
 
 		string128 sndName;
-		strconcat(sizeof(sndName), sndName, m_sSndShotCurrent.c_str(), "Actor", (iAmmoElapsed == 1) ? "Last" : "", bIndoor ? "Indoor" : "");
+		strconcat(sizeof(sndName), sndName, m_sSndShotCurrent.c_str(), (m_bIsDoubleBarrelShotgun && (iAmmoElapsed % 2 == 0)) ? "" : "R", "Actor", (!m_bIsDoubleBarrelShotgun && (iAmmoElapsed == 1)) ? "Last" : "", bIndoor ? "Indoor" : "");
 		
 		if (m_sounds.FindSoundItem(sndName, false))
 		{
@@ -1267,7 +1269,7 @@ void CWeaponMagazined::OnShot()
 	}
 
 	string128 sndName;
-	strconcat(sizeof(sndName), sndName, m_sSndShotCurrent.c_str(), (iAmmoElapsed == 1) ? "Last" : "", bIndoor ? "Indoor" : "");
+	strconcat(sizeof(sndName), sndName, m_sSndShotCurrent.c_str(), (m_bIsDoubleBarrelShotgun && (iAmmoElapsed % 2 == 0)) ? "" : "R", (!m_bIsDoubleBarrelShotgun && (iAmmoElapsed == 1)) ? "Last" : "", bIndoor ? "Indoor" : "");
 
 	if (m_sounds.FindSoundItem(sndName, false))
 	{

@@ -1551,6 +1551,7 @@
     <ClInclude Include="VisualBulletSystem.h" />
     <ClInclude Include="WeaponAttaches.h" />
     <ClInclude Include="WeaponAutomaticShotgun.h" />
+    <ClInclude Include="WeaponDoubleBarrelShotgun.h" />
     <ClInclude Include="xrClientsPool.h" />
     <ClInclude Include="SleepEffector.h" />
     <ClInclude Include="ai\Monsters\ai_monster_effector.h" />
@@ -4318,6 +4319,7 @@
     </ClCompile>
     <ClCompile Include="WeaponAttaches.cpp" />
     <ClCompile Include="WeaponAutomaticShotgun.cpp" />
+    <ClCompile Include="WeaponDoubleBarrelShotgun.cpp" />
     <ClCompile Include="xrClientsPool.cpp" />
     <ClCompile Include="xr_Client_BattlEye.cpp" />
     <ClCompile Include="CameraFirstEye.cpp" />

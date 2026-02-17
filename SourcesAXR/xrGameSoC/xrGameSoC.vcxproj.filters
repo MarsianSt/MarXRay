@@ -2362,6 +2362,9 @@
     <Filter Include="Core\Client\Objects\items &amp; weapons\Weapons\Various weapons\Weapon AutomaticShotgun">
       <UniqueIdentifier>{449dbe9d-6e97-44c9-a755-a6ca00582d78}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Core\Client\Objects\items &amp; weapons\Weapons\Various weapons\Weapon DoubleBarrelShotgun">
+      <UniqueIdentifier>{b26384de-7070-4d80-b854-7e4e7fcb41de}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="mt_config.h">
@@ -6755,6 +6758,9 @@
     <ClInclude Include="VisualBulletSystem.h">
       <Filter>Core\Client\Objects\items &amp; weapons\Weapons\Custom Weapon\Weapon Generic</Filter>
     </ClInclude>
+    <ClInclude Include="WeaponDoubleBarrelShotgun.h">
+      <Filter>Core\Client\Objects\items &amp; weapons\Weapons\Various weapons\Weapon DoubleBarrelShotgun</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="damage_manager.cpp">
@@ -10059,6 +10065,9 @@
     </ClCompile>
     <ClCompile Include="VisualBulletSystem.cpp">
       <Filter>Core\Client\Objects\items &amp; weapons\Weapons\Custom Weapon\Weapon Generic</Filter>
+    </ClCompile>
+    <ClCompile Include="WeaponDoubleBarrelShotgun.cpp">
+      <Filter>Core\Client\Objects\items &amp; weapons\Weapons\Various weapons\Weapon DoubleBarrelShotgun</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

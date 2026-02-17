@@ -25,6 +25,7 @@ CShootingObject::CShootingObject(void)
 {
 	fTime							= 0;
  	fTimeToFire						= 0;
+	fFastShotTime					= 0;
 	//fHitPower						= 0.0f;
 	fvHitPower.set(0.0f,0.0f,0.0f,0.0f);
 	m_fStartBulletSpeed				= 1000.f;
@@ -87,12 +88,16 @@ void CShootingObject::Load	(LPCSTR section)
 	//Alundaio: Two-shot burst rpm; used for Abakan/AN-94
 	fModeShotTime			= READ_IF_EXISTS(pSettings, r_float, section, "rpm_mode_2", fTimeToFire);
 
+	// Dance Maniac: Fast shoot rpm for double barrel shotguns
+	fFastShotTime			= READ_IF_EXISTS(pSettings, r_float, section, "rpm_fast", fTimeToFire);
+
 	//Cycle down RPM after first 2 shots; used for Abakan/AN-94
 	bCycleDown				= READ_IF_EXISTS(pSettings, r_bool, section, "cycle_down", false);
 
 	VERIFY(fTimeToFire>0.f);
 	fTimeToFire			= 60.f / fTimeToFire;
 	fModeShotTime		= 60.f / fModeShotTime;
+	fFastShotTime		= 60.f / fFastShotTime;
 	
 	m_bForcedParticlesHudMode = !!pSettings->line_exist(section, "forced_particle_hud_mode");
 	if (m_bForcedParticlesHudMode)

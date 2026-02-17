@@ -16,13 +16,13 @@ public:
 	virtual void	net_Import				(NET_Packet& P);
 
 	virtual void	Reload					();
-	void			switch2_StartReload		();
-	void			switch2_AddCartgidge	();
-	void			switch2_EndReload		();
+	virtual void	switch2_StartReload		();
+	virtual void	switch2_AddCartgidge	();
+	virtual void	switch2_EndReload		();
 
 	virtual void	PlayAnimOpenWeapon		();
 	virtual void	PlayAnimAddOneCartridgeWeapon();
-	void			PlayAnimCloseWeapon		();
+	virtual void	PlayAnimCloseWeapon		();
 
 	virtual bool	Action					(s32 cmd, u32 flags);
 	virtual	int		GetCurrentFireMode	() { return m_aFireModes[m_iCurFireMode]; };

@@ -23,15 +23,15 @@ public:
 	virtual void	OnShotBoth			();
 	virtual void	switch2_Fire		();
 	virtual void	switch2_Fire2		();
-	void			switch2_StartReload ();
-	void			switch2_AddCartgidge();
-	void			switch2_EndReload	();
+	virtual void	switch2_StartReload ();
+	virtual void	switch2_AddCartgidge();
+	virtual void	switch2_EndReload	();
 
 	virtual void	UpdateSounds		();
 	virtual void	PlayAnimOpenWeapon	();
 	virtual void	PlayAnimAddOneCartridgeWeapon();
 	virtual void	PlayAnimAim			();
-	void			PlayAnimCloseWeapon	();
+	virtual void	PlayAnimCloseWeapon	();
 
 	virtual bool	Action(s32 cmd, u32 flags);
 

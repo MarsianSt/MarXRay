@@ -2327,6 +2327,7 @@
     <ClInclude Include="WeaponBinocularsVision.h" />
     <ClInclude Include="weaponBM16.h" />
     <ClInclude Include="WeaponCustomPistol.h" />
+    <ClInclude Include="WeaponDoubleBarrelShotgun.h" />
     <ClInclude Include="WeaponFN2000.h" />
     <ClInclude Include="WeaponFORT.h" />
     <ClInclude Include="WeaponGroza.h" />
@@ -9268,6 +9269,7 @@
     </ClCompile>
     <ClCompile Include="WeaponCustomPistol.cpp" />
     <ClCompile Include="WeaponDispersion.cpp" />
+    <ClCompile Include="WeaponDoubleBarrelShotgun.cpp" />
     <ClCompile Include="WeaponFire.cpp" />
     <ClCompile Include="WeaponFN2000.cpp">
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">pch_script.h</PrecompiledHeaderFile>

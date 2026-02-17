@@ -1,6 +1,7 @@
 #include "pch_script.h"
 #include "f1.h"
 #include "WeaponAmmo.h"
+#include "WeaponDoubleBarrelShotgun.h"
 #include "Medkit.h"
 #include "Antirad.h"
 #include "FoodItem.h"
@@ -58,6 +59,8 @@ void CF1::script_register	(lua_State *L)
 		class_<CArtefactContainer, CGameObject>("CArtefactContainer")
 			.def(constructor<>()),
 		class_<CSleepingBag, CGameObject>("CSleepingBag")
+			.def(constructor<>()),
+		class_<CWeaponDoubleBarrelShotgun, CGameObject>("CWeaponDoubleBarrelShotgun")
 			.def(constructor<>())
 	];
 }

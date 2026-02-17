@@ -2527,6 +2527,9 @@
     <Filter Include="AI\AScript\ScriptClasses\ScriptVarsStorage">
       <UniqueIdentifier>{749ef268-3fbe-427f-95b5-a63cba31ea15}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Core\Client\Objects\items &amp; weapons\Weapons\Various weapons\Weapon DoubleBarrelShotgun">
+      <UniqueIdentifier>{7a727f24-a2e6-40b9-88fa-dded740c2b3f}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="mt_config.h">
@@ -7521,6 +7524,9 @@
     <ClInclude Include="VisualBulletSystem.h">
       <Filter>Core\Client\Objects\items &amp; weapons\Weapons\Custom Weapon\Weapon Generic</Filter>
     </ClInclude>
+    <ClInclude Include="WeaponDoubleBarrelShotgun.h">
+      <Filter>Core\Client\Objects\items &amp; weapons\Weapons\Various weapons\Weapon DoubleBarrelShotgun</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="damage_manager.cpp">
@@ -11280,6 +11286,9 @@
     </ClCompile>
     <ClCompile Include="VisualBulletSystem.cpp">
       <Filter>Core\Client\Objects\items &amp; weapons\Weapons\Custom Weapon\Weapon Generic</Filter>
+    </ClCompile>
+    <ClCompile Include="WeaponDoubleBarrelShotgun.cpp">
+      <Filter>Core\Client\Objects\items &amp; weapons\Weapons\Various weapons\Weapon DoubleBarrelShotgun</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

@@ -60,6 +60,7 @@ protected:
 
 	float					fTimeToFire;
 	float					fModeShotTime;
+	float					fFastShotTime;
 	bool					bCycleDown;
 	Fvector4				fvHitPower;
 	//float					fHitPower;

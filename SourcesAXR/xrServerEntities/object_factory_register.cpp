@@ -103,6 +103,7 @@
 #	include "weaponBM16.h"
 #	include "weaponRG6.h"
 #	include "WeaponStatMgun.h"
+#	include "WeaponDoubleBarrelShotgun.h"
 
 #	include "scope.h"
 #	include "silencer.h"
@@ -314,6 +315,7 @@ void CObjectFactory::register_classes	()
 	ADD(CWeaponKnife			,CSE_ALifeItemWeapon			,CLSID_OBJECT_W_KNIFE			,"wpn_knife");
 	ADD(CWeaponBM16				,CSE_ALifeItemWeaponShotGun		,CLSID_OBJECT_W_BM16			,"wpn_bm16");
 	ADD(CWeaponRG6				,CSE_ALifeItemWeaponShotGun		,CLSID_OBJECT_W_RG6				,"wpn_rg6");
+	ADD(CWeaponDoubleBarrelShotgun,CSE_ALifeItemWeaponShotGun	,CLSID_OBJECT_W_DBSHOTGUN		,"wpn_dbshotgun");
 	//-----------------------------------------------------------------------------------------------------
 	ADD(CWeaponAmmo				,CSE_ALifeItemAmmo				,CLSID_OBJECT_AMMO				,"wpn_ammo");
 	ADD(CWeaponAmmo				,CSE_ALifeItemAmmo				,CLSID_OBJECT_A_VOG25			,"wpn_ammo_vog25");
