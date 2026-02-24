@@ -106,6 +106,7 @@ CWeapon::CWeapon()
 	m_cur_scope				= NULL;
 	m_bRememberActorNVisnStatus = false;
 	m_freelook_switch_back	= false;
+	m_bIsAttachScope		= false;
 
 	//Mortan: new params
 	bUseAltScope		= false;
@@ -1226,9 +1227,14 @@ void CWeapon::LoadOriginalScopesParams(LPCSTR section)
 			LPCSTR str = pSettings->r_string(section, "scopes_sect");
 			for (int i = 0, count = _GetItemCount(str); i < count; ++i)
 			{
-				string128						scope_section;
+				string128 scope_section;
 				_GetItem(str, i, scope_section);
-				m_scopes.push_back(scope_section);
+
+				string256 attach_sect;
+				strconcat(sizeof(attach_sect), attach_sect, scope_section, "_attach");
+				bool is_attach = (attach_sect && pSettings->line_exist(attach_sect, "attach_hud_visual"));
+
+				m_scopes.push_back(is_attach ? attach_sect : scope_section);
 			}
 		}
 		else
@@ -1262,17 +1268,12 @@ void CWeapon::LoadCurrentScopeParams(LPCSTR section)
 			bScopeIsHasTexture = true;
 	}
 
-	string256 attach_sect;
-	strconcat(sizeof(attach_sect), attach_sect, m_eScopeStatus == ALife::eAddonPermanent ? "scope" : m_scopes[m_cur_scope].c_str(), "_attach_sect");
+	shared_str cur_scope_sect = ((m_eScopeStatus == ALife::eAddonAttachable) ? m_scopes[m_cur_scope].c_str() : "scope");
+	m_bIsAttachScope = pSettings->line_exist(cur_scope_sect, "attach_hud_visual");
 
-	if (attach_sect && pSettings->line_exist(m_section_id.c_str(), attach_sect))
-		m_sScopeAttachSection = READ_IF_EXISTS(pSettings, r_string, m_section_id.c_str(), attach_sect, "");
-
-	m_zoom_params.m_fScopeZoomFactor = pSettings->r_float(section, "scope_zoom_factor");
 	m_zoom_params.m_fAltAimZoomFactor = READ_IF_EXISTS(pSettings, r_float, section, "alt_aim_zoom_factor", m_zoom_params.m_fIronSightZoomFactor);
 	Load3DScopeParams(section);
 
-	shared_str cur_scope_sect = (m_sScopeAttachSection.size() ? m_sScopeAttachSection : (m_eScopeStatus == ALife::eAddonAttachable) ? m_scopes[m_cur_scope].c_str() : "scope");
 	m_bAltZoomEnabledScope = READ_IF_EXISTS(pSettings, r_bool, cur_scope_sect, "enable_alternative_aim", false);
 
 	if (bIsSecondVPZoomPresent())
@@ -2534,7 +2535,7 @@ void CWeapon::UpdateHUDAddonsVisibility()
 	if (m_cur_scope_bone != NULL)
 		SetBoneVisible(m_cur_scope_bone, TRUE);
 
-	if (!m_sScopeAttachSection.size())
+	if (!m_bIsAttachScope)
 	{
 		if (bone_id != BI_NONE)
 		{
@@ -2551,6 +2552,11 @@ void CWeapon::UpdateHUDAddonsVisibility()
 				if (m_eScopeStatus == ALife::eAddonPermanent)
 					HudItemData()->set_bone_visible(wpn_scope_def_bone, TRUE, TRUE);
 		}
+	}
+	else
+	{
+		if (bone_id != BI_NONE)
+			HudItemData()->set_bone_visible(wpn_scope_def_bone, FALSE, TRUE);
 	}
 
 	if (!m_sSilencerAttachSection.size())
@@ -2660,17 +2666,25 @@ void CWeapon::UpdateAddonsVisibility(IKinematics* visual)
 	if (m_cur_scope_bone != NULL)
 		SetBoneVisible(m_cur_scope_bone, TRUE);
 
-	if (ScopeAttachable() && !m_sScopeAttachSection.size())
+	if (ScopeAttachable())
 	{
-		if (IsScopeAttached())
+		if (!m_bIsAttachScope)
 		{
-			if (bone_id != BI_NONE && !pWeaponVisual->LL_GetBoneVisible(bone_id))
-				pWeaponVisual->LL_SetBoneVisible(bone_id,TRUE,TRUE);
+			if (IsScopeAttached())
+			{
+				if (bone_id != BI_NONE && !pWeaponVisual->LL_GetBoneVisible(bone_id))
+					pWeaponVisual->LL_SetBoneVisible(bone_id, TRUE, TRUE);
+			}
+			else
+			{
+				if (bone_id != BI_NONE && pWeaponVisual->LL_GetBoneVisible(bone_id))
+					pWeaponVisual->LL_SetBoneVisible(bone_id, FALSE, TRUE);
+			}
 		}
 		else
 		{
 			if (bone_id != BI_NONE && pWeaponVisual->LL_GetBoneVisible(bone_id))
-				pWeaponVisual->LL_SetBoneVisible(bone_id,FALSE,TRUE);
+				pWeaponVisual->LL_SetBoneVisible(bone_id, FALSE, TRUE);
 		}
 	}
 
@@ -3696,7 +3710,7 @@ void CWeapon::SwitchZoomMode()
 	if (!IsZoomed())
 		return;
 
-	shared_str cur_scope_sect = (m_sScopeAttachSection.size() ? m_sScopeAttachSection : (m_eScopeStatus == ALife::eAddonAttachable) ? m_scopes[m_cur_scope].c_str() : "scope");
+	shared_str cur_scope_sect = ((m_eScopeStatus == ALife::eAddonAttachable) ? m_scopes[m_cur_scope].c_str() : "scope");
 
 	bool HudFovFromScope = false;
 	HudFovFromScope = READ_IF_EXISTS(pSettings, r_bool, cur_scope_sect, "cur_scope_hud_fov", false);
@@ -3765,32 +3779,35 @@ void CWeapon::UpdateAddonsTransform(bool for_hud)
 
 void CWeapon::UpdateAimOffsets()
 {
-	shared_str cur_scope_sect = (m_sScopeAttachSection.size() ? m_sScopeAttachSection : (m_eScopeStatus == ALife::eAddonAttachable) ? m_scopes[m_cur_scope].c_str() : "scope");
+	shared_str cur_scope_sect = ((m_eScopeStatus == ALife::eAddonAttachable) ? m_scopes[m_cur_scope].c_str() : "scope");
 	psHUD_FOV_def = last_hud_fov;
 
 	static bool bNeedRestoreOffsets = false;
 
-	if ((bNeedRestoreOffsets && (!IsScopeAttached() || (!IsZoomed() && !IsRotatingFromZoom())) || !cur_scope_sect.size() || m_bAltZoomEnabled))
+	attachable_hud_item* hi = HudItemData();
+
+	if (!hi)
+		return;
+
+	bool is_16x9 = UI().is_widescreen();
+	string64	_prefix;
+	xr_sprintf(_prefix, "%s", is_16x9 ? "_16x9" : "");
+	string128	val_name{};
+
+	if ((bNeedRestoreOffsets && (!IsScopeAttached() || (!IsZoomed() && !IsRotatingFromZoom()))))
 	{
-		attachable_hud_item* hi = HudItemData();
-
-		if (!hi)
-			return;
-
-		bool is_16x9 = UI().is_widescreen();
-		string64	_prefix;
-		xr_sprintf(_prefix, "%s", is_16x9 ? "_16x9" : "");
-		string128	val_name;
-
 		strconcat(sizeof(val_name), val_name, "aim_hud_offset_pos", _prefix);
 		hi->m_measures.m_hands_offset[0][1] = pSettings->r_fvector3(m_hud_sect, val_name);
 		strconcat(sizeof(val_name), val_name, "aim_hud_offset_rot", _prefix);
 		hi->m_measures.m_hands_offset[1][1] = pSettings->r_fvector3(m_hud_sect, val_name);
 
-		strconcat(sizeof(val_name), val_name, "aim_alt_hud_offset_pos", _prefix);
-		hi->m_measures.m_hands_offset[0][3] = READ_IF_EXISTS(pSettings, r_fvector3, m_hud_sect, val_name, hi->m_measures.m_hands_offset[0][1]);
-		strconcat(sizeof(val_name), val_name, "aim_alt_hud_offset_rot", _prefix);
-		hi->m_measures.m_hands_offset[1][3] = READ_IF_EXISTS(pSettings, r_fvector3, m_hud_sect, val_name, hi->m_measures.m_hands_offset[1][1]);
+		if (m_bAltZoomEnabled)
+		{
+			strconcat(sizeof(val_name), val_name, "aim_alt_hud_offset_pos", _prefix);
+			hi->m_measures.m_hands_offset[0][3] = READ_IF_EXISTS(pSettings, r_fvector3, m_hud_sect, val_name, hi->m_measures.m_hands_offset[0][1]);
+			strconcat(sizeof(val_name), val_name, "aim_alt_hud_offset_rot", _prefix);
+			hi->m_measures.m_hands_offset[1][3] = READ_IF_EXISTS(pSettings, r_fvector3, m_hud_sect, val_name, hi->m_measures.m_hands_offset[1][1]);
+		}
 
 		strconcat(sizeof(val_name), val_name, "gl_hud_offset_pos", _prefix);
 		hi->m_measures.m_hands_offset[0][2] = pSettings->r_fvector3(m_hud_sect, val_name);
@@ -3799,7 +3816,7 @@ void CWeapon::UpdateAimOffsets()
 
 		if (cur_scope_sect.size())
 			m_bAltZoomEnabledScope = READ_IF_EXISTS(pSettings, r_bool, cur_scope_sect, "enable_alternative_aim", false);
-		
+
 		bNeedRestoreOffsets = false;
 
 		return;
@@ -3811,20 +3828,11 @@ void CWeapon::UpdateAimOffsets()
 	if (HudFovFromScope && !IsRotatingFromZoom())
 		psHUD_FOV_def = READ_IF_EXISTS(pSettings, r_float, cur_scope_sect, !m_bAltZoomActive ? "aim_hud_fov" : "aim_alt_hud_fov", GetHudFov());
 
-	bool AimOffsetsFromScope = READ_IF_EXISTS(pSettings, r_bool, cur_scope_sect, "cur_scope_aim_offsets", m_bAltZoomEnabledScope);
+
+	bool AimOffsetsFromScope = READ_IF_EXISTS(pSettings, r_bool, cur_scope_sect, "cur_scope_aim_offsets", m_bAltZoomEnabledScope) && IsScopeAttached();
 
 	if (AimOffsetsFromScope)
 	{
-		attachable_hud_item* hi = HudItemData();
-
-		if (!hi)
-			return;
-
-		bool is_16x9 = UI().is_widescreen();
-		string64	_prefix;
-		xr_sprintf(_prefix, "%s", is_16x9 ? "_16x9" : "");
-		string128	val_name;
-
 		strconcat(sizeof(val_name), val_name, "aim_hud_offset_pos", _prefix);
 		hi->m_measures.m_hands_offset[0][1] = READ_IF_EXISTS(pSettings, r_fvector3, cur_scope_sect, val_name, hi->m_measures.m_hands_offset[0][1]);
 		strconcat(sizeof(val_name), val_name, "aim_hud_offset_rot", _prefix);

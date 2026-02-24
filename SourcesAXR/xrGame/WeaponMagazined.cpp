@@ -2241,19 +2241,19 @@ void CWeaponMagazined::InitAddons()
 				m_cur_scope_bone = ScopeBone;
 			}
 
-			if (m_sScopeAttachSection.size() && pSettings->line_exist(m_sScopeAttachSection, "attach_hud_visual"))
-				WeaponAttach().CreateAttach(m_sScopeAttachSection, m_weapon_attaches);
+			if (m_bIsAttachScope && pSettings->line_exist(m_scopes[m_cur_scope], "attach_hud_visual"))
+				WeaponAttach().CreateAttach(m_scopes[m_cur_scope], m_weapon_attaches);
 		}
 		else if (m_eScopeStatus == ALife::eAddonPermanent)
 		{
-			if (m_sScopeAttachSection.size() && pSettings->line_exist(m_sScopeAttachSection, "attach_hud_visual"))
-				WeaponAttach().CreateAttach(m_sScopeAttachSection, m_weapon_attaches);
+			if (m_bIsAttachScope && pSettings->line_exist(m_scopes[m_cur_scope], "attach_hud_visual"))
+				WeaponAttach().CreateAttach(m_scopes[m_cur_scope], m_weapon_attaches);
 		}
 	}
 	else
 	{
-		if (m_sScopeAttachSection.size() && pSettings->line_exist(m_sScopeAttachSection, "attach_hud_visual"))
-			WeaponAttach().RemoveAttach(m_sScopeAttachSection, m_weapon_attaches);
+		if (m_bIsAttachScope && pSettings->line_exist(m_scopes[m_cur_scope], "attach_hud_visual"))
+			WeaponAttach().RemoveAttach(m_scopes[m_cur_scope], m_weapon_attaches);
 
 		if ( m_UIScope )
 			xr_delete( m_UIScope );

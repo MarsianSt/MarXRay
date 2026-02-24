@@ -306,7 +306,6 @@ protected:
 	shared_str		m_sLaserName;
 	shared_str		m_sTacticalTorchName;
 
-	shared_str		m_sScopeAttachSection{};
 	shared_str		m_sSilencerAttachSection{};
 	shared_str		m_sLaserAttachSection{};
 	shared_str		m_sTacticalTorchAttachSection{};
@@ -324,6 +323,8 @@ protected:
 
 	xr_vector<shared_str> m_all_scope_bones;
 	shared_str		m_cur_scope_bone;
+
+	bool			m_bIsAttachScope;
 
 	//смещение иконов апгрейдов в инвентаре
 	int	m_iScopeX, m_iScopeY;
