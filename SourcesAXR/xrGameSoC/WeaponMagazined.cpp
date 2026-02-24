@@ -2113,7 +2113,8 @@ bool CWeaponMagazined::DetachScope(const char* item_section_name, bool b_spawn_i
 		if (!xr_strcmp(iter_scope_name, item_section_name))
 		{
 			m_cur_scope = NULL;
-			m_cur_scope_bone = NULL;
+			m_cur_scope_show_bones.clear();
+			m_cur_scope_hide_bones.clear();
 			m_bAltZoomActive = false;
 			detached = true;
 		}
@@ -2136,10 +2137,32 @@ void CWeaponMagazined::InitAddons()
 		{
 			LoadCurrentScopeParams(GetScopeName().c_str());
 
-			if (pSettings->line_exist(m_scopes[m_cur_scope], "bones"))
+			if (pSettings->line_exist(m_scopes[m_cur_scope], "show_bones"))
 			{
-				pcstr ScopeBone = pSettings->r_string(m_scopes[m_cur_scope], "bones");
-				m_cur_scope_bone = ScopeBone;
+				m_cur_scope_show_bones.clear();
+				pcstr BonesToShow = pSettings->r_string(m_scopes[m_cur_scope], "show_bones");
+
+				for (int i = 0; i < _GetItemCount(BonesToShow); i++)
+				{
+					string128 bone;
+					_GetItem(BonesToShow, i, bone);
+
+					m_cur_scope_show_bones.push_back(bone);
+				}
+			}
+
+			if (pSettings->line_exist(m_scopes[m_cur_scope], "hide_bones"))
+			{
+				m_cur_scope_hide_bones.clear();
+				pcstr BonesToHide = pSettings->r_string(m_scopes[m_cur_scope], "hide_bones");
+
+				for (int i = 0; i < _GetItemCount(BonesToHide); i++)
+				{
+					string128 bone;
+					_GetItem(BonesToHide, i, bone);
+
+					m_cur_scope_hide_bones.push_back(bone);
+				}
 			}
 
 			if (m_bIsAttachScope && pSettings->line_exist(m_scopes[m_cur_scope], "attach_hud_visual"))

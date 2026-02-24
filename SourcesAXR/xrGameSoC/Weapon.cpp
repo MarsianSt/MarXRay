@@ -718,13 +718,15 @@ void CWeapon::Load		(LPCSTR section)
 	auto LoadBoneNames = [](pcstr section, pcstr line, RStringVec& list)
 	{
 		list.clear();
+
 		if (pSettings->line_exist(section, line))
 		{
 			pcstr lineStr = pSettings->r_string(section, line);
-			for (int j = 0, cnt = _GetItemCount(lineStr); j < cnt; ++j)
+
+			for (int cnt = 0; cnt < _GetItemCount(lineStr); ++cnt)
 			{
 				string128 bone_name;
-				_GetItem(lineStr, j, bone_name);
+				_GetItem(lineStr, cnt, bone_name);
 				list.push_back(bone_name);
 			}
 			return true;
@@ -738,19 +740,12 @@ void CWeapon::Load		(LPCSTR section)
 	// Default hidden bones
 	LoadBoneNames(section, "def_hide_bones", m_defHiddenBones);
 
+	// All scopes bones
+	m_all_scope_bones.clear();
 	if (pSettings->line_exist(section, "scopes_sect"))
 	{
 		pcstr ScopeSect = pSettings->r_string(section, "scopes_sect");
-		for (int i = 0; i < _GetItemCount(ScopeSect); i++)
-		{
-			string128 scope;
-			_GetItem(ScopeSect, i, scope);
-			if (pSettings->line_exist(scope, "bones"))
-			{
-				shared_str bone = pSettings->r_string(scope, "bones");
-				m_all_scope_bones.push_back(bone);
-			}
-		}
+		LoadBoneNames(ScopeSect, "show_bones", m_all_scope_bones);
 	}
 
 	hud_recalc_koef = READ_IF_EXISTS(pSettings, r_float, m_hud_sect, "hud_recalc_koef", 1.35f); //На калаше при 1.35 вроде норм смотрится, другим стволам возможно придется подбирать другие значения.
@@ -2434,11 +2429,17 @@ void CWeapon::UpdateHUDAddonsVisibility()
 		SetBoneVisible(bone, TRUE);
 	}
 
-	for (int i = 0; i < m_all_scope_bones.size(); i++)
-		SetBoneVisible(m_all_scope_bones[i], FALSE);
+	// Hide all scopes bones
+	for (const shared_str& bone : m_all_scope_bones)
+		SetBoneVisible(bone, FALSE);
 
-	if (m_cur_scope_bone != NULL)
-		SetBoneVisible(m_cur_scope_bone, TRUE);
+	// Show current scope shown bones
+	for (const shared_str& bone : m_cur_scope_show_bones)
+		SetBoneVisible(bone, TRUE);
+
+	// Hide current scope hidden bones
+	for (const shared_str& bone : m_cur_scope_hide_bones)
+		SetBoneVisible(bone, FALSE);
 
 	if (!m_bIsAttachScope)
 	{
@@ -2564,11 +2565,17 @@ void CWeapon::UpdateAddonsVisibility()
 		SetBoneVisible(bone, TRUE);
 	}
 
-	for (int i = 0; i < m_all_scope_bones.size(); i++)
-		SetBoneVisible(m_all_scope_bones[i], FALSE);
+	// Hide all scopes bones
+	for (const shared_str& bone : m_all_scope_bones)
+		SetBoneVisible(bone, FALSE);
 
-	if (m_cur_scope_bone != NULL)
-		SetBoneVisible(m_cur_scope_bone, TRUE);
+	// Show current scope shown bones
+	for (const shared_str& bone : m_cur_scope_show_bones)
+		SetBoneVisible(bone, TRUE);
+
+	// Hide current scope hidden bones
+	for (const shared_str& bone : m_cur_scope_hide_bones)
+		SetBoneVisible(bone, FALSE);
 
 	if (ScopeAttachable())
 	{

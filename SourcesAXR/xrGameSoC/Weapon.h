@@ -321,9 +321,6 @@ protected:
 	shared_str		m_sHud_wpn_laser_ray_bone;
 	shared_str		m_sHud_wpn_flashlight_cone_bone;
 
-	xr_vector<shared_str> m_all_scope_bones;
-	shared_str		m_cur_scope_bone;
-
 	bool			m_bIsAttachScope;
 
 	//смещение иконов апгрейдов в инвентаре
@@ -335,6 +332,9 @@ protected:
 
 	RStringVec		m_defShownBones;
 	RStringVec		m_defHiddenBones;
+	RStringVec		m_all_scope_bones;
+	RStringVec		m_cur_scope_show_bones;
+	RStringVec		m_cur_scope_hide_bones;
 
 public:
 
