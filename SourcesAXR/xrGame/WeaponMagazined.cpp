@@ -2272,11 +2272,29 @@ void CWeaponMagazined::InitAddons()
 			if (m_bIsAttachScope && pSettings->line_exist(m_scopes[m_cur_scope], "attach_hud_visual"))
 				WeaponAttach().CreateAttach(m_scopes[m_cur_scope], m_weapon_attaches);
 		}
+
+		if (m_bIsAttachScope)
+		{
+			for (auto mesh : m_weapon_attaches)
+			{
+				if (mesh->m_newWeaponWorldVisual.size())
+					SetWorldVisual(mesh->m_newWeaponWorldVisual);
+
+				if (mesh->m_newWeaponHUDSect.size())
+					ReplaceHudSection(mesh->m_newWeaponHUDSect.c_str());
+			}
+		}
 	}
 	else
 	{
 		if (m_bIsAttachScope && pSettings->line_exist(m_scopes[m_cur_scope], "attach_hud_visual"))
 			WeaponAttach().RemoveAttach(m_scopes[m_cur_scope], m_weapon_attaches);
+
+		if (m_bIsAttachScope && m_defWorldVisual.size())
+			SetWorldVisual(m_defWorldVisual);
+
+		if (m_bIsAttachScope && m_defWeaponHudSect.size())
+			ReplaceHudSection(m_defWeaponHudSect.c_str());
 
 		if ( m_UIScope )
 			xr_delete( m_UIScope );

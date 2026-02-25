@@ -156,6 +156,9 @@ CWeapon::CWeapon()
 	m_bCheckAmmoChangeLockGL = false;
 
 	m_bVisualBulletSystem	= nullptr;
+
+	m_defWorldVisual		= nullptr;
+	m_defWeaponHudSect		= nullptr;
 }
 
 const shared_str CWeapon::GetScopeName() const
@@ -816,6 +819,10 @@ void CWeapon::Load		(LPCSTR section)
 	m_bUseAimAnmDirDependency		= READ_IF_EXISTS(pSettings, r_bool, section, "enable_aim_anm_dir_dependency", false);
 	m_bUseSilShotAnim				= READ_IF_EXISTS(pSettings, r_bool, section, "enable_silencer_shoot_anm", false);
 	m_bAltZoomEnabled				= READ_IF_EXISTS(pSettings, r_bool, section, "enable_alternative_aim", false);
+
+	m_defWorldVisual				= pSettings->r_string(section, "visual");
+	m_defWeaponHudSect				= pSettings->r_string(section, "hud");
+
 	m_sSafetyBoneName				= READ_IF_EXISTS(pSettings, r_string, section, "safety_bone", nullptr);
 
 	if (m_sSafetyBoneName.size())
@@ -4043,4 +4050,10 @@ void CWeapon::update_visual_bullet_textures(const bool forced)
 		tex->Load(bullet_texrure_name.c_str());
 		current_bullet_texture = bullet_texrure_name;
 	}
+}
+
+void CWeapon::SetWorldVisual(shared_str new_visual)
+{
+	if (CInventoryItem* item = smart_cast<CInventoryItem*>(this))
+		item->object().cNameVisual_set(new_visual);
 }

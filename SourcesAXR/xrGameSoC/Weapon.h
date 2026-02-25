@@ -428,6 +428,8 @@ public:
 			float			GetOverheating		() { return m_fWeaponOverheating; }
 			void			SetOverheating		(float overheating) { m_fWeaponOverheating = overheating; }
 
+			void			SetWorldVisual		(shared_str new_visual);
+
 	virtual void			FireBullet			(const Fvector& pos, const Fvector& shot_dir, float fire_disp, const CCartridge& cartridge, u16 parent_id, u16 weapon_id, bool send_hit);
 
 protected:
@@ -475,6 +477,8 @@ protected:
 	bool					m_bWpnExplosion;
 	bool					m_bWpnDestroyAfterExplode;
 	float					m_fWpnExplodeChance;
+
+	shared_str				m_defWorldVisual, m_defWeaponHudSect;
 
 public:
 	//загружаемые параметры

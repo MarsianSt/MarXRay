@@ -20,10 +20,13 @@ public:
 	float			hud_attach_scale;
 	float			world_attach_scale;
 
-	shared_str		m_attach_bone_name;		// Позиция кости которая будет использоваться для аттача, если пусто то аттачим к кости wpn_body
-	shared_str		m_visualHUDName;		// Путь до меша
-	shared_str		m_visualWorldName;		// Путь до меша мировой модели (опционально)
-	shared_str		m_section;				// Название секции
+	shared_str		m_attach_bone_name;				// Позиция кости которая будет использоваться для аттача, если пусто то аттачим к кости wpn_body
+	shared_str		m_visualHUDName;				// Путь до меша
+	shared_str		m_visualWorldName;				// Путь до меша мировой модели (опционально)
+	shared_str		m_section;						// Название секции
+
+	shared_str		m_newWeaponWorldVisual;			// Замена мировой модели оружия при установке аттача (если надо)
+	shared_str		m_newWeaponHUDSect;				// Замена худовой секции оружия при установке аттача (если надо)
 
 	WeaponAttach* CreateAttach(shared_str attach_section, xr_vector<WeaponAttach*>& m_attaches);
 	void RemoveAttach(shared_str attach_section, xr_vector<WeaponAttach*>& m_attaches);

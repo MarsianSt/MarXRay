@@ -9,6 +9,8 @@ WeaponAttach::WeaponAttach()
 	m_attach_bone_name = nullptr;
 	m_visualHUDName = nullptr;
 	m_visualWorldName = nullptr;
+	m_newWeaponWorldVisual = nullptr;
+	m_newWeaponHUDSect = nullptr;
 	m_section = nullptr;
 	m_hud_attach_pos.identity();
 	m_world_attach_pos.identity();
@@ -144,4 +146,7 @@ void WeaponAttach::Load(shared_str attach_sect)
 	world_attach_scale = READ_IF_EXISTS(pSettings, r_float, attach_sect, "world_attach_scale", hud_attach_scale);
 	m_visualHUDName = READ_IF_EXISTS(pSettings, r_string, attach_sect, "attach_hud_visual", nullptr);
 	m_visualWorldName = READ_IF_EXISTS(pSettings, r_string, attach_sect, "attach_world_visual", m_visualHUDName);
+
+	m_newWeaponWorldVisual = READ_IF_EXISTS(pSettings, r_string, attach_sect, "weapon_world_visual", nullptr);
+	m_newWeaponHUDSect = READ_IF_EXISTS(pSettings, r_string, attach_sect, "weapon_hud", nullptr);
 }
