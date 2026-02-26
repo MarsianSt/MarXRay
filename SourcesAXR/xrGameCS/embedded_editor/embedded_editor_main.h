@@ -2,6 +2,7 @@
 
 void ShowEditor();
 bool IsEditor();
+bool IsEditorActive();
 bool Editor_KeyPress(int key);
 bool Editor_KeyRelease(int key);
 bool Editor_KeyHold(int key);

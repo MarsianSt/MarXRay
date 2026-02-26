@@ -176,6 +176,12 @@ public:
 	virtual bool					IsTutorialSequencerActive() { return 0; };
 
 	virtual void					EditorOnFrame		() {};
+	virtual bool					EditorKeyPress		(int key) { return 0; };
+	virtual bool					EditorKeyRelease	(int key) { return 0; };
+	virtual bool					EditorKeyHold		(int key) { return 0; };
+	virtual bool					EditorMouseMove		(int dx, int dy) { return 0; };
+	virtual bool					EditorActive		() { return 0; };
+
 	virtual void					RegisterModel		(IRenderVisual* V)
 #ifndef _EDITOR
      = 0;

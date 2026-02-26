@@ -1023,6 +1023,36 @@ void CGamePersistent::EditorOnFrame()
 	Editor_OnFrame();
 }
 
+bool CGamePersistent::EditorKeyPress(int key)
+{
+	extern bool Editor_KeyPress(int key);
+	return Editor_KeyPress(key);
+}
+
+bool CGamePersistent::EditorKeyRelease(int key)
+{
+	extern bool Editor_KeyRelease(int key);
+	return Editor_KeyRelease(key);
+}
+
+bool CGamePersistent::EditorKeyHold(int key)
+{
+	extern bool Editor_KeyHold(int key);
+	return Editor_KeyHold(key);
+}
+
+bool CGamePersistent::EditorMouseMove(int dx, int dy)
+{
+	extern bool Editor_MouseMove(int dx, int dy);
+	return Editor_MouseMove(dx, dy);
+}
+
+bool CGamePersistent::EditorActive()
+{
+	extern bool IsEditorActive();
+	return IsEditorActive();
+}
+
 void CGamePersistent::SetEffectorDOF(const Fvector& needed_dof)
 {
 	if(m_bPickableDOF)	return;

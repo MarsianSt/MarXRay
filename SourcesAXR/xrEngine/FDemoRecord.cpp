@@ -10,6 +10,7 @@
 #include "render.h"
 #include "CustomHUD.h"
 #include "CameraManager.h"
+#include "IGame_Persistent.h"
 
 extern BOOL g_bDisableRedText;
 static Flags32	s_hud_flag	= {0};
@@ -415,6 +416,9 @@ BOOL CDemoRecord::ProcessCam(SCamEffectorInfo& info, float m_fFactorMod)
 
 void CDemoRecord::IR_OnKeyboardPress	(int dik)
 {
+	if (g_pGamePersistent->EditorKeyPress(dik))
+		return;
+
 	if (dik == DIK_MULTIPLY)
 	{
 		m_b_redirect_input_to_level	= !m_b_redirect_input_to_level;
@@ -461,6 +465,9 @@ static void update_whith_timescale( Fvector &v, const Fvector &v_delta )
 
 void CDemoRecord::IR_OnKeyboardHold	(int dik)
 {
+	if (g_pGamePersistent->EditorKeyHold(dik))
+		return;
+
 	if(m_b_redirect_input_to_level)
 	{
 		g_pGameLevel->IR_OnKeyboardHold(dik);
@@ -494,8 +501,16 @@ void CDemoRecord::IR_OnKeyboardHold	(int dik)
 
 }
 
+void CDemoRecord::IR_OnKeyboardRelease(int dik)
+{
+	g_pGamePersistent->EditorKeyRelease(dik);
+}
+
 void CDemoRecord::IR_OnMouseMove		(int dx, int dy)
 {
+	if (g_pGamePersistent->EditorMouseMove(dx, dy))
+		return;
+
 	if(m_b_redirect_input_to_level)
 	{
 		g_pGameLevel->IR_OnMouseMove(dx, dy);
@@ -514,6 +529,13 @@ void CDemoRecord::IR_OnMouseMove		(int dx, int dy)
 
 void CDemoRecord::IR_OnMouseHold		(int btn)
 {
+	if (g_pGamePersistent->EditorActive())
+	{
+		// Dance Maniac: Hack for input mouse key
+		g_pGamePersistent->EditorKeyPress(337 + btn);
+		return;
+	}
+
 	if(m_b_redirect_input_to_level)
 	{
 		g_pGameLevel->IR_OnMouseHold(btn);
@@ -525,6 +547,15 @@ void CDemoRecord::IR_OnMouseHold		(int btn)
 	case 1:			vT_delta.z -= 1.0f; break; // Move Forward
 	}
 	update_whith_timescale( m_vT, vT_delta );
+}
+
+void CDemoRecord::IR_OnMouseRelease(int btn)
+{
+	if (g_pGamePersistent->EditorActive())
+	{
+		// Dance Maniac: Hack for input mouse key
+		g_pGamePersistent->EditorKeyRelease(337 + btn);
+	}
 }
 
 void CDemoRecord::RecordKey()

@@ -130,6 +130,11 @@ public:
 			bool		IsTutorialSequencerActive() override;
 
 	virtual void		EditorOnFrame			();
+	virtual bool		EditorKeyPress			(int key);
+	virtual bool		EditorKeyRelease		(int key);
+	virtual bool		EditorKeyHold			(int key);
+	virtual bool		EditorMouseMove			(int dx, int dy);
+	virtual bool		EditorActive			();
 
 	xr_vector<fastdelegate::FastDelegate0<>>    GameLoadedCallback;
 };
