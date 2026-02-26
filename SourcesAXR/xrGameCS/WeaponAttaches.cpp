@@ -56,6 +56,15 @@ void WeaponAttach::UpdateAttachesPosition(IRenderVisual* model, const Fmatrix& p
 		Fmatrix anchorMatrix = kinematics->LL_GetTransform(boneID);
 		m_hud_attach_pos.mul(parent, anchorMatrix);
 		m_hud_attach_pos.mulB_43(m_hud_attach_offset);
+
+		if (hud_attach_scale != 1.0f)
+		{
+			Fmatrix scale, trans;
+			trans = m_hud_attach_pos;
+			float cur_scale = hud_attach_scale;
+			scale.scale(cur_scale, cur_scale, cur_scale);
+			m_hud_attach_pos.mul(trans, scale);
+		}
 	}
 	else
 	{
@@ -67,6 +76,15 @@ void WeaponAttach::UpdateAttachesPosition(IRenderVisual* model, const Fmatrix& p
 		Fmatrix anchorMatrix = kinematics->LL_GetTransform(boneID);
 		m_world_attach_pos.mul(parent, anchorMatrix);
 		m_world_attach_pos.mulB_43(m_world_attach_offset);
+
+		if (world_attach_scale != 1.0f)
+		{
+			Fmatrix scale, trans;
+			trans = m_world_attach_pos;
+			float cur_scale = world_attach_scale;
+			scale.scale(cur_scale, cur_scale, cur_scale);
+			m_world_attach_pos.mul(trans, scale);
+		}
 	}
 	
 	if (attach_hud_visual)
@@ -98,15 +116,6 @@ void WeaponAttach::RenderAttach(bool hud_mode)
 	{
 		if (attach_hud_visual)
 		{
-			if (hud_attach_scale != 1.0f)
-			{
-				Fmatrix scale, trans;
-				trans = m_hud_attach_pos;
-				float cur_scale = hud_attach_scale;
-				scale.scale(cur_scale, cur_scale, cur_scale);
-				m_hud_attach_pos.mul(trans, scale);
-			}
-
 			::Render->set_Transform(&m_hud_attach_pos);
 			::Render->add_Visual(attach_hud_visual, true);
 		}
@@ -117,15 +126,6 @@ void WeaponAttach::RenderAttach(bool hud_mode)
 	{
 		if (attach_world_visual)
 		{
-			if (world_attach_scale != 1.0f)
-			{
-				Fmatrix scale, trans;
-				trans = m_world_attach_pos;
-				float cur_scale = world_attach_scale;
-				scale.scale(cur_scale, cur_scale, cur_scale);
-				m_world_attach_pos.mul(trans, scale);
-			}
-
 			::Render->set_Transform(&m_world_attach_pos);
 			::Render->add_Visual(attach_world_visual, true);
 		}
