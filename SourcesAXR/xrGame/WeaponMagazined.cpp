@@ -1672,10 +1672,10 @@ void CWeaponMagazined::switch2_Fire	()
 
 void CWeaponMagazined::switch2_Empty()
 {
-	OnZoomOut();
-	
 	if (m_bAutoreloadEnabled)
 	{
+		OnZoomOut();
+
 		if (!TryReload())
 		{
 			OnEmptyClick();
