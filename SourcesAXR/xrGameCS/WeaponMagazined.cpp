@@ -1233,7 +1233,7 @@ void CWeaponMagazined::OnShot()
 		}
 
 		string128 sndName;
-		strconcat(sizeof(sndName), sndName, m_sSndShotCurrent.c_str(), (m_bIsDoubleBarrelShotgun && (iAmmoElapsed % 2 == 0)) ? "" : "R", "Actor", (!m_bIsDoubleBarrelShotgun && (iAmmoElapsed == 1)) ? "Last" : "", bIndoor ? "Indoor" : "");
+		strconcat(sizeof(sndName), sndName, m_sSndShotCurrent.c_str(), m_bIsDoubleBarrelShotgun ? (iAmmoElapsed % 2 == 0) ? "" : "R" : "", "Actor", (!m_bIsDoubleBarrelShotgun && (iAmmoElapsed == 1)) ? "Last" : "", bIndoor ? "Indoor" : "");
 		
 		if (m_sounds.FindSoundItem(sndName, false))
 		{
@@ -1269,7 +1269,7 @@ void CWeaponMagazined::OnShot()
 	}
 
 	string128 sndName;
-	strconcat(sizeof(sndName), sndName, m_sSndShotCurrent.c_str(), (m_bIsDoubleBarrelShotgun && (iAmmoElapsed % 2 == 0)) ? "" : "R", (!m_bIsDoubleBarrelShotgun && (iAmmoElapsed == 1)) ? "Last" : "", bIndoor ? "Indoor" : "");
+	strconcat(sizeof(sndName), sndName, m_sSndShotCurrent.c_str(), m_bIsDoubleBarrelShotgun ? (iAmmoElapsed % 2 == 0) ? "" : "R" : "", (!m_bIsDoubleBarrelShotgun && (iAmmoElapsed == 1)) ? "Last" : "", bIndoor ? "Indoor" : "");
 
 	if (m_sounds.FindSoundItem(sndName, false))
 	{
