@@ -60,6 +60,7 @@ CWeaponMagazined::CWeaponMagazined(LPCSTR name, ESoundTypes eSoundType) : CWeapo
 	m_bUseFiremodeChangeAnim = true;
 	bHasBulletsToHide		= false;
 	m_bPerformFullUnload	= false;
+	m_bEnableRPM_Pending	= false;
 
 	m_iMagClickStartRound	= 0;
 }
@@ -221,8 +222,8 @@ void CWeaponMagazined::Load	(LPCSTR section)
 		m_sounds.LoadSound(section, "snd_overheating_idle", "sndOverheatingIdle", true, m_eSoundEmptyClick);
 
 	m_iMagClickStartRound = READ_IF_EXISTS(pSettings, r_u32, section, "mag_click_start_round", 0);
-
 	m_bPerformFullUnload = READ_IF_EXISTS(pSettings, r_bool, section, "perform_full_unload", false);
+	m_bEnableRPM_Pending = READ_IF_EXISTS(pSettings, r_bool, section, "enable_rpm_pending", false);
 
 	//  [7/20/2005]
 	if (pSettings->line_exist(section, "dispersion_start"))
@@ -1027,7 +1028,7 @@ void CWeaponMagazined::state_Fire	(float dt)
 		//Alundaio: Cycle down RPM after two shots; used for Abakan/AN-94
 		bool b_mod_shot_time = (GetCurrentFireMode() == 3 || GetCurrentFireMode() == 2 || (bCycleDown == true && m_iShotNum < 1));
 
-		bool b_fast_mode = (m_bIsDoubleBarrelShotgun && (iAmmoElapsed % 2 == 0));
+		bool b_fast_mode = (m_bIsDoubleBarrelShotgun ? (iAmmoElapsed % 2 == 0) : (m_bEnableRPM_Pending && iAmmoElapsed == 1));
 
 		VERIFY			(fTimeToFire>0.f);
 		fTime			+=	b_mod_shot_time ? fModeShotTime : b_fast_mode ? fFastShotTime : fTimeToFire;

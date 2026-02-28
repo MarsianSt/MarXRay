@@ -41,6 +41,7 @@ protected:
 
 	bool            m_bCustomShotSounds;
 	bool			m_bPerformFullUnload;
+	bool			m_bEnableRPM_Pending;
 
 protected:
 	virtual void	OnMagazineEmpty	();
@@ -121,6 +122,8 @@ public:
 
 			bool	HaveCartridgeInInventory(u8 cnt);
 			u8		GetAvailableCartridgesToLoad(bool full_reload);
+
+	IC BOOL			IsPending		() const { return !!(m_huditem_flags.test(fl_pending) || (m_bEnableRPM_Pending && fShotTimeCounter > 0.f)); }
 
 public:
 	virtual bool	SwitchMode				();
