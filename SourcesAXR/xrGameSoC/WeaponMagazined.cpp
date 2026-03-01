@@ -560,8 +560,21 @@ void CWeaponMagazined::OnMagazineEmpty()
 		Actor()->callback(GameObject::eOnWeaponMagazineEmpty)(lua_game_object(), AC);
 	}
 
+	u32 cur_state = GetState();
+
+	if (cur_state == eFire)
+	{
+		if (m_bIsShotgun || m_bIsBoltRiffle)
+		{
+			if (fTime > 0)
+				OnEmptyClick();
+
+			return;
+		}
+	}
+
 	//попытка стрелять когда нет патронов
-	if (GetState() == eIdle) 
+	if (cur_state == eIdle)
 	{
 		OnEmptyClick			();
 		return;
