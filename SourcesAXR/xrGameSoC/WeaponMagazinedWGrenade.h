@@ -80,6 +80,7 @@ public:
 	virtual void	PlayAnimLaserSwitch	();
 	virtual void	PlayAnimFlashlightSwitch();
 	virtual	bool	PlayAnimAimEnd		();
+	virtual void	PlayAnimDeviceSwitch() override;
 
 	//дополнительные параметры патронов 
 	//для подствольника
@@ -96,7 +97,7 @@ public:
 
 	int						iAmmoElapsedMain;
 
-	bool					IsMainMagazineEmpty() { return iAmmoElapsedMain <= 0; }
+	bool					IsMainMagazineEmpty() { return (m_bGrenadeMode ? iAmmoElapsedMain <= 0 : iAmmoElapsed <= 0); }
 
 	virtual void UpdateGrenadeVisibility(bool visibility);
 

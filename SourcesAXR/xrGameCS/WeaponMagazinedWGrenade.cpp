@@ -14,6 +14,8 @@
 #include "game_base_space.h"
 #include "../xrphysics/MathUtils.h"
 #include "player_hud.h"
+#include "Torch.h"
+#include "ActorNightVision.h"
 #include "AdvancedXrayGameConstants.h"
 
 #include "script_callback_ex.h"
@@ -739,7 +741,7 @@ void CWeaponMagazinedWGrenade::PlayAnimHide()
 		{
 			if (IsMisfire())
 				PlayHUDMotionIfExists({ "anm_hide_g_jammed", "anm_hide_jammed_g", "anm_hide_g" }, true, GetState());
-			else if (IsEmptyMagazine())
+			else if (IsMainMagazineEmpty())
 				PlayHUDMotionIfExists({ "anm_hide_g_empty", "anm_hide_empty_g", "anm_hide_g" }, true, GetState());
 			else
 				PlayHUDMotion("anm_hide_g", TRUE, this, GetState());
@@ -1287,7 +1289,7 @@ void CWeaponMagazinedWGrenade::PlayAnimLaserSwitch()
 	}
 
 	string_path guns_device_switch_anm{};
-	strconcat(sizeof(guns_device_switch_anm), guns_device_switch_anm, "anm_laser", !IsLaserOn() ? "_on" : "_off", m_bGrenadeMode ? "_g" : "_w_gl", (IsMisfire() ? "_jammed" : (IsMagazineEmpty()) ? "_empty" : ""));
+	strconcat(sizeof(guns_device_switch_anm), guns_device_switch_anm, "anm_laser", !IsLaserOn() ? "_on" : "_off", m_bGrenadeMode ? "_g" : "_w_gl", (IsMisfire() ? "_jammed" : (IsMainMagazineEmpty()) ? "_empty" : ""));
 
 	if (isHUDAnimationExist(guns_device_switch_anm))
 	{
@@ -1335,7 +1337,7 @@ void CWeaponMagazinedWGrenade::PlayAnimFlashlightSwitch()
 	}
 
 	string_path guns_device_switch_anm{};
-	strconcat(sizeof(guns_device_switch_anm), guns_device_switch_anm, "anm_torch", !IsFlashlightOn() ? "_on" : "_off", m_bGrenadeMode ? "_g" : "_w_gl", (IsMisfire() ? "_jammed" : (IsMagazineEmpty()) ? "_empty" : ""));
+	strconcat(sizeof(guns_device_switch_anm), guns_device_switch_anm, "anm_torch", !IsFlashlightOn() ? "_on" : "_off", m_bGrenadeMode ? "_g" : "_w_gl", (IsMisfire() ? "_jammed" : (IsMainMagazineEmpty()) ? "_empty" : ""));
 
 	if (isHUDAnimationExist(guns_device_switch_anm))
 	{
@@ -1372,6 +1374,81 @@ void CWeaponMagazinedWGrenade::PlayAnimFlashlightSwitch()
 	}
 	else
 		inherited::PlayAnimFlashlightSwitch();
+}
+
+void CWeaponMagazinedWGrenade::PlayAnimDeviceSwitch()
+{
+	if (!IsGrenadeLauncherAttached())
+	{
+		inherited::PlayAnimDeviceSwitch();
+		return;
+	}
+
+	CActor* actor = Actor();
+	CTorch* torch = smart_cast<CTorch*>(Actor()->inventory().ItemFromSlot(TORCH_SLOT));
+
+	if (!actor->GetNightVision())
+		actor->SetNightVision(xr_new<CNightVisionEffector>(actor->cNameSect()));
+
+	CNightVisionEffector* nvg = Actor()->GetNightVision();
+
+	PlaySound(HeadLampSwitch && torch ? (!torch->IsSwitchedOn() ? "sndHeadlampOn" : "sndHeadlampOff") : NightVisionSwitch && nvg ? (!nvg->IsActive() ? "sndNvOn" : "sndNvOff") : CleanMaskAction ? "sndCleanMask" : "", get_LastFP());
+
+	string128 guns_device_switch_anm{};
+	strconcat(sizeof(guns_device_switch_anm), guns_device_switch_anm, HeadLampSwitch && torch ? (!torch->IsSwitchedOn() ? "anm_headlamp_on" : "anm_headlamp_off") : NightVisionSwitch && nvg ? (!nvg->IsActive() ? "anm_nv_on" : "anm_nv_off") : CleanMaskAction ? "anm_clean_mask" : "", IsMisfire() ? "_jammed" : IsMainMagazineEmpty() ? "_empty" : "", IsGrenadeLauncherAttached() ? (!IsGrenadeMode() ? "_w_gl" : "_g") : "");
+
+	if (isHUDAnimationExist(guns_device_switch_anm))
+	{
+		if (CleanMaskAction)
+		{
+			actor->SetMaskAnimLength(Device.dwTimeGlobal + PlayHUDMotionNew(guns_device_switch_anm, true, GetState()));
+			actor->SetMaskAnimActive(true);
+			actor->SetActionAnimInProcess(true);
+		}
+		else
+			PlayHUDMotionNew(guns_device_switch_anm, true, GetState());
+	}
+	else if (guns_device_switch_anm && strstr(guns_device_switch_anm, "_jammed"))
+	{
+		char new_guns_device_switch_anm[256];
+		strcpy(new_guns_device_switch_anm, guns_device_switch_anm);
+		new_guns_device_switch_anm[strlen(guns_device_switch_anm) - strlen("_jammed")] = '\0';
+
+		if (isHUDAnimationExist(new_guns_device_switch_anm))
+		{
+			if (CleanMaskAction)
+			{
+				actor->SetMaskAnimLength(Device.dwTimeGlobal + PlayHUDMotionNew(new_guns_device_switch_anm, true, GetState()));
+				actor->SetMaskAnimActive(true);
+				actor->SetActionAnimInProcess(true);
+			}
+			else
+				PlayHUDMotionNew(new_guns_device_switch_anm, true, GetState());
+		}
+	}
+	else if (guns_device_switch_anm && strstr(guns_device_switch_anm, "_empty"))
+	{
+		char new_guns_device_switch_anm[256];
+		strcpy(new_guns_device_switch_anm, guns_device_switch_anm);
+		new_guns_device_switch_anm[strlen(guns_device_switch_anm) - strlen("_empty")] = '\0';
+
+		if (isHUDAnimationExist(new_guns_device_switch_anm))
+		{
+			if (CleanMaskAction)
+			{
+				actor->SetMaskAnimLength(Device.dwTimeGlobal + PlayHUDMotionNew(new_guns_device_switch_anm, true, GetState()));
+				actor->SetMaskAnimActive(true);
+				actor->SetActionAnimInProcess(true);
+			}
+			else
+				PlayHUDMotionNew(new_guns_device_switch_anm, true, GetState());
+		}
+	}
+	else
+	{
+		DeviceUpdate();
+		SwitchState(eIdle);
+	}
 }
 
 void CWeaponMagazinedWGrenade::UpdateSounds	()
