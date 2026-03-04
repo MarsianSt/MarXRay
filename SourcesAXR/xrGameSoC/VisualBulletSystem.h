@@ -17,7 +17,8 @@ class CVisualBulletSystem
 	// Magazined & Revolvers
 	xr_vector<xr_string>	shell_bones_sets{};
 	LPCSTR					feeder_bone_prefix{};
-	bool					m_bAmmoTypesVisuals;
+	bool					m_bAmmoTypesVisuals{};
+	bool					m_bProtectaMode{};
 
 	u8						cur_ammo_type{};
 	u8						next_ammo_type{};

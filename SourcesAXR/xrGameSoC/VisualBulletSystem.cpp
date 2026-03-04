@@ -1,11 +1,11 @@
 ////////////////////////////////////////////////////////////////////////////
 //	Module 		: VisualBulletSystem.cpp
 //	Created 	: 24.01.2026
-//	Modified 	: 03.02.2026
+//	Modified 	: 05.03.2026
 //	Author		: Dance Maniac (M.F.S. Team)
 //	Description : Bullets visualisation system class
 //  MIT License
-//	Copyright(c) 2020 Dance Maniac
+//	Copyright(c) 2026 Dance Maniac
 ////////////////////////////////////////////////////////////////////////////
 
 #include "stdafx.h"
@@ -20,6 +20,7 @@ CVisualBulletSystem::CVisualBulletSystem()
 	m_pWeapon = nullptr;
 	m_bVisualBulletSystem = false;
 	m_bAmmoTypesVisuals = false;
+	m_bProtectaMode = false;
 	feeder_bone_prefix = nullptr;
 	cur_ammo_type = 0;
 	next_ammo_type = 0;
@@ -67,11 +68,13 @@ void CVisualBulletSystem::Load(LPCSTR section)
 			if (pSettings->line_exist(section, "shell_bones_in_model"))
 				shell_bones_sets.push_back(pSettings->r_string(section, "shell_bones_in_model"));
 
-			feeder_bone_prefix = READ_IF_EXISTS(pSettings, r_string, section, "feeder_bone_prefix", "");
+			feeder_bone_prefix = READ_IF_EXISTS(pSettings, r_string, section, "feeder_bone_prefix", nullptr);
 		} break;
 	case eModeShotgun:
 	case eModeDoubleBarrel:
 		{
+			m_bProtectaMode = READ_IF_EXISTS(pSettings, r_bool, section, "protecta_mode", false);
+
 			for (int i = 0; i < m_pWeapon->m_ammoTypes.size(); ++i)
 			{
 				LPCSTR paramName = make_string("bullet_bones_set_%d", i).c_str();
@@ -132,7 +135,7 @@ void CVisualBulletSystem::Update(const bool forced, const bool unload_mode)
 	case eModeShotgun:
 	case eModeDoubleBarrel:
 		{
-			ReloadShotgun(forced, unload_mode);
+			ReloadShotgun((forced || m_bProtectaMode), unload_mode);
 		} break;
 	case eModeRevolver:
 		{
@@ -162,16 +165,20 @@ void CVisualBulletSystem::ReloadShotgun(const bool forced, const bool unload_mod
 	}
 
 	const auto& bones_to_show = bullet_bones_sets[unload_mode ? cur_ammo_type : id];
+	u8 bullets_to_show = m_pWeapon->GetAmmoElapsed();
 
 	if (!forced && current_bullet_bones == bones_to_show)
 		return;
 
-	for (u8 i = 0; i < bullet_bones_in_model.size(); i++)
+	for (size_t i = 0; i < bullet_bones_in_model.size(); ++i)
 	{
 		u16 bone_id = m_pWeapon->HudItemData()->m_model->LL_BoneID(bullet_bones_in_model[i].c_str());
 
 		if (bone_id != BI_NONE)
-			m_pWeapon->HudItemData()->set_bone_visible(bullet_bones_in_model[i].c_str(), false, TRUE);
+		{
+			bool should_show = (bullets_to_show && i <= bullets_to_show);
+			m_pWeapon->HudItemData()->set_bone_visible(bullet_bones_in_model[i].c_str(), m_bProtectaMode ? should_show : false, TRUE);
+		}
 	}
 
 	xr_string temp = bones_to_show.c_str();
@@ -321,7 +328,7 @@ void CVisualBulletSystem::ReloadMagazined(const bool forced, const bool unload_m
 		if (bone_id == BI_NONE)
 			continue;
 
-		bool should_show = unload_mode ? (i < bullets_to_show) : (i >= (bullet_bones_in_model.size() - bullets_to_show));
+		bool should_show = (bullets_to_show && i <= bullets_to_show);
 		m_pWeaponMagazined->HudItemData()->set_bone_visible(bullet_bones_in_model[i].c_str(), should_show);
 
 		if (shell_bones_sets.size())
@@ -336,7 +343,7 @@ void CVisualBulletSystem::ReloadMagazined(const bool forced, const bool unload_m
 
 				if (spring_bone_id != BI_NONE)
 				{
-					bool spring_visible = unload_mode ? !(i < bullets_to_show) : !(i >= (bullet_bones_in_model.size() - bullets_to_show));
+					bool spring_visible = !(bullets_to_show && i <= bullets_to_show);
 					m_pWeaponMagazined->HudItemData()->set_bone_visible(bone_name, spring_visible);
 				}
 				else
@@ -344,7 +351,7 @@ void CVisualBulletSystem::ReloadMagazined(const bool forced, const bool unload_m
 			}
 		}
 
-		if (feeder_bone_prefix)
+		if (feeder_bone_prefix && *feeder_bone_prefix)
 		{
 			for (int i = 0; i <= m_pWeaponMagazined->GetAmmoMagSize(); ++i)
 			{
