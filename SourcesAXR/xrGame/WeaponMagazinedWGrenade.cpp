@@ -1103,8 +1103,6 @@ void CWeaponMagazinedWGrenade::PlayAnimShoot()
 	}
 	else
 	{
-		//HUD_VisualBulletUpdate();
-
 		VERIFY(GetState() == eFire);
 
 		if ((IsRotatingToZoom() && m_zoom_params.m_fZoomRotationFactor != 0.0f) || (IsRotatingFromZoom() && m_zoom_params.m_fZoomRotationFactor != 1.0f))

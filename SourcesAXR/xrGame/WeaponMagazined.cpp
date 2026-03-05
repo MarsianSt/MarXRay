@@ -616,6 +616,9 @@ void CWeaponMagazined::OnMagazineEmpty()
 
 void CWeaponMagazined::UnloadMagazine(bool spawn_ammo)
 {
+	if (m_bVisualBulletSystem)
+		m_bVisualBulletSystem->Update(false, true);
+
 	last_hide_bullet = -1;
 	HUD_VisualBulletUpdate();
 
@@ -820,6 +823,9 @@ void CWeaponMagazined::DeviceSwitch()
 
 void CWeaponMagazined::OnStateSwitch	(u32 S)
 {
+	if (m_bVisualBulletSystem)
+		m_bVisualBulletSystem->Update(false, true);
+
 	HUD_VisualBulletUpdate();
 
 	inherited::OnStateSwitch(S);
@@ -1172,6 +1178,9 @@ void CWeaponMagazined::OnShot()
 
 	HUD_VisualBulletUpdate		();
 	update_visual_bullet_textures();
+
+	if (m_bVisualBulletSystem)
+		m_bVisualBulletSystem->Update(false, true);
 	
 	// Shell Drop
 	Fvector vel; 
@@ -2685,8 +2694,6 @@ void CWeaponMagazined::PlayAnimShoot()
 	string_path guns_shoot_anm{};
 	strconcat(sizeof(guns_shoot_anm), guns_shoot_anm, (isHUDAnimationExist("anm_shoot") ? "anm_shoot" : "anm_shots"), (IsZoomed() && !IsRotatingToZoom()) ? (IsScopeAttached() && m_bUseAimScopeAnims ? "_aim_scope" : "_aim") : "", (iAmmoElapsed == 1) ? "_last" : "", (IsMisfire() ? "_jammed" : IsMagazineEmpty() ? "_empty" : ""), (IsSilencerAttached() && m_bUseSilShotAnim) ? "_sil" : "");
 
-	//HUD_VisualBulletUpdate();
-
 	if (iAmmoElapsed == 1)
 		PlayHUDMotionIfExists({ guns_shoot_anm, "anm_shoot_last", "anm_shots_last", "anm_shot_l", "anm_shoot", "anm_shots" }, false, GetState());
 	else
@@ -2993,9 +3000,8 @@ bool CWeaponMagazined::GetBriefInfo( II_BriefInfo& info )
 	{
 		last_hide_bullet = ae >= bullet_cnt ? bullet_cnt : bullet_cnt - ae - 1;
 
-		if (ae == 0) last_hide_bullet = -1;
-
-		//HUD_VisualBulletUpdate();
+		if (ae == 0)
+			last_hide_bullet = -1;
 	}
 
 	if (HasFireModes())
