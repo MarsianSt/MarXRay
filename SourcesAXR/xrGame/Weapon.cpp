@@ -153,6 +153,7 @@ CWeapon::CWeapon()
 
 	m_bIndoorSoundsEnabled	= false;
 	m_bMisfireBulletRemove	= false;
+	m_bCheckAmmoChangeLock	= false;
 	m_bCheckAmmoChangeLockGL = false;
 
 	m_bVisualBulletSystem	= nullptr;
@@ -699,6 +700,7 @@ void CWeapon::Load		(LPCSTR section)
 
 	m_bIndoorSoundsEnabled	= READ_IF_EXISTS(pSettings, r_bool, section, "indoor_sounds_enabled", false);
 	m_bMisfireBulletRemove	= READ_IF_EXISTS(pSettings, r_bool, section, "misfire_bullet_remove", true);
+	m_bCheckAmmoChangeLock	= READ_IF_EXISTS(pSettings, r_bool, section, "check_ammo_change_lock", false);
 	m_bCheckAmmoChangeLockGL = READ_IF_EXISTS(pSettings, r_bool, section, "check_gl_ammo_change_lock", false);
 
 	m_bBulletsVisualization = pSettings->line_exist(section, "bullet_bones");
@@ -2100,7 +2102,8 @@ bool CWeapon::Action(u16 cmd, u32 flags)
 			return true;
 		case kWPN_NEXT: 
 			{
-				return ((m_bCheckAmmoChangeLockGL && IsGrenadeMode() && iAmmoElapsed > 0) ? false : SwitchAmmoType(flags));
+				bool ammo_change_locked = ((m_bCheckAmmoChangeLock && !IsGrenadeMode()) || (m_bCheckAmmoChangeLockGL && IsGrenadeMode())) && iAmmoElapsed > 0;
+				return (ammo_change_locked ? false : SwitchAmmoType(flags));
 			} 
 
 		case kWPN_ZOOM:
