@@ -116,6 +116,9 @@ public:
 
 	virtual BOOL		feel_touch_on_contact	(CObject *);
 	virtual BOOL		feel_touch_contact		(CObject *);
+
+	virtual void		renderable_Render		() override;
+
 	// utils
 	void				mk_orientation			( Fvector& dir, Fmatrix& mR );
 	void				mk_rotation				( Fvector& dir, SRotation &R);
@@ -309,6 +312,11 @@ public:
 	//////////////////////////////////////////////////////////////////////////
 private:
 	bool							m_invulnerable;
+
+	bool							m_bModelScaleRandom;
+	float							m_fModelScale;
+	float							m_fModelScaleRandomMin;
+	float							m_fModelScaleRandomMax;
 
 public:
 	IC		void					invulnerable								(const bool &invulnerable);
