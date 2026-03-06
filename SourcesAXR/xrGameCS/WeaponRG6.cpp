@@ -163,7 +163,7 @@ void CWeaponRG6::Reload()
 		inheritedSG::TriStateReload();
 	else
 	{
-		if (!smart_cast<CWeaponAmmo*>(m_pInventory->GetAny(m_ammoTypes[m_ammoType].c_str())))
+		if (!unlimited_ammo() && !smart_cast<CWeaponAmmo*>(m_pInventory->GetAny(m_ammoTypes[m_ammoType].c_str())))
 			return;
 
 		shared_str fake_grenade_name = pSettings->r_string(m_ammoTypes[m_ammoType].c_str(), "fake_grenade_name");
