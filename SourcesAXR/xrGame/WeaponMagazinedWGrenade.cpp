@@ -277,7 +277,7 @@ bool CWeaponMagazinedWGrenade::Action(u16 cmd, u32 flags)
 		{
 			if(iAmmoElapsed)
 				LaunchGrenade		();
-			else
+			else if (m_bAutoreloadEnabled)
 				Reload				();
 
 			if(GetState() == eIdle) 
