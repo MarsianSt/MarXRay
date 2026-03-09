@@ -308,10 +308,8 @@ void CWeaponMagazined::FireStart		()
 				
 				if (iAmmoElapsed == 0) 
 					OnMagazineEmpty();
-				else{
-					R_ASSERT(H_Parent());
+				else
 					SwitchState(eFire);
-				}
 			}
 		}else 
 		{
@@ -1049,30 +1047,32 @@ void CWeaponMagazined::state_Fire(float dt)
 		p1.set(get_LastFP());
 		d.set(get_LastFD());
 
-		if (!H_Parent()) return;
-		if (smart_cast<CMPPlayersBag*>(H_Parent()) != NULL)
+		if (H_Parent())
 		{
-			Msg("! WARNING: state_Fire of object [%d][%s] while parent is CMPPlayerBag...", ID(), cNameSect().c_str());
-			return;
-		}
+			if (smart_cast<CMPPlayersBag*>(H_Parent()) != NULL)
+			{
+				Msg("! WARNING: state_Fire of object [%d][%s] while parent is CMPPlayerBag...", ID(), cNameSect().c_str());
+				return;
+			}
 
-		CInventoryOwner* io		= smart_cast<CInventoryOwner*>(H_Parent());
-		if(NULL == io->inventory().ActiveItem())
-		{
-				Log("current_state", GetState() );
+			CInventoryOwner* io = smart_cast<CInventoryOwner*>(H_Parent());
+			if (NULL == io->inventory().ActiveItem())
+			{
+				Log("current_state", GetState());
 				Log("next_state", GetNextState());
 				Log("item_sect", cNameSect().c_str());
 				Log("H_Parent", H_Parent()->cNameSect().c_str());
 				StopShooting();
 				return;
 				//Alundaio: This is not supposed to happen but it does. GSC was aware but why no return here? Known to cause crash on game load if npc immediatly enters combat.
+			}
+
+			CEntity* E = smart_cast<CEntity*>(H_Parent());
+			E->g_fireParams(this, p1, d);
+
+			if (!E->g_stateFire())
+				StopShooting();
 		}
-
-		CEntity* E = smart_cast<CEntity*>(H_Parent());
-		E->g_fireParams	(this, p1,d);
-
-		if( !E->g_stateFire() )
-			StopShooting();
 
 		if (m_iShotNum == 0)
 		{
@@ -1171,7 +1171,8 @@ void CWeaponMagazined::OnShot()
 		Actor()->set_state_wishful(Actor()->get_state_wishful() & (~mcSprint));
 
 	// Camera	
-	AddShotEffector				();
+	if (ParentIsActor())
+		AddShotEffector			();
 
 	// Animation
 	PlayAnimShoot				();
@@ -1650,29 +1651,32 @@ void CWeaponMagazined::PlayAnimFlashlightSwitch()
 #endif
 void CWeaponMagazined::switch2_Fire	()
 {
-	CInventoryOwner* io		= smart_cast<CInventoryOwner*>(H_Parent());
-	CInventoryItem* ii		= smart_cast<CInventoryItem*>(this);
-#ifdef DEBUG
-	if (!io)
-		return;
-	//VERIFY2					(io,make_string("no inventory owner, item %s",*cName()));
-
-	if (ii != io->inventory().ActiveItem())
-		Msg					("! not an active item, item %s, owner %s, active item %s",*cName(),*H_Parent()->cName(),io->inventory().ActiveItem() ? *io->inventory().ActiveItem()->object().cName() : "no_active_item");
-
-	if ( !(io && (ii == io->inventory().ActiveItem())) ) 
+	if (H_Parent())
 	{
-		CAI_Stalker			*stalker = smart_cast<CAI_Stalker*>(H_Parent());
-		if (stalker) {
-			stalker->planner().show						();
-			stalker->planner().show_current_world_state	();
-			stalker->planner().show_target_world_state	();
+		CInventoryOwner* io = smart_cast<CInventoryOwner*>(H_Parent());
+		CInventoryItem* ii = smart_cast<CInventoryItem*>(this);
+#ifdef DEBUG
+		if (!io)
+			return;
+		//VERIFY2					(io,make_string("no inventory owner, item %s",*cName()));
+
+		if (ii != io->inventory().ActiveItem())
+			Msg("! not an active item, item %s, owner %s, active item %s", *cName(), *H_Parent()->cName(), io->inventory().ActiveItem() ? *io->inventory().ActiveItem()->object().cName() : "no_active_item");
+
+		if (!(io && (ii == io->inventory().ActiveItem())))
+		{
+			CAI_Stalker* stalker = smart_cast<CAI_Stalker*>(H_Parent());
+			if (stalker) {
+				stalker->planner().show();
+				stalker->planner().show_current_world_state();
+				stalker->planner().show_target_world_state();
+			}
 		}
-	}
 #else
-	if (!io)
-		return;
+		if (!io)
+			return;
 #endif // DEBUG
+	}
 
 //
 //	VERIFY2(

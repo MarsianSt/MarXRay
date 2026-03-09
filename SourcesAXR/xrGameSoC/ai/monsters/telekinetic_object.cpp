@@ -6,6 +6,7 @@
 #include "../../PHElement.h"
 #include "../../level.h"
 #include "../../gameobject.h"
+#include "Weapon.h"
 
 #define KEEP_IMPULSE_UPDATE 200
 #define FIRE_TIME			3000
@@ -170,9 +171,15 @@ void CTelekineticObject::keep()
 
 void CTelekineticObject::release() 
 {
-	if (!object || !object->m_pPhysicsShell || !object->m_pPhysicsShell->isActive()) return;
+	if (!object || !object->m_pPhysicsShell || !object->m_pPhysicsShell->isActive())
+		return;
 	
-	
+	if (CWeapon* weapon = object->cast_weapon())
+	{
+		weapon->ClearTeleParams();
+		weapon->FireEnd();
+	}
+
 	Fvector dir_inv;
 	dir_inv.set(0.f,-1.0f,0.f);
 

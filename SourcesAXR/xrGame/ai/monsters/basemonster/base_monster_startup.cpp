@@ -172,7 +172,7 @@ void CBaseMonster::Load(LPCSTR section)
 		m_fTrailLightRange = pSettings->r_float(section, "light_range");
 	}
 	m_bParticlesEnabled = !!READ_IF_EXISTS(pSettings, r_bool, section, "particles_enabled", false);
-	m_sParticlesIdleName = READ_IF_EXISTS(pSettings, r_string, section, "particles_idle", NULL);
+	m_sParticlesIdleName = READ_IF_EXISTS(pSettings, r_string, section, "particles_idle", nullptr);
 
 	m_bEnablePsyAuraAfterDie = READ_IF_EXISTS(pSettings, r_bool, section, "enable_psy_infl_for_dead", false);
 	m_bEnableRadAuraAfterDie = READ_IF_EXISTS(pSettings, r_bool, section, "enable_rad_infl_for_dead", true);
@@ -180,6 +180,27 @@ void CBaseMonster::Load(LPCSTR section)
 	m_bEnableAcidAuraAfterDie = READ_IF_EXISTS(pSettings, r_bool, section, "enable_acid_infl_for_dead", false);
 	m_bDropItemAfterSuperAttack = READ_IF_EXISTS(pSettings, r_bool, section, "drop_item_after_super_attack", false);
 	m_iSuperAttackDropItemPer = READ_IF_EXISTS(pSettings, r_u32, section, "super_attack_drop_item_per", 50);
+
+	m_TelekinesisSect = READ_IF_EXISTS(pSettings, r_string, section, "telekinesis_section", nullptr);
+
+	if (m_TelekinesisSect.size())
+	{
+		m_iTeleMaxObjects		= READ_IF_EXISTS(pSettings, r_u32,		m_TelekinesisSect, "tele_max_objects",		4);
+		m_iTeleMaxWeapons		= READ_IF_EXISTS(pSettings, r_u32,		m_TelekinesisSect, "tele_max_weapons",		0);
+		m_iTeleWeaponMode		= READ_IF_EXISTS(pSettings, r_u32,		m_TelekinesisSect, "tele_weapon_mode",		0);
+
+		m_iTeleTimeToHold		= READ_IF_EXISTS(pSettings, r_u32,		m_TelekinesisSect, "tele_time_to_hold",		0);
+		m_iTeleMaxTime			= READ_IF_EXISTS(pSettings, r_u32,		m_TelekinesisSect, "tele_max_time",			10000);
+		m_fTeleObjectMinMass	= READ_IF_EXISTS(pSettings, r_float,	m_TelekinesisSect, "tele_object_min_mass",	0.f);
+		m_fTeleObjectMaxMass	= READ_IF_EXISTS(pSettings, r_float,	m_TelekinesisSect, "tele_object_max_mass",	5000.f);
+		m_fTeleFindRadius		= READ_IF_EXISTS(pSettings, r_float,	m_TelekinesisSect, "tele_find_radius",		10.f);
+		m_fTeleMinDistance		= READ_IF_EXISTS(pSettings, r_float,	m_TelekinesisSect, "tele_min_distance",		8.f);
+		m_fTeleMaxDistance		= READ_IF_EXISTS(pSettings, r_float,	m_TelekinesisSect, "tele_max_distance",		30.f);
+		m_fTeleRaiseSpeed		= READ_IF_EXISTS(pSettings, r_float,	m_TelekinesisSect, "tele_raise_speed",		5.f);
+		m_fTeleFlyVelocity		= READ_IF_EXISTS(pSettings, r_float,	m_TelekinesisSect, "tele_fly_velocity",		30.f);
+		m_fTeleObjectHeight		= READ_IF_EXISTS(pSettings, r_float,	m_TelekinesisSect, "tele_objects_height",	2.f);
+		m_bTeleObjectsRotation	= READ_IF_EXISTS(pSettings, r_bool,		m_TelekinesisSect, "tele_objects_rotation", false);
+	}
 }
 
 void CBaseMonster::PostLoad (LPCSTR section)

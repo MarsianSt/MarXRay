@@ -122,6 +122,22 @@ CBaseMonster::CBaseMonster() :	m_psy_aura(this, "psy"),
 	m_bEnableAcidAuraAfterDie				= false;
 	m_bDropItemAfterSuperAttack				= false;
 	m_iSuperAttackDropItemPer				= 50;
+
+	m_TelekinesisSect						= nullptr;
+	m_iTeleMaxObjects						= 4;
+	m_iTeleMaxWeapons						= 0;
+	m_iTeleWeaponMode						= 0;
+	m_iTeleTimeToHold						= 0;
+	m_iTeleMaxTime							= 10000;
+	m_fTeleObjectMinMass					= 0.f;
+	m_fTeleObjectMaxMass					= 5000.f;
+	m_fTeleFindRadius						= 50.f;
+	m_fTeleMinDistance						= 8.f;
+	m_fTeleMaxDistance						= 30.f;
+	m_fTeleRaiseSpeed						= 5.f;
+	m_fTeleFlyVelocity						= 30.f;
+	m_fTeleObjectHeight						= 2.f;
+	m_bTeleObjectsRotation					= false;
 }
 
 #pragma warning (pop)

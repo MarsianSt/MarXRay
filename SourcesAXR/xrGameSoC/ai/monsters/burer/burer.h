@@ -89,14 +89,18 @@ public:
 	float	m_gravi_impulse_to_objects;
 	float	m_gravi_impulse_to_enemy;
 	float	m_gravi_hit_power;
-	
 
 	u32		m_tele_max_handled_objects;
 	u32		m_tele_time_to_hold;
+	u32		m_tele_max_time;
 	float	m_tele_object_min_mass;
 	float	m_tele_object_max_mass;
 	float	m_tele_find_radius;
-
+	float	m_tele_min_distance;
+	float	m_tele_max_distance;
+	float	m_tele_raise_speed;
+	float	m_tele_fly_velocity;
+	float	m_tele_object_height;
 
 	bool	m_shield_active;
 	LPCSTR	particle_fire_shield;

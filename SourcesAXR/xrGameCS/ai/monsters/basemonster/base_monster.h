@@ -427,6 +427,31 @@ IC	void					wake_up				(){m_bSleep = false;}
 
 private:
 	bool					ignore_collision_hit;	
+
+public:
+	// Telekinesis
+	shared_str				m_TelekinesisSect;
+
+	u32						m_iTeleMaxObjects;
+	u32						m_iTeleMaxWeapons;
+	u32						m_iTeleWeaponMode;
+	u32						m_iTeleTimeToHold;
+	u32						m_iTeleMaxTime;
+	float					m_fTeleObjectMinMass;
+	float					m_fTeleObjectMaxMass;
+	float					m_fTeleFindRadius;
+	float					m_fTeleMinDistance;
+	float					m_fTeleMaxDistance;
+	float					m_fTeleRaiseSpeed;
+	float					m_fTeleFlyVelocity;
+	float					m_fTeleObjectHeight;
+	bool					m_bTeleObjectsRotation;
+
+	enum ETeleModes {
+		eModeDefault = 0,
+		eModeAdvanced,
+		eModeHard,
+	};
 	
 public:
 	IC	void				set_ignore_collision_hit (bool value) {ignore_collision_hit = value;}

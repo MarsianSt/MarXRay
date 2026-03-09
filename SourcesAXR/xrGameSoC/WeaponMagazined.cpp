@@ -1017,20 +1017,22 @@ void CWeaponMagazined::state_Fire	(float dt)
 	p1.set(get_LastFP());
 	d.set(get_LastFD());
 
-	if (!H_Parent()) return;
-
-	/*CInventoryOwner* io		= smart_cast<CInventoryOwner*>(H_Parent());
-	if (NULL == io->inventory().ActiveItem())
+	if (H_Parent())
 	{
-			Log("current_state", GetState() );
-			Log("next_state", GetNextState());
-			Log("state_time", m_dwStateTime);
-			Log("item_sect", cNameSect().c_str());
-			Log("H_Parent", H_Parent()->cNameSect().c_str());
-	}  */
+		/*CInventoryOwner* io		= smart_cast<CInventoryOwner*>(H_Parent());
+		if (NULL == io->inventory().ActiveItem())
+		{
+				Log("current_state", GetState() );
+				Log("next_state", GetNextState());
+				Log("state_time", m_dwStateTime);
+				Log("item_sect", cNameSect().c_str());
+				Log("H_Parent", H_Parent()->cNameSect().c_str());
+		}  */
 
 
-	smart_cast<CEntity*>	(H_Parent())->g_fireParams	(this, p1,d);
+		smart_cast<CEntity*>	(H_Parent())->g_fireParams(this, p1, d);
+	}
+
 	if (m_iShotNum == 0)
 	{
 		m_vStartPos = p1;
@@ -1103,7 +1105,8 @@ void CWeaponMagazined::OnShot		()
 		Actor()->set_state_wishful(Actor()->get_state_wishful() & (~mcSprint));
 
 	// Camera	
-	AddShotEffector		();
+	if (ParentIsActor())
+		AddShotEffector	();
 
 	// Animation
 	PlayAnimShoot		();
@@ -1573,29 +1576,32 @@ void CWeaponMagazined::PlayAnimFlashlightSwitch()
 #endif
 void CWeaponMagazined::switch2_Fire	()
 {
-	CInventoryOwner* io		= smart_cast<CInventoryOwner*>(H_Parent());
-	CInventoryItem* ii		= smart_cast<CInventoryItem*>(this);
-#ifdef DEBUG
-	if (!io)
-		return;
-	//VERIFY2					(io,make_string("no inventory owner, item %s",*cName()));
-
-	if (ii != io->inventory().ActiveItem())
-		Msg					("! not an active item, item %s, owner %s, active item %s",*cName(),*H_Parent()->cName(),io->inventory().ActiveItem() ? *io->inventory().ActiveItem()->object().cName() : "no_active_item");
-
-	if ( !(io && (ii == io->inventory().ActiveItem())) ) 
+	if (H_Parent())
 	{
-		CAI_Stalker			*stalker = smart_cast<CAI_Stalker*>(H_Parent());
-		if (stalker) {
-			stalker->planner().show						();
-			stalker->planner().show_current_world_state	();
-			stalker->planner().show_target_world_state	();
+		CInventoryOwner* io = smart_cast<CInventoryOwner*>(H_Parent());
+		CInventoryItem* ii = smart_cast<CInventoryItem*>(this);
+#ifdef DEBUG
+		if (!io)
+			return;
+		//VERIFY2					(io,make_string("no inventory owner, item %s",*cName()));
+
+		if (ii != io->inventory().ActiveItem())
+			Msg("! not an active item, item %s, owner %s, active item %s", *cName(), *H_Parent()->cName(), io->inventory().ActiveItem() ? *io->inventory().ActiveItem()->object().cName() : "no_active_item");
+
+		if (!(io && (ii == io->inventory().ActiveItem())))
+		{
+			CAI_Stalker* stalker = smart_cast<CAI_Stalker*>(H_Parent());
+			if (stalker) {
+				stalker->planner().show();
+				stalker->planner().show_current_world_state();
+				stalker->planner().show_target_world_state();
+			}
 		}
-	}
 #else
-	if (!io)
-		return;
+		if (!io)
+			return;
 #endif // DEBUG
+	}
 
 //
 //	VERIFY2(

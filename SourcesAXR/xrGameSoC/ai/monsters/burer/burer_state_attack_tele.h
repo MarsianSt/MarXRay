@@ -49,8 +49,16 @@ private:
 			// Выбор подходящих объектов для телекинеза
 			void		SelectObjects			();
 
+			// Dance Maniac: Проверки валидности объектов вынесены в отельные функции
+			bool		IsBasicValid			(CPhysicsShellHolder* obj);
+			bool		IsHeavyObject			(CPhysicsShellHolder* obj);
+			bool		IsQuestItem				(CPhysicsShellHolder* obj);
+			bool		IsValidNonWeapon		(CPhysicsShellHolder* obj);
+
 			// internal for FindObjects
 			void		FindFreeObjects			(xr_vector<CObject*> &tpObjects, const Fvector &pos);
+
+			void		FireAllToEnemy			();
 
 private:
 };

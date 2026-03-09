@@ -129,7 +129,7 @@ void CWeaponRG6::FireStart ()
 
 		CExplosiveRocket* pGrenade = smart_cast<CExplosiveRocket*>(getCurrentRocket());
 		VERIFY(pGrenade);
-		pGrenade->SetInitiator(H_Parent()->ID());
+		pGrenade->SetInitiator(H_Parent() ? H_Parent()->ID() : ID());
 
 		if (OnServer())
 		{

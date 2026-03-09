@@ -40,6 +40,7 @@
 #include "PostprocessAnimator.h"
 #include "../xrEngine/CameraBase.h"
 #include "CharacterPhysicsSupport.h"
+#include "ai/monsters/basemonster/base_monster.h"
 
 //#include "embedded_editor/embedded_editor_main.h"
 #include "AdvancedXrayGameConstants.h"
@@ -160,6 +161,7 @@ CWeapon::CWeapon(LPCSTR name)
 	m_bMisfireBulletRemove	= false;
 	m_bCheckAmmoChangeLock	= false;
 	m_bCheckAmmoChangeLockGL = false;
+	m_bTelekinesisAvail		= true;
 
 	m_bVisualBulletSystem	= nullptr;
 
@@ -653,6 +655,7 @@ void CWeapon::Load		(LPCSTR section)
 	m_bMisfireBulletRemove	= READ_IF_EXISTS(pSettings, r_bool, section, "misfire_bullet_remove", true);
 	m_bCheckAmmoChangeLock	= READ_IF_EXISTS(pSettings, r_bool, section, "check_ammo_change_lock", false);
 	m_bCheckAmmoChangeLockGL = READ_IF_EXISTS(pSettings, r_bool, section, "check_gl_ammo_change_lock", false);
+	m_bTelekinesisAvail		= READ_IF_EXISTS(pSettings, r_bool, section, "telekinesis_avail", true);
 
 	m_bBulletsVisualization = pSettings->line_exist(section, "bullet_bones");
 
@@ -1559,6 +1562,9 @@ void CWeapon::shedule_Update	(u32 dT)
 				g_pGamePersistent->devices_shader_data.cur_weapon_overheating = m_fWeaponOverheating;
 		}
 	}
+
+	if (m_bTelekinesisAvail)
+		UpdateTelekinesis();
 }
 
 void CWeapon::OnH_B_Independent	(bool just_before_destroy)
@@ -2968,8 +2974,7 @@ void CWeapon::SwitchState(u32 S)
 	if (OnClient()) return;
 
 	SetNextState		( S );	// Very-very important line of code!!! :)
-	if (CHudItem::object().Local() && !CHudItem::object().getDestroy()/* && (S!=NEXT_STATE)*/ 
-		&& m_pInventory && OnServer())	
+	if (CHudItem::object().Local() && !CHudItem::object().getDestroy() && OnServer())	
 	{
 		// !!! Just single entry for given state !!!
 		NET_Packet		P;
@@ -3379,13 +3384,6 @@ float CWeapon::GetConditionToShow	() const
 	return	(GetCondition());//powf(GetCondition(),4.0f));
 }
 
-BOOL CWeapon::ParentMayHaveAimBullet	()
-{
-	CObject* O=H_Parent();
-	CEntityAlive* EA=smart_cast<CEntityAlive*>(O);
-	return EA->cast_actor()!=0;
-}
-
 bool CWeapon::ParentIsActor()
 {
 	CObject* O = H_Parent();
@@ -3396,7 +3394,7 @@ bool CWeapon::ParentIsActor()
 	if (!EA)
 		return FALSE;
 
-	return EA->cast_actor() != 0;
+	return EA->cast_actor() != nullptr;
 }
 
 extern int hud_adj_mode;
@@ -3960,4 +3958,145 @@ void CWeapon::SetWorldVisual(shared_str new_visual)
 {
 	if (CInventoryItem* item = smart_cast<CInventoryItem*>(this))
 		item->object().cNameVisual_set(new_visual);
+}
+
+// Dance Maniac: Weapon Telekinesis
+void CWeapon::UpdateTelekinesis()
+{
+	CEntityAlive* enemy = m_weapon_tele_params.enemy;
+	bool stop_weapon_tele = ((enemy && !enemy->g_Alive()) || !enemy || !m_pPhysicsShell);
+
+	if (stop_weapon_tele)
+	{
+		if (IsWorking() && !H_Parent())
+			FireEnd();
+
+		return;
+	}
+
+	const Fvector enemy_pos = enemy->Center();
+	const Fvector center = Center();
+
+	Fvector aim_vector;
+	aim_vector.sub(enemy_pos, center);
+	const float aim_magnitude = aim_vector.magnitude();
+
+	if (aim_magnitude < EPS_S)
+		return;
+
+	aim_vector.normalize();
+	Fmatrix current_orientation = XFORM();
+
+	switch (m_weapon_tele_params.mode)
+	{
+	case eModeDefault:
+	case eModeAdvanced:
+	{
+		Fvector target_angles;
+		Fmatrix target_orientation;
+		target_orientation.identity();
+		target_orientation.k.set(aim_vector);
+		Fvector::generate_orthonormal_basis_normalized(target_orientation.k, target_orientation.j, target_orientation.i);
+		target_orientation.getXYZi(target_angles);
+
+		Fvector current_angles;
+		current_orientation.getXYZi(current_angles);
+
+		Fvector delta_angles;
+		delta_angles.x = angle_difference(target_angles.x, current_angles.x);
+		delta_angles.y = angle_difference(target_angles.y, current_angles.y);
+		delta_angles.z = 0.0f;
+
+		const float torque_factor = m_pPhysicsShell->getMass() * 0.5f;
+		delta_angles.mul(torque_factor);
+		m_pPhysicsShell->setTorque(delta_angles);
+
+		// В этих режимах стреляем всегда, когда враг в поле зрения
+		if (get_LastFD().magnitude() > EPS_S)
+		{
+			if (!IsWorking())
+				FireStart();
+		}
+	} break;
+	case eModeHard:
+	case eModeHardAdvanced:
+	{
+		Fvector current_dir = current_orientation.k;
+		current_dir.normalize();
+
+		float cos_angle = current_dir.dotproduct(aim_vector);
+		cos_angle = clampr(cos_angle, -1.0f, 1.0f);
+		float angle = acosf(cos_angle);
+
+		const float ANGLE_THRESHOLD = 0.02f; // ~1.14 градуса
+		const float ROTATION_SPEED = 4.0f;   // скорость поворота рад/сек
+
+		if (angle > ANGLE_THRESHOLD)
+		{
+			Fvector rotation_axis;
+			rotation_axis.crossproduct(current_dir, aim_vector);
+
+			float axis_mag = rotation_axis.magnitude();
+
+			if (axis_mag < EPS_S)
+				rotation_axis.set(0.0f, 1.0f, 0.0f);
+			else
+				rotation_axis.mul(1.0f / axis_mag);
+
+			Fvector target_angular_vel;
+			float speed = angle * ROTATION_SPEED;
+			target_angular_vel.mul(rotation_axis, speed);
+			m_pPhysicsShell->set_AngularVel(target_angular_vel);
+		}
+		else
+			m_pPhysicsShell->set_AngularVel(Fvector().set(0.0f, 0.0f, 0.0f));
+
+		// Проверка наведения для стрельбы
+		UpdateFiring(enemy_pos, aim_vector);
+	} break;
+	}
+}
+
+void CWeapon::UpdateFiring(const Fvector& enemy_pos, const Fvector& aim_vector)
+{
+	const Fvector fire_src = get_LastFP();
+	Fvector fire_dir = get_LastFD();
+	const float fire_dir_mag = fire_dir.magnitude();
+
+	if (fire_dir_mag < EPS_S)
+		return;
+
+	fire_dir.normalize();
+	const float alignment = fire_dir.dotproduct(aim_vector);
+
+	if (alignment > 0.95f) // ~18 градусов допуска (cos(18°) ≈ 0.95)
+	{
+		collide::rq_result trace;
+		if (Level().ObjectSpace.RayPick(fire_src, fire_dir, 300.0f, collide::rqtBoth, trace, this))
+		{
+			if (trace.O == m_weapon_tele_params.enemy)
+			{
+				if (!IsWorking())
+					FireStart();
+
+				return;
+			}
+		}
+	}
+
+	// Прекращаем стрельбу, если цель потеряна
+	if (IsWorking())
+		FireEnd();
+}
+
+void CWeapon::SetTeleParams(CEntityAlive* enemy, u32 mode)
+{
+	m_weapon_tele_params.enemy = enemy;
+	m_weapon_tele_params.mode = mode;
+}
+
+void CWeapon::ClearTeleParams()
+{
+	m_weapon_tele_params.enemy = nullptr;
+	m_weapon_tele_params.mode = 0;
 }

@@ -154,14 +154,44 @@ bool CTelekinesis::is_active_object(CPhysicsShellHolder *obj)
 
 void CTelekinesis::schedule_update()
 {
-	if (!active) return;
+	if (!active)
+		return;
 
 	// обновить состояние объектов
-	for (u32 i = 0; i < objects.size(); i++) {
-
+	for (u32 i = 0; i < objects.size(); i++)
+	{
 		CTelekineticObject *cur_obj = objects[i];
 		cur_obj->update_state();
-		if(cur_obj->is_released())	remove_object(objects.begin()+i);
+
+		// Dance Maniac: Вращение поднятых объектов
+		CPhysicsShellHolder* ph_object = cur_obj->get_object();
+		if (ph_object && ph_object->m_pPhysicsShell && cur_obj->m_rotate)
+		{
+			Fvector aim_vector{};
+			Fvector target_angles;
+			Fmatrix target_orientation;
+			target_orientation.identity();
+			target_orientation.k.set(aim_vector);
+			Fvector::generate_orthonormal_basis_normalized(target_orientation.k, target_orientation.j, target_orientation.i);
+			target_orientation.getXYZi(target_angles);
+
+			Fmatrix current_orientation = ph_object->XFORM();
+
+			Fvector current_angles;
+			current_orientation.getXYZi(current_angles);
+
+			Fvector delta_angles;
+			delta_angles.x = angle_difference(target_angles.x, current_angles.x);
+			delta_angles.y = angle_difference(target_angles.y, current_angles.y);
+			delta_angles.z = 0.0f;
+
+			const float torque_factor = ph_object->m_pPhysicsShell->getMass() * 0.5f;
+			delta_angles.mul(torque_factor);
+			ph_object->m_pPhysicsShell->setTorque(delta_angles);
+		}
+
+		if (cur_obj->is_released())
+			remove_object(objects.begin()+i);
 	}
 }
 

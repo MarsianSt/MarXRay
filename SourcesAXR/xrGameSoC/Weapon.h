@@ -734,7 +734,6 @@ public:
 	virtual bool			use_crosshair				()	const {return true;}
 			bool			show_crosshair				();
 			bool			show_indicators				();
-	virtual BOOL			ParentMayHaveAimBullet		();
 	virtual bool			ParentIsActor				();
 	virtual void			OnDrop						() override;
 			bool			WeaponSoundExist			(LPCSTR section, LPCSTR sound_name, bool log = false) const;
@@ -816,4 +815,32 @@ public:
 
 private:
 	void UpdateAddonsBlocks();
+
+private:
+	// Dance Maniac: Weapon Telekinesis
+	enum EWeaponTeleModes {			// 0, 1 - рандомная стрельба во все стороны с кручением пушки; 2, 3 - прицельная стрельба по противнику
+		eModeDefault = 0,
+		eModeAdvanced,
+		eModeHard,
+		eModeHardAdvanced,
+	};
+
+	struct SWeaponTeleParams
+	{
+		u32				mode{};		// Режим работы
+		CEntityAlive*	enemy{};	// Текущая цель
+
+	} m_weapon_tele_params;
+
+	bool m_bTelekinesisAvail;
+
+protected:
+	void UpdateTelekinesis	();
+	void UpdateFiring		(const Fvector& enemy_pos, const Fvector& aim_vector);
+
+public:
+	void SetTeleParams		(CEntityAlive* enemy, u32 mode = 0);
+	void ClearTeleParams	();
+	bool IsTeleActive		() { return m_weapon_tele_params.enemy; }
+	bool IsTelekinesisAvail	() { return m_bTelekinesisAvail; }
 };

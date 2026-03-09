@@ -128,17 +128,17 @@ void CBurer::Load(LPCSTR section)
 	m_shield_keep_particle				= 	READ_IF_EXISTS(pSettings, r_string, section, "shield_keep_particle", 0);	
 	m_shield_keep_particle_period		= 	READ_IF_EXISTS(pSettings, r_u32, section, "shield_keep_particle_period", 1000);
 		
-	m_tele_max_handled_objects			= 	pSettings->r_u32(section,"Tele_Max_Handled_Objects");
-	m_tele_max_time						= 	READ_IF_EXISTS(pSettings, r_u32, section, "Tele_Max_Time", 10000);
-	m_tele_time_to_hold					= 	pSettings->r_u32(section,"Tele_Time_To_Hold");
-	m_tele_object_min_mass				= 	pSettings->r_float(section,"Tele_Object_Min_Mass");
-	m_tele_object_max_mass				= 	pSettings->r_float(section,"Tele_Object_Max_Mass");
-	m_tele_find_radius					= 	pSettings->r_float(section,"Tele_Find_Radius");
-	m_tele_min_distance					= 	READ_IF_EXISTS(pSettings, r_float, section, "tele_min_distance", 8);
-	m_tele_max_distance					= 	READ_IF_EXISTS(pSettings, r_float, section, "tele_max_distance", 30);
-	m_tele_raise_speed					= 	READ_IF_EXISTS(pSettings, r_float, section, "tele_raise_speed", 5.f);
-	m_tele_fly_velocity					=	READ_IF_EXISTS(pSettings, r_float, section, "tele_fly_velocity", 30.f);
-	m_tele_object_height				=	READ_IF_EXISTS(pSettings, r_float, section, "tele_object_height", 2.f);
+	m_tele_max_handled_objects			=	READ_IF_EXISTS(pSettings, r_u32, section, "Tele_Max_Handled_Objects", m_iTeleMaxObjects);
+	m_tele_max_time						= 	READ_IF_EXISTS(pSettings, r_u32, section, "Tele_Max_Time",			m_iTeleMaxTime);
+	m_tele_time_to_hold					=	READ_IF_EXISTS(pSettings, r_u32, section, "Tele_Time_To_Hold",		m_iTeleTimeToHold);
+	m_tele_object_min_mass				=	READ_IF_EXISTS(pSettings, r_float, section, "Tele_Object_Min_Mass", m_fTeleObjectMinMass);
+	m_tele_object_max_mass				=	READ_IF_EXISTS(pSettings, r_float, section, "Tele_Object_Max_Mass", m_fTeleObjectMaxMass);
+	m_tele_find_radius					=	READ_IF_EXISTS(pSettings, r_float, section, "Tele_Find_Radius",		m_fTeleFindRadius);
+	m_tele_min_distance					= 	READ_IF_EXISTS(pSettings, r_float, section, "tele_min_distance",	m_fTeleMinDistance);
+	m_tele_max_distance					= 	READ_IF_EXISTS(pSettings, r_float, section, "tele_max_distance",	m_fTeleMaxDistance);
+	m_tele_raise_speed					= 	READ_IF_EXISTS(pSettings, r_float, section, "tele_raise_speed",		m_fTeleRaiseSpeed);
+	m_tele_fly_velocity					=	READ_IF_EXISTS(pSettings, r_float, section, "tele_fly_velocity",	m_fTeleFlyVelocity);
+	m_tele_object_height				=	READ_IF_EXISTS(pSettings, r_float, section, "tele_object_height",	m_fTeleObjectHeight);
 	
 	particle_fire_shield				= 	pSettings->r_string(section,"Particle_Shield");
 	

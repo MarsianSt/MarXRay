@@ -140,7 +140,7 @@ void CWeaponRPG7::switch2_Fire	()
 
 		CExplosiveRocket* pGrenade			= smart_cast<CExplosiveRocket*>(getCurrentRocket());
 		VERIFY								(pGrenade);
-		pGrenade->SetInitiator				(H_Parent()->ID());
+		pGrenade->SetInitiator				(H_Parent() ? H_Parent()->ID() : ID());
 
 		if (OnServer())
 		{

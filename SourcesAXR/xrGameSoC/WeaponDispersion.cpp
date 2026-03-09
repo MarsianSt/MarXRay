@@ -31,14 +31,14 @@ float CWeapon::GetFireDispersion	(bool with_cartridge)
 float CWeapon::GetFireDispersion	(float cartridge_k) 
 {
 	//учет базовой дисперсии, состояние оружия и влияение патрона
-	float fire_disp = fireDispersionBase*cartridge_k*GetConditionDispersionFactor();
-	
-	//вычислить дисперсию, вносимую самим стрелком
-	const CInventoryOwner* pOwner	=	smart_cast<const CInventoryOwner*>(H_Parent());
-	VERIFY (pOwner);
+	float fire_disp = fireDispersionBase * cartridge_k * GetConditionDispersionFactor();
 
-	float parent_disp = pOwner->GetWeaponAccuracy();
-	fire_disp += parent_disp;
+	//вычислить дисперсию, вносимую самим стрелком
+	if (const auto pOwner = smart_cast<const CInventoryOwner*>(H_Parent()))
+	{
+		const float parent_disp = pOwner->GetWeaponAccuracy();
+		fire_disp += parent_disp;
+	}
 
 	return fire_disp;
 }
