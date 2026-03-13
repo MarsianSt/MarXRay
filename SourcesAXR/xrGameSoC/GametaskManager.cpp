@@ -336,3 +336,51 @@ SGameTaskObjective* CGameTaskManager::ActiveObjective()
 	
 	return (t)?&t->Objective(g_active_task_objective_id):NULL;
 }
+
+// Dance Maniac: Функция поиска квеста по LinkedMapLocation
+CGameTask* CGameTaskManager::FindTaskByMapLocation(CMapLocation* map_loc)
+{
+	for (auto& task : GameTasks())
+	{
+		CGameTask* t = task.game_task;
+
+		if (!t)
+			continue;
+
+		for (u32 i = 0; i < t->m_Objectives.size(); ++i)
+		{
+			CMapLocation* ml = t->m_Objectives[i].LinkedMapLocation();
+
+			if (ml && map_loc && ml->ObjectID() == map_loc->ObjectID())
+				return t;
+		}
+	}
+
+	return nullptr;
+}
+
+// Dance Maniac: Функция получения object_id квеста
+u16 CGameTaskManager::GetTaskTargetObjectID(CGameTask* task, CMapLocation* target_map_loc)
+{
+	if (!task || !target_map_loc)
+		return u16(-1);
+
+	for (u32 i = 0; i < task->m_Objectives.size(); ++i)
+	{
+		SGameTaskObjective& objective = task->m_Objectives[i];
+		CMapLocation* ml = objective.LinkedMapLocation();
+
+		if (ml && target_map_loc && ml->ObjectID() == target_map_loc->ObjectID())
+		{
+			if (objective.object_id != u16(-1))
+				return objective.object_id;
+
+			if (ml && ml->ObjectID() != u16(-1))
+				return ml->ObjectID();
+
+			break;
+		}
+	}
+
+	return u16(-1);
+}

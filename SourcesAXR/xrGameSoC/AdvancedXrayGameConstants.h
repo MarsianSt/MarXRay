@@ -59,6 +59,8 @@ namespace GameConstants
 	bool GetLimitedInvBoxes();
 	bool GetGlobalAchEnabled();
 	bool GetMonstersInventory();
+	bool GetMiniMapEnabled();
+	bool GetCompassPanelEnabled();
 	int  GetArtefactsCount();
 	int  GetIntScriptCMDCount();
 	int  GetBOOLScriptCMDCount();

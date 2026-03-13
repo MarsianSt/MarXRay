@@ -3,7 +3,7 @@
 #include "UIMainIngameWnd.h"
 #include "UIMessagesWindow.h"
 #include "../UIZoneMap.h"
-
+#include "UICompassPanel.h"
 
 #include <dinput.h>
 #include "../actor.h"
@@ -22,7 +22,7 @@
 #include "../alife_simulator.h"
 #include "../alife_object_registry.h"
 #include "../game_cl_base.h"
-#include "../level.h"
+#include "../Level.h"
 #include "../seniority_hierarchy_holder.h"
 
 #include "../date_time.h"
@@ -83,7 +83,8 @@ CUIMainIngameWnd::CUIMainIngameWnd()
 //	m_pWeapon					= NULL;
 	m_pGrenade					= nullptr;
 	m_pItem						= nullptr;
-	UIZoneMap					= xr_new<CUIZoneMap>();
+	UIZoneMap					= nullptr;
+	UICompassPanel				= nullptr;
 	m_pPickUpItem				= nullptr;
 	m_pMPChatWnd				= nullptr;
 	m_pMPLogWnd					= nullptr;
@@ -99,7 +100,13 @@ extern CUIProgressShape* g_MissileForceShape;
 CUIMainIngameWnd::~CUIMainIngameWnd()
 {
 	DestroyFlashingIcons		();
-	xr_delete					(UIZoneMap);
+	
+	if (UIZoneMap)
+		xr_delete				(UIZoneMap);
+
+	if (UICompassPanel)
+		xr_delete				(UICompassPanel);
+
 	HUD_SOUND_ITEM::DestroySound(m_contactSnd);
 	xr_delete					(g_MissileForceShape);
 
@@ -140,7 +147,25 @@ void CUIMainIngameWnd::Init()
 	//---------------------------------------------------------
 
 	//индикаторы 
-	UIZoneMap->Init				();
+	
+	// Dance Maniac: Fallback for minimap & compass
+	if (GameConstants::GetCompassPanelEnabled())
+	{
+		UICompassPanel = xr_new<CUICompassPanel>();
+
+		if (!UICompassPanel->Init())
+		{
+			xr_delete(UICompassPanel);
+
+			if (GameConstants::GetMiniMapEnabled())
+				UIZoneMap = xr_new<CUIZoneMap>();
+		}
+	}
+	else if (GameConstants::GetMiniMapEnabled())
+		UIZoneMap = xr_new<CUIZoneMap>();
+
+	if (UIZoneMap)
+		UIZoneMap->Init();
 
 	// Подсказки, которые возникают при наведении прицела на объект
 	AttachChild					(&UIStaticQuickHelp);
@@ -363,8 +388,17 @@ void CUIMainIngameWnd::Draw()
 	if (UIArtefactsPanel)
 		UIArtefactsPanel->Draw();
 
-	UIZoneMap->visible = true;
-	UIZoneMap->Render();
+	if (UIZoneMap)
+	{
+		UIZoneMap->visible = true;
+		UIZoneMap->Render();
+	}
+
+	if (UICompassPanel)
+	{
+		UICompassPanel->SetVisible(true);
+		UICompassPanel->Draw();
+	}
 
 	RenderQuickInfos();
 
@@ -403,7 +437,11 @@ void CUIMainIngameWnd::Update()
 		return;
 	}
 
-	UIZoneMap->Update();
+	if (UIZoneMap)
+		UIZoneMap->Update();
+
+	if (UICompassPanel)
+		UICompassPanel->Update();
 	
 //	UIHealthBar.SetProgressPos	(m_pActor->GetfHealth()*100.0f);
 	UIMotionIcon.SetPower		(m_pActor->conditions().GetPower()*100.0f);
@@ -798,13 +836,13 @@ void CUIMainIngameWnd::UpdateFlashingIcons()
 
 void CUIMainIngameWnd::AnimateContacts(bool b_snd)
 {
-	UIZoneMap->Counter_ResetClrAnimation();
+	if (UIZoneMap)
+		UIZoneMap->Counter_ResetClrAnimation();
 
 	if(b_snd)
 		HUD_SOUND_ITEM::PlaySound	(m_contactSnd, Fvector().set(0,0,0), 0, true );
 
 }
-
 
 void CUIMainIngameWnd::SetPickUpItem	(CInventoryItem* PickUpItem)
 {
@@ -833,7 +871,9 @@ void CUIMainIngameWnd::OnConnected()
 {
 	ZoneScoped;
 
-	UIZoneMap->SetupCurrentMap();
+	if (UIZoneMap)
+		UIZoneMap->SetupCurrentMap();
+
 	if ( m_ui_hud_states )
 	{
 		m_ui_hud_states->on_connected();
@@ -842,7 +882,8 @@ void CUIMainIngameWnd::OnConnected()
 
 void CUIMainIngameWnd::OnSectorChanged(int sector)
 {
-	UIZoneMap->OnSectorChanged(sector);
+	if (UIZoneMap)
+		UIZoneMap->OnSectorChanged(sector);
 }
 
 void CUIMainIngameWnd::reset_ui()
@@ -858,6 +899,33 @@ void CUIMainIngameWnd::reset_ui()
 	{
 		m_ui_hud_states->reset_ui();
 	}
+}
+
+void CUIMainIngameWnd::ShowZoneMap(bool status)
+{
+	if (UIZoneMap)
+		UIZoneMap->visible = status;
+
+	if (UICompassPanel)
+		UICompassPanel->SetVisible(status);
+}
+
+void CUIMainIngameWnd::DrawZoneMap()
+{
+	if (UIZoneMap)
+		UIZoneMap->Render();
+
+	if (UICompassPanel)
+		UICompassPanel->Draw();
+}
+
+void CUIMainIngameWnd::UpdateZoneMap()
+{
+	if (UIZoneMap)
+		UIZoneMap->Update();
+
+	if (UICompassPanel)
+		UICompassPanel->Update();
 }
 
 struct TS{

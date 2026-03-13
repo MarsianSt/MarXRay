@@ -18,6 +18,7 @@ class					CUIPdaMsgListItem;
 class					CLAItem;
 class					CUIZoneMap;
 class					CUIArtefactPanel;
+class					CUICompassPanel;
 class					CUIScrollView;
 struct					GAME_NEWS_DATA;
 class					CActor;
@@ -50,6 +51,7 @@ protected:
 	CUICarPanel			UICarPanel;
 	CUIMotionIcon		UIMotionIcon;	
 	CUIZoneMap*			UIZoneMap;
+	CUICompassPanel*	UICompassPanel;
 
 	CUIStatic*			m_ind_temperature;
 	u32					m_min_temperature_clr, m_mid_temperature_clr, m_max_temperature_clr;

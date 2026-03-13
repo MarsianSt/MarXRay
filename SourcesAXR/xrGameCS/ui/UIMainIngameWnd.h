@@ -23,6 +23,7 @@ class	CInventoryItem;
 class	CUIHudStatesWnd;
 class	CUICellItem;
 class	CUIArtefactPanel;
+class	CUICompassPanel;
 
 class CUIMainIngameWnd: public CUIWindow  
 {
@@ -45,6 +46,7 @@ public:
 //	CUICarPanel			UICarPanel;
 	CUIMotionIcon		UIMotionIcon;
 	CUIZoneMap*			UIZoneMap;
+	CUICompassPanel*	UICompassPanel;
 	CUIArtefactPanel*	UIArtefactsPanel;
 
 	CUIStatic*			m_ind_temperature;
@@ -76,9 +78,10 @@ public:
 	
 	CUIHudStatesWnd*	m_ui_hud_states;
 
-	IC	void			ShowZoneMap( bool status ) { UIZoneMap->visible = status; }
-		void			DrawZoneMap() { UIZoneMap->Render(); }
-		void			UpdateZoneMap() { UIZoneMap->Update(); }
+		void			ShowZoneMap(bool status);
+		void			DrawZoneMap();
+		void			UpdateZoneMap();
+
 		void			DrawMainIndicatorsForInventory();
 	
 	CUIHudStatesWnd*	get_hud_states() { return m_ui_hud_states; } //temp

@@ -9,6 +9,8 @@ class CUIMiniMap;
 
 class CUIZoneMap
 {
+	friend class CUICompassPanel;
+
 public:
 	bool						visible;
 

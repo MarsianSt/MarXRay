@@ -539,7 +539,7 @@ void SGameTaskObjective::load(IReader &stream)
 		}
 }
 
-void SScriptObjectiveHelper::init_functors(xr_vector<shared_str>& v_src, xr_vector<luabind::functor<bool> >& v_dest)
+void SScriptObjectiveHelper::init_functors(xr_vector<shared_str>& v_src, task_state_functors& v_dest)
 {
 	xr_vector<shared_str>::iterator it		= v_src.begin();
 	xr_vector<shared_str>::iterator it_e	= v_src.end();

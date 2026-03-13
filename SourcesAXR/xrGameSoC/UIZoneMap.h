@@ -10,6 +10,8 @@ class CUIMiniMap;
 
 class CUIZoneMap
 {
+	friend class CUICompassPanel;
+
 	CUIMiniMap*				m_activeMap;
 	float						m_fScale;
 

@@ -22,6 +22,7 @@ enum ELocationFlags
 	ePointerEnabled		= (1<<4),
 	eSpotEnabled		= (1<<5),
 	eUserDefined		= (1<<6),
+	eCompassAvailable	= (1<<7),
 };
 
 protected:
@@ -34,6 +35,9 @@ protected:
 
 	CMapSpot*				m_level_map_spot_border;
 	CMapSpot*				m_mini_map_spot_border;
+
+	shared_str				m_compass_spot_texture;
+	u32						m_compass_spot_color;
 
 	u16						m_objectID;
 	u16						m_refCount;
@@ -88,6 +92,10 @@ public:
 	Fvector					GetLastPosition					() {return m_position_global;};
 	bool					Serializable					() const {return !!m_flags.test(eSerailizable);}
 	void					SetSerializable					(bool b) {m_flags.set(eSerailizable,b);}
+
+	const shared_str&		GetCompassSpotTextureName		() const { return m_compass_spot_texture; }
+	u32						GetCompassSpotColor				() const { return m_compass_spot_color; }
+	bool					GetCompassAvail					() const { return !!m_flags.test(eCompassAvailable); }
 
 	virtual void			save							(IWriter &stream);
 	virtual void			load							(IReader &stream);

@@ -116,6 +116,7 @@ public:
 
 	void					SetMapLocation_script	(LPCSTR _mls)				{m_map_location = _mls;}
 	void					SetMapObjectID_script	(int _id)					{m_map_object_id = (u16)_id;}
+	u16						GetMapObjectID			()							{ return m_map_object_id; }
 
 	void 					AddCompleteInfo_script	(LPCSTR _str);
 	void 					AddFailInfo_script		(LPCSTR _str);

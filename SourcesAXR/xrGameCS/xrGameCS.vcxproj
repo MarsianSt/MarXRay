@@ -2081,6 +2081,7 @@
     <ClInclude Include="ui\UICheckButton.h" />
     <ClInclude Include="ui\UIColorAnimatorWrapper.h" />
     <ClInclude Include="ui\UIComboBox.h" />
+    <ClInclude Include="ui\UICompassPanel.h" />
     <ClInclude Include="ui\UICustomEdit.h" />
     <ClInclude Include="ui\UICustomSpin.h" />
     <ClInclude Include="ui\UIDebugFonts.h" />
@@ -8349,6 +8350,7 @@
       <PrecompiledHeaderOutputFile Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)$(ProjectName)_script.pch</PrecompiledHeaderOutputFile>
       <PrecompiledHeaderOutputFile Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)$(ProjectName)_script.pch</PrecompiledHeaderOutputFile>
     </ClCompile>
+    <ClCompile Include="ui\UICompassPanel.cpp" />
     <ClCompile Include="ui\UICustomEdit.cpp" />
     <ClCompile Include="ui\UICustomSpin.cpp" />
     <ClCompile Include="ui\UIDebugFonts.cpp" />

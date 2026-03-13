@@ -1546,6 +1546,7 @@
     <ClInclude Include="TacticalTorch.h" />
     <ClInclude Include="UIFontDefines.h" />
     <ClInclude Include="ui\UIBoosterInfo.h" />
+    <ClInclude Include="ui\UICompassPanel.h" />
     <ClInclude Include="ui\UIHudStatesWnd.h" />
     <ClInclude Include="ui\UIInventoryItemParams.h" />
     <ClInclude Include="VisualBulletSystem.h" />
@@ -2230,6 +2231,7 @@
     <ClCompile Include="TacticalTorch.cpp" />
     <ClCompile Include="ui\UIBoosterInfo.cpp" />
     <ClCompile Include="ui\UICarBodyWndHighlights.cpp" />
+    <ClCompile Include="ui\UICompassPanel.cpp" />
     <ClCompile Include="ui\UIDoubleProgressBar.cpp" />
     <ClCompile Include="ui\UIHelper.cpp" />
     <ClCompile Include="ui\UIHudStatesWnd.cpp" />

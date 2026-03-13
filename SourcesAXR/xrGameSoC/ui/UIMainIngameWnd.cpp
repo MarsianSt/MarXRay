@@ -4,7 +4,7 @@
 #include "UIMainIngameWnd.h"
 #include "UIMessagesWindow.h"
 #include "../UIZoneMap.h"
-
+#include "UICompassPanel.h"
 
 #include <dinput.h>
 #include "../actor.h"
@@ -20,7 +20,7 @@
 #include "../alife_simulator.h"
 #include "../alife_object_registry.h"
 #include "../game_cl_base.h"
-#include "../level.h"
+#include "../Level.h"
 #include "../seniority_hierarchy_holder.h"
 #include "../GamePersistent.h"
 
@@ -79,16 +79,17 @@ const u32	g_clWhite					= 0xffffffff;
 
 CUIMainIngameWnd::CUIMainIngameWnd()
 {
-	m_pActor					= NULL;
-	m_pWeapon					= NULL;
-	m_pGrenade					= NULL;
-	m_pItem						= NULL;
-	UIZoneMap					= xr_new<CUIZoneMap>();
-	m_pPickUpItem				= NULL;
+	m_pActor					= nullptr;
+	m_pWeapon					= nullptr;
+	m_pGrenade					= nullptr;
+	m_pItem						= nullptr;
+	UIZoneMap					= nullptr;
+	UICompassPanel				= nullptr;
+	m_pPickUpItem				= nullptr;
 	m_artefactPanel				= xr_new<CUIArtefactPanel>();
-	m_pMPChatWnd				= NULL;
-	m_pMPLogWnd					= NULL;	
-	uiPickUpItemIconNew_		= NULL;	
+	m_pMPChatWnd				= nullptr;
+	m_pMPLogWnd					= nullptr;
+	uiPickUpItemIconNew_		= nullptr;
 	fuzzyShowInfo_				= 0.f;
 }
 
@@ -98,7 +99,12 @@ extern CUIProgressShape* g_MissileForceShape;
 CUIMainIngameWnd::~CUIMainIngameWnd()
 {
 	DestroyFlashingIcons		();
-	xr_delete					(UIZoneMap);
+
+	if (UIZoneMap)
+		xr_delete				(UIZoneMap);
+
+	if (UICompassPanel)
+		xr_delete				(UICompassPanel);
 
 	if (m_artefactPanel)
 		xr_delete				(m_artefactPanel);
@@ -147,10 +153,30 @@ void CUIMainIngameWnd::Init()
 	UIWeaponIcon.Enable			(false);
 
 	//индикаторы 
-	UIZoneMap->Init				();
-	UIZoneMap->SetScale			(DEFAULT_MAP_SCALE);
 
-	if(IsGameTypeSingle())
+	// Dance Maniac: Fallback for minimap & compass
+	if (GameConstants::GetCompassPanelEnabled())
+	{
+		UICompassPanel = xr_new<CUICompassPanel>();
+
+		if (!UICompassPanel->Init())
+		{
+			xr_delete(UICompassPanel);
+
+			if (GameConstants::GetMiniMapEnabled())
+				UIZoneMap = xr_new<CUIZoneMap>();
+		}
+	}
+	else if (GameConstants::GetMiniMapEnabled())
+		UIZoneMap = xr_new<CUIZoneMap>();
+
+	if (UIZoneMap)
+	{
+		UIZoneMap->Init();
+		UIZoneMap->SetScale(DEFAULT_MAP_SCALE);
+	}
+
+	if(UIZoneMap && IsGameTypeSingle())
 	{
 		xml_init.InitStatic					(uiXml, "static_pda_online", 0, &UIPdaOnline);
 		UIZoneMap->Background().AttachChild	(&UIPdaOnline);
@@ -375,7 +401,15 @@ void CUIMainIngameWnd::Draw()
 
 	UIMotionIcon.SetNoise		((s16)(0xffff&iFloor(m_pActor->m_snd_noise*100.0f)));
 	CUIWindow::Draw				();
-	UIZoneMap->Render			();			
+
+	if (UIZoneMap)
+		UIZoneMap->Render		();			
+
+	if (UICompassPanel)
+	{
+		UICompassPanel->SetVisible(true);
+		UICompassPanel->Draw();
+	}
 
 	RenderQuickInfos			();
 
@@ -584,10 +618,16 @@ void CUIMainIngameWnd::Update()
 	UIHealthBar.SetProgressPos		(m_pActor->GetfHealth()*100.0f);
 	UIMotionIcon.SetPower			(m_pActor->conditions().GetPower()*100.0f);
 
-	UIZoneMap->UpdateRadar			(Device.vCameraPosition);
-	float h,p;
-	Device.vCameraDirection.getHP	(h,p);
-	UIZoneMap->SetHeading			(-h);
+	if (UIZoneMap)
+	{
+		UIZoneMap->UpdateRadar(Device.vCameraPosition);
+		float h, p;
+		Device.vCameraDirection.getHP(h, p);
+		UIZoneMap->SetHeading(-h);
+	}
+
+	if (UICompassPanel)
+		UICompassPanel->Update();
 
 	fuzzyShowInfo_ += SHOW_INFO_SPEED * Device.fTimeDelta;
 
@@ -605,16 +645,19 @@ bool CUIMainIngameWnd::OnKeyboardPress(int dik)
 
 	if(Level().IR_GetKeyState(DIK_LSHIFT) || Level().IR_GetKeyState(DIK_RSHIFT))
 	{
-		switch(dik)
+		if (UIZoneMap)
 		{
-		case DIK_NUMPADMINUS:
-			UIZoneMap->ZoomOut();
-			return true;
-			break;
-		case DIK_NUMPADPLUS:
-			UIZoneMap->ZoomIn();
-			return true;
-			break;
+			switch (dik)
+			{
+			case DIK_NUMPADMINUS:
+				UIZoneMap->ZoomOut();
+				return true;
+				break;
+			case DIK_NUMPADPLUS:
+				UIZoneMap->ZoomIn();
+				return true;
+				break;
+			}
 		}
 	}
 	else
@@ -880,7 +923,8 @@ void CUIMainIngameWnd::OnConnected()
 {
 	ZoneScoped;
 
-	UIZoneMap->SetupCurrentMap		();
+	if (UIZoneMap)
+		UIZoneMap->SetupCurrentMap		();
 }
 
 void CUIMainIngameWnd::reset_ui()

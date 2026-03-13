@@ -7527,6 +7527,9 @@
     <ClInclude Include="WeaponDoubleBarrelShotgun.h">
       <Filter>Core\Client\Objects\items &amp; weapons\Weapons\Various weapons\Weapon DoubleBarrelShotgun</Filter>
     </ClInclude>
+    <ClInclude Include="ui\UICompassPanel.h">
+      <Filter>UI\Common\MainIngame</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="damage_manager.cpp">
@@ -11289,6 +11292,9 @@
     </ClCompile>
     <ClCompile Include="WeaponDoubleBarrelShotgun.cpp">
       <Filter>Core\Client\Objects\items &amp; weapons\Weapons\Various weapons\Weapon DoubleBarrelShotgun</Filter>
+    </ClCompile>
+    <ClCompile Include="ui\UICompassPanel.cpp">
+      <Filter>UI\Common\MainIngame</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

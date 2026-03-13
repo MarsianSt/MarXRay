@@ -35,4 +35,7 @@ public:
 	SGameTaskObjective*		ActiveObjective					();
 	void					SetActiveTask					(const TASK_ID& id, u16 idx);
 	void					DiscordUpdateTask				();
+
+	CGameTask*				FindTaskByMapLocation			(CMapLocation* map_loc);
+	u16						GetTaskTargetObjectID			(CGameTask* task, CMapLocation* target_map_loc);
 };

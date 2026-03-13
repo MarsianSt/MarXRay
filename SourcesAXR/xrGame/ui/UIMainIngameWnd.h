@@ -16,6 +16,7 @@ class	CUIHudStatesWnd;
 class	CUIMotionIcon;
 class	CUICellItem;
 class	CUIArtefactPanel;
+class	CUICompassPanel;
 
 class CUIMainIngameWnd: public CUIWindow  
 {
@@ -31,6 +32,7 @@ public:
 	CUITextWnd*			UIStaticQuickHelp;
 	CUIMotionIcon*		UIMotionIcon;
 	CUIZoneMap*			UIZoneMap;
+	CUICompassPanel*	UICompassPanel;
 
 	CUIHudStatesWnd*	m_ui_hud_states;
 	CUIArtefactPanel*	UIArtefactsPanel;
