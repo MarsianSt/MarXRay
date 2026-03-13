@@ -790,16 +790,17 @@ void CUIXmlInit::InitAutoFrameLineGroup(CUIXml& xml_doc, LPCSTR path, int index,
 	xml_doc.SetLocalRoot				(_stored_root);
 }
 
-bool CUIXmlInit::InitFont(CUIXml &xml_doc, LPCSTR path, int index, u32 &color, CGameFont *&pFnt)
+bool CUIXmlInit::InitFont(CUIXml &xml_doc, LPCSTR path, int index, u32 &color, CGameFont *&pFnt, u32 def_color, LPCSTR def_font)
 {
-	color = GetColor	(xml_doc, path, index, 0xff);
+	color = GetColor	(xml_doc, path, index, def_color);
 
-	LPCSTR font_name = xml_doc.ReadAttrib(path, index, "font", nullptr);
+	LPCSTR font_name = xml_doc.ReadAttrib(path, index, "font", def_font);
 	if(!font_name)
 	{
 		pFnt = nullptr;
 		return false;
-	}else
+	}
+	else
 	{
 		if(!xr_strcmp(font_name, GRAFFITI19_FONT_NAME))
 		{
@@ -852,12 +853,14 @@ bool CUIXmlInit::InitFont(CUIXml &xml_doc, LPCSTR path, int index, u32 &color, C
 		else if(!xr_strcmp(font_name, DI_FONT_NAME))
 		{
 			pFnt = UI().Font().pFontDI;
-		}else
+		}
+		else
 		{
 			R_ASSERT3(0,"unknown font",font_name);
 			pFnt	= nullptr;
 		}
 	}
+
 	return true;
 }
 
