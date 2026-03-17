@@ -23,6 +23,7 @@ private:
 	Fvector					m_angles;
 	float					m_entrance_time;
 	shared_str				m_invite_str;
+	shared_str				m_next_level_name;
 	bool					m_b_enabled;
 
 	void					update_actor_invitation	();
@@ -43,6 +44,12 @@ public:
 	void				EnableLevelChanger	(bool b)				{m_b_enabled=b;}
 	bool				IsLevelChangerEnabled() const				{return m_b_enabled;}
 	void				SetLEvelChangerInvitationStr(LPCSTR str)	{m_invite_str = str;}
+
+	GameGraph::_GRAPH_ID GetNextLevelGVertex() const	{ return m_game_vertex_id; }
+	u32					GetNextLevelVertex	() const	{ return m_level_vertex_id; }
+	shared_str			GetNextLevelName	() const	{ return m_next_level_name; }
+	const Fvector&		GetNextLevelPos		() const	{ return m_position; }
+
 	//serialization
 	virtual BOOL	net_SaveRelevant		();
 	virtual void	save					(NET_Packet &output_packet);

@@ -22,6 +22,7 @@ private:
 	Fvector					m_position;
 	Fvector					m_angles;
 	float					m_entrance_time;
+	shared_str				m_next_level_name;
 	void					update_actor_invitation	();
 	bool					m_bSilentMode;
 	bool					get_reject_pos(Fvector& p, Fvector& r);
@@ -34,6 +35,11 @@ public:
 	virtual void		shedule_Update		(u32 dt);
 	virtual void		feel_touch_new		(CObject* O);
 	virtual BOOL		feel_touch_contact	(CObject* O);
+
+	GameGraph::_GRAPH_ID GetNextLevelGVertex() const	{ return m_game_vertex_id; }
+	u32					GetNextLevelVertex	() const	{ return m_level_vertex_id; }
+	shared_str			GetNextLevelName	() const	{ return m_next_level_name; }
+	const Fvector&		GetNextLevelPos		() const	{ return m_position; }
 
 	virtual bool		IsVisibleForZones() { return false;		}
 	virtual void		OnRender			();

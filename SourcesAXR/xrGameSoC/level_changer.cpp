@@ -61,6 +61,7 @@ BOOL CLevelChanger::net_Spawn	(CSE_Abstract* DC)
 	m_level_vertex_id			= l_tpALifeLevelChanger->m_dwNextNodeID;
 	m_position					= l_tpALifeLevelChanger->m_tNextPosition;
 	m_angles					= l_tpALifeLevelChanger->m_tAngles;
+	m_next_level_name			= l_tpALifeLevelChanger->m_caLevelToChange;
 
 	m_bSilentMode				= !!l_tpALifeLevelChanger->m_bSilentMode;
 	if (ai().get_level_graph()) {
