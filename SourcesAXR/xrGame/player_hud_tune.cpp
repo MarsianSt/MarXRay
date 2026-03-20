@@ -11,6 +11,7 @@
 #include "ui_base.h"
 #include "debug_renderer.h"
 #include "Weapon.h"
+#include "WeaponMagazined.h"
 #include "Actor.h"
 #include "Inventory.h"
 
@@ -529,6 +530,10 @@ void player_hud::SaveCfg(const int idx) const
 				.c_str());
 		}
 
+		// Safety Params
+		if (auto WpnMag = smart_cast<CWeaponMagazined*>(Actor()->inventory().ActiveItem()))
+			SaveBonesTransformCfg(Wpn->cNameSect().c_str(), WpnMag, pWpnCfg);
+
 		if (Wpn->m_weapon_attaches.size())
 			SaveAttachesCfg(Wpn->cNameSect().c_str(), Wpn);
 	}
@@ -577,4 +582,75 @@ void player_hud::SaveAttachesCfg(LPCSTR parent_section, CWeapon* parent_wpn) con
 	}
 
 	Msg("[%s] Weapon attaches data saved to %s", __FUNCTION__, fname);
+}
+
+void player_hud::SaveBonesTransformCfg(LPCSTR section, CWeaponMagazined* wpn, CInifile& config) const
+{
+	if (auto& controller = wpn->m_WeaponBonesController)
+	{
+		for (auto& [bone_name, transform] : wpn->m_WeaponBonesController->GetBones())
+		{
+			u32 mode = transform->GetTransformMode();
+
+			// Rotation
+			Fvector rot_axis = transform->GetRotationAxis();
+			string128 rot_angle_param{};
+			xr_sprintf(rot_angle_param, "%s_rot_axis", bone_name.c_str());
+
+			config.w_string(section, rot_angle_param, make_string("%f,%f,%f", rot_axis.x, rot_axis.y, rot_axis.z).c_str());
+
+			float rot_speed_deg = rad2deg(transform->GetRotationSpeed());
+			string128 rot_speed_param{};
+			xr_sprintf(rot_speed_param, "%s_rot_speed", bone_name.c_str());
+
+			config.w_string(section, rot_speed_param, make_string("%f", rot_speed_deg).c_str());
+
+			// Translation
+			float trans_speed = transform->GetTranslationSpeed();
+			string128 trans_speed_param{};
+			xr_sprintf(trans_speed_param, "%s_trans_speed", bone_name.c_str());
+			config.w_string(section, trans_speed_param, make_string("%f", trans_speed).c_str());
+
+			if (mode == CWeaponBoneTransform::eModeFiremode)
+			{
+				int modes_count = wpn->GetFireModesCount();
+				auto& rot_angles = transform->GetRotationAngles();
+				auto& trans_offsets = transform->GetTranslationOffsets();
+
+				for (int i = 0; i < modes_count; i++)
+				{
+					// Angle
+					float angle_deg = rad2deg(rot_angles[i]);
+					string128 angle_name;
+					xr_sprintf(angle_name, "%s_rot_angle_mode_%d", bone_name.c_str(), i);
+					config.w_string(section, angle_name, make_string("%f", angle_deg).c_str());
+
+					// Offset
+					Fvector offset = trans_offsets[i];
+					string128 offset_name;
+					xr_sprintf(offset_name, "%s_trans_offset_mode_%d", bone_name.c_str(), i);
+					config.w_string(section, offset_name, make_string("%f,%f,%f", offset.x, offset.y, offset.z).c_str());
+				}
+			}
+			else if (mode == CWeaponBoneTransform::eModeDefault)
+			{
+				auto& rot_angles = transform->GetRotationAngles();
+				auto& trans_offsets = transform->GetTranslationOffsets();
+
+				// Angle
+				float angle_deg = rad2deg(rot_angles[0]);
+				string128 angle_name;
+				xr_sprintf(angle_name, "%s_rot_angle", bone_name.c_str());
+				config.w_string(section, angle_name, make_string("%f", angle_deg).c_str());
+
+				// Offset
+				Fvector offset = trans_offsets[0];
+				string128 offset_name;
+				xr_sprintf(offset_name, "%s_trans_offset", bone_name.c_str());
+				config.w_string(section, offset_name, make_string("%f,%f,%f", offset.x, offset.y, offset.z).c_str());
+			}
+		}
+	}
+
+	Msg("[%s] Weapon bones transform data saved to %s", __FUNCTION__, config.fname());
 }

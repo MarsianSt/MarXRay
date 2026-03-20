@@ -298,6 +298,7 @@ public:
 	void			tune				(Ivector values);
 	void			SaveCfg				(const int idx) const;
 	void			SaveAttachesCfg		(LPCSTR parent_section, CWeapon* parent_wpn) const;
+	void			SaveBonesTransformCfg(LPCSTR section, CWeaponMagazined* wpn, CInifile& config) const;
 	u32				motion_length		(const motion_params& P, const MotionID& M, const CMotionDef*& md, float speed, IKinematicsAnimated* itemModel);
 	u32				motion_length		(const shared_str& anim_name, const shared_str& hud_name, const CMotionDef*& md, float speed = 1.f);
 	u32				motion_length_script(LPCSTR section, LPCSTR anm_name, float speed);

@@ -7407,6 +7407,9 @@
     <ClInclude Include="ui\UICompassPanel.h">
       <Filter>UI\Common\MainIngame</Filter>
     </ClInclude>
+    <ClInclude Include="WeaponBonesController.h">
+      <Filter>Core\Client\Objects\items &amp; weapons\Weapons\Custom Weapon\Weapon Generic</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="damage_manager.cpp">
@@ -11068,6 +11071,9 @@
     </ClCompile>
     <ClCompile Include="ui\UICompassPanel.cpp">
       <Filter>UI\Common\MainIngame</Filter>
+    </ClCompile>
+    <ClCompile Include="WeaponBonesController.cpp">
+      <Filter>Core\Client\Objects\items &amp; weapons\Weapons\Custom Weapon\Weapon Generic</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

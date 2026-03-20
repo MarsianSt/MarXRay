@@ -1,9 +1,11 @@
 ////////////////////////////////////////////////////////////////////////////
 //	Module 		: embedded_editor_hud.cpp
 //	Created 	: 05.05.2021
-//  Modified 	: 11.01.2026
+//  Modified 	: 23.03.2026
 //	Author		: Dance Maniac (M.F.S. Team)
 //	Description : ImGui Hud Editor
+//  MIT License
+//	Copyright(c) 2026 Dance Maniac
 ////////////////////////////////////////////////////////////////////////////
 
 #include "stdAfx.h"
@@ -15,6 +17,7 @@
 #include "../../xrEngine/IGame_Persistent.h"
 #include "../player_hud.h"
 #include "../Weapon.h"
+#include "../WeaponMagazined.h"
 #include "../WeaponAttaches.h"
 #include "../Actor.h"
 #include "../Inventory.h"
@@ -192,6 +195,9 @@ void ShowHudEditor(bool& show)
 				}
 			}
 
+			if (auto WpnMag = smart_cast<CWeaponMagazined*>(Actor()->inventory().ActiveItem()))
+				EditBonesTransform(WpnMag, drag_intensity);
+
 			for (int i = 0; i < Wpn->m_weapon_attaches.size(); i++)
 			{
 				auto mesh = Wpn->m_weapon_attaches[i];
@@ -285,4 +291,148 @@ bool HudEditor_MouseWheel(float wheel)
 	ImGui::End();
 
 	return true;
+}
+
+void EditBonesTransform(CWeaponMagazined* WpnMag, float drag_intensity)
+{
+	if (!WpnMag->m_WeaponBonesController)
+		return;
+
+	ImGui::Separator();
+
+	bool changed = false;
+
+	ImGui::TextColored(ImVec4(0.5f, 0.8f, 1.0f, 1.0f), toUtf8(CStringTable().translate("st_hud_editor_bones_transform").c_str()).c_str());
+
+	for (auto& [bone_name, transform] : WpnMag->m_WeaponBonesController->GetBones())
+	{
+		if (!transform || !transform->IsInitialized())
+			continue;
+
+		string128 node_name;
+		xr_sprintf(node_name, "%s##%s", bone_name.c_str(), bone_name.c_str());
+
+		if (ImGui::TreeNode(node_name))
+		{
+			u32 mode = transform->GetTransformMode();
+
+			// ========== Общие параметры ==========
+			// Ось вращения
+			Fvector rot_axis = transform->GetRotationAxis();
+			string128 rot_angle_param{};
+			xr_sprintf(rot_angle_param, "%s_rot_axis", bone_name.c_str());
+
+			if (ImGui::DragFloat3(rot_angle_param, (float*)&rot_axis, drag_intensity, -1.0f, 1.0f, "%.6f"))
+			{
+				transform->SetRotationAxis(rot_axis);
+				changed = true;
+			}
+
+			// Скорость вращения
+			float rot_speed_deg = rad2deg(transform->GetRotationSpeed());
+			string128 rot_speed_param{};
+			xr_sprintf(rot_speed_param, "%s_rot_speed", bone_name.c_str());
+
+			if (ImGui::DragFloat(rot_speed_param, &rot_speed_deg, drag_intensity, 0.0f, 360.0f, "%.6f"))
+			{
+				transform->SetRotationSpeed(deg2rad(rot_speed_deg));
+				changed = true;
+			}
+
+			// Скорость сдвига
+			float trans_speed = transform->GetTranslationSpeed();
+			string128 trans_speed_param{};
+			xr_sprintf(trans_speed_param, "%s_trans_speed", bone_name.c_str());
+
+			if (ImGui::DragFloat(trans_speed_param, &trans_speed, drag_intensity, 0.0f, 10.0f, "%.6f"))
+			{
+				transform->SetTranslationSpeed(trans_speed);
+				changed = true;
+			}
+
+			ImGui::Separator();
+			int modes_count = WpnMag->GetFireModesCount();
+
+			// ========== Параметры в зависимости от режима ==========
+			if (mode == CWeaponBoneTransform::eModeFiremode)
+			{
+				auto& rot_angles = transform->GetRotationAngles();
+				auto& trans_offsets = transform->GetTranslationOffsets();
+
+				ImGui::TextColored(ImVec4(0.5f, 0.8f, 1.0f, 1.0f), toUtf8(CStringTable().translate("st_hud_editor_bones_trans_fmode").c_str()).c_str());
+
+				for (int i = 0; i < modes_count; i++)
+				{
+					string128 group_name;
+					xr_sprintf(group_name, "%s (%s %d)", bone_name.c_str(), toUtf8(CStringTable().translate("st_hud_editor_bones_firemode").c_str()).c_str(), i);
+
+					ImGui::Text(group_name);
+
+					// Угол поворота
+					float angle_deg = rad2deg(rot_angles[i]);
+					string128 angle_name;
+					xr_sprintf(angle_name, "%s_rot_angle_mode_%d", bone_name.c_str(), i);
+
+					if (ImGui::DragFloat(angle_name, &angle_deg, drag_intensity, -180.0f, 180.0f, "%.6f"))
+					{
+						rot_angles[i] = deg2rad(angle_deg);
+						changed = true;
+					}
+
+					// Сдвиг
+					Fvector offset = trans_offsets[i];
+					string128 offset_name;
+					xr_sprintf(offset_name, "%s_trans_offset_mode_%d", bone_name.c_str(), i);
+
+					if (ImGui::DragFloat3(offset_name, (float*)&offset, drag_intensity, -0.1f, 0.1f, "%.6f"))
+					{
+						trans_offsets[i] = offset;
+						changed = true;
+					}
+				}
+			}
+			else if (mode == CWeaponBoneTransform::eModeDefault)
+			{
+				ImGui::Text(bone_name.c_str());
+
+				auto& rot_angles = transform->GetRotationAngles();
+				auto& trans_offsets = transform->GetTranslationOffsets();
+
+				// Угол поворота
+				float angle_deg = rad2deg(rot_angles[0]);
+				string128 angle_name;
+				xr_sprintf(angle_name, "%s_rot_angle", bone_name.c_str());
+
+				if (ImGui::DragFloat(angle_name, &angle_deg, drag_intensity, -180.0f, 180.0f, "%.6f"))
+				{
+					rot_angles[0] = deg2rad(angle_deg);
+					changed = true;
+				}
+
+				// Сдвиг
+				Fvector offset = trans_offsets[0];
+				string128 offset_name;
+				xr_sprintf(offset_name, "%s_trans_offset", bone_name.c_str());
+
+				if (ImGui::DragFloat3(offset_name, (float*)&offset, drag_intensity, -0.1f, 0.1f, "%.6f"))
+				{
+					trans_offsets[0] = offset;
+					changed = true;
+				}
+			}
+
+			if (changed)
+			{
+				if (mode == CWeaponBoneTransform::eModeFiremode)
+				{
+					u32 fire_mode = WpnMag->GetCurFireModeValue();
+					WpnMag->m_WeaponBonesController->SetSafetyMode(fire_mode, modes_count);
+					changed = false;
+				}
+				else if (mode == CWeaponBoneTransform::eModeDefault)
+					WpnMag->m_WeaponBonesController->RefreshBoneCurrentParams(bone_name);
+			}
+		}
+	}
+	ImGui::Separator();
 }

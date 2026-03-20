@@ -2246,6 +2246,7 @@
     <ClInclude Include="WeaponBinoculars.h" />
     <ClInclude Include="WeaponBinocularsVision.h" />
     <ClInclude Include="weaponBM16.h" />
+    <ClInclude Include="WeaponBonesController.h" />
     <ClInclude Include="WeaponCustomPistol.h" />
     <ClInclude Include="WeaponDoubleBarrelShotgun.h" />
     <ClInclude Include="WeaponFN2000.h" />
@@ -9270,6 +9271,7 @@
       <PrecompiledHeaderOutputFile Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)$(ProjectName)_script.pch</PrecompiledHeaderOutputFile>
       <PrecompiledHeaderOutputFile Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)$(ProjectName)_script.pch</PrecompiledHeaderOutputFile>
     </ClCompile>
+    <ClCompile Include="WeaponBonesController.cpp" />
     <ClCompile Include="WeaponCustomPistol.cpp" />
     <ClCompile Include="WeaponDispersion.cpp" />
     <ClCompile Include="WeaponDoubleBarrelShotgun.cpp" />

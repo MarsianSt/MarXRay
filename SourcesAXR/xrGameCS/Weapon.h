@@ -15,6 +15,7 @@
 #include "CameraRecoil.h"
 #include "WeaponAttaches.h"
 #include "VisualBulletSystem.h"
+#include "WeaponBonesController.h"
 
 #include "ui_base.h"
 
@@ -30,6 +31,7 @@ class CNightVisionEffector;
 class CLAItem;
 class WeaponAttach;
 class CVisualBulletSystem;
+class CWeaponBonesController;
 
 #define WEAPON_INDOOR_HEMI_FACTOR 0.01f         // Сила освещённости персонжаей солнечным светом, ниже которой считается что персонаж в помещении 
 #define WEAPON_SND_REFLECTION_HUD_FACTOR 0.7f   // Коэфицент на который домножается громкость звука эха от выстрела, если он был сделат от 1-го лица
@@ -57,16 +59,6 @@ public:
 	bool					bChangeNVSecondVPStatus();
 	virtual	bool            bMarkCanShow() { return IsZoomed(); }
 	virtual void			UpdateAddonsTransform(bool for_hud);
-
-	static void				SafetyBoneCallback(CBoneInstance* P);
-	virtual void			SetSafetyBoneCallback();
-	virtual void			ResetSafetyBoneCallback();
-	virtual void			SetHudSafetyBoneCallback();
-	virtual void			ResetHudSafetyBoneCallback();
-	virtual void			UpdateSafetyRotation();
-	virtual void			CalculateSafetyRotation(float value);
-	virtual void			RecalculateSafetyRotation(bool reverse, u32 step);
-
 
 	virtual void			UpdateSecondVP(bool bInGrenade = false);
 	void					Load3DScopeParams(LPCSTR section);
@@ -432,13 +424,7 @@ protected:
 	bool					m_bAltZoomEnabledScope;
 	bool					m_bAltZoomActive;
 
-	shared_str				m_sSafetyBoneName;
-	Fvector4				m_fSafetyRotationSteps{};
-	float					m_fSafetyRotationSpeed;
-	float					m_fSafetyRotationTime;
-	Fvector					m_vSafetyRotationAxis;
-	Fmatrix					m_mSafetyRotation;
-
+protected:
 	// Временные блокировки аддонов
 	bool					m_bBlockSilencerWithGL, m_bLaserBlockedByAddon, m_bFlashlightBlockedByAddon;
 
@@ -767,6 +753,9 @@ public:
 	CVisualBulletSystem*	m_bVisualBulletSystem;
 
 	void					update_visual_bullet_textures(const bool forced = false);
+
+	// Dance Maniac: Weapon Bones Transform
+	CWeaponBonesController* m_WeaponBonesController;
 
 private:
 	float hud_recalc_koef;

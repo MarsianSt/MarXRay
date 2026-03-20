@@ -270,6 +270,9 @@ void CWeaponMagazined::Load	(LPCSTR section)
 			bullet_cnt++;
 		}
 	}
+
+	if (m_WeaponBonesController)
+		m_WeaponBonesController->Load(section, m_aFireModes.size(), m_iCurFireMode);
 }
 
 bool CWeaponMagazined::UseScopeTexture()
@@ -353,32 +356,10 @@ void CWeaponMagazined::Reload()
 
 void CWeaponMagazined::EngineMotionMarksUpdate(u32 state, const motion_marks& M)
 {
-	if (strstr(*M.name, "rotate_safety") == *M.name)
+	if (strstr(*M.name, "safety_fmode") == *M.name)
 	{
-		bool reverse = false;
-		
-		switch (m_iCurFireMode)
-		{
-		case 0:
-			{
-				reverse = false;
-			} break;
-		case 1:
-			{
-				if (m_aFireModes.size() == 3)
-					reverse = false;
-				else
-					reverse = true;
-			} break;
-		case 2:
-			{
-				reverse = true;
-			} break;
-		default:
-			break;
-		}
-
-		RecalculateSafetyRotation(reverse, m_fSafetyRotationSteps[m_iCurFireMode]);
+		if (m_WeaponBonesController)
+			m_WeaponBonesController->SetSafetyMode(m_iCurFireMode, m_aFireModes.size());
 	}
 	else if (strstr(*M.name, "device_switch") == *M.name)
 	{
@@ -2955,6 +2936,9 @@ void CWeaponMagazined::load(IReader &input_packet)
 	load_data		(m_iQueueSize, input_packet);SetQueueSize(m_iQueueSize);
 	load_data		(m_iShotNum, input_packet);
 	load_data		(m_iCurFireMode, input_packet);
+
+	if (m_WeaponBonesController)
+		m_WeaponBonesController->SetSafetyMode(m_iCurFireMode, m_aFireModes.size());
 }
 
 void CWeaponMagazined::net_Export	(NET_Packet& P)
