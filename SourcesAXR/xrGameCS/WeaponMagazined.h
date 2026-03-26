@@ -125,6 +125,14 @@ public:
 
 	IC BOOL			IsPending		() const { return !!(m_huditem_flags.test(fl_pending) || (m_bEnableRPM_Pending && fShotTimeCounter > 0.f)); }
 
+	IC void SetPending(BOOL H)
+	{
+		m_huditem_flags.set(fl_pending, H);
+
+		if (m_bEnableRPM_Pending && IsMisfire() && fShotTimeCounter > 0.f)
+			fShotTimeCounter = 0.0f;
+	}
+
 public:
 	virtual bool	SwitchMode				();
 	virtual bool	SingleShotMode			()			{return 1 == m_iQueueSize;}

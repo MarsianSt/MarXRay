@@ -131,6 +131,13 @@ public:
 
 	IC BOOL			IsPending		() const { return !!(m_huditem_flags.test(fl_pending) || (m_bEnableRPM_Pending && fTime > 0.f)); }
 
+	IC void SetPending(BOOL H)
+	{
+		m_huditem_flags.set(fl_pending, H);
+
+		if (m_bEnableRPM_Pending && IsMisfire() && fTime > 0.f)
+			fTime = 0.0f;
+	}
 
 	//////////////////////////////////////////////
 	// для стрельбы очередями или одиночными
