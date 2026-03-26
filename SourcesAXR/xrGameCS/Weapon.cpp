@@ -459,6 +459,8 @@ void CWeapon::Load		(LPCSTR section)
 {
 	inherited::Load					(section);
 
+	m_sounds.LoadSound(section, "snd_alt_aim", "sndAltAim", true);
+
 	// load ammo classes
 	m_ammoTypes.clear();
 	LPCSTR				S = pSettings->r_string(section, "ammo_class");
@@ -3718,6 +3720,9 @@ void CWeapon::SwitchZoomMode()
 
 	if (HudFovFromScope)
 		psHUD_FOV_def = READ_IF_EXISTS(pSettings, r_float, cur_scope_sect, !m_bAltZoomActive ? "aim_hud_fov" : "aim_alt_hud_fov", GetHudFov());
+
+	if (WeaponSoundExist(m_section_id.c_str(), "snd_alt_aim"))
+		PlaySound("sndAltAim", get_LastFP());
 
 	m_zoom_params.m_fCurrentZoomFactor = CurrentZoomFactor();
 }
