@@ -2756,24 +2756,24 @@ bool CWeaponMagazined::SwitchMode			()
 
 void	CWeaponMagazined::OnNextFireMode		()
 {
-	if (!m_bHasDifferentFireModes) return;
+	if (!m_bHasDifferentFireModes || GetState() != eIdle)
+		return;
 
 	if (isHUDAnimationExist("anm_changefiremode_from_1_to_a") || isHUDAnimationExist("anm_changefiremode"))
 		SwitchState(eFiremodeNext);
 
-	if (GetState() != eIdle) return;
 	m_iCurFireMode = (m_iCurFireMode+1+m_aFireModes.size()) % m_aFireModes.size();
 	SetQueueSize(GetCurrentFireMode());
 };
 
 void	CWeaponMagazined::OnPrevFireMode		()
 {
-	if (!m_bHasDifferentFireModes) return;
+	if (!m_bHasDifferentFireModes || GetState() != eIdle)
+		return;
 
 	if (isHUDAnimationExist("anm_changefiremode_from_1_to_a") || isHUDAnimationExist("anm_changefiremode"))
 		SwitchState(eFiremodePrev);
 
-	if (GetState() != eIdle) return;
 	m_iCurFireMode = (m_iCurFireMode-1+m_aFireModes.size()) % m_aFireModes.size();
 	SetQueueSize(GetCurrentFireMode());	
 };
