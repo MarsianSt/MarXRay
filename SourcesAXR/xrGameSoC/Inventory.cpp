@@ -26,6 +26,8 @@
 #include "CustomBackpack.h"
 #include "CustomOutfit.h"
 #include "ActorHelmet.h"
+#include "AntigasFilter.h"
+#include "RepairKit.h"
 #include "HUDManager.h"
 #include "UIGameSP.h"
 #include "ui\UIInventoryWnd.h"
@@ -1017,7 +1019,15 @@ CInventoryItem *CInventory::get_object_by_id(ALife::_OBJECT_ID tObjectID)
 void CInventory::ChooseItmAnimOrNot(PIItem pIItem)
 {
 	CEatableItem* pItemToEat = smart_cast<CEatableItem*>(pIItem);
-	if (!pItemToEat) return;
+	if (!pItemToEat)
+		return;
+
+	CBattery* pBattery		= smart_cast<CBattery*>(pIItem);
+	CAntigasFilter* pFilter = smart_cast<CAntigasFilter*>(pIItem);
+	CRepairKit* pRepairKit	= smart_cast<CRepairKit*>(pIItem);
+
+	if (!pItemToEat->Useful() || (pFilter && !pFilter->UseAllowed()) || (pRepairKit && !pRepairKit->UseAllowed()))
+		return;
 
 	bool HasAnim = pItemToEat->m_bHasAnimation;
 	bool AnimSect = pItemToEat->anim_sect != nullptr;

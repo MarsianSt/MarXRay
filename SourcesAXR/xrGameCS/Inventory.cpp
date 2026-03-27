@@ -27,6 +27,8 @@
 #include "CustomDetector.h"
 #include "CustomBackpack.h"
 #include "ActorHelmet.h"
+#include "AntigasFilter.h"
+#include "RepairKit.h"
 #include "PDA.h"
 
 using namespace InventoryUtilities;
@@ -1251,6 +1253,13 @@ void CInventory::ChooseItmAnimOrNot(PIItem pIItem)
 {
 	CEatableItem* pItemToEat = smart_cast<CEatableItem*>(pIItem);
 	if (!pItemToEat) 
+		return;
+
+	CBattery* pBattery		= smart_cast<CBattery*>(pIItem);
+	CAntigasFilter* pFilter = smart_cast<CAntigasFilter*>(pIItem);
+	CRepairKit* pRepairKit	= smart_cast<CRepairKit*>(pIItem);
+
+	if (!pItemToEat->Useful() || (pFilter && !pFilter->UseAllowed()) || (pRepairKit && !pRepairKit->UseAllowed()))
 		return;
 
 	if (ItmHasAnim(pItemToEat))
