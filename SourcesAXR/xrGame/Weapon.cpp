@@ -3695,6 +3695,30 @@ void CWeapon::SwitchZoomMode()
 	if (WeaponSoundExist(m_section_id.c_str(), "snd_alt_aim"))
 		PlaySound("sndAltAim", get_LastFP());
 
+	if (IsGameTypeSingle() && H_Parent() == Level().CurrentControlEntity())
+	{
+		CActor* current_actor = static_cast_checked<CActor*>(Level().CurrentControlEntity());
+		VERIFY(current_actor);
+
+		string_path ce_path{};
+		LPCSTR anm_name = READ_IF_EXISTS(pSettings, r_string, m_section_id.c_str(), "cam_eff_change_aim_type", nullptr);
+
+		if (anm_name && FS.exist(ce_path, "$game_anims$", anm_name))
+		{
+			CEffectorCam* ec = current_actor->Cameras().GetCamEffector(eCEWeaponAction);
+
+			if (ec)
+				current_actor->Cameras().RemoveCamEffector(eCEWeaponAction);
+
+			CAnimatorCamEffector* e = xr_new<CAnimatorCamEffector>();
+			e->SetType(eCEWeaponAction);
+			e->SetHudAffect(false);
+			e->SetCyclic(false);
+			e->Start(anm_name);
+			current_actor->Cameras().AddCamEffector(e);
+		}
+	}
+
 	m_zoom_params.m_fCurrentZoomFactor = CurrentZoomFactor();
 }
 
