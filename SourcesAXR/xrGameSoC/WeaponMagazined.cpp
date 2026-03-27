@@ -1098,9 +1098,18 @@ void CWeaponMagazined::OnShot		()
 	HUD_VisualBulletUpdate();
 	
 	// Shell Drop
+	u8 local_ammo_type = m_ammoType;
+
+	if (m_magazine.size())
+	{
+		u8 magazine_back_ammo_type = m_magazine.back().m_LocalAmmoType;
+		if (magazine_back_ammo_type != local_ammo_type)
+			local_ammo_type = magazine_back_ammo_type;
+	}
+
 	Fvector vel; 
 	PHGetLinearVell(vel);
-	OnShellDrop					(get_LastSP(), vel, m_ammoType);
+	OnShellDrop					(get_LastSP(), vel, local_ammo_type);
 	
 	// Огонь из ствола
 	StartFlameParticles	();
