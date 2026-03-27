@@ -147,6 +147,7 @@ CWeapon::CWeapon(LPCSTR name)
 	m_bIsShotgun			= false;
 	m_bIsDoubleBarrelShotgun = false;
 	m_bUseRG6_AddCartridgeAlt = false;
+	m_bDisableAdvancedSE	= false;
 
 	m_bWpnExplosion			= false;
 	m_bWpnDestroyAfterExplode = false;
@@ -657,6 +658,7 @@ void CWeapon::Load		(LPCSTR section)
 	m_bCheckAmmoChangeLock	= READ_IF_EXISTS(pSettings, r_bool, section, "check_ammo_change_lock", false);
 	m_bCheckAmmoChangeLockGL = READ_IF_EXISTS(pSettings, r_bool, section, "check_gl_ammo_change_lock", false);
 	m_bTelekinesisAvail		= READ_IF_EXISTS(pSettings, r_bool, section, "telekinesis_avail", true);
+	m_bDisableAdvancedSE	= READ_IF_EXISTS(pSettings, r_bool, section, "disable_adv_shoot_effectors", false);
 
 	m_bBulletsVisualization = pSettings->line_exist(section, "bullet_bones");
 

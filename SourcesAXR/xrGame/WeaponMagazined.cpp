@@ -1189,7 +1189,7 @@ void CWeaponMagazined::OnShot()
 		AddHUDShootingEffect();
 
 		// Dance Maniac: Дополнительный эффектор стрельбы
-		if (m_b_advanced_shoot_effectors && IsGameTypeSingle() && ParentIsActor())
+		if (m_b_advanced_shoot_effectors && !m_bDisableAdvancedSE && IsGameTypeSingle() && ParentIsActor())
 		{
 			CEffectorCam* effector = Actor()->Cameras().GetCamEffector((ECamEffectorType)eCEWeaponAction2);
 

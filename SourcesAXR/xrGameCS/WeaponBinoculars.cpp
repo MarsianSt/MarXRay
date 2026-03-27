@@ -29,6 +29,8 @@ void CWeaponBinoculars::Load	(LPCSTR section)
 	m_sounds.LoadSound(section, "snd_zoomin",  "sndZoomIn",		false, SOUND_TYPE_ITEM_USING);
 	m_sounds.LoadSound(section, "snd_zoomout", "sndZoomOut",	false, SOUND_TYPE_ITEM_USING);
 	m_bVision = !!pSettings->r_bool(section,"vision_present");
+
+	m_bDisableAdvancedSE = READ_IF_EXISTS(pSettings, r_bool, section, "disable_adv_shoot_effectors", true);
 }
 
 

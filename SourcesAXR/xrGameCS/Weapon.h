@@ -438,6 +438,7 @@ protected:
 	bool					m_bUseRG6_AddCartridgeAlt;
 	bool					m_bIndoorSoundsEnabled;
 	bool					m_bMisfireBulletRemove;
+	bool					m_bDisableAdvancedSE;
 
 	shared_str				ppeWpnExplosion;
 	ref_sound				sndWpnExplosion;
@@ -661,6 +662,7 @@ public:
 	bool					m_bUseAimAnmDirDependency;
 	bool					m_bCheckAmmoChangeLock;
 	bool					m_bCheckAmmoChangeLockGL;
+
 	u8						m_u8TracerColorID;
 	u32						m_set_next_ammoType_on_reload;
 	// Multitype ammo support
@@ -828,4 +830,6 @@ public:
 	void ClearTeleParams	();
 	bool IsTeleActive		() { return m_weapon_tele_params.enemy; }
 	bool IsTelekinesisAvail	() { return m_bTelekinesisAvail; }
+
+	bool AdvancedSE_Enabled	() { return !m_bDisableAdvancedSE; }
 };

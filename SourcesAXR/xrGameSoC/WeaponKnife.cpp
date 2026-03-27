@@ -50,6 +50,8 @@ void CWeaponKnife::Load	(LPCSTR section)
 	m_sounds.LoadSound(section, "snd_sprint_idle",	"sndSprintIdle", true, SOUND_TYPE_ITEM_HIDING);
 	
 	knife_material_idx =  GMLib.GetMaterialIdx(KNIFE_MATERIAL_NAME);
+
+	m_bDisableAdvancedSE = READ_IF_EXISTS(pSettings, r_bool, section, "disable_adv_shoot_effectors", true);
 }
 
 void CWeaponKnife::OnStateSwitch(u32 S, u32 oldState)

@@ -534,7 +534,7 @@ u32 attachable_hud_item::anim_play(const shared_str& anm_name_b, BOOL bMixIn, co
 		{
 			CWeapon* wpn = smart_cast<CWeapon*>(current_actor->inventory().ActiveItem());
 
-			if (wpn && wpn->IsWorking())
+			if (wpn && wpn->AdvancedSE_Enabled() && (wpn->GetState() == CWeapon::eFire || wpn->GetState() == CWeapon::eFire2))
 				return ret;
 		}
 
