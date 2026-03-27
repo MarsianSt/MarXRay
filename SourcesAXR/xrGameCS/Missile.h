@@ -1,4 +1,5 @@
 #pragma once
+
 #include "hud_item_object.h"
 #include "HudSound.h"
 
@@ -52,6 +53,8 @@ public:
 	virtual void			PlayAnimDeviceSwitch		() override;
 
 	virtual bool			GetBriefInfo				(II_BriefInfo& info);
+
+	virtual void			PlayAnimByDetector			(bool switch_state = false, u32 state = eDetAction, const char* anm_name = "") override;
 
 protected:
 	virtual void			UpdateFireDependencies_internal	();

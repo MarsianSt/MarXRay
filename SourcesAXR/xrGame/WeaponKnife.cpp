@@ -200,6 +200,21 @@ void CWeaponKnife::PlayAnimDeviceSwitch()
 	}
 }
 
+void CWeaponKnife::PlayAnimByDetector(bool switch_state, u32 state, const char* anm_name)
+{
+	if (IsPending() || !ParentIsActor())
+		return;
+
+	if (isHUDAnimationExist(anm_name))
+	{
+		if (switch_state)
+			SwitchState(state);
+
+		SetPending(state != eIdle);
+		PlayHUDMotionNew(anm_name, true, state);
+	}
+}
+
 void CWeaponKnife::FastStrike(u32 state)
 {
 	if (state == 0)
@@ -384,6 +399,7 @@ void CWeaponKnife::OnAnimationEnd(u32 state)
 
 	case eShowing:
 	case eDeviceSwitch:
+	case eDetAction:
 	case eIdle:		SwitchState(eIdle);		break;	
 
 	default:		inherited::OnAnimationEnd(state);

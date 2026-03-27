@@ -1447,6 +1447,11 @@ void CWeaponMagazined::OnAnimationEnd(u32 state)
 			SwitchState(eIdle);
 			break;
 		}
+		case eDetAction:
+		{
+			SwitchState(eIdle);
+			break;
+		}
 	}
 	inherited::OnAnimationEnd(state);
 }
@@ -2804,6 +2809,67 @@ void CWeaponMagazined::PlayAnimDeviceSwitch()
 
 	if (g_actor->IsDetectorActive())
 		det->PlayDetectorAnimation(true, eDetAction, guns_device_switch_det_anm);
+}
+
+void CWeaponMagazined::ActionByDetector(u32 state)
+{
+	if (!IsPending() && ParentIsActor())
+	{
+		if (state != eIdle)
+			SwitchState(eDetAction);
+		else
+		{
+			SwitchState(eIdle);
+		}
+	}
+}
+
+void CWeaponMagazined::PlayAnimByDetector(bool switch_state, u32 state, const char* anm_name)
+{
+	if (IsPending() || !ParentIsActor())
+		return;
+
+	string128 guns_anm_by_detector{};
+	strconcat(sizeof(guns_anm_by_detector), guns_anm_by_detector, anm_name, IsMisfire() ? "_jammed" : IsEmptyMagazine() ? "_empty" : "");
+
+	if (isHUDAnimationExist(guns_anm_by_detector))
+	{
+		if (switch_state)
+			SwitchState(state);
+
+		SetPending(state != eIdle);
+		PlayHUDMotionNew(guns_anm_by_detector, true, state);
+	}
+	else if (guns_anm_by_detector && strstr(guns_anm_by_detector, "_jammed"))
+	{
+		char new_guns_anm_by_detector[256];
+		strcpy(new_guns_anm_by_detector, guns_anm_by_detector);
+		new_guns_anm_by_detector[strlen(guns_anm_by_detector) - strlen("_jammed")] = '\0';
+
+		if (isHUDAnimationExist(new_guns_anm_by_detector))
+		{
+			if (switch_state)
+				SwitchState(state);
+
+			SetPending(state != eIdle);
+			PlayHUDMotionNew(new_guns_anm_by_detector, true, state);
+		}
+	}
+	else if (guns_anm_by_detector && strstr(guns_anm_by_detector, "_empty"))
+	{
+		char new_guns_anm_by_detector[256];
+		strcpy(new_guns_anm_by_detector, guns_anm_by_detector);
+		new_guns_anm_by_detector[strlen(guns_anm_by_detector) - strlen("_empty")] = '\0';
+
+		if (isHUDAnimationExist(new_guns_anm_by_detector))
+		{
+			if (switch_state)
+				SwitchState(state);
+
+			SetPending(state != eIdle);
+			PlayHUDMotionNew(new_guns_anm_by_detector, true, state);
+		}
+	}
 }
 
 void CWeaponMagazined::OnZoomIn			()

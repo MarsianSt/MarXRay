@@ -472,8 +472,10 @@ void CMissile::OnAnimationEnd(u32 state)
 			SwitchState(eThrowEnd);
 		} break;
 	case eDeviceSwitch:
-		SwitchState(eIdle);
-		break;
+	case eDetAction:
+		{
+			SwitchState(eIdle);
+		} break;
 	default:
 		inherited::OnAnimationEnd(state);
 	}
@@ -934,5 +936,20 @@ void CMissile::PlayAnimDeviceSwitch()
 	{
 		DeviceUpdate();
 		SwitchState(eIdle);
+	}
+}
+
+void CMissile::PlayAnimByDetector(bool switch_state, u32 state, const char* anm_name)
+{
+	if (IsPending() || !smart_cast<CActor*>(H_Parent()))
+		return;
+
+	if (isHUDAnimationExist(anm_name))
+	{
+		if (switch_state)
+			SwitchState(state);
+
+		SetPending(state != eIdle);
+		PlayHUDMotionNew(anm_name, true, state);
 	}
 }

@@ -135,6 +135,7 @@ public:
 	virtual void				PlayAnimSprintStart	();
 	virtual void				PlayAnimSprintEnd	();
 	virtual void				PlayAnimDeviceSwitch() {};
+	virtual void				PlayAnimByDetector	(bool switch_state, u32 state, const char* anm_name) {};
 
 	virtual void				UpdateCL			();
 	virtual void				renderable_Render	();

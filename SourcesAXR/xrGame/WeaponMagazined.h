@@ -214,6 +214,10 @@ protected:
 	virtual bool	PlayAnimAimEnd		();
 	virtual void	PlayAnimDeviceSwitch() override;
 
+public:
+	virtual void	ActionByDetector	(u32 state);
+	virtual void	PlayAnimByDetector	(bool switch_state = false, u32 state = eDetAction, const char* anm_name = "") override;
+
 protected:
 
 	virtual void    SetAnimFlag(u32 flag, LPCSTR anim_name);
