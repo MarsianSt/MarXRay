@@ -6767,6 +6767,9 @@
     <ClInclude Include="WeaponBonesController.h">
       <Filter>Core\Client\Objects\items &amp; weapons\Weapons\Custom Weapon\Weapon Generic</Filter>
     </ClInclude>
+    <ClInclude Include="artefact_container_script.h">
+      <Filter>Core\Client\Objects\items &amp; weapons\Devices\ArtefactContainer</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="damage_manager.cpp">

@@ -1268,6 +1268,7 @@
     <ClInclude Include="antirad.h" />
     <ClInclude Include="Artefact.h" />
     <ClInclude Include="ArtefactContainer.h" />
+    <ClInclude Include="artefact_container_script.h" />
     <ClInclude Include="artefact_activation.h" />
     <ClInclude Include="atlas_stalkercoppc_v1.h" />
     <ClInclude Include="atlas_submit_queue.h" />

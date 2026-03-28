@@ -1246,6 +1246,7 @@
     <ClInclude Include="Artefact.h" />
     <ClInclude Include="ArtefactContainer.h" />
     <ClInclude Include="artefact_activation.h" />
+    <ClInclude Include="artefact_container_script.h" />
     <ClInclude Include="attachable_item.h" />
     <ClInclude Include="attachable_item_inline.h" />
     <ClInclude Include="attachment_owner.h" />

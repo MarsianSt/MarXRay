@@ -1,13 +1,16 @@
 ////////////////////////////////////////////////////////////////////////////
 //	Module 		: ArtefactContainer.cpp
 //	Created 	: 08.05.2023
-//  Modified 	: 19.09.2023
+//  Modified 	: 28.03.2026
 //	Author		: Dance Maniac (M.F.S. Team)
 //	Description : Artefact container
+//  MIT License
+//	Copyright(c) 2026 Dance Maniac
 ////////////////////////////////////////////////////////////////////////////
 
 #include "stdafx.h"
 #include "ArtefactContainer.h"
+#include "artefact_container_script.h"
 #include "Artefact.h"
 #include "level.h"
 #include "Actor.h"
@@ -89,22 +92,39 @@ void CArtefactContainer::PutArtefactToContainer(const CArtefact& artefact)
 
 void CArtefactContainer::TakeArtefactFromContainer(CArtefact* artefact)
 {
-	for (auto it = m_sArtefactsInside.begin(); it != m_sArtefactsInside.end();)
+	for (auto it = m_sArtefactsInside.begin(); it != m_sArtefactsInside.end(); ++it)
 	{
 		if (*it == artefact)
 		{
-			CArtefact* item_to_spawn = smart_cast<CArtefact*>(*it);
-			it = m_sArtefactsInside.erase(it);
-
-			Level().spawn_item(item_to_spawn->cNameSect().c_str(), Actor()->Position(), false, Actor()->ID());
-
 			af_from_container_charge_level = artefact->GetCurrentChargeLevel();
 			af_from_container_rank = artefact->GetCurrentAfRank();
-			m_LastAfContainer = this;
 
+			Level().spawn_item(artefact->cNameSect().c_str(), Position(), false, ID());
+			m_sArtefactsInside.erase(it);
+
+			m_LastAfContainer = this;
 			return;
 		}
-		++it;
+	}
+}
+
+void CArtefactContainer::TakeArtefactFromContainerBySect(LPCSTR af_section)
+{
+	for (auto it = m_sArtefactsInside.begin(); it != m_sArtefactsInside.end(); ++it)
+	{
+		CArtefact* artefact = smart_cast<CArtefact*>(*it);
+
+		if (artefact && xr_strcmp(artefact->cNameSect().c_str(), af_section) == 0)
+		{
+			af_from_container_charge_level = artefact->GetCurrentChargeLevel();
+			af_from_container_rank = artefact->GetCurrentAfRank();
+
+			Level().spawn_item(af_section, Actor()->Position(), false, Actor()->ID());
+			m_sArtefactsInside.erase(it);
+
+			m_LastAfContainer = this;
+			return;
+		}
 	}
 }
 

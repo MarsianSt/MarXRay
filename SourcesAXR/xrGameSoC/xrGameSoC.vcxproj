@@ -604,6 +604,7 @@
     <ClInclude Include="AnomalyDetector.h" />
     <ClInclude Include="AntigasFilter.h" />
     <ClInclude Include="ArtefactContainer.h" />
+    <ClInclude Include="artefact_container_script.h" />
     <ClInclude Include="Battery.h" />
     <ClInclude Include="CustomBackpack.h" />
     <ClInclude Include="debug_text_tree.h" />

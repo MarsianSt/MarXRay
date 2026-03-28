@@ -13,7 +13,6 @@
 #include "RepairKit.h"
 #include "AntigasFilter.h"
 #include "CustomBackpack.h"
-#include "ArtefactContainer.h"
 #include "SleepingBag.h"
 
 CF1::CF1(void) {
@@ -55,8 +54,6 @@ void CF1::script_register	(lua_State *L)
 		class_<CDetectorAnomaly, CGameObject>("CDetectorAnomaly")
 			.def(constructor<>()),
 		class_<CCustomBackpack, CGameObject>("CCustomBackpack")
-			.def(constructor<>()),
-		class_<CArtefactContainer, CGameObject>("CArtefactContainer")
 			.def(constructor<>()),
 		class_<CSleepingBag, CGameObject>("CSleepingBag")
 			.def(constructor<>()),
