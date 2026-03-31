@@ -206,6 +206,33 @@ bool CWeapon::bChangeNVSecondVPStatus()
 
 	bNVsecondVPstatus = !bNVsecondVPstatus;
 
+	if (m_sounds.FindSoundItem("sndScopeNV", false))
+		m_sounds.PlaySound("sndScopeNV", get_LastFP(), H_Root(), !!GetHUDmode(), false, (u8)-1);
+
+	if (IsGameTypeSingle() && H_Parent() == Level().CurrentControlEntity())
+	{
+		CActor* current_actor = static_cast_checked<CActor*>(Level().CurrentControlEntity());
+		VERIFY(current_actor);
+
+		string_path ce_path{};
+		LPCSTR anm_name = READ_IF_EXISTS(pSettings, r_string, m_section_id.c_str(), "cam_eff_switch_scope_nv", nullptr);
+
+		if (anm_name && FS.exist(ce_path, "$game_anims$", anm_name))
+		{
+			CEffectorCam* ec = current_actor->Cameras().GetCamEffector(eCEWeaponAction);
+
+			if (ec)
+				current_actor->Cameras().RemoveCamEffector(eCEWeaponAction);
+
+			CAnimatorCamEffector* e = xr_new<CAnimatorCamEffector>();
+			e->SetType(eCEWeaponAction);
+			e->SetHudAffect(false);
+			e->SetCyclic(false);
+			e->Start(anm_name);
+			current_actor->Cameras().AddCamEffector(e);
+		}
+	}
+
 	return true;
 }
 
@@ -476,6 +503,7 @@ void CWeapon::Load		(LPCSTR section)
 	inherited::Load					(section);
 
 	m_sounds.LoadSound(section, "snd_alt_aim", "sndAltAim", true);
+	m_sounds.LoadSound(section, "snd_switch_scope_nv", "sndScopeNV", true);
 
 	// load ammo classes
 	m_ammoTypes.clear();
