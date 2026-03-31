@@ -267,6 +267,9 @@ void CUIBoosterInfo::SetInfo(CInventoryItem& pInvItem)
 			case eBoostPowerRestore:
 			case eBoostBleedingRestore:
 			case eBoostPsyHealthRestore:
+			case eBoostMaxWeight:
+				max_val = 1.0f;
+				break;
 			case eBoostIntoxicationRestore:
 			case eBoostSleepenessRestore:
 			case eBoostAlcoholRestore:
@@ -276,9 +279,6 @@ void CUIBoosterInfo::SetInfo(CInventoryItem& pInvItem)
 			case eBoostNarcotismRestore:
 			case eBoostWithdrawalRestore:
 			case eBoostFrostbiteRestore:
-			case eBoostMaxWeight:
-				max_val = 1.0f;
-				break;
 			case eBoostSatietyRestore:
 			case eBoostThirstRestore:
 			case eBoostRadiationRestore:
