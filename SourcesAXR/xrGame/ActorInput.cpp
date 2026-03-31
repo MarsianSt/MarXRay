@@ -312,7 +312,7 @@ void CActor::IR_OnKeyboardPress(int cmd)
 	case kQUICK_USE_4:
 		{
 			const shared_str& item_name = g_quick_use_slots[cmd-kQUICK_USE_1];
-			if (item_name.size())
+			if (CurrentGameUI()->ActorMenu().m_pQuickSlot && item_name.size())
 			{
 				CEatableItem* itm = nullptr;
 
@@ -341,7 +341,7 @@ void CActor::IR_OnKeyboardPress(int cmd)
 						inventory().ClientEat(itm);
 					}
 					
-					if (GameConstants::GetHUD_UsedItemTextEnabled() && !inventory().ItmHasAnim(itm))
+					if (GameConstants::GetHUD_UsedItemTextEnabled())
 					{
 						SDrawStaticStruct* _s = CurrentGameUI()->AddCustomStatic("item_used", true);
 						string1024					str;

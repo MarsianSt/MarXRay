@@ -317,17 +317,17 @@ void CActor::IR_OnKeyboardPress(int cmd)
 				}
 				if (itm)
 				{
-
-					if (GameConstants::GetHUD_UsedItemTextEnabled() && itm)
+					if (IsGameTypeSingle())
 					{
-						if (IsGameTypeSingle())
-						{
-							inventory().ChooseItmAnimOrNot(itm);
-						}
-						else
-						{
-							inventory().ClientEat(itm);
-						}
+						inventory().ChooseItmAnimOrNot(itm);
+					}
+					else
+					{
+						inventory().ClientEat(itm);
+					}
+
+					if (GameConstants::GetHUD_UsedItemTextEnabled())
+					{
 						SDrawStaticStruct* _s		= HUD().GetUI()->UIGame()->AddCustomStatic("item_used", true);
 						_s->m_endTime				= Device.fTimeGlobal+3.0f;// 3sec
 						string1024					str;

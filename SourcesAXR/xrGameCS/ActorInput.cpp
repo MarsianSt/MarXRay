@@ -105,7 +105,7 @@ void CActor::IR_OnKeyboardPress(int cmd)
 		case kQUICK_USE_4:
 		{
 			const shared_str& item_name		= g_quick_use_slots[cmd-kQUICK_USE_1];
-			if(item_name.size())
+			if(HUD().GetUI()->UIGame()->ActorMenu().m_pQuickSlot && item_name.size())
 			{
 				CEatableItem* itm = nullptr;
 
@@ -134,8 +134,7 @@ void CActor::IR_OnKeyboardPress(int cmd)
 						inventory().ClientEat(itm);
 					}
 
-					static const bool enabled = READ_IF_EXISTS(pSettings, r_bool, "null_features", "show_item_used_hud_text", true);
-					if (enabled && !inventory().ItmHasAnim(itm))
+					if (GameConstants::GetHUD_UsedItemTextEnabled())
 					{
 						SDrawStaticStruct* _s		= HUD().GetUI()->UIGame()->AddCustomStatic("item_used", true);
 						_s->m_endTime				= Device.fTimeGlobal+3.0f;
@@ -143,9 +142,8 @@ void CActor::IR_OnKeyboardPress(int cmd)
 						strconcat					(sizeof(str),str,*CStringTable().translate("st_item_used"),": ", itm->NameItem());
 						_s->wnd()->SetText			(str);
 					}
-					
-					if (HUD().GetUI()->UIGame()->ActorMenu().m_pQuickSlot)
-						HUD().GetUI()->UIGame()->ActorMenu().m_pQuickSlot->ReloadReferences(this);
+
+					HUD().GetUI()->UIGame()->ActorMenu().m_pQuickSlot->ReloadReferences(this);
 				}
 			}
 		}break;
@@ -169,14 +167,15 @@ void CActor::IR_OnKeyboardPress(int cmd)
 					CEatableItem* pEatable = smart_cast<CEatableItem*>(it);
 					if (!pEatable)
 						continue;
-					if (pEatable->GetPortionsNum() == 1)
+					if (pEatable->m_section_id == item_name && !itm && pEatable->GetPortionsNum() == 1)
 					{
 						itm = pEatable;
 						break;
 					}
-					if (pEatable->m_section_id == item_name && !itm || itm && (pEatable->GetPortionsNum() < itm->GetPortionsNum()))
+					if (pEatable->m_section_id == item_name && !itm || pEatable->m_section_id == item_name && itm && (pEatable->GetPortionsNum() < itm->GetPortionsNum()))
 						itm = pEatable;
 				}
+
 				if (itm)
 				{
 					if (IsGameTypeSingle())
@@ -188,7 +187,7 @@ void CActor::IR_OnKeyboardPress(int cmd)
 						inventory().ClientEat(itm);
 					}
 
-					if (GameConstants::GetHUD_UsedItemTextEnabled() && !inventory().ItmHasAnim(itm))
+					if (GameConstants::GetHUD_UsedItemTextEnabled())
 					{
 						SDrawStaticStruct* _s = HUD().GetUI()->UIGame()->AddCustomStatic("item_used", true);
 						_s->m_endTime = Device.fTimeGlobal + 3.0f;
