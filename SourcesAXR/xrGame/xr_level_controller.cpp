@@ -61,6 +61,7 @@ _action  actions[]		= {
 	{ "wpn_firemode_prev",	kWPN_FIREMODE_PREV		,_both},	
 	{ "wpn_firemode_next",	kWPN_FIREMODE_NEXT		,_both},
 	{ "wpn_alt_aim",		kWPN_ALT_AIM			,_both},
+	{ "wpn_switch_nv",		kWPN_NV_CHANGE			,_both},
 	{ "quick_kick",			kQUICK_KICK				,_both},
 	{ "quick_grenade",		kQUICK_GRENADE			,_both},
 
