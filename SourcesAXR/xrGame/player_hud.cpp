@@ -527,17 +527,23 @@ u32 attachable_hud_item::anim_play(const shared_str& anm_name_b, BOOL bMixIn, co
 		CActor* current_actor = static_cast_checked<CActor*>(Level().CurrentControlEntity());
 		VERIFY(current_actor);
 
+		bool bWpnPumpEffect = false;
+
 		if (m_b_advanced_shoot_effectors && current_actor)
 		{
-			CWeapon* wpn = smart_cast<CWeapon*>(current_actor->inventory().ActiveItem());
+			if (CWeapon* wpn = smart_cast<CWeapon*>(current_actor->inventory().ActiveItem()))
+			{
+				bool bShooting = (wpn->GetState() == CWeapon::eFire || wpn->GetState() == CWeapon::eFire2);
+				bWpnPumpEffect = (wpn->AdvancedSE_PumpEnabled() && bShooting);
 
-			if (wpn && wpn->AdvancedSE_Enabled() && (wpn->GetState() == CWeapon::eFire || wpn->GetState() == CWeapon::eFire2))
-				return ret;
+				if (wpn->AdvancedSE_Enabled() && !bWpnPumpEffect && bShooting)
+					return ret;
+			}
 		}
 
 		string_path ce_path;
 		string_path anm_name;
-		strconcat(sizeof(anm_name), anm_name, "camera_effects" "\\" "weapon" "\\", M.eff_name ? M.eff_name : M.name.c_str(), ".anm");
+		strconcat(sizeof(anm_name), anm_name, "camera_effects" "\\" "weapon" "\\", M.eff_name ? M.eff_name : M.name.c_str(), bWpnPumpEffect ? "_pump" : "", ".anm");
 
 		if (FS.exist(ce_path, "$game_anims$", anm_name))
 		{

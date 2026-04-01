@@ -460,6 +460,7 @@ protected:
 	bool					m_bIndoorSoundsEnabled;
 	bool					m_bMisfireBulletRemove;
 	bool					m_bDisableAdvancedSE;
+	bool					m_bEnablePumpAdvancedSE;
 
 	shared_str				ppeWpnExplosion;
 	ref_sound				sndWpnExplosion;
@@ -838,4 +839,5 @@ public:
 	bool IsTelekinesisAvail	() { return m_bTelekinesisAvail; }
 
 	bool AdvancedSE_Enabled	() { return !m_bDisableAdvancedSE; }
+	bool AdvancedSE_PumpEnabled() { return m_bEnablePumpAdvancedSE; }
 };
