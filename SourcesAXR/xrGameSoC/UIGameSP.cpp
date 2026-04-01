@@ -191,10 +191,14 @@ bool CUIGameSP::IR_OnKeyboardPress(int dik)
 		{
 			SDrawStaticStruct* ss	= AddCustomStatic("main_task", true);
 			SGameTaskObjective* o	= pActor->GameTaskManager().ActiveObjective();
-			if(!o)
-				ss->m_static->SetTextST	("st_no_active_task");
-			else
-				ss->m_static->SetTextST	(*(o->description));
+			
+			if (ss && ss->m_static)
+			{
+				if (!o)
+					ss->m_static->SetTextST("st_no_active_task");
+				else
+					ss->m_static->SetTextST(*(o->description));
+			}
 
 		}break;
 	}
