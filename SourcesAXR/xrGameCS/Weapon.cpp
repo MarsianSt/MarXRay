@@ -3548,7 +3548,7 @@ bool CWeapon::IsHudModeNow()
 
 void CWeapon::ZoomDynamicMod(bool bIncrement, bool bForceLimit)
 {
-	if (!IsScopeAttached())
+	if (!IsScopeAttached() || IsGrenadeMode() || m_bAltZoomActive)
 		return;
 
 	if (!m_zoom_params.m_bUseDynamicZoom)

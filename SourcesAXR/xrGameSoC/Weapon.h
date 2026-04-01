@@ -352,7 +352,7 @@ public:
 		Fvector			m_ZoomDof;
 		Fvector4		m_ReloadDof;
 		Fvector4		m_ReloadEmptyDof;
-		BOOL			m_bUseDynamicZoom;
+		BOOL			m_bUseDynamicZoom{};
 		shared_str		m_sUseZoomPostprocess;
 		shared_str		m_sUseBinocularVision;
 		CBinocularsVision*		m_pVision;
