@@ -850,6 +850,9 @@ public:
 
 	bool					IsDetectorActive() const;
 	void					DetectorToogle(bool fastmode = false) const;
+	bool					IsWaitingHideDet() { return m_bWaitingForDetectorHide; }
+	void					SetWaitingHideDet(bool status) { m_bWaitingForDetectorHide = status; }
+	void					OnDetectorHidden();
 
 	bool					MaskClearInProcess		() { return m_bMaskClear; }
 	void					SetMaskClear			(bool clear) { m_bMaskClear = clear; }
@@ -857,6 +860,7 @@ public:
 	void					SetMaskAnimActive		(bool status) { m_bMaskAnimActivated = status; }
 	void					SetMaskAnimLength		(int length) { m_iMaskAnimLength = length; }
 	void					SetActionAnimInProcess	(bool status) { m_bActionAnimInProcess = status; }
+	void					SetActionAnimMode		(u32 mode = 0) { m_ActionAnimMode = mode; }
 
 	float					GetDevicesPsyFactor() { return m_fDevicesPsyFactor; }
 	void					SetDevicesPsyFactor(float psy_factor) { m_fDevicesPsyFactor = psy_factor; }
@@ -892,6 +896,8 @@ protected:
 	bool					m_bTakeItemActivated;
 	bool					m_bItemTaked;
 	bool					m_bUsePickupAnim;
+	bool					m_bWaitingForDetectorHide;
+	u32						m_ActionAnimMode;
 	int						m_iNVGAnimLength;
 	int						m_iActionTiming;
 	int						m_iMaskAnimLength;

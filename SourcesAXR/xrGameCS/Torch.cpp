@@ -12,7 +12,7 @@
 #include "../Include/xrRender/Kinematics.h"
 #include "../xrEngine/camerabase.h"
 #include "../xrengine/xr_collide_form.h"
-#include "inventory.h"
+#include "Inventory.h"
 #include "game_base_space.h"
 
 #include "UIGameCustom.h"
@@ -24,9 +24,6 @@
 #include "AdvancedXrayGameConstants.h"
 #include "Battery.h"
 #include "CustomDetector.h"
-
-std::atomic<bool> isHidingInProgressTorch(false);
-std::atomic<bool> processSwitchNeeded(false);
 
 static const float		TIME_2_HIDE					= 5.f;
 static const float		TORCH_INERTION_CLAMP		= PI_DIV_6;
@@ -167,7 +164,7 @@ void CTorch::Switch()
 	if (OnClient())
 		return;
 
-	if (isHidingInProgressTorch.load())
+	if (Actor()->IsWaitingHideDet())
 		return;
 
 	CCustomDetector* pDet = smart_cast<CCustomDetector*>(Actor()->inventory().ItemFromSlot(DETECTOR_SLOT));
@@ -179,33 +176,33 @@ void CTorch::Switch()
 		return;
 	}
 
-	isHidingInProgressTorch.store(true);
-
-	std::thread hidingThread([&, pDet]
-		{
-			while (pDet && !pDet->IsHidden())
-				pDet->HideDetector(true);
-
-			isHidingInProgressTorch.store(false);
-			processSwitchNeeded.store(true);
-		});
-
-	hidingThread.detach();
+	Actor()->SetWaitingHideDet(true);
+	Actor()->SetActionAnimMode(2);
+	pDet->SetHideCallback(std::bind(&CActor::OnDetectorHidden, Actor()));
+	pDet->HideDetector(true, true);
 }
 
 void CTorch::ProcessSwitch()
 {
 	if (OnClient())
+	{
+		Actor()->SetWaitingHideDet(false);
 		return;
-
+	}
 
 	CActor* pA = smart_cast<CActor*>(H_Parent());
 	if (!pA)
+	{
+		Actor()->SetWaitingHideDet(false);
 		return;
+	}
 
 	CWeapon* Wpn = smart_cast<CWeapon*>(Actor()->inventory().ActiveItem());
 	if (Wpn && Wpn->IsZoomed())
+	{
+		Actor()->SetWaitingHideDet(false);
 		return;
+	}
 		
 
 	LPCSTR anim_sect = READ_IF_EXISTS(pAdvancedSettings, r_string, "actions_animations", "switch_torch_section", nullptr);
@@ -214,12 +211,16 @@ void CTorch::ProcessSwitch()
 	{
 		bool bActive			= !m_switched_on;
 		Switch(bActive);
+		Actor()->SetWaitingHideDet(false);
 		return;
 	}
 
 
-	if (Wpn && !(Wpn->GetState() == CWeapon::eIdle))
+	if (Wpn && !(Wpn->GetState() == CWeapon::eIdle || Wpn->GetState() == CWeapon::eDetAction))
+	{
+		Actor()->SetWaitingHideDet(false);
 		return;
+	}
 
 	m_bActivated = true;
 
@@ -276,6 +277,7 @@ void CTorch::UpdateUseAnim()
 		m_iActionTiming = Device.dwTimeGlobal;
 		Switch(bActive);
 		m_bSwitched = true;
+		Actor()->SetWaitingHideDet(false);
 	}
 
 	if (m_bActivated)
@@ -288,6 +290,7 @@ void CTorch::UpdateUseAnim()
 			g_block_all_except_movement = false;
 			g_actor_allow_ladder = true;
 			Actor()->m_bActionAnimInProcess = false;
+			Actor()->SetWaitingHideDet(false);
 			m_bActivated = false;
 		}
 	}
@@ -471,12 +474,6 @@ void CTorch::UpdateChargeLevel(void)
 void CTorch::UpdateCL() 
 {
 	inherited::UpdateCL			();
-
-	if (processSwitchNeeded.load())
-	{
-		ProcessSwitch();
-		processSwitchNeeded.store(false);
-	}
 
 	if (Actor()->m_bActionAnimInProcess && m_bActivated)
 		UpdateUseAnim();

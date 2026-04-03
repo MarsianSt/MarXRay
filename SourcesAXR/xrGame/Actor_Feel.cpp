@@ -32,9 +32,6 @@
 
 extern bool g_block_all_except_movement;
 
-std::atomic<bool> isHidingInProgressInv(false);
-std::atomic<bool> TakeItemAnimNeeded(false);
-
 void CActor::feel_touch_new				(CObject* O)
 {
 	CPhysicsShellHolder* sh=smart_cast<CPhysicsShellHolder*>(O);
@@ -482,7 +479,7 @@ void CActor::TakeItemAnimCheck(bool use_pickup_anim)
 
 	m_bUsePickupAnim = use_pickup_anim;
 
-	if (isHidingInProgressInv.load())
+	if (m_bWaitingForDetectorHide)
 		return;
 
 	CCustomDetector* pDet = smart_cast<CCustomDetector*>(inventory().ItemFromSlot(DETECTOR_SLOT));
@@ -501,37 +498,36 @@ void CActor::TakeItemAnimCheck(bool use_pickup_anim)
 		}
 	}
 
-	isHidingInProgressInv.store(true);
-
-	std::thread hidingThread([&, pDet]
-		{
-			while (pDet && !pDet->IsHidden())
-				pDet->HideDetector(true);
-
-			isHidingInProgressInv.store(false);
-			TakeItemAnimNeeded.store(true);
-		});
-
-	hidingThread.detach();
+	m_bWaitingForDetectorHide = true;
+	m_ActionAnimMode = use_pickup_anim ? 1 : 0;
+	pDet->SetHideCallback(std::bind(&CActor::OnDetectorHidden, this));
+	pDet->HideDetector(true, true);
 }
 
 void CActor::TakeItemAnim(bool use_pickup_anim)
 {
 	if (use_pickup_anim && !m_pObjectToTake)
+	{
+		m_bWaitingForDetectorHide = false;
 		return;
+	}
 
 	LPCSTR anim_sect = READ_IF_EXISTS(pAdvancedSettings, r_string, "actions_animations", "take_item_section", nullptr);
 
 	if (!anim_sect || !use_pickup_anim)
 	{
 		Game().SendPickUpEvent(ID(), m_pObjectToTake->ID());
+		m_bWaitingForDetectorHide = false;
 		return;
 	}
 
 	CWeapon* Wpn = smart_cast<CWeapon*>(inventory().ActiveItem());
 
-	if (Wpn && !(Wpn->GetState() == CWeapon::eIdle))
+	if (Wpn && !(Wpn->GetState() == CWeapon::eIdle || Wpn->GetState() == CWeapon::eDetAction))
+	{
+		m_bWaitingForDetectorHide = false;
 		return;
+	}
 
 	m_bTakeItemActivated = true;
 
@@ -579,12 +575,6 @@ void CActor::TakeItemAnim(bool use_pickup_anim)
 
 void CActor::UpdateUseAnim()
 {
-	if (TakeItemAnimNeeded.load())
-	{
-		TakeItemAnim(m_bUsePickupAnim);
-		TakeItemAnimNeeded.store(false);
-	}
-
 	if (!m_bTakeItemActivated)
 		return;
 
@@ -604,6 +594,7 @@ void CActor::UpdateUseAnim()
 
 		m_bItemTaked = true;
 		m_pObjectToTake = nullptr;
+		m_bWaitingForDetectorHide = false;
 	}
 
 	if (m_bTakeItemActivated)
@@ -617,6 +608,7 @@ void CActor::UpdateUseAnim()
 			g_actor_allow_ladder = true;
 			m_bActionAnimInProcess = false;
 			m_bTakeItemActivated = false;
+			m_bWaitingForDetectorHide = false;
 		}
 	}
 }

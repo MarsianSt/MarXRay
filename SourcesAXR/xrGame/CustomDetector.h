@@ -144,13 +144,14 @@ public:
 
 	virtual void	OnActiveItem		();
 	virtual void	OnHiddenItem		();
+	virtual void	OnDrop				() override;
 	virtual void	OnStateSwitch		(u32 S);
 	virtual void	OnAnimationEnd		(u32 state);
 	virtual	void	UpdateXForm			();
 	virtual bool	ParentIsActor		();
 
-	void			ToggleDetector		(bool bFastMode);
-	void			HideDetector		(bool bFastMode);
+	void			ToggleDetector		(bool bFastMode, bool bForce = false);
+	void			HideDetector		(bool bFastMode, bool bForce = false);
 	void			ShowDetector		(bool bFastMode);
 	virtual bool	CheckCompatibility	(CHudItem* itm);
 
@@ -208,6 +209,11 @@ public:
 
 			virtual CCustomDetector* cast_detector() { return this; }
 
+			using HideCallback = std::function<void()>;
+
+			void	SetHideCallback				(HideCallback callback);
+			void	ClearHideCallback();
+
 protected:
 			bool	CheckCompatibilityInt		(CHudItem* itm, u16* slot_to_activate);
 			void 	TurnDetectorInternal		(bool b);
@@ -222,6 +228,8 @@ protected:
 	float			m_fAfDetectRadius;
 
 	CAfList<CObject>m_artefacts;
+
+	HideCallback	m_hideCallback;
 
 	virtual bool			install_upgrade_impl(LPCSTR section, bool test);
 };

@@ -120,10 +120,6 @@ int				psActorQuickSaveNumberMax = 5;
 ENGINE_API extern int ps_r__ShaderNVG;
 extern ENGINE_API Fvector4 ps_ssfx_hud_drops_1;
 
-std::atomic<bool> isHidingInProgress(false);
-std::atomic<bool> CheckNVGAnimNeeded(false);
-std::atomic<bool> CleanMaskAnimNeeded(false);
-
 CActor::CActor() : CEntityAlive(),current_ik_cam_shift(0)
 {
 	encyclopedia_registry	= xr_new<CEncyclopediaRegistryWrapper	>();
@@ -289,6 +285,8 @@ CActor::CActor() : CEntityAlive(),current_ik_cam_shift(0)
 	m_fSpeedWeightFactor	= 8.0f;
 
 	m_bQuickWeaponBlocked	= false;
+	m_bWaitingForDetectorHide = false;
+	m_ActionAnimMode		= 0;
 }
 
 
@@ -1614,18 +1612,6 @@ void CActor::shedule_Update	(u32 DT)
 
 	if (GameConstants::GetActorSkillsEnabled())
 		UpdateSkills();
-
-	if (CheckNVGAnimNeeded.load())
-	{
-		StartNVGAnimation();
-		CheckNVGAnimNeeded.store(false);
-	}
-
-	if (CleanMaskAnimNeeded.load())
-	{
-		CleanMask();
-		CleanMaskAnimNeeded.store(false);
-	}
 
 	if (m_bActionAnimInProcess)
 	{
@@ -3082,7 +3068,7 @@ bool CActor::unlimited_ammo()
 
 void CActor::NVGAnimCheckDetector()
 {
-	if (isHidingInProgress.load())
+	if (m_bWaitingForDetectorHide)
 		return;
 
 	CCustomDetector* pDet = smart_cast<CCustomDetector*>(inventory().ItemFromSlot(DETECTOR_SLOT));
@@ -3094,18 +3080,10 @@ void CActor::NVGAnimCheckDetector()
 		return;
 	}
 
-	isHidingInProgress.store(true);
-
-	std::thread hidingThread([&, pDet]
-		{
-			while (pDet && !pDet->IsHidden())
-				pDet->HideDetector(true);
-
-			isHidingInProgress.store(false);
-			CheckNVGAnimNeeded.store(true);
-		});
-
-	hidingThread.detach();
+	m_bWaitingForDetectorHide = true;
+	m_ActionAnimMode = 3;
+	pDet->SetHideCallback(std::bind(&CActor::OnDetectorHidden, this));
+	pDet->HideDetector(true, true);
 }
 
 void CActor::StartNVGAnimation()
@@ -3116,21 +3094,31 @@ void CActor::StartNVGAnimation()
 	CCustomOutfit* pOutfit = smart_cast<CCustomOutfit*>(inventory().ItemFromSlot(OUTFIT_SLOT));
 
 	if (Wpn && Wpn->IsZoomed())
+	{
+		m_bWaitingForDetectorHide = false;
 		return;
+	}
 
 	if (!(pHelmet && pHelmet->m_NightVisionSect.size()) && !(pHelmet2 && pHelmet2->m_NightVisionSect.size()) && !(pOutfit && pOutfit->m_NightVisionSect.size()))
+	{
+		m_bWaitingForDetectorHide = false;
 		return;
+	}
 
 	LPCSTR anim_sect = READ_IF_EXISTS(pAdvancedSettings, r_string, "actions_animations", "switch_nightvision_section", nullptr);
 
 	if (!anim_sect)
 	{
 		SwitchNightVision(!m_bNightVisionOn);
+		m_bWaitingForDetectorHide = false;
 		return;
 	}
 
-	if (Wpn && !(Wpn->GetState() == CWeapon::eIdle))
+	if (Wpn && !(Wpn->GetState() == CWeapon::eIdle || Wpn->GetState() == CWeapon::eDetAction))
+	{
+		m_bWaitingForDetectorHide = false;
 		return;
+	}
 
 	m_bNVGActivated = true;
 
@@ -3181,6 +3169,7 @@ void CActor::UpdateNVGUseAnim()
 		m_iActionTiming = Device.dwTimeGlobal;
 		SwitchNightVision(!m_bNightVisionOn);
 		m_bNVGSwitched = true;
+		m_bWaitingForDetectorHide = false;
 	}
 
 	if (m_bNVGActivated)
@@ -3194,13 +3183,14 @@ void CActor::UpdateNVGUseAnim()
 			g_actor_allow_ladder = true;
 			m_bActionAnimInProcess = false;
 			m_bNVGActivated = false;
+			m_bWaitingForDetectorHide = false;
 		}
 	}
 }
 
 void CActor::CleanMaskAnimCheckDetector()
 {
-	if (isHidingInProgress.load())
+	if (m_bWaitingForDetectorHide)
 		return;
 
 	CCustomDetector* pDet = smart_cast<CCustomDetector*>(inventory().ItemFromSlot(DETECTOR_SLOT));
@@ -3214,18 +3204,10 @@ void CActor::CleanMaskAnimCheckDetector()
 		return;
 	}
 
-	isHidingInProgress.store(true);
-
-	std::thread hidingThread([&, pDet]
-		{
-			while (pDet && !pDet->IsHidden())
-				pDet->HideDetector(true);
-
-			isHidingInProgress.store(false);
-			CleanMaskAnimNeeded.store(true);
-		});
-
-	hidingThread.detach();
+	m_bWaitingForDetectorHide = true;
+	m_ActionAnimMode = 4;
+	pDet->SetHideCallback(std::bind(&CActor::OnDetectorHidden, this));
+	pDet->HideDetector(true, true);
 }
 
 void CActor::CleanMask()
@@ -3233,7 +3215,10 @@ void CActor::CleanMask()
 	LPCSTR anim_sect = READ_IF_EXISTS(pAdvancedSettings, r_string, "actions_animations", "clean_mask_section", nullptr);
 
 	if (!anim_sect)
+	{
+		m_bWaitingForDetectorHide = false;
 		return;
+	}
 
 	CWeapon* Wpn = smart_cast<CWeapon*>(inventory().ActiveItem());
 	CHelmet* pHelmet = smart_cast<CHelmet*>(inventory().ItemFromSlot(HELMET_SLOT));
@@ -3241,10 +3226,16 @@ void CActor::CleanMask()
 	CCustomOutfit* pOutfit = smart_cast<CCustomOutfit*>(inventory().ItemFromSlot(OUTFIT_SLOT));
 
 	if (!(pHelmet && pHelmet->m_b_HasGlass) && !(pHelmet2 && pHelmet2->m_b_HasGlass) && !(pOutfit && pOutfit->m_b_HasGlass))
+	{
+		m_bWaitingForDetectorHide = false;
 		return;
+	}
 
-	if (Wpn && (!(Wpn->GetState() == CWeapon::eIdle) || Wpn->IsZoomed()))
+	if (Wpn && (!(Wpn->GetState() == CWeapon::eIdle || Wpn->GetState() == CWeapon::eDetAction) || Wpn->IsZoomed()))
+	{
+		m_bWaitingForDetectorHide = false;
 		return;
+	}
 
 	m_bMaskAnimActivated = true;
 
@@ -3293,6 +3284,7 @@ void CActor::UpdateMaskUseAnim()
 	if ((m_iActionTiming <= Device.dwTimeGlobal && !m_bMaskClear) && g_Alive())
 	{
 		m_iActionTiming = Device.dwTimeGlobal;
+		m_bWaitingForDetectorHide = false;
 
 		CWeapon* Wpn = smart_cast<CWeapon*>(inventory().ActiveItem());
 
@@ -3312,6 +3304,7 @@ void CActor::UpdateMaskUseAnim()
 			m_bActionAnimInProcess = false;
 			m_bMaskAnimActivated = false;
 			m_bMaskClear = false;
+			m_bWaitingForDetectorHide = false;
 		}
 	}
 }
@@ -3817,6 +3810,34 @@ void CActor::DetectorToogle(bool fastmode) const
 {
 	if (auto det = smart_cast<CCustomDetector*>(inventory().ItemFromSlot(DETECTOR_SLOT)))
 		det->ToggleDetector(fastmode);
+}
+
+void CActor::OnDetectorHidden()
+{
+	m_bWaitingForDetectorHide = false;
+
+	switch (m_ActionAnimMode)
+	{
+	case 1:
+		{
+			TakeItemAnim(true);
+		} break;
+	case 2:
+		{
+			if (CTorch* torch = smart_cast<CTorch*>(inventory().ItemFromSlot(TORCH_SLOT)))
+				torch->ProcessSwitch();
+		} break;
+	case 3:
+		{
+			StartNVGAnimation();
+		} break;
+	case 4:
+		{
+			CleanMask();
+		} break;
+	default:
+		m_ActionAnimMode = 0;
+	}
 }
 
 void CActor::StartActionSndAnm(shared_str snd_name, shared_str eff_name)

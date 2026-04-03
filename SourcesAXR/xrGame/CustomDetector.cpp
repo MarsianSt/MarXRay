@@ -91,19 +91,19 @@ bool  CCustomDetector::CheckCompatibility(CHudItem* itm)
 	return true;
 }
 
-void CCustomDetector::HideDetector(bool bFastMode)
+void CCustomDetector::HideDetector(bool bFastMode, bool bForce)
 {
-	if(GetState()==eIdle)
-		ToggleDetector(bFastMode);
+	if (GetState()==eIdle || bForce)
+		ToggleDetector(bFastMode, bForce);
 }
 
 void CCustomDetector::ShowDetector(bool bFastMode)
 {
-	if(GetState()==eHidden)
+	if (GetState()==eHidden)
 		ToggleDetector(bFastMode);
 }
 
-void CCustomDetector::ToggleDetector(bool bFastMode)
+void CCustomDetector::ToggleDetector(bool bFastMode, bool bForce)
 {
 	m_bNeedActivation		= false;
 	m_bFastAnimMode			= bFastMode;
@@ -111,7 +111,7 @@ void CCustomDetector::ToggleDetector(bool bFastMode)
 	if (GetState() == eHidden)
 	{
 		PIItem iitem = m_pInventory->ActiveItem();
-		CHudItem* itm = (iitem) ? iitem->cast_hud_item() : NULL;
+		CHudItem* itm = (iitem) ? iitem->cast_hud_item() : nullptr;
 		u16 slot_to_activate = NO_ACTIVE_SLOT;
 
 		if (CheckCompatibilityInt(itm, &slot_to_activate))
@@ -128,7 +128,7 @@ void CCustomDetector::ToggleDetector(bool bFastMode)
 			}
 		}
 	}
-	else if (GetState() == eIdle)
+	else if (GetState() == eIdle || bForce)
 		SwitchState(eHiding);
 }
 
@@ -220,12 +220,24 @@ void CCustomDetector::OnAnimationEnd(u32 state)
 			SwitchState					(eHidden);
 			TurnDetectorInternal		(false);
 			g_player_hud->detach_item	(this);
+
+			if (m_hideCallback)
+			{
+				m_hideCallback();
+				ClearHideCallback();
+			}
 		} break;
 	case eShowing:
 	case eIdle:
 	case eDetAction:
 		{
 			SwitchState(eIdle);
+
+			if (m_hideCallback)
+			{
+				m_hideCallback();
+				ClearHideCallback();
+			}
 		} break;
 	}
 }
@@ -244,12 +256,23 @@ void CCustomDetector::OnHiddenItem()
 {
 }
 
+void CCustomDetector::OnDrop()
+{
+	if (m_hideCallback)
+	{
+		m_hideCallback();
+		ClearHideCallback();
+	}
+}
+
 CCustomDetector::CCustomDetector() 
 {
-	m_ui				= NULL;
+	m_ui				= nullptr;
 	m_bFastAnimMode		= false;
 	m_bNeedActivation	= false;
 	m_bDetActionsEnabled = false;
+
+	m_hideCallback		= nullptr;
 
 	flash_light_bone	= "light_bone_1";
 	m_flash_bone_id		= BI_NONE;
@@ -263,6 +286,9 @@ CCustomDetector::~CCustomDetector()
 	xr_delete				(m_ui);
 	detector_light.destroy	();
 	detector_glow.destroy	();
+
+	if (m_hideCallback)
+		ClearHideCallback();
 }
 
 BOOL CCustomDetector::net_Spawn(CSE_Abstract* DC) 
@@ -717,4 +743,14 @@ bool CCustomDetector::install_upgrade_impl(LPCSTR section, bool test)
 bool CCustomDetector::IsNecessaryItem(const shared_str& item_sect_, xr_vector<shared_str> item)
 {
 	return (std::find(item.begin(), item.end(), item_sect_) != item.end());
+}
+
+void CCustomDetector::SetHideCallback(HideCallback callback)
+{
+	m_hideCallback = std::move(callback);
+}
+
+void CCustomDetector::ClearHideCallback()
+{
+	m_hideCallback = nullptr;
 }
