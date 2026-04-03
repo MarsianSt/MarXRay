@@ -210,36 +210,45 @@ bool CWeapon::bChangeNVSecondVPStatus()
 	if (!bNVsecondVPavaible || !IsZoomed())
 		return false;
 
-	bNVsecondVPstatus = !bNVsecondVPstatus;
-
-	if (m_sounds.FindSoundItem("sndScopeNV", false))
-		m_sounds.PlaySound("sndScopeNV", get_LastFP(), H_Root(), !!GetHUDmode(), false, (u8)-1);
-
-	if (IsGameTypeSingle() && H_Parent() == Level().CurrentControlEntity())
+	static u32 m_switch_time = 0;
+	if (m_switch_time <= Device.dwTimeGlobal)
 	{
-		CActor* current_actor = smart_cast<CActor*>(Level().CurrentControlEntity());
-		VERIFY(current_actor);
+		bNVsecondVPstatus = !bNVsecondVPstatus;
 
-		string_path ce_path{};
-		LPCSTR anm_name = READ_IF_EXISTS(pSettings, r_string, m_section_id.c_str(), "cam_eff_switch_scope_nv", nullptr);
+		m_switch_time = Device.dwTimeGlobal + 750;
 
-		if (anm_name && FS.exist(ce_path, "$game_anims$", anm_name))
+		if (m_sounds.FindSoundItem("sndScopeNV", false))
+			m_sounds.PlaySound("sndScopeNV", get_LastFP(), H_Root(), !!GetHUDmode(), false, (u8)-1);
+
+		if (IsGameTypeSingle() && H_Parent() == Level().CurrentControlEntity())
 		{
-			CEffectorCam* ec = current_actor->Cameras().GetCamEffector(eCEWeaponAction);
+			CActor* current_actor = smart_cast<CActor*>(Level().CurrentControlEntity());
+			VERIFY(current_actor);
 
-			if (ec)
-				current_actor->Cameras().RemoveCamEffector(eCEWeaponAction);
+			string_path ce_path{};
+			LPCSTR anm_name = READ_IF_EXISTS(pSettings, r_string, m_section_id.c_str(), "cam_eff_switch_scope_nv", nullptr);
 
-			CAnimatorCamEffector* e = xr_new<CAnimatorCamEffector>();
-			e->SetType(eCEWeaponAction);
-			e->SetHudAffect(false);
-			e->SetCyclic(false);
-			e->Start(anm_name);
-			current_actor->Cameras().AddCamEffector(e);
+			if (anm_name && FS.exist(ce_path, "$game_anims$", anm_name))
+			{
+				CEffectorCam* ec = current_actor->Cameras().GetCamEffector(eCEWeaponAction);
+
+				if (ec)
+					current_actor->Cameras().RemoveCamEffector(eCEWeaponAction);
+
+				CAnimatorCamEffector* e = xr_new<CAnimatorCamEffector>();
+				e->SetType(eCEWeaponAction);
+				e->SetHudAffect(false);
+				e->SetCyclic(false);
+				e->Start(anm_name);
+				current_actor->Cameras().AddCamEffector(e);
+
+				// Dance Maniac: If use cam effector - set m_switch_time by camera effect life time
+				m_switch_time = Device.dwTimeGlobal + (e->GetAnimatorLength() * 1000.f);
+			}
 		}
-	}
 
-	return true;
+		return true;
+	}
 }
 
 shared_str CWeapon::GetNameWithAttachment()
