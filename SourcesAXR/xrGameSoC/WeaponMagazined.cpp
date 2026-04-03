@@ -513,7 +513,8 @@ bool CWeaponMagazined::TryReload()
 		}
 	}
 	
-	SwitchState(eIdle);
+	if (GetState() != eSprintStart && GetState() != eIdle && GetState() != eSprintEnd)
+		SwitchState(eIdle);
 
 	return false;
 }
