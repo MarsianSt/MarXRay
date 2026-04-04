@@ -48,7 +48,7 @@ CEatableItem::CEatableItem()
 	m_iAnimHandsCnt			= 1;
 	m_iAnimLength			= 0;
 	m_bActivated			= false;
-	m_bItmStartAnim			= false;
+	m_bAnimStartNow			= false;
 	m_bNeedDestroyNotUseful = true;
 
 	m_fRadioactivity		= 0.0f;
@@ -176,31 +176,42 @@ void CEatableItem::UpdateInRuck(CActor* actor)
 	}
 }
 
+void CEatableItem::OnDetectorHidden()
+{
+	m_bAnimStartNow = true;
+	Actor()->SetWaitingHideDet(false);
+}
+
 void CEatableItem::HideWeapon()
 {
-	if (Actor()->m_bActionAnimInProcess || m_bActivated || m_bItmStartAnim)
+	if (Actor()->m_bActionAnimInProcess || m_bActivated || m_bAnimStartNow || Actor()->IsWaitingHideDet())
 		return;
 
-	CEffectorCam* effector = Actor()->Cameras().GetCamEffector((ECamEffectorType)effUseItem);
-	CCustomDetector* pDet = smart_cast<CCustomDetector*>(Actor()->inventory().ItemFromSlot(DETECTOR_SLOT));
 	CWeapon* pWpn = smart_cast<CWeapon*>(Actor()->inventory().ActiveItem());
-	
-	if (pWpn && !(pWpn->GetState() == CWeapon::eIdle))
+	if (pWpn && !(pWpn->GetState() == CWeapon::eIdle || pWpn->GetState() == CWeapon::eDetAction))
 		return;
 
 	Actor()->SetWeaponHideState(INV_STATE_BLOCK_ALL, true);
 
-	if (pDet)
-		pDet->HideDetector(true);
+	CCustomDetector* pDet = smart_cast<CCustomDetector*>(Actor()->inventory().ItemFromSlot(DETECTOR_SLOT));
+	if (!pDet || (pDet->IsHidden() && m_bHasAnimation))
+	{
+		m_bAnimStartNow = true;
+		return;
+	}
 
-	m_bItmStartAnim = true;
+	Actor()->SetWaitingHideDet(true);
+	Actor()->SetActionAnimMode(5);
+	pDet->SetHideCallback(std::bind(&CEatableItem::OnDetectorHidden, this));
+	pDet->HideDetector(true, true);
 }
 
 void CEatableItem::StartAnimation()
 {
+	m_bAnimStartNow = false;
 	m_bActivated = true;
 
-	CEffectorCam* effector = Actor()->Cameras().GetCamEffector((ECamEffectorType)effUseItem);
+	CEffectorCam* effector = Actor()->Cameras().GetCamEffector((ECamEffectorType)eCEUseItem);
 	CCustomOutfit* cur_outfit = Actor()->GetOutfit();
 
 	bool has_lss = (cur_outfit && cur_outfit->m_bHasLSS);
@@ -209,10 +220,12 @@ void CEatableItem::StartAnimation()
 	bool m_bSingleHanded = READ_IF_EXISTS(pSettings, r_bool, cur_section, "single_handed_anim", false);
 	int m_iAnimHandsCnt = m_bSingleHanded ? 1 : 2;
 
-	m_bItmStartAnim = false;
 	g_block_all_except_movement = true;
 	g_actor_allow_ladder = false;
 	Actor()->m_bActionAnimInProcess = true;
+
+	if (!Actor()->inventory_disabled())
+		CurrentGameUI()->HideActorMenu();
 
 	if (pSettings->line_exist(cur_section, "anm_use"))
 	{
@@ -251,7 +264,7 @@ void CEatableItem::StartAnimation()
 	}
 
 	if (!effector && use_cam_effector != nullptr)
-		AddEffector(Actor(), effUseItem, use_cam_effector, m_fEffectorIntensity);
+		AddEffector(Actor(), eCEUseItem, use_cam_effector, m_fEffectorIntensity);
 
 	if (pSettings->line_exist(cur_section, "snd_using"))
 	{
@@ -278,7 +291,7 @@ void CEatableItem::UpdateUseAnim(CActor* actor)
 	if (!m_bHasAnimation) return;
 
 	CCustomDetector* pDet = smart_cast<CCustomDetector*>(actor->inventory().ItemFromSlot(DETECTOR_SLOT));
-	CEffectorCam* effector = actor->Cameras().GetCamEffector((ECamEffectorType)effUseItem);
+	CEffectorCam* effector = actor->Cameras().GetCamEffector((ECamEffectorType)eCEUseItem);
 	CCustomOutfit* cur_outfit = Actor()->GetOutfit();
 
 	bool has_lss = (cur_outfit && cur_outfit->m_bHasLSS);
@@ -286,15 +299,13 @@ void CEatableItem::UpdateUseAnim(CActor* actor)
 
 	bool IsActorAlive = g_pGamePersistent->GetActorAliveStatus();
 
-	if (!Actor()->inventory_disabled() && m_bItmStartAnim)
-		CurrentGameUI()->HideActorMenu();
-
-	if (m_bItmStartAnim && actor->inventory().GetActiveSlot() == NO_ACTIVE_SLOT && (!pDet || pDet->IsHidden()) && !m_bActivated)
+	if (m_bAnimStartNow && actor->inventory().GetActiveSlot() == NO_ACTIVE_SLOT && (!pDet || pDet->IsHidden()) && !m_bActivated)
 		StartAnimation();
 
 	if (!IsActorAlive)
 	{
 		m_using_sound.stop();
+		actor->SetWaitingHideDet(false);
 
 		if (pSettings->line_exist(cur_section, "hud_fov") && last_hud_fov > 0.0f)
 		{
@@ -311,6 +322,7 @@ void CEatableItem::UpdateUseAnim(CActor* actor)
 				actor->inventory().SetPrevActiveSlot(NO_ACTIVE_SLOT);
 
 			actor->SetWeaponHideState(INV_STATE_BLOCK_ALL, false);
+			actor->SetWaitingHideDet(false);
 
 			m_iAnimLength = Device.dwTimeGlobal;
 			m_bActivated = false;
@@ -325,7 +337,7 @@ void CEatableItem::UpdateUseAnim(CActor* actor)
 			}
 
 			if (effector)
-				RemoveEffector(actor, effUseItem);
+				RemoveEffector(actor, eCEUseItem);
 
 			ps_ssfx_wpn_dof_1 = GameConstants::GetSSFX_DefaultDoF();
 			ps_ssfx_wpn_dof_2 = GameConstants::GetSSFX_DefaultDoF().z;

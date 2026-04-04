@@ -265,7 +265,7 @@ public:
 	void			update				(const Fmatrix& trans);
 	void			StopScriptAnim		();
 	void			updateMovementLayerState();
-	void			PlayBlendAnm		(LPCSTR name, u8 part = 0, float speed = 1.f, float power = 1.f, bool bLooped = true, bool no_restart = false);
+	void			PlayBlendAnm		(LPCSTR name, u8 part = 0, float speed = 1.f, float power = 1.f, bool bLooped = true, bool no_restart = false, int ce_type = 0);
 	void			StopBlendAnm		(LPCSTR name, bool bForce = false);
 	void			StopAllBlendAnms	(bool bForce);
 	float			SetBlendAnmTime		(LPCSTR name, float time);

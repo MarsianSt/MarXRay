@@ -135,6 +135,7 @@ void CCustomDetector::ToggleDetector(bool bFastMode, bool bForce)
 void CCustomDetector::OnStateSwitch(u32 S)
 {
 	inherited::OnStateSwitch(S);
+	auto detectorOwner = smart_cast<CHudItem*>(g_actor->inventory().ActiveItem());
 
 	switch(S)
 	{
@@ -144,7 +145,7 @@ void CCustomDetector::OnStateSwitch(u32 S)
 			m_sounds.PlaySound			("sndShow", Fvector().set(0,0,0), this, true, false);
 			PlayHUDMotion				(m_bFastAnimMode ? "anm_show_fast" : "anm_show", FALSE/*TRUE*/, this, GetState());
 
-			if (auto detectorOwner = smart_cast<CHudItem*>(g_actor->inventory().ActiveItem()))
+			if (detectorOwner)
 				detectorOwner->PlayAnimByDetector(true, eDetAction, "anm_detector_show");
 
 			SetPending					(TRUE);
@@ -154,7 +155,7 @@ void CCustomDetector::OnStateSwitch(u32 S)
 			m_sounds.PlaySound			("sndHide", Fvector().set(0,0,0), this, true, false);
 			PlayHUDMotion				(m_bFastAnimMode ? "anm_hide_fast" : "anm_hide", FALSE/*TRUE*/, this, GetState());
 
-			if (auto detectorOwner = smart_cast<CHudItem*>(g_actor->inventory().ActiveItem()))
+			if (detectorOwner)
 				detectorOwner->PlayAnimByDetector(true, eDetAction, "anm_detector_hide");
 
 			SetPending					(TRUE);
@@ -182,6 +183,9 @@ void CCustomDetector::DetectorAction(u32 state)
 void CCustomDetector::PlayDetectorAnimation(bool switch_state, u32 state, const char* anm_name)
 {
 	if (!m_bDetActionsEnabled || !ParentIsActor())
+		return;
+
+	if (GetState() == eShowing || GetState() == eHiding)
 		return;
 
 	if (isHUDAnimationExist(anm_name))

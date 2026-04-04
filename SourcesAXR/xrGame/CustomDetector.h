@@ -158,7 +158,7 @@ public:
 	virtual u32		ef_detector_type	() const	{return 1;};
 
 	virtual void	DetectorAction		(u32 state);
-    virtual void	PlayDetectorAnimation(bool switch_state = false, u32 state = eDetAction, const char* anm_name = "");
+	virtual void	PlayDetectorAnimation(bool switch_state = false, u32 state = eDetAction, const char* anm_name = "");
 
 	virtual void	PlayAnimIdle		();
 

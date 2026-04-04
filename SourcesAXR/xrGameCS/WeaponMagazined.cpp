@@ -2554,8 +2554,8 @@ void CWeaponMagazined::PlayAnimAim()
 		{
 			PlayHUDMotionNew(guns_aim_anm, true, GetState());
 
-			if (ParentIsActor() && g_actor->IsDetectorActive())
-				det->PlayDetectorAnimation(true, eDetAction, GenerateAimAnimName("anm_idle_aim_moving"));
+			if (!IsRotatingToZoom() && ParentIsActor() && g_actor->IsDetectorActive() && !det->IsPending())
+				det->PlayDetectorAnimation(true, eIdle, GenerateAimAnimName("anm_idle_aim_moving"));
 
 			return;
 		}
@@ -2569,8 +2569,8 @@ void CWeaponMagazined::PlayAnimAim()
 			{
 				PlayHUDMotionNew(new_guns_aim_anm, true, GetState());
 
-				if (ParentIsActor() && g_actor->IsDetectorActive())
-					det->PlayDetectorAnimation(true, eDetAction, GenerateAimAnimName("anm_idle_aim_moving"));
+				if (!IsRotatingToZoom() && ParentIsActor() && g_actor->IsDetectorActive() && !det->IsPending())
+					det->PlayDetectorAnimation(true, eIdle, GenerateAimAnimName("anm_idle_aim_moving"));
 
 				return;
 			}
@@ -2585,8 +2585,8 @@ void CWeaponMagazined::PlayAnimAim()
 			{
 				PlayHUDMotionNew(new_guns_aim_anm, true, GetState());
 
-				if (ParentIsActor() && g_actor->IsDetectorActive())
-					det->PlayDetectorAnimation(true, eDetAction, GenerateAimAnimName("anm_idle_aim_moving"));
+				if (!IsRotatingToZoom() && ParentIsActor() && g_actor->IsDetectorActive() && !det->IsPending())
+					det->PlayDetectorAnimation(true, eIdle, GenerateAimAnimName("anm_idle_aim_moving"));
 
 				return;
 			}
@@ -2600,8 +2600,8 @@ void CWeaponMagazined::PlayAnimAim()
 	else
 		PlayHUDMotion("anm_idle_aim", TRUE, NULL, GetState());
 
-	if (ParentIsActor() && g_actor->IsDetectorActive())
-		det->PlayDetectorAnimation(true, eDetAction, GenerateAimAnimName("anm_idle_aim"));
+	if (!IsRotatingToZoom() && ParentIsActor() && g_actor->IsDetectorActive() && !det->IsPending())
+		det->PlayDetectorAnimation(true, eIdle, GenerateAimAnimName("anm_idle_aim"));
 }
 
 bool CWeaponMagazined::PlayAnimAimEnd()
@@ -2839,6 +2839,9 @@ void CWeaponMagazined::PlayAnimByDetector(bool switch_state, u32 state, const ch
 	if (IsPending() || !ParentIsActor())
 		return;
 
+	if (GetState() == eShowing || GetState() == eHiding)
+		return;
+
 	string128 guns_anm_by_detector{};
 	strconcat(sizeof(guns_anm_by_detector), guns_anm_by_detector, anm_name, IsMisfire() ? "_jammed" : IsEmptyMagazine() ? "_empty" : "");
 
@@ -2847,7 +2850,7 @@ void CWeaponMagazined::PlayAnimByDetector(bool switch_state, u32 state, const ch
 		if (switch_state)
 			SwitchState(state);
 
-		SetPending(state != eIdle);
+		SetPending(GetState() != eIdle);
 		PlayHUDMotionNew(guns_anm_by_detector, true, state);
 	}
 	else if (guns_anm_by_detector && strstr(guns_anm_by_detector, "_jammed"))
@@ -2861,7 +2864,7 @@ void CWeaponMagazined::PlayAnimByDetector(bool switch_state, u32 state, const ch
 			if (switch_state)
 				SwitchState(state);
 
-			SetPending(state != eIdle);
+			SetPending(GetState() != eIdle);
 			PlayHUDMotionNew(new_guns_anm_by_detector, true, state);
 		}
 	}
@@ -2876,7 +2879,7 @@ void CWeaponMagazined::PlayAnimByDetector(bool switch_state, u32 state, const ch
 			if (switch_state)
 				SwitchState(state);
 
-			SetPending(state != eIdle);
+			SetPending(GetState() != eIdle);
 			PlayHUDMotionNew(new_guns_anm_by_detector, true, state);
 		}
 	}

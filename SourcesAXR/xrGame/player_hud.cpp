@@ -1411,7 +1411,7 @@ void player_hud::updateMovementLayerState()
 	}
 }
 
-void player_hud::PlayBlendAnm(LPCSTR name, u8 part, float speed, float power, bool bLooped, bool no_restart)
+void player_hud::PlayBlendAnm(LPCSTR name, u8 part, float speed, float power, bool bLooped, bool no_restart, int ce_type)
 {
 	if (IsGameTypeSingle() && m_attached_items[0])
 	{
@@ -1433,13 +1433,13 @@ void player_hud::PlayBlendAnm(LPCSTR name, u8 part, float speed, float power, bo
 
 			if (FS.exist(ce_path, "$game_anims$", anm_name))
 			{
-				CEffectorCam* ec = current_actor->Cameras().GetCamEffector(eCEWeaponAction);
+				CEffectorCam* ec = current_actor->Cameras().GetCamEffector(ce_type ? (ECamEffectorType)ce_type : eCEWeaponAction);
 
 				if (ec)
-					current_actor->Cameras().RemoveCamEffector(eCEWeaponAction);
+					current_actor->Cameras().RemoveCamEffector(ce_type ? (ECamEffectorType)ce_type : eCEWeaponAction);
 
 				CAnimatorCamEffector* e = xr_new<CAnimatorCamEffector>();
-				e->SetType(eCEWeaponAction);
+				e->SetType(ce_type ? (ECamEffectorType)ce_type : eCEWeaponAction);
 				e->SetHudAffect(false);
 				e->SetCyclic(false);
 				e->Start(anm_name);

@@ -266,8 +266,12 @@ void CActor::IR_OnKeyboardPress(int cmd)
 			PIItem det_active					= inventory().ItemFromSlot(DETECTOR_SLOT);
 			if(det_active)
 			{
-				CCustomDetector* det			= smart_cast<CCustomDetector*>(det_active);
-				det->ToggleDetector				(g_player_hud->attached_item(0)!=NULL);
+				CWeapon* wpn = smart_cast<CWeapon*>(inventory().ActiveItem());
+				CCustomDetector* det = smart_cast<CCustomDetector*>(det_active);
+
+				if (!wpn || (wpn && !wpn->IsZoomed()))
+					det->ToggleDetector(g_player_hud->attached_item(0) != nullptr);
+
 				return;
 			}
 		} break;

@@ -18,7 +18,6 @@
 #define effActorDeath			(eStartEffectorID+10)
 #define effIntoxication			(eStartEffectorID+11)
 #define effSleepeness			(eStartEffectorID+12)
-#define effUseItem				(eStartEffectorID+13)
 #define effDrugs				(eStartEffectorID+14)
 #define effFrostbite			(eStartEffectorID+15)
 #define effPostprocessEditor	(eStartEffectorID+16)
@@ -46,3 +45,4 @@
 #define	eCEWeaponAction2		((ECamEffectorType)(cefNext+18))
 #define	eCEActorMoving			((ECamEffectorType)(cefNext+19))
 #define	eCEPostprocessEditor	((ECamEffectorType)(cefNext+20))
+#define eCEUseItem				((ECamEffectorType)(cefNext+21))

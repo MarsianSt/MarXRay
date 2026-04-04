@@ -949,12 +949,15 @@ void CMissile::PlayAnimByDetector(bool switch_state, u32 state, const char* anm_
 	if (IsPending() || !smart_cast<CActor*>(H_Parent()))
 		return;
 
+	if (GetState() == eShowing || GetState() == eHiding)
+		return;
+
 	if (isHUDAnimationExist(anm_name))
 	{
 		if (switch_state)
 			SwitchState(state);
 
-		SetPending(state != eIdle);
+		SetPending(GetState() != eIdle);
 		PlayHUDMotionNew(anm_name, true, state);
 	}
 }

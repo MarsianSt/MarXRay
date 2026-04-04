@@ -509,9 +509,9 @@ void CActor::TakeItemAnim(bool use_pickup_anim)
 		if (use_cam_effector)
 		{
 			if (Wpn)
-				g_player_hud->PlayBlendAnm(use_cam_effector, 0, anim_speed, effector_intensity, false);
+				g_player_hud->PlayBlendAnm(use_cam_effector, 0, anim_speed, effector_intensity, false, false, eCEUseItem);
 			else
-				AddEffector(use_cam_effector, effUseItem, effector_intensity);
+				AddEffector(use_cam_effector, eCEUseItem, effector_intensity);
 		}
 
 		m_iTakeAnimLength = Device.dwTimeGlobal + g_player_hud->motion_length_script(anim_sect, !Wpn ? "anm_use" : "anm_use_weapon", anim_speed);

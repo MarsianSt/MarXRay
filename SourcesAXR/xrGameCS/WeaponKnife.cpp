@@ -206,12 +206,15 @@ void CWeaponKnife::PlayAnimByDetector(bool switch_state, u32 state, const char* 
 	if (IsPending() || !ParentIsActor())
 		return;
 
+	if (GetState() == eShowing || GetState() == eHiding)
+		return;
+
 	if (isHUDAnimationExist(anm_name))
 	{
 		if (switch_state)
 			SwitchState(state);
 
-		SetPending(state != eIdle);
+		SetPending(GetState() != eIdle);
 		PlayHUDMotionNew(anm_name, true, state);
 	}
 }

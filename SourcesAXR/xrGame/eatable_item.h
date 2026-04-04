@@ -32,6 +32,7 @@ public:
 			void			UpdateUseAnim				(CActor* actor);
 			void			HideWeapon					();
 			void			StartAnimation				();
+			void			OnDetectorHidden			();
 
 			void			SetRemainingUses			(u32 value) { if (value > m_iConstPortions) return; m_iPortionsNum = value; };
 			u32				GetMaxUses					() const { return m_iConstPortions; };
@@ -47,7 +48,7 @@ public:
 			bool			m_bHasAnimation;
 			bool			m_bUnlimited;
 			bool			m_bActivated;
-			bool			m_bItmStartAnim;
+			bool			m_bAnimStartNow;
 			bool			m_bNeedDestroyNotUseful;
 			int				m_iAnimHandsCnt;
 			int				m_iAnimLength;

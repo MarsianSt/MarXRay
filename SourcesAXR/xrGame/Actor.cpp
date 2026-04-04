@@ -3138,9 +3138,9 @@ void CActor::StartNVGAnimation()
 		if (use_cam_effector)
 		{
 			if (Wpn)
-				g_player_hud->PlayBlendAnm(use_cam_effector, 0, anim_speed, effector_intensity, false);
+				g_player_hud->PlayBlendAnm(use_cam_effector, 0, anim_speed, effector_intensity, false, false, eCEUseItem);
 			else
-				AddEffector(use_cam_effector, effUseItem, effector_intensity);
+				AddEffector(use_cam_effector, eCEUseItem, effector_intensity);
 		}
 
 		m_iNVGAnimLength = Device.dwTimeGlobal + g_player_hud->motion_length_script(anim_sect, !Wpn ? "anm_use" : "anm_use_weapon", anim_speed);
@@ -3255,9 +3255,9 @@ void CActor::CleanMask()
 		if (use_cam_effector)
 		{
 			if (Wpn)
-				g_player_hud->PlayBlendAnm(use_cam_effector, 0, anim_speed, effector_intensity, false);
+				g_player_hud->PlayBlendAnm(use_cam_effector, 0, anim_speed, effector_intensity, false, false, eCEUseItem);
 			else
-				AddEffector(use_cam_effector, effUseItem, effector_intensity);
+				AddEffector(use_cam_effector, eCEUseItem, effector_intensity);
 		}
 
 		m_iMaskAnimLength = Device.dwTimeGlobal + g_player_hud->motion_length_script(anim_sect, !Wpn ? "anm_use" : "anm_use_weapon", anim_speed);
@@ -3349,7 +3349,7 @@ void CActor::QuickKick()
 		g_player_hud->script_anim_play(2, anim_sect, !active_item ? "anm_use" : "anm_use_weapon", true, anim_speed, attach_visual);
 
 		if (use_cam_effector)
-			AddEffector(use_cam_effector, effUseItem, effector_intensity);
+			AddEffector(use_cam_effector, eCEUseItem, effector_intensity);
 
 		m_iQuickKickAnimLength = Device.dwTimeGlobal + g_player_hud->motion_length_script(anim_sect, !active_item ? "anm_use" : "anm_use_weapon", anim_speed);
 	}
@@ -3387,10 +3387,10 @@ void CActor::UpdateQuickKickAnim()
 	{
 		if ((m_iQuickKickAnimLength <= Device.dwTimeGlobal) || !g_Alive())
 		{
-			CEffectorCam* effector = Cameras().GetCamEffector((ECamEffectorType)effUseItem);
+			CEffectorCam* effector = Cameras().GetCamEffector((ECamEffectorType)eCEUseItem);
 
 			if (effector)
-				RemoveEffector(this, effUseItem);
+				RemoveEffector(this, eCEUseItem);
 
 			SetWeaponHideState(INV_STATE_BLOCK_ALL, false, false);
 			m_iQuickKickAnimLength = Device.dwTimeGlobal;
