@@ -203,10 +203,21 @@ void	CRenderTarget::phase_combine	()
 		PIX_EVENT(combine_1);
 		// Compute params
 		Fmatrix		m_v2w;			m_v2w.invert				(Device.mView		);
-		CEnvDescriptorMixer& envdesc= *g_pGamePersistent->Environment().CurrentEnv		;
+
+		float sun_lumscale_amb = ps_r2_sun_lumscale_amb;
+		float sun_lumscale_hemi = ps_r2_sun_lumscale_hemi;
+
+		CEnvDescriptorMixer& envdesc = *g_pGamePersistent->Environment().CurrentEnv;
+
+		if (bWeatherSunLumscale)
+		{
+			sun_lumscale_amb += envdesc.sun_lumscale_amb;
+			sun_lumscale_hemi += envdesc.sun_lumscale_hemi;
+		}
+
 		const float minamb			= 0.001f;
 		Fvector4	ambclr			= { _max(envdesc.ambient.x*2,minamb),	_max(envdesc.ambient.y*2,minamb),			_max(envdesc.ambient.z*2,minamb),	0	};
-					ambclr.mul		(ps_r2_sun_lumscale_amb + g_pGamePersistent->devices_shader_data.nightvision_lum_factor);
+					ambclr.mul		(sun_lumscale_amb + g_pGamePersistent->devices_shader_data.nightvision_lum_factor);
 
 		Fvector4	envclr;
 		if (g_pGamePersistent->Environment().used_soc_weather)
@@ -215,9 +226,9 @@ void	CRenderTarget::phase_combine	()
 			envclr = { envdesc.hemi_color.x * 2 + EPS, envdesc.hemi_color.y * 2 + EPS, envdesc.hemi_color.z * 2 + EPS, envdesc.weight };
 
 		Fvector4	fogclr			= { envdesc.fog_color.x,	envdesc.fog_color.y,	envdesc.fog_color.z,		0	};
-					envclr.x		*= 2*ps_r2_sun_lumscale_hemi; 
-					envclr.y		*= 2*ps_r2_sun_lumscale_hemi; 
-					envclr.z		*= 2*ps_r2_sun_lumscale_hemi;
+					envclr.x		*= 2 * sun_lumscale_hemi;
+					envclr.y		*= 2 * sun_lumscale_hemi;
+					envclr.z		*= 2 * sun_lumscale_hemi;
 		Fvector4	sunclr,sundir;
 
 		float		fSSAONoise = 2.0f;

@@ -359,6 +359,15 @@ CEnvDescriptor::CEnvDescriptor	(shared_str const& identifier) : m_identifier(ide
 	bloom_threshold		= 3.5f;
 	bloom_exposure		= 3.f;
 	bloom_sky_intensity = 0.6f;
+
+	tonemap_adaptation	= 0.0f;
+	tonemap_amount		= 0.0f;
+	tonemap_lowlum		= 0.0f;
+	tonemap_middlegray	= 0.0f;
+
+	sun_lumscale		= 0.0f;
+	sun_lumscale_amb	= 0.0f;
+	sun_lumscale_hemi	= 0.0f;
 }
 
 #define	C_CHECK(C)	if (C.x<0 || C.x>2 || C.y<0 || C.y>2 || C.z<0 || C.z>2)	{ Msg("! Invalid '%s' in env-section '%s'",#C,m_identifier.c_str());}
@@ -450,6 +459,33 @@ void CEnvDescriptor::load	(CEnvironment& environment, CInifile& config, bool isW
 
 	if (config.line_exist(m_identifier.c_str(), "color_grading"))
 		color_grading = config.r_fvector4(m_identifier.c_str(), "color_grading");
+	
+	if (bWeatherTonemap)
+	{
+		if (config.line_exist(m_identifier.c_str(), "tonemap_adaptation"))
+			tonemap_adaptation = config.r_float(m_identifier.c_str(), "tonemap_adaptation");
+
+		if (config.line_exist(m_identifier.c_str(), "tonemap_amount"))
+			tonemap_amount = config.r_float(m_identifier.c_str(), "tonemap_amount");
+
+		if (config.line_exist(m_identifier.c_str(), "tonemap_lowlum"))
+			tonemap_lowlum = config.r_float(m_identifier.c_str(), "tonemap_lowlum");
+
+		if (config.line_exist(m_identifier.c_str(), "tonemap_middlegray"))
+			tonemap_middlegray = config.r_float(m_identifier.c_str(), "tonemap_middlegray");
+	}
+
+	if (bWeatherSunLumscale)
+	{
+		if (config.line_exist(m_identifier.c_str(), "sun_lumscale"))
+			sun_lumscale = config.r_float(m_identifier.c_str(), "sun_lumscale");
+
+		if (config.line_exist(m_identifier.c_str(), "sun_lumscale_amb"))
+			sun_lumscale_amb = config.r_float(m_identifier.c_str(), "sun_lumscale_amb");
+
+		if (config.line_exist(m_identifier.c_str(), "sun_lumscale_hemi"))
+			sun_lumscale_hemi = config.r_float(m_identifier.c_str(), "sun_lumscale_hemi");
+	}
 
 	clouds_velocity_0 = pSettings->line_exist(m_identifier.c_str(), "clouds_velocity_0") ? pSettings->r_float(m_identifier.c_str(), "clouds_velocity_0") : 0.001f;
 	clouds_velocity_1 = pSettings->line_exist(m_identifier.c_str(), "clouds_velocity_1") ? pSettings->r_float(m_identifier.c_str(), "clouds_velocity_1") : 0.0005f;
@@ -589,6 +625,33 @@ void CEnvDescriptor::load_shoc(float exec_tm, LPCSTR S, CEnvironment& environmen
 
 	if (pSettings->line_exist(m_identifier.c_str(), "color_grading"))
 		color_grading = pSettings->r_fvector4(m_identifier.c_str(), "color_grading");
+
+	if (bWeatherTonemap)
+	{
+		if (pSettings->line_exist(m_identifier.c_str(), "tonemap_adaptation"))
+			tonemap_adaptation = pSettings->r_float(m_identifier.c_str(), "tonemap_adaptation");
+
+		if (pSettings->line_exist(m_identifier.c_str(), "tonemap_amount"))
+			tonemap_amount = pSettings->r_float(m_identifier.c_str(), "tonemap_amount");
+
+		if (pSettings->line_exist(m_identifier.c_str(), "tonemap_lowlum"))
+			tonemap_lowlum = pSettings->r_float(m_identifier.c_str(), "tonemap_lowlum");
+
+		if (pSettings->line_exist(m_identifier.c_str(), "tonemap_middlegray"))
+			tonemap_middlegray = pSettings->r_float(m_identifier.c_str(), "tonemap_middlegray");
+	}
+
+	if (bWeatherSunLumscale)
+	{
+		if (pSettings->line_exist(m_identifier.c_str(), "sun_lumscale"))
+			sun_lumscale = pSettings->r_float(m_identifier.c_str(), "sun_lumscale");
+
+		if (pSettings->line_exist(m_identifier.c_str(), "sun_lumscale_amb"))
+			sun_lumscale_amb = pSettings->r_float(m_identifier.c_str(), "sun_lumscale_amb");
+
+		if (pSettings->line_exist(m_identifier.c_str(), "sun_lumscale_hemi"))
+			sun_lumscale_hemi = pSettings->r_float(m_identifier.c_str(), "sun_lumscale_hemi");
+	}
 
 	clouds_velocity_0 = pSettings->line_exist(m_identifier.c_str(), "clouds_velocity_0") ? pSettings->r_float(m_identifier.c_str(), "clouds_velocity_0") : 0.001f;
 	clouds_velocity_1 = pSettings->line_exist(m_identifier.c_str(), "clouds_velocity_1") ? pSettings->r_float(m_identifier.c_str(), "clouds_velocity_1") : 0.0005f;
@@ -828,6 +891,21 @@ void CEnvDescriptorMixer::lerp	(CEnvironment* , CEnvDescriptor& A, CEnvDescripto
 	bloom_threshold		= fi * A.bloom_threshold + f * B.bloom_threshold;
 	bloom_exposure		= fi * A.bloom_exposure + f * B.bloom_exposure;
 	bloom_sky_intensity = fi * A.bloom_sky_intensity + f * B.bloom_sky_intensity;
+
+	if (bWeatherTonemap)
+	{
+		tonemap_adaptation	= fi * A.tonemap_adaptation + f * B.tonemap_adaptation;
+		tonemap_amount		= fi * A.tonemap_amount + f * B.tonemap_amount;
+		tonemap_lowlum		= fi * A.tonemap_lowlum + f * B.tonemap_lowlum;
+		tonemap_middlegray	= fi * A.tonemap_middlegray + f * B.tonemap_middlegray;
+	}
+
+	if (bWeatherSunLumscale)
+	{
+		sun_lumscale		= fi * A.sun_lumscale + f * B.sun_lumscale;
+		sun_lumscale_amb	= fi * A.sun_lumscale_amb + f * B.sun_lumscale_amb;
+		sun_lumscale_hemi	= fi * A.sun_lumscale_hemi + f * B.sun_lumscale_hemi;
+	}
 
 	// colors
 //.	sky_color.lerp			(A.sky_color,B.sky_color,f).add(Mdf.sky_color).mul(modif_power);

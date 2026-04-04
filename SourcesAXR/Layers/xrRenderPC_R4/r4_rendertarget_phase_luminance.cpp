@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "../../xrEngine/x_ray.h"
 
 #pragma pack(push,4)
 struct v_build	{
@@ -117,16 +118,31 @@ void	CRenderTarget::phase_luminance()
 		pv++;
 		RCache.Vertex.Unlock		(4,g_bloom_filter->vb_stride);
 
-		f_luminance_adapt			= .9f*f_luminance_adapt + .1f*Device.fTimeDelta*ps_r2_tonemap_adaptation;
-		float		amount			= ps_r2_ls_flags.test(R2FLAG_TONEMAP)?ps_r2_tonemap_amount:0;
-		Fvector3	_none, _full, _result;
-				_none.set			(1,							0,		1						);
-				_full.set			(ps_r2_tonemap_middlegray,	1.f,	ps_r2_tonemap_low_lum	);
-				_result.lerp		(_none, _full, amount	);
+		float tonemap_adaptation = ps_r2_tonemap_adaptation;
+		float tonemap_amount = ps_r2_ls_flags.test(R2FLAG_TONEMAP) ? ps_r2_tonemap_amount : 0.f;
+		float tonemap_lowlum = ps_r2_tonemap_low_lum;
+		float tonemap_middlegray = ps_r2_tonemap_middlegray;
 
-		RCache.set_Element			(s_luminance->E[2]		);
-		RCache.set_Geometry			(g_bloom_filter			);
-		RCache.set_c("MiddleGray",	_result.x,_result.y,_result.z,f_luminance_adapt	);
+		if (bWeatherTonemap && ps_r2_ls_flags.test(R2FLAG_TONEMAP))
+		{
+			auto current_env = g_pGamePersistent->Environment().CurrentEnv;
+
+			tonemap_adaptation += current_env->tonemap_adaptation;
+			tonemap_amount += current_env->tonemap_amount;
+			tonemap_lowlum += current_env->tonemap_lowlum;
+			tonemap_middlegray += current_env->tonemap_middlegray;
+		}
+
+		f_luminance_adapt = .9f * f_luminance_adapt + .1f * Device.fTimeDelta * tonemap_adaptation;
+
+		Fvector3 tonemap_none, tonemap_full, tonemap_result;
+		tonemap_none.set(1.f, 0.f, 1.f);
+		tonemap_full.set(tonemap_middlegray, 1.f, tonemap_lowlum);
+		tonemap_result.lerp(tonemap_none, tonemap_full, tonemap_amount);
+
+		RCache.set_Element			(s_luminance->E[2]);
+		RCache.set_Geometry			(g_bloom_filter);
+		RCache.set_c				("MiddleGray", tonemap_result.x, tonemap_result.y, tonemap_result.z, f_luminance_adapt);
 		RCache.Render				(D3DPT_TRIANGLELIST,Offset,0,4,0,2);
 	}
 

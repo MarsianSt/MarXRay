@@ -3,6 +3,7 @@
 #include "../../xrEngine/xrLevel.h"
 #include "../../xrEngine/igame_persistent.h"
 #include "../../xrEngine/environment.h"
+#include "../../xrEngine/x_ray.h"
 #include "light_db.h"
 
 #define LT_DIRECT 0
@@ -277,13 +278,22 @@ void			CLight_DB::Update			()
 			AD.normalize();
 		}
 
+		float sun_lumscale = ps_r2_sun_lumscale;
+
+		if (bWeatherSunLumscale)
+		{
+			auto current_env = g_pGamePersistent->Environment().CurrentEnv;
+
+			sun_lumscale += current_env->sun_lumscale;
+		}
+
 		sun_original->set_rotation	(OD,_sun_original->right	);
 		sun_original->set_position	(OP);
 		sun_original->set_color		(E.sun_color.x,E.sun_color.y,E.sun_color.z);
 		sun_original->set_range		(600.f);
 		sun_adapted->set_rotation	(AD, _sun_adapted->right	);
 		sun_adapted->set_position	(AP		);
-		sun_adapted->set_color		(E.sun_color.x*ps_r2_sun_lumscale,E.sun_color.y*ps_r2_sun_lumscale,E.sun_color.z*ps_r2_sun_lumscale);
+		sun_adapted->set_color		(E.sun_color.x * sun_lumscale, E.sun_color.y * sun_lumscale, E.sun_color.z * sun_lumscale);
 		sun_adapted->set_range		(600.f	);
 		
 		if (!::Render->is_sun_static())

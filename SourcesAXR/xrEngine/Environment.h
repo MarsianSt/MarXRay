@@ -200,8 +200,15 @@ public:
 	float				bloom_exposure;
 	float				bloom_sky_intensity;
 
-//	int					lens_flare_id;
-//	int					tb_id;
+	float				tonemap_adaptation;
+	float				tonemap_amount;
+	float				tonemap_lowlum;
+	float				tonemap_middlegray;
+
+	float				sun_lumscale;
+	float				sun_lumscale_amb;
+	float				sun_lumscale_hemi;
+
 	shared_str			lens_flare_id;
 	shared_str			lens_flare_id_phased;
 	shared_str			tb_id;

@@ -133,6 +133,21 @@ void saveWeather(shared_str name, const xr_vector<CEnvDescriptor*>& env)
 		f.w_float(el->m_identifier.c_str(), "bloom_threshold", el->bloom_threshold);
 		f.w_float(el->m_identifier.c_str(), "bloom_exposure", el->bloom_exposure);
 		f.w_float(el->m_identifier.c_str(), "bloom_sky_intensity", el->bloom_sky_intensity);
+
+		if (bWeatherTonemap)
+		{
+			f.w_float(el->m_identifier.c_str(), "tonemap_adaptation", el->tonemap_adaptation);
+			f.w_float(el->m_identifier.c_str(), "tonemap_amount", el->tonemap_amount);
+			f.w_float(el->m_identifier.c_str(), "tonemap_lowlum", el->tonemap_lowlum);
+			f.w_float(el->m_identifier.c_str(), "tonemap_middlegray", el->tonemap_middlegray);
+		}
+
+		if (bWeatherSunLumscale)
+		{
+			f.w_float(el->m_identifier.c_str(), "sun_lumscale", el->sun_lumscale);
+			f.w_float(el->m_identifier.c_str(), "sun_lumscale_amb", el->sun_lumscale_amb);
+			f.w_float(el->m_identifier.c_str(), "sun_lumscale_hemi", el->sun_lumscale_hemi);
+		}
 	}
 	string_path fileName;
 	FS.update_path(fileName, "$game_weathers$", name.c_str());
@@ -512,6 +527,37 @@ void ShowWeatherEditor(bool& show)
 		ImGui::Text(toUtf8(CStringTable().translate("st_weather_editor_clr_grad_options").c_str()).c_str());
 
 		if (ImGui::ColorEdit4("color_grading", (float*)&cur->color_grading))
+			changed = true;
+	}
+
+	if (bWeatherTonemap)
+	{
+		ImGui::Text(toUtf8(CStringTable().translate("st_weather_editor_tonemap_settings").c_str()).c_str());
+
+		if (ImGui::SliderFloat("tonemap_adaptation", &cur->tonemap_adaptation, -10.0f, 10.0f))
+			changed = true;
+
+		if (ImGui::SliderFloat("tonemap_amount", &cur->tonemap_amount, -1.0f, 1.0f))
+			changed = true;
+
+		if (ImGui::SliderFloat("tonemap_lowlum", &cur->tonemap_lowlum, -1.0f, 1.0f))
+			changed = true;
+
+		if (ImGui::SliderFloat("tonemap_middlegray", &cur->tonemap_middlegray, -2.0f, 2.0f))
+			changed = true;
+	}
+
+	if (bWeatherSunLumscale)
+	{
+		ImGui::Text(toUtf8(CStringTable().translate("st_weather_editor_sun_lumscale_settings").c_str()).c_str());
+
+		if (ImGui::SliderFloat("sun_lumscale", &cur->sun_lumscale, -4.0f, 3.0f))
+			changed = true;
+
+		if (ImGui::SliderFloat("sun_lumscale_amb", &cur->sun_lumscale_amb, -3.0f, 3.0f))
+			changed = true;
+
+		if (ImGui::SliderFloat("sun_lumscale_hemi", &cur->sun_lumscale_hemi, -3.0f, 3.0f))
 			changed = true;
 	}
 
