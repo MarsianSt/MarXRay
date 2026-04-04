@@ -1495,7 +1495,8 @@ void CWeaponMagazined::switch2_ChangeFireMode()
 
 void CWeaponMagazined::PlayAnimFireMode()
 {
-	if (auto det = smart_cast<CCustomDetector*>(g_actor->inventory().ItemFromSlot(DETECTOR_SLOT)); g_actor->IsDetectorActive())
+	auto det = smart_cast<CCustomDetector*>(g_actor->inventory().ItemFromSlot(DETECTOR_SLOT));
+	if (ParentIsActor() && g_actor->IsDetectorActive())
 		det->PlayDetectorAnimation(true, eDetAction, "anm_firemode");
 
 	string_path guns_firemode_anm{};
@@ -2446,6 +2447,10 @@ void CWeaponMagazined::PlayAnimShow()
 		PlayHUDMotion("anm_show_empty", FALSE, this, GetState());
 	else
 		PlayHUDMotion("anm_show", FALSE, this, GetState());
+
+	auto det = smart_cast<CCustomDetector*>(g_actor->inventory().ItemFromSlot(DETECTOR_SLOT));
+	if (ParentIsActor() && g_actor->IsDetectorActive())
+		det->PlayDetectorAnimation(true, eDetAction, "anm_wpn_show");
 }
 
 void CWeaponMagazined::PlayAnimHide()
@@ -2458,6 +2463,10 @@ void CWeaponMagazined::PlayAnimHide()
 		PlayHUDMotion("anm_hide_empty", TRUE, this, GetState());
 	else
 		PlayHUDMotion("anm_hide", TRUE, this, GetState());
+
+	auto det = smart_cast<CCustomDetector*>(g_actor->inventory().ItemFromSlot(DETECTOR_SLOT));
+	if (ParentIsActor() && g_actor->IsDetectorActive())
+		det->PlayDetectorAnimation(true, eDetAction, "anm_wpn_hide");
 }
 
 void CWeaponMagazined::PlayAnimBore()
@@ -2517,7 +2526,7 @@ void CWeaponMagazined::PlayAnimAim()
 
 	if (IsRotatingToZoom()) 
 	{
-		if (g_actor->IsDetectorActive())
+		if (ParentIsActor() && g_actor->IsDetectorActive())
 			det->PlayDetectorAnimation(true, eDetAction, "anm_idle_aim_start");
 
 		string32 guns_aim_start_anm;
@@ -2560,7 +2569,7 @@ void CWeaponMagazined::PlayAnimAim()
 		{
 			PlayHUDMotionNew(guns_aim_anm_, true, GetState());
 
-			if (g_actor->IsDetectorActive())
+			if (ParentIsActor() && g_actor->IsDetectorActive())
 				det->PlayDetectorAnimation(true, eDetAction, GenerateAimAnimName("anm_idle_aim_moving"));
 
 			return;
@@ -2575,7 +2584,7 @@ void CWeaponMagazined::PlayAnimAim()
 			{
 				PlayHUDMotionNew(new_guns_aim_anm, true, GetState());
 
-				if (g_actor->IsDetectorActive())
+				if (ParentIsActor() && g_actor->IsDetectorActive())
 					det->PlayDetectorAnimation(true, eDetAction, GenerateAimAnimName("anm_idle_aim_moving"));
 
 				return;
@@ -2591,7 +2600,7 @@ void CWeaponMagazined::PlayAnimAim()
 			{
 				PlayHUDMotionNew(new_guns_aim_anm, true, GetState());
 
-				if (g_actor->IsDetectorActive())
+				if (ParentIsActor() && g_actor->IsDetectorActive())
 					det->PlayDetectorAnimation(true, eDetAction, GenerateAimAnimName("anm_idle_aim_moving"));
 
 				return;
@@ -2606,13 +2615,14 @@ void CWeaponMagazined::PlayAnimAim()
 	else
 		PlayHUDMotion("anm_idle_aim", TRUE, NULL, GetState());
 
-	if (g_actor->IsDetectorActive())
+	if (ParentIsActor() && g_actor->IsDetectorActive())
 		det->PlayDetectorAnimation(true, eDetAction, GenerateAimAnimName("anm_idle_aim"));
 }
 
 bool CWeaponMagazined::PlayAnimAimEnd()
 {
-	if (auto det = smart_cast<CCustomDetector*>(g_actor->inventory().ItemFromSlot(DETECTOR_SLOT)); g_actor->IsDetectorActive())
+	auto det = smart_cast<CCustomDetector*>(g_actor->inventory().ItemFromSlot(DETECTOR_SLOT));
+	if (ParentIsActor() && g_actor->IsDetectorActive())
 		det->PlayDetectorAnimation(true, eDetAction, "anm_idle_aim_end");
 
 	string32 guns_aim_end_anm;
@@ -2687,7 +2697,8 @@ void CWeaponMagazined::PlayAnimShoot()
 	string256 guns_det_shoot_anm{};
 	strconcat(sizeof(guns_det_shoot_anm), guns_det_shoot_anm, "anm_shoot", (IsZoomed() && !IsRotatingToZoom()) ? "_aim" : "");
 
-	if (auto det = smart_cast<CCustomDetector*>(g_actor->inventory().ItemFromSlot(DETECTOR_SLOT)); g_actor->IsDetectorActive())
+	auto det = smart_cast<CCustomDetector*>(g_actor->inventory().ItemFromSlot(DETECTOR_SLOT));
+	if (ParentIsActor() && g_actor->IsDetectorActive())
 		det->PlayDetectorAnimation(true, eDetAction, guns_det_shoot_anm);
 
 	string_path guns_shoot_anm{};
@@ -2707,7 +2718,8 @@ bool CWeaponMagazined::PlayAnimFakeShoot()
 	string256 guns_det_shoot_anm{};
 	strconcat(sizeof(guns_det_shoot_anm), guns_det_shoot_anm, "anm_fakeshoot", (IsZoomed() && !IsRotatingToZoom()) ? "_aim" : "");
 
-	if (auto det = smart_cast<CCustomDetector*>(g_actor->inventory().ItemFromSlot(DETECTOR_SLOT)); g_actor->IsDetectorActive())
+	auto det = smart_cast<CCustomDetector*>(g_actor->inventory().ItemFromSlot(DETECTOR_SLOT));
+	if (ParentIsActor() && g_actor->IsDetectorActive())
 		det->PlayDetectorAnimation(true, eDetAction, guns_det_shoot_anm);
 
 	string128 guns_fakeshoot_anm{};
@@ -2823,7 +2835,7 @@ void CWeaponMagazined::PlayAnimDeviceSwitch()
 		return;
 	}
 
-	if (g_actor->IsDetectorActive())
+	if (ParentIsActor() && g_actor->IsDetectorActive())
 		det->PlayDetectorAnimation(true, eDetAction, guns_device_switch_det_anm);
 }
 

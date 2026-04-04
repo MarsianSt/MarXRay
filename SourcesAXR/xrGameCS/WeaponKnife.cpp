@@ -191,7 +191,7 @@ void CWeaponKnife::PlayAnimDeviceSwitch()
 		else
 			PlayHUDMotionNew(guns_device_switch_anm, true, GetState());
 
-		if (g_actor->IsDetectorActive())
+		if (smart_cast<CActor*>(H_Parent()) && g_actor->IsDetectorActive())
 			det->PlayDetectorAnimation(true, eDetAction, guns_device_switch_anm);
 	}
 	else
@@ -422,7 +422,7 @@ void CWeaponKnife::switch2_Attacking	(u32 state)
 		PlayHUDMotion("anm_attack", FALSE, this, state);
 		PlaySound("m_sndShot", get_LastFP());
 
-		if (g_actor->IsDetectorActive())
+		if (smart_cast<CActor*>(H_Parent()) && g_actor->IsDetectorActive())
 			det->PlayDetectorAnimation(true, eDetAction, "anm_knife_kick_1");
 	}
 	else //eFire2
@@ -434,7 +434,7 @@ void CWeaponKnife::switch2_Attacking	(u32 state)
 		else
 			PlaySound("m_sndShot", get_LastFP());
 
-		if (g_actor->IsDetectorActive())
+		if (smart_cast<CActor*>(H_Parent()) && g_actor->IsDetectorActive())
 			det->PlayDetectorAnimation(true, eDetAction, "anm_knife_kick_2");
 	}
 
@@ -455,6 +455,10 @@ void CWeaponKnife::switch2_Hiding	()
 	VERIFY(GetState()==eHiding);
 	PlayHUDMotion("anm_hide", TRUE, this, GetState());
 
+	auto det = smart_cast<CCustomDetector*>(g_actor->inventory().ItemFromSlot(DETECTOR_SLOT));
+	if (ParentIsActor() && g_actor->IsDetectorActive())
+		det->PlayDetectorAnimation(true, eDetAction, "anm_wpn_hide");
+
 	if (m_sounds.FindSoundItem("m_sndHolster", false))
 		PlaySound("m_sndHolster", get_LastFP());
 }
@@ -469,6 +473,10 @@ void CWeaponKnife::switch2_Showing	()
 {
 	VERIFY(GetState()==eShowing);
 	PlayHUDMotion("anm_show", FALSE, this, GetState());
+
+	auto det = smart_cast<CCustomDetector*>(g_actor->inventory().ItemFromSlot(DETECTOR_SLOT));
+	if (ParentIsActor() && g_actor->IsDetectorActive())
+		det->PlayDetectorAnimation(true, eDetAction, "anm_wpn_show");
 
 	if (m_sounds.FindSoundItem("m_sndDraw", false))
 		PlaySound("m_sndDraw", get_LastFP());

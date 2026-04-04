@@ -694,12 +694,12 @@ bool CCustomDetector::ParentIsActor()
 {
 	CObject* O = H_Parent();
 	if (!O)
-		return FALSE;
+		return false;
 
 	CEntityAlive* EA = smart_cast<CEntityAlive*>(O);
 
 	if (!EA)
-		return FALSE;
+		return false;
 
 	return EA->cast_actor() != nullptr;
 }

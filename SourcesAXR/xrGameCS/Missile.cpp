@@ -317,6 +317,9 @@ void CMissile::State(u32 state)
 
 			if (m_sounds.FindSoundItem("m_sndDraw", false))
 				PlaySound		("m_sndDraw", C);
+
+			if (smart_cast<CActor*>(H_Parent()) && g_actor->IsDetectorActive())
+				det->PlayDetectorAnimation(true, eDetAction, "anm_wpn_show");
 		} break;
 	case eIdle:
 		{
@@ -332,6 +335,9 @@ void CMissile::State(u32 state)
 
 				if (m_sounds.FindSoundItem("m_sndHolster", false))
 					PlaySound		("m_sndHolster", C);
+
+				if (smart_cast<CActor*>(H_Parent()) && g_actor->IsDetectorActive())
+					det->PlayDetectorAnimation(true, eDetAction, "anm_wpn_hide");
 			}
 		} break;
 	case eHidden:
@@ -362,14 +368,14 @@ void CMissile::State(u32 state)
 			if (m_sounds.FindSoundItem("m_sndThrowStart", false))
 				PlaySound		("m_sndThrowStart", C);
 
-			if (g_actor->IsDetectorActive())
+			if (smart_cast<CActor*>(H_Parent()) && g_actor->IsDetectorActive())
 				det->PlayDetectorAnimation(true, eDetAction, "anm_missile_throw_begin");
 		} break;
 	case eReady:
 		{
 			PlayHUDMotion		("anm_throw_idle", TRUE, this, GetState());
 
-			if (g_actor->IsDetectorActive())
+			if (smart_cast<CActor*>(H_Parent()) && g_actor->IsDetectorActive())
 				det->PlayDetectorAnimation(true, eDetAction, "anm_missile_throw_idle");
 		} break;
 	case eThrow:
@@ -381,7 +387,7 @@ void CMissile::State(u32 state)
 			if (m_sounds.FindSoundItem("m_sndThrow", false))
 				PlaySound		("m_sndThrow", C);
 
-			if (g_actor->IsDetectorActive())
+			if (smart_cast<CActor*>(H_Parent()) && g_actor->IsDetectorActive())
 				det->PlayDetectorAnimation(true, eDetAction, "anm_missile_throw_end");
 		} break;
 	case eThrowEnd:
@@ -928,7 +934,7 @@ void CMissile::PlayAnimDeviceSwitch()
 		else
 			PlayHUDMotionNew(guns_device_switch_anm, true, GetState());
 
-		if (g_actor->IsDetectorActive())
+		if (smart_cast<CActor*>(H_Parent()) && g_actor->IsDetectorActive())
 			det->PlayDetectorAnimation(true, eDetAction, guns_device_switch_anm);
 	}
 	else
