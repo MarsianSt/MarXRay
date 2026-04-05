@@ -14,14 +14,22 @@ void CWeaponBM16::Load	(LPCSTR section)
 {
 	inherited::Load		(section);
 	m_sounds.LoadSound	(section, "snd_reload_1", "sndReload1", true, m_eSoundReload);
+	m_sounds.LoadSound	(section, "snd_reload_one_bullet", "sndReloadOneBullet", true, m_eSoundReload);
 	m_sounds.LoadSound	(section, "snd_reload_misfire_0", "sndReloadMisfire0", true, m_eSoundReload);
 	m_sounds.LoadSound	(section, "snd_reload_misfire_1", "sndReloadMisfire1", true, m_eSoundReload);
 	m_sounds.LoadSound	(section, "snd_ammochange_1", "sndAmmoChange1", true, m_eSoundReload);
 	m_sounds.LoadSound	(section, "snd_ammochange_2", "sndAmmoChange2", true, m_eSoundReload);
+	m_sounds.LoadSound	(section, "snd_ammochange_one_bullet", "sndAmmoChangeOneBullet", true, m_eSoundReload);
+	m_sounds.LoadSound	(section, "snd_ammochange_one_bullet_2", "sndAmmoChangeOneBullet2", true, m_eSoundReload);
 }
 
 void CWeaponBM16::PlayReloadSound()
 {
+	u8 needed_ammo_type = (m_set_next_ammoType_on_reload != undefined_ammo_type && m_ammoType != m_set_next_ammoType_on_reload) ? m_set_next_ammoType_on_reload : m_ammoType;
+	bool b_single_bullet = ((m_magazine.size() == 1 || !HaveCartridgeInInventory(2, m_ammoType)) && (m_set_next_ammoType_on_reload == undefined_ammo_type || m_ammoType == m_set_next_ammoType_on_reload));
+	bool isAmmoChange = m_magazine.size() > 0 && m_set_next_ammoType_on_reload != undefined_ammo_type && m_ammoType != m_set_next_ammoType_on_reload;
+	bool isOneBulletCase = ((isAmmoChange || m_magazine.size() == 0) && !HaveCartridgeInInventory(2, needed_ammo_type) && HaveCartridgeInInventory(1, needed_ammo_type));
+
 	if (IsMisfire())
 	{
 		string128 sndUnmisName{};
@@ -34,11 +42,10 @@ void CWeaponBM16::PlayReloadSound()
 		}
 	}
 
-	bool isAmmoChange = m_magazine.size() > 0 && m_set_next_ammoType_on_reload != undefined_ammo_type && m_ammoType != m_set_next_ammoType_on_reload;
 	if (isAmmoChange)
 	{
 		string128 sndAmmoChangeName{};
-		strconcat(sizeof(sndAmmoChangeName), sndAmmoChangeName, "sndAmmoChange", (m_magazine.size() == 1 || !HaveCartridgeInInventory(2)) ? "1" : std::to_string(m_magazine.size()).c_str());
+		strconcat(sizeof(sndAmmoChangeName), sndAmmoChangeName, "sndAmmoChange", isOneBulletCase ? ((m_magazine.size() == 1) ? "OneBullet" : "OneBullet2") : (m_magazine.size() == 1 || !HaveCartridgeInInventory(2, m_set_next_ammoType_on_reload)) ? "1" : std::to_string(m_magazine.size()).c_str());
 
 		if (m_sounds.FindSoundItem(sndAmmoChangeName, false))
 		{
@@ -47,13 +54,11 @@ void CWeaponBM16::PlayReloadSound()
 		}
 	}
 
-	bool b_single_bullet = ((m_magazine.size() == 1 || !HaveCartridgeInInventory(2)) &&
-		(m_set_next_ammoType_on_reload == undefined_ammo_type || m_ammoType == m_set_next_ammoType_on_reload));
+	string128 sndReloadName{};
+	strconcat(sizeof(sndReloadName), sndReloadName, "sndReload", isOneBulletCase ? "OneBullet" : b_single_bullet ? "1" : "");
 
-	if (b_single_bullet)
-		PlaySound	("sndReload1",get_LastFP());
-	else						
-		PlaySound	("sndReload",get_LastFP());
+	if (m_sounds.FindSoundItem(sndReloadName, false))
+		PlaySound(sndReloadName, get_LastFP());
 }
 
 void CWeaponBM16::PlayAnimShoot()
@@ -174,6 +179,11 @@ void CWeaponBM16::PlayAnimBore()
 
 void CWeaponBM16::PlayAnimReload()
 {
+	u8 needed_ammo_type = (m_set_next_ammoType_on_reload != undefined_ammo_type && m_ammoType != m_set_next_ammoType_on_reload) ? m_set_next_ammoType_on_reload : m_ammoType;
+	bool b_single_bullet = ((m_magazine.size() == 1 || !HaveCartridgeInInventory(2, m_ammoType)) && (m_set_next_ammoType_on_reload == undefined_ammo_type || m_ammoType == m_set_next_ammoType_on_reload));
+	bool isAmmoChange = m_magazine.size() > 0 && m_set_next_ammoType_on_reload != undefined_ammo_type && m_ammoType != m_set_next_ammoType_on_reload;
+	bool isOneBulletCase = ((isAmmoChange || m_magazine.size() == 0) && !HaveCartridgeInInventory(2, needed_ammo_type) && HaveCartridgeInInventory(1, needed_ammo_type));
+
 	if (IsMisfire())
 	{
 		string128 anmUnmisName{};
@@ -181,33 +191,29 @@ void CWeaponBM16::PlayAnimReload()
 
 		if (isHUDAnimationExist(anmUnmisName))
 		{
-			PlayHUDMotionIfExists({ anmUnmisName, "anm_reload_2" }, true, GetState());
+			PlayHUDMotionIfExists({ anmUnmisName, b_single_bullet ? "anm_reload_1" : "anm_reload_2" }, true, GetState());
 			return;
 		}
 	}
 
-	bool isAmmoChange = m_magazine.size() > 0 && m_set_next_ammoType_on_reload != undefined_ammo_type && m_ammoType != m_set_next_ammoType_on_reload;
 	if (isAmmoChange)
 	{
 		string128 anmAmmoChangeName{};
-		strconcat(sizeof(anmAmmoChangeName), anmAmmoChangeName, "anm_ammochange_", (m_magazine.size() == 1 || !HaveCartridgeInInventory(2)) ? "1" : std::to_string(m_magazine.size()).c_str());
+		strconcat(sizeof(anmAmmoChangeName), anmAmmoChangeName, "anm_ammochange_", isOneBulletCase ? ((m_magazine.size() == 1) ? "one_bullet" : "one_bullet_2") : (m_magazine.size() == 1 || !HaveCartridgeInInventory(2, m_set_next_ammoType_on_reload)) ? "1" : std::to_string(m_magazine.size()).c_str());
 
 		if (isHUDAnimationExist(anmAmmoChangeName))
 		{
-			PlayHUDMotionIfExists({ anmAmmoChangeName, "anm_reload_2" }, true, GetState());
+			PlayHUDMotionIfExists({ anmAmmoChangeName, b_single_bullet ? "anm_reload_1" : "anm_reload_2" }, true, GetState());
 			return;
 		}
 	}
 
-	bool b_single_bullet = ((m_magazine.size() == 1 || !HaveCartridgeInInventory(2)) &&
-		(m_set_next_ammoType_on_reload == undefined_ammo_type || m_ammoType == m_set_next_ammoType_on_reload));
-
 	VERIFY(GetState()==eReload);
 
-	if (b_single_bullet)
-		PlayHUDMotion("anm_reload_1",TRUE,this,GetState());
-	else
-		PlayHUDMotion("anm_reload_2",TRUE,this,GetState());
+	string128 anmReloadName{};
+	strconcat(sizeof(anmReloadName), anmReloadName, "anm_reload_", isOneBulletCase ? "one_bullet" : b_single_bullet ? "1" : "2");
+
+	PlayHUDMotionIfExists({ anmReloadName, b_single_bullet ? "anm_reload_1" : "anm_reload_2" }, true, GetState());
 }
 
 void  CWeaponBM16::PlayAnimIdleMoving()
