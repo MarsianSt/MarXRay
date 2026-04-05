@@ -314,17 +314,25 @@ void CWeaponShotgun::PlayAnimAim()
 		PlayHUDMotion("anm_idle_aim", TRUE, NULL, GetState());
 }
 
-bool CWeaponShotgun::HaveCartridgeInInventory(u8 cnt)
+bool CWeaponShotgun::HaveCartridgeInInventory(u8 cnt, u8 ammo_type)
 {
-	if (unlimited_ammo())	return true;
-	if(!m_pInventory)		return false;
+	if (unlimited_ammo())
+		return true;
+
+	if(!m_pInventory)
+		return false;
+
+	if (ammo_type != undefined_ammo_type)
+		return GetAmmoCount(ammo_type) >= cnt;
 
 	u32 ac = GetAmmoCount(m_ammoType);
-	if(ac<cnt)
+	if (ac < cnt)
 	{
 		for(u8 i = 0; i < u8(m_ammoTypes.size()); ++i) 
 		{
-			if(m_ammoType==i) continue;
+			if (m_ammoType==i)
+				continue;
+
 			ac	+= GetAmmoCount(i);
 			if(ac >= cnt)
 			{
@@ -333,7 +341,8 @@ bool CWeaponShotgun::HaveCartridgeInInventory(u8 cnt)
 			}
 		}
 	}
-	return ac>=cnt;
+
+	return ac >= cnt;
 }
 
 u8 CWeaponShotgun::AddCartridge		(u8 cnt)

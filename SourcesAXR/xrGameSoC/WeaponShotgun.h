@@ -40,7 +40,7 @@ protected:
 	void			TriStateReload		();
 	virtual void	OnStateSwitch		(u32 S, u32 oldState);
 
-	bool			HaveCartridgeInInventory(u8 cnt);
+	bool			HaveCartridgeInInventory(u8 cnt, u8 ammo_type = u8(-1));
 	virtual u8		AddCartridge		(u8 cnt);
 
 	ESoundTypes		m_eSoundShotBoth;

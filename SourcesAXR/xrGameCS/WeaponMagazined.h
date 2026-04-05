@@ -120,8 +120,8 @@ public:
 
 	virtual bool	GetBriefInfo	(II_BriefInfo& info);
 
-			bool	HaveCartridgeInInventory(u8 cnt);
-			u8		GetAvailableCartridgesToLoad(bool full_reload);
+			bool	HaveCartridgeInInventory(u8 cnt, u8 ammo_type = u8(-1));
+			u8		GetAvailableCartridgesToLoad(bool full_reload, u8 ammo_type = u8(-1));
 
 	IC BOOL			IsPending		() const { return !!(m_huditem_flags.test(fl_pending) || (m_bEnableRPM_Pending && fShotTimeCounter > 0.f)); }
 

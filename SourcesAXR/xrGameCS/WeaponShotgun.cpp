@@ -314,30 +314,35 @@ void CWeaponShotgun::PlayAnimAim()
 		PlayHUDMotion("anm_idle_aim", TRUE, NULL, GetState());
 }
 
-bool CWeaponShotgun::HaveCartridgeInInventory		(u8 cnt)
+bool CWeaponShotgun::HaveCartridgeInInventory(u8 cnt, u8 ammo_type)
 {
-	if (unlimited_ammo()) return true;
-	m_pCurrentAmmo = NULL;
-	if(m_pInventory) 
+	if (unlimited_ammo())
+		return true;
+
+	if (!m_pInventory)
+		return false;
+
+	if (ammo_type != u8(-1))
+		return GetAmmoCount(ammo_type) >= cnt;
+
+	u32 ac = GetAmmoCount(m_ammoType);
+	if (ac < cnt)
 	{
-		//попытаться найти в инвентаре патроны текущего типа 
-		m_pCurrentAmmo = smart_cast<CWeaponAmmo*>(m_pInventory->GetAny(*m_ammoTypes[m_ammoType]));
-		
-		if(!m_pCurrentAmmo )
+		for (u8 i = 0; i < u8(m_ammoTypes.size()); ++i)
 		{
-			for(u32 i = 0; i < m_ammoTypes.size(); ++i) 
+			if (m_ammoType == i)
+				continue;
+
+			ac += GetAmmoCount(i);
+			if (ac >= cnt)
 			{
-				//проверить патроны всех подходящих типов
-				m_pCurrentAmmo = smart_cast<CWeaponAmmo*>(m_pInventory->GetAny(*m_ammoTypes[i]));
-				if(m_pCurrentAmmo) 
-				{ 
-					m_ammoType = i; 
-					break; 
-				}
+				m_ammoType = i;
+				break;
 			}
 		}
 	}
-	return (m_pCurrentAmmo!=NULL)&&(m_pCurrentAmmo->m_boxCurr>=cnt) ;
+
+	return ac >= cnt;
 }
 
 u8 CWeaponShotgun::AddCartridge		(u8 cnt)

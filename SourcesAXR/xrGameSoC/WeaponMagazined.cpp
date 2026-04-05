@@ -2958,7 +2958,7 @@ void CWeaponMagazined::CheckMagazine()
 	}
 }
 
-bool CWeaponMagazined::HaveCartridgeInInventory(u8 cnt)
+bool CWeaponMagazined::HaveCartridgeInInventory(u8 cnt, u8 ammo_type)
 {
 	if (unlimited_ammo())
 		return true;
@@ -2966,15 +2966,18 @@ bool CWeaponMagazined::HaveCartridgeInInventory(u8 cnt)
 	if (!m_pInventory)
 		return false;
 
-	u32 ac = GetAmmoCount(m_ammoType);
+	if (ammo_type != u8(-1))
+		return GetAmmoCount(ammo_type) >= cnt;
 
+	u32 ac = GetAmmoCount(m_ammoType);
 	if (ac < cnt)
 	{
 		for (u8 i = 0; i < u8(m_ammoTypes.size()); ++i)
 		{
-			if (m_ammoType == i) continue;
-			ac += GetAmmoCount(i);
+			if (m_ammoType == i)
+				continue;
 
+			ac += GetAmmoCount(i);
 			if (ac >= cnt)
 			{
 				m_ammoType = i;
@@ -2982,19 +2985,20 @@ bool CWeaponMagazined::HaveCartridgeInInventory(u8 cnt)
 			}
 		}
 	}
+
 	return ac >= cnt;
 }
 
-u8 CWeaponMagazined::GetAvailableCartridgesToLoad(bool full_reload)
+u8 CWeaponMagazined::GetAvailableCartridgesToLoad(bool full_reload, u8 ammo_type)
 {
 	if (full_reload)
 	{
-		if (HaveCartridgeInInventory(iMagazineSize))
+		if (HaveCartridgeInInventory(iMagazineSize, ammo_type))
 			return iMagazineSize;
 
 		for (u8 try_load = (iMagazineSize - 1); try_load > 0; try_load--)
 		{
-			if (HaveCartridgeInInventory(try_load))
+			if (HaveCartridgeInInventory(try_load, ammo_type))
 				return try_load;
 		}
 
@@ -3004,12 +3008,12 @@ u8 CWeaponMagazined::GetAvailableCartridgesToLoad(bool full_reload)
 	{
 		u8 needed = iMagazineSize - iAmmoElapsed;
 
-		if (HaveCartridgeInInventory(needed))
+		if (HaveCartridgeInInventory(needed, ammo_type))
 			return needed;
 
 		for (u8 try_load = needed - 1; try_load > 0; try_load--)
 		{
-			if (HaveCartridgeInInventory(try_load))
+			if (HaveCartridgeInInventory(try_load, ammo_type))
 				return try_load;
 		}
 
