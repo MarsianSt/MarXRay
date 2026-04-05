@@ -467,7 +467,7 @@ extern ENGINE_API int ps_ssfx_terrain_pom_refine;
 extern ENGINE_API float psWeatherFogClamping;
 
 int ps_r4_ss_grass_collision = ps_r4_shaders_flags.test(R4FLAG_SSS_ADDON) ? 1 : 0;
-int ps_r4_pseudo_pbr = 0;
+int ps_r4_pseudo_pbr = READ_IF_EXISTS(pAdvancedSettings, r_u32, "start_settings", "r4_pseudo_pbr", 1);
 
 float ps_r__opt_dist = 100.f;
 float ps_r4_sss_water_waves_koef = READ_IF_EXISTS(pAdvancedSettings, r_float, "start_settings", "r4_sss_water_waves_koef", 0.2f);
