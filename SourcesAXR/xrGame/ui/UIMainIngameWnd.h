@@ -138,13 +138,15 @@ public:
 	// Енумы соответсвующие предупреждающим иконкам 
 	enum EWarningIcons
 	{
-		ewiAll				= 0,
+		ewiAll = 0,
 		ewiWeaponJammed,
 //		ewiRadiation,
 //		ewiWound,
+//		ewiFrostbite,
 //		ewiStarvation,
 //		ewiPsyHealth,
 //		ewiSleep,
+//		ewiHeating,
 		ewiInvincible,
 		ewiArtefact,
 	};

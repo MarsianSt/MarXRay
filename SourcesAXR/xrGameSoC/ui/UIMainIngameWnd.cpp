@@ -323,27 +323,41 @@ void CUIMainIngameWnd::Init()
 		"invincible"
 	};
 
-	// Загружаем пороговые значения для индикаторов
-	EWarningIcons j = ewiWeaponJammed;
-	while (j < ewiInvincible)
+	std::map<EWarningIcons, shared_str> warningConfigStrings =
 	{
-		// Читаем данные порогов для каждого индикатора
-		shared_str cfgRecord = pSettings->r_string("main_ingame_indicators_thresholds", *warningStrings[static_cast<int>(j) - 1]);
-		u32 count = _GetItemCount(*cfgRecord);
+		{ewiWeaponJammed,   "jammed"},
+		{ewiRadiation,		"radiation"},
+		{ewiWound,			"wounds"},
+		{ewiFrostbite,      "frostbite"},
+		{ewiStarvation,     "starvation"},
+		{ewiPsyHealth,		"fatigue"},
+		//{ewiSleep,		"sleeping"},
+		{ewiHeating,        "heating"},
+		{ewiInvincible,     "invincible"},
+		{ewiArtefact,       "artefact"}
+	};
 
-		char	singleThreshold[8];
-		float	f = 0;
-		for (u32 k = 0; k < count; ++k)
+	// Загружаем пороговые значения для индикаторов
+	for (const auto& pair : warningConfigStrings)
+	{
+		EWarningIcons iconType = pair.first;
+		const shared_str& cfgKey = pair.second;
+
+		if (pSettings->line_exist("main_ingame_indicators_thresholds", *cfgKey))
 		{
-			_GetItem(*cfgRecord, k, singleThreshold);
-			sscanf(singleThreshold, "%f", &f);
+			shared_str cfgRecord = pSettings->r_string("main_ingame_indicators_thresholds", *cfgKey);
+			u32 count = _GetItemCount(*cfgRecord);
 
-			m_Thresholds[j].push_back(f);
+			char singleThreshold[8];
+			float f = 0;
+			for (u32 k = 0; k < count; ++k)
+			{
+				_GetItem(*cfgRecord, k, singleThreshold);
+				sscanf(singleThreshold, "%f", &f);
+				m_Thresholds[iconType].push_back(f);
+			}
 		}
-
-		j = static_cast<EWarningIcons>(j + 1);
 	}
-
 
 	// Flashing icons initialize
 	uiXml.SetLocalRoot						(uiXml.NavigateToNode("flashing_icons"));
