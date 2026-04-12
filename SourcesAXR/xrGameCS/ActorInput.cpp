@@ -646,7 +646,7 @@ void CActor::IR_OnMouseMove(int dx, int dy)
 
 	auto wpn = smart_cast<CWeapon*>(inventory().ActiveItem());
 
-	float scale		= (C->f_fov/g_fov)* ((wpn && wpn->IsZoomed() && wpn->bIsSecondVPZoomPresent()) ? psSVP_MouseSens : psMouseSens) * psMouseSensScale/50.f  / LookFactor;
+	float scale		= (C->f_fov/g_fov)* ((wpn && wpn->IsZoomed() && wpn->bIsSecondVPZoomPresent() && !wpn->GetAltZoomStatus()) ? psSVP_MouseSens : psMouseSens) * psMouseSensScale/50.f  / LookFactor;
 	if (dx){
 		float d = float(dx)*scale;
 		cam_Active()->Move((d<0)?kLEFT:kRIGHT, _abs(d));
