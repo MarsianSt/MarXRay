@@ -3622,13 +3622,9 @@ void CWeapon::UpdateSecondVP(bool bInGrenade)
 
 	CActor* pActor = smart_cast<CActor*>(H_Parent());
 
-	bool bCond_1 = bInZoomRightNow();		// Мы должны целиться  
-
-	bool bCond_2 = bIsSecondVPZoomPresent();						// В конфиге должен быть прописан фактор зума для линзы (scope_lense_factor
-																	// больше чем 0)
+	bool bCond_1 = bInZoomRightNow();								// Мы должны целиться  
+	bool bCond_2 = bIsSecondVPZoomPresent();						// В конфиге должен быть прописан фактор зума для линзы (scope_lense_factor больше чем 0)
 	bool bCond_3 = pActor->cam_Active() == pActor->cam_FirstEye();	// Мы должны быть от 1-го лица	
-
-
 
 	Device.m_SecondViewport.SetSVPActive(bCond_1 && bCond_2 && bCond_3 && !bInGrenade);
 }

@@ -3588,19 +3588,16 @@ float CWeapon::GetSecondVPFov() const
 //      
 void CWeapon::UpdateSecondVP(bool bInGrenade)
 {
-	// + CActor::UpdateCL();
 	bool b_is_active_item = (m_pInventory != NULL) && (m_pInventory->ActiveItem() == this);
-	R_ASSERT(
-		ParentIsActor() && b_is_active_item); //           
+	R_ASSERT(ParentIsActor() && b_is_active_item); //           
 
 	CActor* pActor = smart_cast<CActor*>(H_Parent());
 
-	bool bCond_1 = m_zoom_params.m_fZoomRotationFactor > 0.05f; //   
-	bool bCond_2 = bIsSecondVPZoomPresent(); //          (scope_lense_factor
-											//   0)
-	bool bCond_3 = pActor->cam_Active() == pActor->cam_FirstEye(); //     1-
+	bool bCond_1 = bInZoomRightNow();								// Мы должны целиться  
+	bool bCond_2 = bIsSecondVPZoomPresent();						// В конфиге должен быть прописан фактор зума для линзы (scope_lense_factor больше чем 0)
+	bool bCond_3 = pActor->cam_Active() == pActor->cam_FirstEye();	// Мы должны быть от 1-го лица	
 
-	Device.m_SecondViewport.SetSVPActive(bCond_1 && bCond_2 && bCond_3);
+	Device.m_SecondViewport.SetSVPActive(bCond_1 && bCond_2 && bCond_3 && !bInGrenade);
 }
 
 bool CWeapon::IsPartlyReloading()
