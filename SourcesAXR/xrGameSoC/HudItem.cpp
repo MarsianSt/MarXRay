@@ -59,7 +59,7 @@ void CHudItem::Load(LPCSTR section)
 {
 	m_item_sect				= section;
 
-	//загрузить hud, если он нужен
+	//Р·Р°РіСЂСѓР·РёС‚СЊ hud, РµСЃР»Рё РѕРЅ РЅСѓР¶РµРЅ
 	if (pSettings->line_exist(section, "hud"))
 		m_hud_sect = pSettings->r_string(section, "hud");
 
@@ -139,15 +139,15 @@ void CHudItem::Load(LPCSTR section)
 	m_walk_offset[1] = READ_IF_EXISTS(pSettings, r_fvector3, section, "walk_hud_offset_rot", (Fvector{0.f, 0.05f, -1.f}));
 	m_walk_offset[2].set(READ_IF_EXISTS(pSettings, r_bool, section, "walk_enabled", true), READ_IF_EXISTS(pSettings, r_float, section, "walk_transition_time", 0.25f), 0.f);
 
-	//Загрузка параметров инерции --#SM+# Begin--
-	constexpr float PITCH_OFFSET_R = 0.0f; // Насколько сильно ствол смещается вбок (влево) при вертикальных поворотах камеры
-	constexpr float PITCH_OFFSET_N = 0.0f; // Насколько сильно ствол поднимается\опускается при вертикальных поворотах камеры
-	constexpr float PITCH_OFFSET_D = 0.02f; // Насколько сильно ствол приближается\отдаляется при вертикальных поворотах камеры
-	float PITCH_LOW_LIMIT = -PI; // Минимальное значение pitch при использовании совместно с PITCH_OFFSET_N
-	constexpr float ORIGIN_OFFSET = -0.05f; // Фактор влияния инерции на положение ствола (чем меньше, тем масштабней инерция)
-	constexpr float ORIGIN_OFFSET_AIM = -0.02f; // (Для прицеливания)
-	constexpr float TENDTO_SPEED = 5.f; // Скорость нормализации положения ствола
-	constexpr float TENDTO_SPEED_AIM = 10.f; // (Для прицеливания)
+	//Р—Р°РіСЂСѓР·РєР° РїР°СЂР°РјРµС‚СЂРѕРІ РёРЅРµСЂС†РёРё --#SM+# Begin--
+	constexpr float PITCH_OFFSET_R = 0.0f; // РќР°СЃРєРѕР»СЊРєРѕ СЃРёР»СЊРЅРѕ СЃС‚РІРѕР» СЃРјРµС‰Р°РµС‚СЃСЏ РІР±РѕРє (РІР»РµРІРѕ) РїСЂРё РІРµСЂС‚РёРєР°Р»СЊРЅС‹С… РїРѕРІРѕСЂРѕС‚Р°С… РєР°РјРµСЂС‹
+	constexpr float PITCH_OFFSET_N = 0.0f; // РќР°СЃРєРѕР»СЊРєРѕ СЃРёР»СЊРЅРѕ СЃС‚РІРѕР» РїРѕРґРЅРёРјР°РµС‚СЃСЏ\РѕРїСѓСЃРєР°РµС‚СЃСЏ РїСЂРё РІРµСЂС‚РёРєР°Р»СЊРЅС‹С… РїРѕРІРѕСЂРѕС‚Р°С… РєР°РјРµСЂС‹
+	constexpr float PITCH_OFFSET_D = 0.02f; // РќР°СЃРєРѕР»СЊРєРѕ СЃРёР»СЊРЅРѕ СЃС‚РІРѕР» РїСЂРёР±Р»РёР¶Р°РµС‚СЃСЏ\РѕС‚РґР°Р»СЏРµС‚СЃСЏ РїСЂРё РІРµСЂС‚РёРєР°Р»СЊРЅС‹С… РїРѕРІРѕСЂРѕС‚Р°С… РєР°РјРµСЂС‹
+	float PITCH_LOW_LIMIT = -PI; // РњРёРЅРёРјР°Р»СЊРЅРѕРµ Р·РЅР°С‡РµРЅРёРµ pitch РїСЂРё РёСЃРїРѕР»СЊР·РѕРІР°РЅРёРё СЃРѕРІРјРµСЃС‚РЅРѕ СЃ PITCH_OFFSET_N
+	constexpr float ORIGIN_OFFSET = -0.05f; // Р¤Р°РєС‚РѕСЂ РІР»РёСЏРЅРёСЏ РёРЅРµСЂС†РёРё РЅР° РїРѕР»РѕР¶РµРЅРёРµ СЃС‚РІРѕР»Р° (С‡РµРј РјРµРЅСЊС€Рµ, С‚РµРј РјР°СЃС€С‚Р°Р±РЅРµР№ РёРЅРµСЂС†РёСЏ)
+	constexpr float ORIGIN_OFFSET_AIM = -0.02f; // (Р”Р»СЏ РїСЂРёС†РµР»РёРІР°РЅРёСЏ)
+	constexpr float TENDTO_SPEED = 5.f; // РЎРєРѕСЂРѕСЃС‚СЊ РЅРѕСЂРјР°Р»РёР·Р°С†РёРё РїРѕР»РѕР¶РµРЅРёСЏ СЃС‚РІРѕР»Р°
+	constexpr float TENDTO_SPEED_AIM = 10.f; // (Р”Р»СЏ РїСЂРёС†РµР»РёРІР°РЅРёСЏ)
 
 	inertion_data.m_pitch_offset_r = READ_IF_EXISTS(pSettings, r_float, m_hud_sect, "pitch_offset_right", PITCH_OFFSET_R);
 	inertion_data.m_pitch_offset_n = READ_IF_EXISTS(pSettings, r_float, m_hud_sect, "pitch_offset_up", PITCH_OFFSET_N);
@@ -159,7 +159,7 @@ void CHudItem::Load(LPCSTR section)
 	inertion_data.m_tendto_speed = READ_IF_EXISTS(pSettings, r_float, m_hud_sect, "inertion_tendto_speed", TENDTO_SPEED);
 	inertion_data.m_tendto_speed_aim = READ_IF_EXISTS(pSettings, r_float, m_hud_sect, "inertion_zoom_tendto_speed", TENDTO_SPEED_AIM);
 
-	// Загрузка параметров смещения при стрельбе
+	// Р—Р°РіСЂСѓР·РєР° РїР°СЂР°РјРµС‚СЂРѕРІ СЃРјРµС‰РµРЅРёСЏ РїСЂРё СЃС‚СЂРµР»СЊР±Рµ
 	m_shooting_params.m_shot_max_offset_LRUD = READ_IF_EXISTS(pSettings, r_fvector4, m_hud_sect, "shooting_max_LRUD", Fvector4().set(0, 0, 0, 0));
 	m_shooting_params.m_shot_max_offset_LRUD_aim = READ_IF_EXISTS(pSettings, r_fvector4, m_hud_sect, "shooting_max_LRUD_aim", Fvector4().set(0, 0, 0, 0));
 	m_shooting_params.m_shot_max_rot_UD = READ_IF_EXISTS(pSettings, r_fvector2, m_hud_sect, "shooting_max_UD_rot", Fvector2().set(0, 0));
@@ -654,13 +654,13 @@ bool CHudItem::TryPlayAnimIdle()
 			{
 				if (!(State & mcCrouch))
 				{
-					if (State & mcAccel) //Ходьба медленная (SHIFT)
+					if (State & mcAccel) //РҐРѕРґСЊР±Р° РјРµРґР»РµРЅРЅР°СЏ (SHIFT)
 						PlayAnimIdleMovingSlow();
 					else
 						PlayAnimIdleMoving();
 					return true;
 				}
-				else if (State & mcAccel) //Ходьба в присяде (CTRL+SHIFT)
+				else if (State & mcAccel) //РҐРѕРґСЊР±Р° РІ РїСЂРёСЃСЏРґРµ (CTRL+SHIFT)
 				{
 					PlayAnimIdleMovingCrouchSlow();
 					return true;
@@ -912,7 +912,7 @@ static BOOL pick_trace_callback(collide::rq_result& result, LPVOID params)
 	collide::rq_result* RQ = (collide::rq_result*)params;
 	if (!result.O)
 	{
-		// получить треугольник и узнать его материал
+		// РїРѕР»СѓС‡РёС‚СЊ С‚СЂРµСѓРіРѕР»СЊРЅРёРє Рё СѓР·РЅР°С‚СЊ РµРіРѕ РјР°С‚РµСЂРёР°Р»
 		CDB::TRI* T = Level().ObjectSpace.GetStaticTris() + result.element;
 		if (T->material < GMLib.CountMaterial())
 		{
@@ -975,7 +975,7 @@ void CHudItem::UpdateInertion(Fmatrix& trans)
         float tendto_speed = GetCurrentHudOffsetIdx() > 0 ? inertion_data.m_tendto_speed_aim : inertion_data.m_tendto_speed;
         float origin_offset = GetCurrentHudOffsetIdx() > 0 ? inertion_data.m_origin_offset_aim : inertion_data.m_origin_offset;
 
-        // Фактор силы инерции
+        // Р¤Р°РєС‚РѕСЂ СЃРёР»С‹ РёРЅРµСЂС†РёРё
         const float power_factor = GetInertionPowerFactor();
         tendto_speed *= power_factor;
         origin_offset *= power_factor;
@@ -994,19 +994,19 @@ void CHudItem::UpdateInertion(Fmatrix& trans)
         if (!current_offset.similar(current_pitch_offset, EPS))
             current_pitch_offset.lerp(current_pitch_offset, current_offset, tendto_speed * Device.fTimeDelta);
 
-        // Отдаление\приближение
+        // РћС‚РґР°Р»РµРЅРёРµ\РїСЂРёР±Р»РёР¶РµРЅРёРµ
         origin.mad(xform.k, current_pitch_offset.x);
 
-        // Сдвиг в противоположную часть экрана
+        // РЎРґРІРёРі РІ РїСЂРѕС‚РёРІРѕРїРѕР»РѕР¶РЅСѓСЋ С‡Р°СЃС‚СЊ СЌРєСЂР°РЅР°
         origin.mad(xform.i, current_pitch_offset.y);
 
-        // Подьём\опускание
+        // РџРѕРґСЊС‘Рј\РѕРїСѓСЃРєР°РЅРёРµ
         clamp(pitch, inertion_data.m_pitch_low_limit, PI);
         origin.mad(xform.j, current_pitch_offset.z);
     }
 }
 
-// Обновление координат текущего худа
+// РћР±РЅРѕРІР»РµРЅРёРµ РєРѕРѕСЂРґРёРЅР°С‚ С‚РµРєСѓС‰РµРіРѕ С…СѓРґР°
 void CHudItem::UpdateHudAdditional(Fmatrix& trans)
 {
     UpdateInertion(trans);
@@ -1022,7 +1022,7 @@ void CHudItem::UpdateHudAdditional(Fmatrix& trans)
     Fvector zr_offs = hi->m_measures.m_hands_offset[0][idx];
     Fvector zr_rot = hi->m_measures.m_hands_offset[1][idx];
 
-    //============= Поворот ствола во время аима =============//
+    //============= РџРѕРІРѕСЂРѕС‚ СЃС‚РІРѕР»Р° РІРѕ РІСЂРµРјСЏ Р°РёРјР° =============//
     if (wpn)
 	{
         const float factor = Device.fTimeDelta / wpn->m_zoom_params.m_fZoomRotateTime;
@@ -1065,7 +1065,7 @@ void CHudItem::UpdateHudAdditional(Fmatrix& trans)
 
 	}
 
-	//============= Коллизия оружия =============//
+	//============= РљРѕР»Р»РёР·РёСЏ РѕСЂСѓР¶РёСЏ =============//
 	if (b_hud_collision)
 	{
 		float dist = GetRayQueryDist();
@@ -1132,37 +1132,37 @@ void CHudItem::UpdateHudAdditional(Fmatrix& trans)
     const u32 iMovingState = pActor->MovingState();
     idx = b_aiming ? 1ui8 : 0ui8;
 
-    //============= Боковой стрейф с оружием =============//
+    //============= Р‘РѕРєРѕРІРѕР№ СЃС‚СЂРµР№С„ СЃ РѕСЂСѓР¶РёРµРј =============//
     {
         const bool bEnabled = m_strafe_offset[2][idx].x;
         if (bEnabled)
         {
-            float fStrafeMaxTime = m_strafe_offset[2][idx].y; // Макс. время в секундах, за которое произойдет смещение худа при стрейфах
+            float fStrafeMaxTime = m_strafe_offset[2][idx].y; // РњР°РєСЃ. РІСЂРµРјСЏ РІ СЃРµРєСѓРЅРґР°С…, Р·Р° РєРѕС‚РѕСЂРѕРµ РїСЂРѕРёР·РѕР№РґРµС‚ СЃРјРµС‰РµРЅРёРµ С…СѓРґР° РїСЂРё СЃС‚СЂРµР№С„Р°С…
 
             if (fStrafeMaxTime <= EPS)
                 fStrafeMaxTime = 0.01f;
 
-            const float fStepPerUpd = Device.fTimeDelta / fStrafeMaxTime; // Величина изменение фактора смещения худа при стрейфах
+            const float fStepPerUpd = Device.fTimeDelta / fStrafeMaxTime; // Р’РµР»РёС‡РёРЅР° РёР·РјРµРЅРµРЅРёРµ С„Р°РєС‚РѕСЂР° СЃРјРµС‰РµРЅРёСЏ С…СѓРґР° РїСЂРё СЃС‚СЂРµР№С„Р°С…
 
             Fvector current_moving_offs{}, current_moving_rot{};
 
-            if (iMovingState & mcLStrafe) // Двигаемся влево
+            if (iMovingState & mcLStrafe) // Р”РІРёРіР°РµРјСЃСЏ РІР»РµРІРѕ
             {
                 current_moving_offs.set(-m_strafe_offset[0][idx]);
                 current_moving_rot.set(-m_strafe_offset[1][idx]);
             }
-            else if (iMovingState & mcRStrafe) // Двигаемся вправо
+            else if (iMovingState & mcRStrafe) // Р”РІРёРіР°РµРјСЃСЏ РІРїСЂР°РІРѕ
             {
                 current_moving_offs.set(m_strafe_offset[0][idx]);
                 current_moving_rot.set(m_strafe_offset[1][idx]);
             }
-            else // Двигаемся в любом другом направлении
+            else // Р”РІРёРіР°РµРјСЃСЏ РІ Р»СЋР±РѕРј РґСЂСѓРіРѕРј РЅР°РїСЂР°РІР»РµРЅРёРё
             {
                 current_moving_offs.set(Fvector{});
                 current_moving_rot.set(Fvector{});
             }
 
-            current_moving_rot.mul(-PI / 180.f); // Преобразуем углы в радианы
+            current_moving_rot.mul(-PI / 180.f); // РџСЂРµРѕР±СЂР°Р·СѓРµРј СѓРіР»С‹ РІ СЂР°РґРёР°РЅС‹
 
             if (!current_moving_offs.similar(current_strafe[0], EPS))
                 current_strafe[0].lerp(current_strafe[0], current_moving_offs, fStepPerUpd);
@@ -1175,31 +1175,31 @@ void CHudItem::UpdateHudAdditional(Fmatrix& trans)
         }
     }
 
-    //=============== Эффекты прыжка ===============//
+    //=============== Р­С„С„РµРєС‚С‹ РїСЂС‹Р¶РєР° ===============//
     {
         const bool bEnabled = m_jump_offset[2][idx].x;
         if (bEnabled)
         {
-            float fJumpMaxTime = m_jump_offset[2][idx].y; // Макс. время в секундах, за которое произойдет смещение худа при прыжке
+            float fJumpMaxTime = m_jump_offset[2][idx].y; // РњР°РєСЃ. РІСЂРµРјСЏ РІ СЃРµРєСѓРЅРґР°С…, Р·Р° РєРѕС‚РѕСЂРѕРµ РїСЂРѕРёР·РѕР№РґРµС‚ СЃРјРµС‰РµРЅРёРµ С…СѓРґР° РїСЂРё РїСЂС‹Р¶РєРµ
 
             if (fJumpMaxTime <= EPS)
                 fJumpMaxTime = 0.01f;
 
-            float fStepPerUpd = Device.fTimeDelta / fJumpMaxTime; // Величина изменение фактора смещения худа при прыжке
+            float fStepPerUpd = Device.fTimeDelta / fJumpMaxTime; // Р’РµР»РёС‡РёРЅР° РёР·РјРµРЅРµРЅРёРµ С„Р°РєС‚РѕСЂР° СЃРјРµС‰РµРЅРёСЏ С…СѓРґР° РїСЂРё РїСЂС‹Р¶РєРµ
 
             Fvector current_jump_offs{}, current_jump_rot{};
 
-            if (iMovingState & mcJump) // Прыжок
+            if (iMovingState & mcJump) // РџСЂС‹Р¶РѕРє
             {
                 current_jump_offs.set(m_jump_offset[0][idx]);
                 current_jump_rot.set(m_jump_offset[1][idx]);
             }
-            else if (iMovingState & mcFall) // Полет
+            else if (iMovingState & mcFall) // РџРѕР»РµС‚
             {
                 current_jump_offs.set(m_fall_offset[0][idx]);
                 current_jump_rot.set(m_fall_offset[1][idx]);
             }
-            else if (iMovingState & mcLanding || iMovingState & mcLanding2) // Полет
+            else if (iMovingState & mcLanding || iMovingState & mcLanding2) // РџРѕР»РµС‚
             {
                 current_jump_offs.set(m_landing_offset[0][idx]);
                 current_jump_rot.set(m_landing_offset[1][idx]);
@@ -1214,7 +1214,7 @@ void CHudItem::UpdateHudAdditional(Fmatrix& trans)
 			float koef = iMovingState & mcLanding2 ? 1.3 : 1.0;
             current_jump_offs.mul(koef);
             current_jump_rot.mul(koef);
-            current_jump_rot.mul(-PI / 180.f); // Преобразуем углы в радианы
+            current_jump_rot.mul(-PI / 180.f); // РџСЂРµРѕР±СЂР°Р·СѓРµРј СѓРіР»С‹ РІ СЂР°РґРёР°РЅС‹
 
             if (!current_jump_offs.similar(current_jump[0], EPS))
                 current_jump[0].lerp(current_jump[0], current_jump_offs, fStepPerUpd);
@@ -1227,31 +1227,31 @@ void CHudItem::UpdateHudAdditional(Fmatrix& trans)
         }
     }
 
-    //=============== Эффекты наклонов ===================//
+    //=============== Р­С„С„РµРєС‚С‹ РЅР°РєР»РѕРЅРѕРІ ===================//
     {
         const bool bEnabled = m_lookout_offset[2][idx].x;
         if (bEnabled)
         {
-            float fLookoutMaxTime = m_lookout_offset[2][idx].y; // Макс. время в секундах, за которое мы наклонимся из центрального положения
+            float fLookoutMaxTime = m_lookout_offset[2][idx].y; // РњР°РєСЃ. РІСЂРµРјСЏ РІ СЃРµРєСѓРЅРґР°С…, Р·Р° РєРѕС‚РѕСЂРѕРµ РјС‹ РЅР°РєР»РѕРЅРёРјСЃСЏ РёР· С†РµРЅС‚СЂР°Р»СЊРЅРѕРіРѕ РїРѕР»РѕР¶РµРЅРёСЏ
             if (fLookoutMaxTime <= EPS)
                 fLookoutMaxTime = 0.01f;
 
-            const float fStepPerUpd = Device.fTimeDelta / fLookoutMaxTime; // Величина изменение фактора поворота
+            const float fStepPerUpd = Device.fTimeDelta / fLookoutMaxTime; // Р’РµР»РёС‡РёРЅР° РёР·РјРµРЅРµРЅРёРµ С„Р°РєС‚РѕСЂР° РїРѕРІРѕСЂРѕС‚Р°
 
             float koef{1.f};
             if ((iMovingState & mcCrouch) && (iMovingState & mcAccel))
-                koef = 0.5; // во сколько раз менять амплитуду при полном присяде
+                koef = 0.5; // РІРѕ СЃРєРѕР»СЊРєРѕ СЂР°Р· РјРµРЅСЏС‚СЊ Р°РјРїР»РёС‚СѓРґСѓ РїСЂРё РїРѕР»РЅРѕРј РїСЂРёСЃСЏРґРµ
             else if (iMovingState & mcCrouch)
-                koef = 0.75; // во сколько раз менять амплитуду при присяде
+                koef = 0.75; // РІРѕ СЃРєРѕР»СЊРєРѕ СЂР°Р· РјРµРЅСЏС‚СЊ Р°РјРїР»РёС‚СѓРґСѓ РїСЂРё РїСЂРёСЃСЏРґРµ
 
             Fvector current_lookout_offs{}, current_lookout_rot{};
 
-            if ((iMovingState & mcLLookout) && !(iMovingState & mcRLookout)) // Выглядываем влево
+            if ((iMovingState & mcLLookout) && !(iMovingState & mcRLookout)) // Р’С‹РіР»СЏРґС‹РІР°РµРј РІР»РµРІРѕ
             {
                 current_lookout_offs.set(-m_lookout_offset[0][idx]);
                 current_lookout_rot.set(-m_lookout_offset[1][idx]);
             }
-            else if ((iMovingState & mcRLookout) && !(iMovingState & mcLLookout)) // Выглядываем вправо
+            else if ((iMovingState & mcRLookout) && !(iMovingState & mcLLookout)) // Р’С‹РіР»СЏРґС‹РІР°РµРј РІРїСЂР°РІРѕ
             {
                 current_lookout_offs.set(m_lookout_offset[0][idx]);
                 current_lookout_rot.set(m_lookout_offset[1][idx]);
@@ -1264,7 +1264,7 @@ void CHudItem::UpdateHudAdditional(Fmatrix& trans)
 
             current_lookout_offs.mul(koef);
             current_lookout_rot.mul(koef);
-            current_lookout_rot.mul(-PI / 180.f); // Преобразуем углы в радианы
+            current_lookout_rot.mul(-PI / 180.f); // РџСЂРµРѕР±СЂР°Р·СѓРµРј СѓРіР»С‹ РІ СЂР°РґРёР°РЅС‹
 
             if (!current_lookout_offs.similar(current_lookout[0], EPS))
                 current_lookout[0].lerp(current_lookout[0], current_lookout_offs, fStepPerUpd);
@@ -1277,26 +1277,26 @@ void CHudItem::UpdateHudAdditional(Fmatrix& trans)
         }
     }
 
-    //=============== Эффекты стойки ===================//
+    //=============== Р­С„С„РµРєС‚С‹ СЃС‚РѕР№РєРё ===================//
     {
         const bool bEnabled = m_move_offset[2].x;
         if (bEnabled)
         {
-            float fMoveMaxTime = m_move_offset[2].y; // Макс. время в секундах, за которое мы наклонимся из центрального положения
+            float fMoveMaxTime = m_move_offset[2].y; // РњР°РєСЃ. РІСЂРµРјСЏ РІ СЃРµРєСѓРЅРґР°С…, Р·Р° РєРѕС‚РѕСЂРѕРµ РјС‹ РЅР°РєР»РѕРЅРёРјСЃСЏ РёР· С†РµРЅС‚СЂР°Р»СЊРЅРѕРіРѕ РїРѕР»РѕР¶РµРЅРёСЏ
             if (fMoveMaxTime <= EPS)
                 fMoveMaxTime = 0.01f;
 
-            const float fStepPerUpd = Device.fTimeDelta / fMoveMaxTime; // Величина изменение фактора поворота
+            const float fStepPerUpd = Device.fTimeDelta / fMoveMaxTime; // Р’РµР»РёС‡РёРЅР° РёР·РјРµРЅРµРЅРёРµ С„Р°РєС‚РѕСЂР° РїРѕРІРѕСЂРѕС‚Р°
 
             float koef{};
             if ((iMovingState & mcCrouch) && (iMovingState & mcAccel))
-                koef = 1.0; // во сколько раз менять амплитуду при полном присяде
+                koef = 1.0; // РІРѕ СЃРєРѕР»СЊРєРѕ СЂР°Р· РјРµРЅСЏС‚СЊ Р°РјРїР»РёС‚СѓРґСѓ РїСЂРё РїРѕР»РЅРѕРј РїСЂРёСЃСЏРґРµ
             else if (iMovingState & mcCrouch)
-                koef = 0.5; // во сколько раз менять амплитуду при присяде
+                koef = 0.5; // РІРѕ СЃРєРѕР»СЊРєРѕ СЂР°Р· РјРµРЅСЏС‚СЊ Р°РјРїР»РёС‚СѓРґСѓ РїСЂРё РїСЂРёСЃСЏРґРµ
 
             Fvector current_move_offs{}, current_move_rot{};
 
-            if (iMovingState & mcCrouch) // Выглядываем влево
+            if (iMovingState & mcCrouch) // Р’С‹РіР»СЏРґС‹РІР°РµРј РІР»РµРІРѕ
             {
                 current_move_offs.set(m_move_offset[0]);
                 current_move_rot.set(m_move_offset[1]);
@@ -1315,7 +1315,7 @@ void CHudItem::UpdateHudAdditional(Fmatrix& trans)
             current_move_rot.mul(!IsZoomed());
             current_move_offs.mul(!pda && !missile);
             current_move_rot.mul(!pda && !missile);
-            current_move_rot.mul(-PI / 180.f); // Преобразуем углы в радианы
+            current_move_rot.mul(-PI / 180.f); // РџСЂРµРѕР±СЂР°Р·СѓРµРј СѓРіР»С‹ РІ СЂР°РґРёР°РЅС‹
 
             if (!current_move_offs.similar(current_move[0], EPS))
                 current_move[0].lerp(current_move[0], current_move_offs, fStepPerUpd);
@@ -1328,22 +1328,22 @@ void CHudItem::UpdateHudAdditional(Fmatrix& trans)
         }
     }
 
-    //=============== Эффекты ходьбы ===================//
+    //=============== Р­С„С„РµРєС‚С‹ С…РѕРґСЊР±С‹ ===================//
     {
         const bool bEnabled = m_walk_offset[2].x;
         if (bEnabled)
         {
-            float fWalkMaxTime = m_walk_offset[2].y; // Макс. время в секундах, за которое мы наклонимся из центрального положения
+            float fWalkMaxTime = m_walk_offset[2].y; // РњР°РєСЃ. РІСЂРµРјСЏ РІ СЃРµРєСѓРЅРґР°С…, Р·Р° РєРѕС‚РѕСЂРѕРµ РјС‹ РЅР°РєР»РѕРЅРёРјСЃСЏ РёР· С†РµРЅС‚СЂР°Р»СЊРЅРѕРіРѕ РїРѕР»РѕР¶РµРЅРёСЏ
             if (fWalkMaxTime <= EPS)
                 fWalkMaxTime = 0.01f;
 
-            const float fStepPerUpd = Device.fTimeDelta / fWalkMaxTime; // Величина изменение фактора поворота
+            const float fStepPerUpd = Device.fTimeDelta / fWalkMaxTime; // Р’РµР»РёС‡РёРЅР° РёР·РјРµРЅРµРЅРёРµ С„Р°РєС‚РѕСЂР° РїРѕРІРѕСЂРѕС‚Р°
 
             float koef{1.f};
             if ((iMovingState & mcCrouch) && (iMovingState & mcAccel))
-                koef = 0.5; // во сколько раз менять амплитуду при полном присяде
+                koef = 0.5; // РІРѕ СЃРєРѕР»СЊРєРѕ СЂР°Р· РјРµРЅСЏС‚СЊ Р°РјРїР»РёС‚СѓРґСѓ РїСЂРё РїРѕР»РЅРѕРј РїСЂРёСЃСЏРґРµ
             else if (iMovingState & mcCrouch)
-                koef = 0.7; // во сколько раз менять амплитуду при присяде
+                koef = 0.7; // РІРѕ СЃРєРѕР»СЊРєРѕ СЂР°Р· РјРµРЅСЏС‚СЊ Р°РјРїР»РёС‚СѓРґСѓ РїСЂРё РїСЂРёСЃСЏРґРµ
 
             Fvector current_walk_offs{}, current_walk_rot{};
 
@@ -1372,7 +1372,7 @@ void CHudItem::UpdateHudAdditional(Fmatrix& trans)
             current_walk_rot.mul(!pda && !missile);
             current_walk_offs.mul(koef);
             current_walk_rot.mul(koef);
-            current_walk_rot.mul(-PI / 180.f); // Преобразуем углы в радианы
+            current_walk_rot.mul(-PI / 180.f); // РџСЂРµРѕР±СЂР°Р·СѓРµРј СѓРіР»С‹ РІ СЂР°РґРёР°РЅС‹
 
             if (!current_walk_offs.similar(current_walk[0], EPS))
                 current_walk[0].lerp(current_walk[0], current_walk_offs, fStepPerUpd);
@@ -1385,103 +1385,106 @@ void CHudItem::UpdateHudAdditional(Fmatrix& trans)
         }
     }
 
-    //=============== Эффекты тряски от стрельбы ===================//
+    //=============== Р­С„С„РµРєС‚С‹ С‚СЂСЏСЃРєРё РѕС‚ СЃС‚СЂРµР»СЊР±С‹ ===================//
 	if (bReloadShooting && wpn)
 	{
-		// Параметры сдвига
-		//--> Длительность (== скорость) затухания эффекта ...
+		// РџР°СЂР°РјРµС‚СЂС‹ СЃРґРІРёРіР°
+		//--> Р”Р»РёС‚РµР»СЊРЅРѕСЃС‚СЊ (== СЃРєРѕСЂРѕСЃС‚СЊ) Р·Р°С‚СѓС…Р°РЅРёСЏ СЌС„С„РµРєС‚Р° ...
 		float fShootingStabilizeTime = (GetState() == wpn->eFire ?
-			//--> ... во время анимации стрельбы
-			lerp(m_shooting_params.m_ret_time_fire[0], //--> от бедра
-				m_shooting_params.m_ret_time_fire[1], //--> в зуме
+			//--> ... РІРѕ РІСЂРµРјСЏ Р°РЅРёРјР°С†РёРё СЃС‚СЂРµР»СЊР±С‹
+			lerp(m_shooting_params.m_ret_time_fire[0], //--> РѕС‚ Р±РµРґСЂР°
+				m_shooting_params.m_ret_time_fire[1], //--> РІ Р·СѓРјРµ
 				wpn->m_zoom_params.m_fZoomRotationFactor) :
-			//--> ... после анимации стрельбы
-			lerp(m_shooting_params.m_ret_time[0], //--> от бедра
-				m_shooting_params.m_ret_time[1], //--> в зуме
+			//--> ... РїРѕСЃР»Рµ Р°РЅРёРјР°С†РёРё СЃС‚СЂРµР»СЊР±С‹
+			lerp(m_shooting_params.m_ret_time[0], //--> РѕС‚ Р±РµРґСЂР°
+				m_shooting_params.m_ret_time[1], //--> РІ Р·СѓРјРµ
 				wpn->m_zoom_params.m_fZoomRotationFactor));
 
 		if (fShootingStabilizeTime <= EPS)
 			fShootingStabilizeTime = 0.01f;
 
-		const float fStepPerUpd = Device.fTimeDelta / (fShootingStabilizeTime * 0.25); // Величина изменение фактора поворота
+		// Р’РµР»РёС‡РёРЅР° РёР·РјРµРЅРµРЅРёСЏ С„Р°РєС‚РѕСЂР° РїРѕРІРѕСЂРѕС‚Р°
+		float fStepPerUpd = Device.fTimeDelta / (fShootingStabilizeTime * 0.25f);
+		clamp(fStepPerUpd, 0.0f, 1.0f); // РћРіСЂР°РЅРёС‡РµРЅРёРµ С€Р°РіР°, С‡С‚РѕР±С‹ РЅР° РЅРёР·РєРѕРј С„РїСЃ РЅРµ РґС‘СЂРіР°Р»Рѕ С…СѓРґ
 
-		//--> Сдвиг по Z
+		//--> РЎРґРІРёРі РїРѕ Z
 		float fShootingBackwOffset = lerp(
-			m_shooting_params.m_shot_offset_BACKW, //--> от бедра
-			m_shooting_params.m_shot_offset_BACKW_aim, //--> в зуме
+			m_shooting_params.m_shot_offset_BACKW, //--> РѕС‚ Р±РµРґСЂР°
+			m_shooting_params.m_shot_offset_BACKW_aim, //--> РІ Р·СѓРјРµ
 			wpn->m_zoom_params.m_fZoomRotationFactor);
 
-		//--> Сдвиг по X, Y
+		//--> РЎРґРІРёРі РїРѕ X, Y
 		Fvector4 vShOffsets; // 0 = -X, 1 = +X, 2 = +Y, 3 = -Y
 		vShOffsets[0] = lerp(
-			m_shooting_params.m_shot_max_offset_LRUD[0], //--> от бедра
-			m_shooting_params.m_shot_max_offset_LRUD_aim[0], //--> в зуме
+			m_shooting_params.m_shot_max_offset_LRUD[0], //--> РѕС‚ Р±РµРґСЂР°
+			m_shooting_params.m_shot_max_offset_LRUD_aim[0], //--> РІ Р·СѓРјРµ
 			wpn->m_zoom_params.m_fZoomRotationFactor);
 		vShOffsets[1] = lerp(
-			m_shooting_params.m_shot_max_offset_LRUD[1], //--> от бедра
-			m_shooting_params.m_shot_max_offset_LRUD_aim[1], //--> в зуме
+			m_shooting_params.m_shot_max_offset_LRUD[1], //--> РѕС‚ Р±РµРґСЂР°
+			m_shooting_params.m_shot_max_offset_LRUD_aim[1], //--> РІ Р·СѓРјРµ
 			wpn->m_zoom_params.m_fZoomRotationFactor);
 		vShOffsets[2] = lerp(
-			m_shooting_params.m_shot_max_offset_LRUD[2], //--> от бедра
-			m_shooting_params.m_shot_max_offset_LRUD_aim[2], //--> в зуме
+			m_shooting_params.m_shot_max_offset_LRUD[2], //--> РѕС‚ Р±РµРґСЂР°
+			m_shooting_params.m_shot_max_offset_LRUD_aim[2], //--> РІ Р·СѓРјРµ
 			wpn->m_zoom_params.m_fZoomRotationFactor);
 		vShOffsets[3] = lerp(
-			m_shooting_params.m_shot_max_offset_LRUD[3], //--> от бедра
-			m_shooting_params.m_shot_max_offset_LRUD_aim[3], //--> в зуме
+			m_shooting_params.m_shot_max_offset_LRUD[3], //--> РѕС‚ Р±РµРґСЂР°
+			m_shooting_params.m_shot_max_offset_LRUD_aim[3], //--> РІ Р·СѓРјРµ
 			wpn->m_zoom_params.m_fZoomRotationFactor);
 
-		//--> Поворот по оси X
-		Fvector4 vShRotX; // 0 = При смещении вверх, 1 = при смещении вниз
+		//--> РџРѕРІРѕСЂРѕС‚ РїРѕ РѕСЃРё X
+		Fvector4 vShRotX; // 0 = РџСЂРё СЃРјРµС‰РµРЅРёРё РІРІРµСЂС…, 1 = РїСЂРё СЃРјРµС‰РµРЅРёРё РІРЅРёР·
 		Fvector4 vShRotYZ;
 		vShRotX[0] = lerp(
-			m_shooting_params.m_shot_max_rot_UD[0], //--> от бедра
-			m_shooting_params.m_shot_max_rot_UD_aim[0], //--> в зуме
+			m_shooting_params.m_shot_max_rot_UD[0], //--> РѕС‚ Р±РµРґСЂР°
+			m_shooting_params.m_shot_max_rot_UD_aim[0], //--> РІ Р·СѓРјРµ
 			wpn->m_zoom_params.m_fZoomRotationFactor);
 		vShRotX[1] = lerp(
-			m_shooting_params.m_shot_max_rot_UD[1], //--> от бедра
-			m_shooting_params.m_shot_max_rot_UD_aim[1], //--> в зуме
+			m_shooting_params.m_shot_max_rot_UD[1], //--> РѕС‚ Р±РµРґСЂР°
+			m_shooting_params.m_shot_max_rot_UD_aim[1], //--> РІ Р·СѓРјРµ
 			wpn->m_zoom_params.m_fZoomRotationFactor);
 		vShRotYZ[0] = lerp(
-			m_shooting_params.m_shot_max_rot_LRFB[0], //--> от бедра
-			m_shooting_params.m_shot_max_rot_LRFB_aim[0], //--> в зуме
+			m_shooting_params.m_shot_max_rot_LRFB[0], //--> РѕС‚ Р±РµРґСЂР°
+			m_shooting_params.m_shot_max_rot_LRFB_aim[0], //--> РІ Р·СѓРјРµ
 			wpn->m_zoom_params.m_fZoomRotationFactor);
 		vShRotYZ[1] = lerp(
-			m_shooting_params.m_shot_max_rot_LRFB[1], //--> от бедра
-			m_shooting_params.m_shot_max_rot_LRFB_aim[1], //--> в зуме
+			m_shooting_params.m_shot_max_rot_LRFB[1], //--> РѕС‚ Р±РµРґСЂР°
+			m_shooting_params.m_shot_max_rot_LRFB_aim[1], //--> РІ Р·СѓРјРµ
 			wpn->m_zoom_params.m_fZoomRotationFactor);
 		vShRotYZ[2] = lerp(
-			m_shooting_params.m_shot_max_rot_LRFB[2], //--> от бедра
-			m_shooting_params.m_shot_max_rot_LRFB_aim[2], //--> в зуме
+			m_shooting_params.m_shot_max_rot_LRFB[2], //--> РѕС‚ Р±РµРґСЂР°
+			m_shooting_params.m_shot_max_rot_LRFB_aim[2], //--> РІ Р·СѓРјРµ
 			wpn->m_zoom_params.m_fZoomRotationFactor);
 		vShRotYZ[3] = lerp(
-			m_shooting_params.m_shot_max_rot_LRFB[3], //--> от бедра
-			m_shooting_params.m_shot_max_rot_LRFB_aim[3], //--> в зуме
+			m_shooting_params.m_shot_max_rot_LRFB[3], //--> РѕС‚ Р±РµРґСЂР°
+			m_shooting_params.m_shot_max_rot_LRFB_aim[3], //--> РІ Р·СѓРјРµ
 			wpn->m_zoom_params.m_fZoomRotationFactor);
 
-		// Применяем сдвиг от стрельбы к HUD-у
+		// РџСЂРёРјРµРЅСЏРµРј СЃРґРІРёРі РѕС‚ СЃС‚СЂРµР»СЊР±С‹ Рє HUD-Сѓ
 		{
 			Fvector shoot_offs, shoot_rot;
 
-			//--> Рассчитываем основу сдвига
+			//--> Р Р°СЃСЃС‡РёС‚С‹РІР°РµРј РѕСЃРЅРѕРІСѓ СЃРґРІРёРіР°
 			shoot_offs = {
-				//--> Горизонтальный сдвиг
+				//--> Р“РѕСЂРёР·РѕРЅС‚Р°Р»СЊРЅС‹Р№ СЃРґРІРёРі
 				lerp(vShOffsets[0], vShOffsets[1], m_fShootingFactorLR) * m_fShootingCurPowerLRUD,
-				//--> Вертикальный сдвиг
+				//--> Р’РµСЂС‚РёРєР°Р»СЊРЅС‹Р№ СЃРґРІРёРі
 				lerp(vShOffsets[2], vShOffsets[3], m_fShootingFactorUD) * m_fShootingCurPowerLRUD,
-				//--> Глубинный сдвиг
+				//--> Р“Р»СѓР±РёРЅРЅС‹Р№ СЃРґРІРёРі
 				-1.f * fShootingBackwOffset * m_fShootingCurPowerBACKW
 			};
+
 			shoot_rot = {
-				//--> Поворот по вертикали
+				//--> РџРѕРІРѕСЂРѕС‚ РїРѕ РІРµСЂС‚РёРєР°Р»Рё
 				lerp(vShRotX[0], vShRotX[1], m_fShootingFactorUD) * m_fShootingCurPowerLRUD,
-				//--> Вертикальный сдвиг
+				//--> Р’РµСЂС‚РёРєР°Р»СЊРЅС‹Р№ СЃРґРІРёРі
 				lerp(vShRotYZ[0], vShRotYZ[1], m_fShootingFactorLR)* m_fShootingCurPowerLRUD,
-				//--> Глубинный сдвиг
+				//--> Р“Р»СѓР±РёРЅРЅС‹Р№ СЃРґРІРёРі
 				lerp(vShRotYZ[2], vShRotYZ[3], m_fShootingFactorFB)* m_fShootingCurPowerBACKW,
 			};
 			shoot_rot.mul(-PI / 180.f);
 
-			//--> Модифицируем её коэфицентом силы сдвига
+			//--> РњРѕРґРёС„РёС†РёСЂСѓРµРј РµС‘ РєРѕСЌС„РёС†РµРЅС‚РѕРј СЃРёР»С‹ СЃРґРІРёРіР°
 			float fShootingKoef = GetShootingEffectKoef();
 			shoot_offs.mul(fShootingKoef);
 			shoot_rot.mul(fShootingKoef);
@@ -1492,30 +1495,28 @@ void CHudItem::UpdateHudAdditional(Fmatrix& trans)
 			if (!shoot_rot.similar(current_shooting[1], EPS))
 				current_shooting[1].lerp(current_shooting[1], shoot_rot, fStepPerUpd);
 
-			//--> Применяем к HUD-у
-			//summary_offset.add(shoot_offs);
-			//summary_rotate.add(shoot_rot);
+			//--> РџСЂРёРјРµРЅСЏРµРј Рє HUD-Сѓ
 			summary_offset.add(current_shooting[0]);
 			summary_rotate.add(current_shooting[1]);
 		}
 
-		// Плавное затухание сдвига от стрельбы
-		//--> Глубинный сдвиг
+		// РџР»Р°РІРЅРѕРµ Р·Р°С‚СѓС…Р°РЅРёРµ СЃРґРІРёРіР° РѕС‚ СЃС‚СЂРµР»СЊР±С‹
+		//--> Р“Р»СѓР±РёРЅРЅС‹Р№ СЃРґРІРёРі
 		float fBackwStabilizeTimeKoef = m_shooting_params.m_ret_time_backw_koef;
-		m_fShootingCurPowerBACKW -= Device.fTimeDelta / (fShootingStabilizeTime * fBackwStabilizeTimeKoef * 0.25);
+		m_fShootingCurPowerBACKW -= Device.fTimeDelta / (fShootingStabilizeTime * fBackwStabilizeTimeKoef * 0.25f);
 		clamp(m_fShootingCurPowerBACKW, 0.0f, 1.0f);
 
-		//--> Боковой сдвиг
-		m_fShootingCurPowerLRUD -= Device.fTimeDelta / fShootingStabilizeTime * 0.25;
+		//--> Р‘РѕРєРѕРІРѕР№ СЃРґРІРёРі
+		m_fShootingCurPowerLRUD -= Device.fTimeDelta / fShootingStabilizeTime * 0.25f;
 		if (m_fShootingCurPowerLRUD <= 0.0f)
 		{
 			ResetShootingEffect(true);
 		}
 	}
 
-    //================ Применение эффектов ===============//
+    //================ РџСЂРёРјРµРЅРµРЅРёРµ СЌС„С„РµРєС‚РѕРІ ===============//
     {
-        // поворот с сохранением смещения by Zander
+        // РїРѕРІРѕСЂРѕС‚ СЃ СЃРѕС…СЂР°РЅРµРЅРёРµРј СЃРјРµС‰РµРЅРёСЏ by Zander
         Fvector _angle{}, _pos{trans.c};
         trans.getHPB(_angle);
         _angle.add(-summary_rotate);
@@ -1527,7 +1528,7 @@ void CHudItem::UpdateHudAdditional(Fmatrix& trans)
         Fmatrix hud_rotation;
         hud_rotation.identity();
 
-        //================ Прицеливание ===============//
+        //================ РџСЂРёС†РµР»РёРІР°РЅРёРµ ===============//
         hud_rotation.rotateX(current_difference[1].x);
 
         Fmatrix hud_rotation_part;
@@ -1546,7 +1547,7 @@ void CHudItem::UpdateHudAdditional(Fmatrix& trans)
     }
     //====================================================//
 }
-// Добавить HUD-эффект сдвига оружия от выстрела
+// Р”РѕР±Р°РІРёС‚СЊ HUD-СЌС„С„РµРєС‚ СЃРґРІРёРіР° РѕСЂСѓР¶РёСЏ РѕС‚ РІС‹СЃС‚СЂРµР»Р°
 void CHudItem::AddHUDShootingEffect()
 {
 	CWeapon* wpn = smart_cast<CWeapon*>(this);
@@ -1557,30 +1558,30 @@ void CHudItem::AddHUDShootingEffect()
 	if (hi == nullptr)
 		return;
 
-	// Отдача назад всегда максимальная на каждом выстреле
+	// РћС‚РґР°С‡Р° РЅР°Р·Р°Рґ РІСЃРµРіРґР° РјР°РєСЃРёРјР°Р»СЊРЅР°СЏ РЅР° РєР°Р¶РґРѕРј РІС‹СЃС‚СЂРµР»Рµ
 	m_fShootingCurPowerBACKW = 1.0f;
 
-	// Отдача в бока становится сильнее при длительной стрельбе
-	//--> Регулируем плавность перемещения оружия по экрану, ограничивая макс. сдвиг на каждый выстрел
+	// РћС‚РґР°С‡Р° РІ Р±РѕРєР° СЃС‚Р°РЅРѕРІРёС‚СЃСЏ СЃРёР»СЊРЅРµРµ РїСЂРё РґР»РёС‚РµР»СЊРЅРѕР№ СЃС‚СЂРµР»СЊР±Рµ
+	//--> Р РµРіСѓР»РёСЂСѓРµРј РїР»Р°РІРЅРѕСЃС‚СЊ РїРµСЂРµРјРµС‰РµРЅРёСЏ РѕСЂСѓР¶РёСЏ РїРѕ СЌРєСЂР°РЅСѓ, РѕРіСЂР°РЅРёС‡РёРІР°СЏ РјР°РєСЃ. СЃРґРІРёРі РЅР° РєР°Р¶РґС‹Р№ РІС‹СЃС‚СЂРµР»
 	float fLRUDDiffPerShot = lerp(m_shooting_params.m_shot_diff_per_shot[0],
 		m_shooting_params.m_shot_diff_per_shot[1], wpn->m_zoom_params.m_fZoomRotationFactor);
 	clamp(fLRUDDiffPerShot, 0.0f, 1.0f);
 
-	m_fShootingFactorLR += ::Random.randF(-fLRUDDiffPerShot, fLRUDDiffPerShot); //--> m_fShootingFactorLR будет 0.5f на момент начала стрельбы
+	m_fShootingFactorLR += ::Random.randF(-fLRUDDiffPerShot, fLRUDDiffPerShot); //--> m_fShootingFactorLR Р±СѓРґРµС‚ 0.5f РЅР° РјРѕРјРµРЅС‚ РЅР°С‡Р°Р»Р° СЃС‚СЂРµР»СЊР±С‹
 	clamp(m_fShootingFactorLR, 0.0f, 1.0f);
 
-	m_fShootingFactorUD += ::Random.randF(-fLRUDDiffPerShot, fLRUDDiffPerShot); //--> m_fShootingFactorUD будет 0.5f на момент начала стрельбы
+	m_fShootingFactorUD += ::Random.randF(-fLRUDDiffPerShot, fLRUDDiffPerShot); //--> m_fShootingFactorUD Р±СѓРґРµС‚ 0.5f РЅР° РјРѕРјРµРЅС‚ РЅР°С‡Р°Р»Р° СЃС‚СЂРµР»СЊР±С‹
 	clamp(m_fShootingFactorUD, 0.0f, 1.0f);
 
-	m_fShootingFactorFB += ::Random.randF(-fLRUDDiffPerShot, fLRUDDiffPerShot); //--> m_fShootingFactorFB будет 0.5f на момент начала стрельбы
+	m_fShootingFactorFB += ::Random.randF(-fLRUDDiffPerShot, fLRUDDiffPerShot); //--> m_fShootingFactorFB Р±СѓРґРµС‚ 0.5f РЅР° РјРѕРјРµРЅС‚ РЅР°С‡Р°Р»Р° СЃС‚СЂРµР»СЊР±С‹
 	clamp(m_fShootingFactorFB, 0.0f, 1.0f);
 
-	//--> С каждым выстрелом разрешаем оружию всё ближе приближаться к текущим границам сдвига
+	//--> РЎ РєР°Р¶РґС‹Рј РІС‹СЃС‚СЂРµР»РѕРј СЂР°Р·СЂРµС€Р°РµРј РѕСЂСѓР¶РёСЋ РІСЃС‘ Р±Р»РёР¶Рµ РїСЂРёР±Р»РёР¶Р°С‚СЊСЃСЏ Рє С‚РµРєСѓС‰РёРј РіСЂР°РЅРёС†Р°Рј СЃРґРІРёРіР°
 	m_fShootingCurPowerLRUD += lerp(m_shooting_params.m_shot_power_per_shot[0],
 		m_shooting_params.m_shot_power_per_shot[1], wpn->m_zoom_params.m_fZoomRotationFactor);
 	clamp(m_fShootingCurPowerLRUD, 0.0f, 1.0f);
 
-	// Наклон ствола от стрельбы (стрейф)
+	// РќР°РєР»РѕРЅ СЃС‚РІРѕР»Р° РѕС‚ СЃС‚СЂРµР»СЊР±С‹ (СЃС‚СЂРµР№С„)
 	float fShotStrafeMin = lerp(m_shooting_params.m_shot_offsets_strafe[0],
 		m_shooting_params.m_shot_offsets_strafe_aim[0], wpn->m_zoom_params.m_fZoomRotationFactor);
 	float fShotStrafeMax = lerp(m_shooting_params.m_shot_offsets_strafe[1],
@@ -1594,12 +1595,12 @@ void CHudItem::AddHUDShootingEffect()
 	current_shooting[1].mul(fStrafeVal * GetShootingEffectKoef() * fStrafePwr * 4.0f);
 }
 
-// Получить коэфицент силы тряски HUD-a при стрельбе
+// РџРѕР»СѓС‡РёС‚СЊ РєРѕСЌС„РёС†РµРЅС‚ СЃРёР»С‹ С‚СЂСЏСЃРєРё HUD-a РїСЂРё СЃС‚СЂРµР»СЊР±Рµ
 float CHudItem::GetShootingEffectKoef()
 {
 	float fShakeKoef = 1.0f;
 
-	//--> Глушитель
+	//--> Р“Р»СѓС€РёС‚РµР»СЊ
 	//fShakeKoef *= cur_silencer_koef.shooting_shake;
 
 	return fShakeKoef;
@@ -1607,8 +1608,8 @@ float CHudItem::GetShootingEffectKoef()
 
 void CHudItem::merge_measures_params()
 {
-	// Смещение от стрельбы
-	if (bReloadShooting) //-> хз зачем	
+	// РЎРјРµС‰РµРЅРёРµ РѕС‚ СЃС‚СЂРµР»СЊР±С‹
+	if (bReloadShooting) //-> С…Р· Р·Р°С‡РµРј	
 	{
 		m_shooting_params.m_shot_max_offset_LRUD = m_shooting_params.m_shot_max_offset_LRUD;
 		m_shooting_params.m_shot_max_offset_LRUD_aim = m_shooting_params.m_shot_max_offset_LRUD_aim;
@@ -1659,7 +1660,7 @@ void CHudItem::TimeLockAnimation()
 	{
 		string128 anm_time_param;
 		xr_strconcat(anm_time_param, "lock_time_", m_current_motion.c_str(), "_end");
-		const float time = READ_IF_EXISTS(pSettings, r_float, HudSection(), anm_time_param, 0) * 1000.f; // Читаем с конфига время анимации (например, lock_time_end_anm_reload)
+		const float time = READ_IF_EXISTS(pSettings, r_float, HudSection(), anm_time_param, 0) * 1000.f; // Р§РёС‚Р°РµРј СЃ РєРѕРЅС„РёРіР° РІСЂРµРјСЏ Р°РЅРёРјР°С†РёРё (РЅР°РїСЂРёРјРµСЂ, lock_time_end_anm_reload)
 		const float current_time = Device.dwTimeGlobal - m_dwMotionStartTm;
 
 		if (time && current_time >= time)

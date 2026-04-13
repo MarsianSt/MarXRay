@@ -1403,7 +1403,9 @@ void CHudItem::UpdateHudAdditional(Fmatrix& trans)
 		if (fShootingStabilizeTime <= EPS)
 			fShootingStabilizeTime = 0.01f;
 
-		const float fStepPerUpd = Device.fTimeDelta / (fShootingStabilizeTime * 0.25); // Величина изменение фактора поворота
+		// Величина изменения фактора поворота
+		float fStepPerUpd = Device.fTimeDelta / (fShootingStabilizeTime * 0.25f);
+		clamp(fStepPerUpd, 0.0f, 1.0f); // Ограничение шага, чтобы на низком фпс не дёргало худ
 
 		//--> Сдвиг по Z
 		float fShootingBackwOffset = lerp(
@@ -1471,6 +1473,7 @@ void CHudItem::UpdateHudAdditional(Fmatrix& trans)
 				//--> Глубинный сдвиг
 				-1.f * fShootingBackwOffset * m_fShootingCurPowerBACKW
 			};
+
 			shoot_rot = {
 				//--> Поворот по вертикали
 				lerp(vShRotX[0], vShRotX[1], m_fShootingFactorUD) * m_fShootingCurPowerLRUD,
@@ -1493,8 +1496,6 @@ void CHudItem::UpdateHudAdditional(Fmatrix& trans)
 				current_shooting[1].lerp(current_shooting[1], shoot_rot, fStepPerUpd);
 
 			//--> Применяем к HUD-у
-			//summary_offset.add(shoot_offs);
-			//summary_rotate.add(shoot_rot);
 			summary_offset.add(current_shooting[0]);
 			summary_rotate.add(current_shooting[1]);
 		}
@@ -1502,11 +1503,11 @@ void CHudItem::UpdateHudAdditional(Fmatrix& trans)
 		// Плавное затухание сдвига от стрельбы
 		//--> Глубинный сдвиг
 		float fBackwStabilizeTimeKoef = m_shooting_params.m_ret_time_backw_koef;
-		m_fShootingCurPowerBACKW -= Device.fTimeDelta / (fShootingStabilizeTime * fBackwStabilizeTimeKoef * 0.25);
+		m_fShootingCurPowerBACKW -= Device.fTimeDelta / (fShootingStabilizeTime * fBackwStabilizeTimeKoef * 0.25f);
 		clamp(m_fShootingCurPowerBACKW, 0.0f, 1.0f);
 
 		//--> Боковой сдвиг
-		m_fShootingCurPowerLRUD -= Device.fTimeDelta / fShootingStabilizeTime * 0.25;
+		m_fShootingCurPowerLRUD -= Device.fTimeDelta / fShootingStabilizeTime * 0.25f;
 		if (m_fShootingCurPowerLRUD <= 0.0f)
 		{
 			ResetShootingEffect(true);
