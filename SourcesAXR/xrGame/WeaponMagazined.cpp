@@ -327,7 +327,7 @@ void CWeaponMagazined::FireStart		()
 		if (object)
 			object->callback(GameObject::eOnWeaponJammed)(object->lua_game_object(), this->lua_game_object());
 
-		if(smart_cast<CActor*>(this->H_Parent()) && (Level().CurrentViewEntity()==H_Parent()) )
+		if(smart_cast<CActor*>(this->H_Parent()) && (Level().CurrentViewEntity()==H_Parent()) && psHUD_Flags.is(HUD_DRAW | HUD_DRAW_RT))
 			CurrentGameUI()->AddCustomStatic("gun_jammed",true);
 
 		OnEmptyClick();
@@ -851,7 +851,7 @@ void CWeaponMagazined::OnStateSwitch	(u32 S)
 		switch2_Unmis();
 		break;
 	case eMisfire:
-		if(smart_cast<CActor*>(this->H_Parent()) && (Level().CurrentViewEntity()==H_Parent()) )
+		if(smart_cast<CActor*>(this->H_Parent()) && (Level().CurrentViewEntity()==H_Parent()) && psHUD_Flags.is(HUD_DRAW | HUD_DRAW_RT))
 			CurrentGameUI()->AddCustomStatic("gun_jammed", true);
 		break;
 	case eMagEmpty:

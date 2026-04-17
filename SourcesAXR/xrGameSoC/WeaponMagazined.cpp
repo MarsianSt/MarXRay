@@ -830,7 +830,7 @@ void CWeaponMagazined::OnStateSwitch(u32 S, u32 oldState)
 		if (object)
 			object->callback(GameObject::eOnWeaponJammed)(object->lua_game_object(), this->lua_game_object());
 
-		if (smart_cast<CActor*>(this->H_Parent()) && (Level().CurrentViewEntity() == H_Parent()))
+		if (smart_cast<CActor*>(this->H_Parent()) && (Level().CurrentViewEntity() == H_Parent()) && psHUD_Flags.is(HUD_DRAW | HUD_DRAW_RT))
 			HUD().GetUI()->AddInfoMessage("gun_jammed");
 	} break;
 	case eMagEmpty:
