@@ -361,11 +361,8 @@ void CActor::IR_OnKeyboardPress(int cmd)
 		{
 			auto wpn = smart_cast<CWeapon*>(inventory().ActiveItem());
 
-			if (wpn)
+			if (wpn && wpn->IsZoomed() && wpn->IsAltAimEnabled())
 			{
-				if (!wpn->IsAltAimEnabled())
-					return;
-
 				wpn->SwitchZoomMode();
 
 				string256 alt_aim_status;
