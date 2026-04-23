@@ -1,7 +1,7 @@
 ﻿////////////////////////////////////////////////////////////////////////////
 //	Module 		: UICompassPanel.cpp
 //	Created 	: 12.03.2026
-//	Modified 	: 20.03.2026
+//	Modified 	: 23.04.2026
 //	Author		: Dance Maniac (M.F.S. Team)
 //	Description : Horizontal direction indicator
 //  MIT License
@@ -265,7 +265,7 @@ void CUICompassPanel::SetHeading(float angle)
 	m_compass.SetHeading(angle);
 }
 
-void CUICompassPanel::AddPoint(u16 id, CObject* obj, LPCSTR text, u32 color, LPCSTR spot_texture, bool show_always, bool show_name)
+void CUICompassPanel::AddPoint(u16 id, CObject* obj, LPCSTR text, CMapLocation* location, bool show_always, bool show_name)
 {
 	for (const auto& point : m_points)
 	{
@@ -277,15 +277,17 @@ void CUICompassPanel::AddPoint(u16 id, CObject* obj, LPCSTR text, u32 color, LPC
 	point.id = id;
 	point.object = obj;
 	point.text = text;
-	point.color = color;
-	point.spot_texture = spot_texture;
+	point.color = location->GetCompassSpotColor();
+	point.spot_texture = location->GetCompassSpotTextureName().c_str();
+	point.spot_icons = location->GetCompassSpotIconShaders();
+	point.tex_rects = location->GetCompassSpotTexRects();
 	point.show_always = show_always;
 	point.show_name = show_name;
 
 	m_points.push_back(point);
 }
 
-void CUICompassPanel::AddPoint(u16 id, const Fvector& pos, LPCSTR text, u32 color, LPCSTR spot_texture, bool show_always, bool show_name)
+void CUICompassPanel::AddPoint(u16 id, const Fvector& pos, LPCSTR text, CMapLocation* location, bool show_always, bool show_name)
 {
 	for (const auto& point : m_points)
 	{
@@ -297,8 +299,10 @@ void CUICompassPanel::AddPoint(u16 id, const Fvector& pos, LPCSTR text, u32 colo
 	point.id = id;
 	point.position = pos;
 	point.text = text;
-	point.color = color;
-	point.spot_texture = spot_texture;
+	point.color = location->GetCompassSpotColor();
+	point.spot_texture = location->GetCompassSpotTextureName().c_str();
+	point.spot_icons = location->GetCompassSpotIconShaders();
+	point.tex_rects = location->GetCompassSpotTexRects();
 	point.show_always = show_always;
 	point.show_name = show_name;
 
@@ -375,7 +379,6 @@ void CUICompassPanel::AddPoints()
 		u16 object_id = map_location->ObjectID();
 		shared_str spot_type = map_loc.spot_type;
 		bool enabled = map_location->SpotEnabled() && map_location->GetCompassAvail();
-		shared_str spot_texture = map_location->GetCompassSpotTextureName();
 		CObject* obj = Level().Objects.net_Find(object_id);
 
 		for (auto& point : m_points)
@@ -467,25 +470,19 @@ void CUICompassPanel::AddPoints()
 
 void CUICompassPanel::AddQuestPoint(u16 id, CSE_ALifeDynamicObject* obj, LPCSTR text, CMapLocation* location, bool is_active)
 {
-	u32 color = location->GetCompassSpotColor();
-	LPCSTR spot_texture = location->GetCompassSpotTextureName().c_str();
-	AddPoint(id, obj->Position(), text, color, spot_texture, is_active);
+	AddPoint(id, obj->Position(), text, location, is_active);
 }
 
 void CUICompassPanel::AddNPCSpot(u16 id, CObject* obj, CAI_Stalker* npc, LPCSTR text, CMapLocation* location)
 {
-	u32 color = location->GetCompassSpotColor();
-	LPCSTR spot_texture = location->GetCompassSpotTextureName().c_str();
 	bool is_dead = npc->g_Alive();
 
-	AddPoint(id, obj, text, color, spot_texture, false, is_dead);
+	AddPoint(id, obj, text, location, false, is_dead);
 }
 
 void CUICompassPanel::AddCustomSpot(u16 id, CObject* obj, LPCSTR text, CMapLocation* location)
 {
-	u32 color = location->GetCompassSpotColor();
-	LPCSTR spot_texture = location->GetCompassSpotTextureName().c_str();
-	AddPoint(id, obj, text, color, spot_texture, false);
+	AddPoint(id, obj, text, location, false);
 }
 
 float CUICompassPanel::CalcPointX(const Fvector& pos) const
@@ -545,6 +542,31 @@ void CUICompassPanel::UpdateActivePoints()
 
 		if (!st)
 			continue;
+
+		if (point.spot_icons[1]->inited() && point.spot_icons[2]->inited())
+		{
+			float ml_y = pos.y;
+			float d = Device.vCameraPosition.y - ml_y;
+
+			if (d > 1.8f)
+			{
+				st->SetShader(point.spot_icons[2]);
+				st->SetTextureRect(point.tex_rects[2]);
+			}
+			else
+			{
+				if (d < -1.8f)
+				{
+					st->SetShader(point.spot_icons[1]);
+					st->SetTextureRect(point.tex_rects[1]);
+				}
+				else
+				{
+					st->SetShader(point.spot_icons[0]);
+					st->SetTextureRect(point.tex_rects[0]);
+				}
+			}
+		}
 
 		float pos_x = m_clipFrame.GetWidth() * x - st->GetWidth() / 2;
 		st->SetWndPos(Fvector2().set(pos_x, 0.f));

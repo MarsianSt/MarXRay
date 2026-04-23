@@ -48,6 +48,10 @@ CMapLocation::CMapLocation(LPCSTR type, u16 object_id)
 	m_mini_map_spot_border_na = nullptr;
 	m_complex_spot_border_na = nullptr;
 
+	m_compass_spot			= nullptr;
+	m_compass_spot_texture	= nullptr;
+	m_compass_spot_color	= 0xFFFFFFFF;
+
 	m_objectID				= object_id;
 	m_actual_time			= 0;
 	m_owner_se_object		= (ai().get_alife()) ? ai().alife().objects().object(m_objectID,true) : nullptr;
@@ -85,6 +89,9 @@ void CMapLocation::destroy()
 	delete_data(m_level_map_spot_border_na);
 	delete_data(m_mini_map_spot_border_na);
 	delete_data(m_complex_spot_border_na);
+
+	if (m_compass_spot)
+		delete_data(m_compass_spot);
 }
 
 CUIXml*	g_uiSpotXml = nullptr;
@@ -189,6 +196,11 @@ void CMapLocation::LoadSpot(LPCSTR type, bool bReload)
 		LPCSTR compass_spot = g_uiSpotXml->ReadAttrib(path, 0, "compass_spot", "");
 		if (xr_strlen(compass_spot))
 		{
+			if (!bReload)
+				m_compass_spot = xr_new<CMiniMapSpot>(this);
+
+			m_compass_spot->Load(g_uiSpotXml, compass_spot);
+
 			string512 buf;
 			xr_strconcat(buf, compass_spot, ":texture");
 
@@ -197,6 +209,19 @@ void CMapLocation::LoadSpot(LPCSTR type, bool bReload)
 			{
 				m_compass_spot_texture = g_uiSpotXml->Read(buf, 0, "");
 				m_compass_spot_color = CUIXmlInit::GetColor(*g_uiSpotXml, buf, 0, 0xFFFFFFFF);
+
+				if (m_compass_spot)
+				{
+					m_compass_spot_icons.clear();
+					m_compass_spot_icons.push_back(m_compass_spot->m_icon_normal);
+					m_compass_spot_icons.push_back(m_compass_spot->m_icon_above);
+					m_compass_spot_icons.push_back(m_compass_spot->m_icon_below);
+
+					m_compass_spot_rects.clear();
+					m_compass_spot_rects.push_back(m_compass_spot->m_tex_rect_normal);
+					m_compass_spot_rects.push_back(m_compass_spot->m_tex_rect_above);
+					m_compass_spot_rects.push_back(m_compass_spot->m_tex_rect_below);
+				}
 			}
 		}
 		else
@@ -212,6 +237,19 @@ void CMapLocation::LoadSpot(LPCSTR type, bool bReload)
 				{
 					m_compass_spot_texture = g_uiSpotXml->Read(buf, 0, "");
 					m_compass_spot_color = CUIXmlInit::GetColor(*g_uiSpotXml, buf, 0, 0xFFFFFFFF);
+
+					if (m_minimap_spot)
+					{
+						m_compass_spot_icons.clear();
+						m_compass_spot_icons.push_back(m_minimap_spot->m_icon_normal);
+						m_compass_spot_icons.push_back(m_minimap_spot->m_icon_above);
+						m_compass_spot_icons.push_back(m_minimap_spot->m_icon_below);
+
+						m_compass_spot_rects.clear();
+						m_compass_spot_rects.push_back(m_minimap_spot->m_tex_rect_normal);
+						m_compass_spot_rects.push_back(m_minimap_spot->m_tex_rect_above);
+						m_compass_spot_rects.push_back(m_minimap_spot->m_tex_rect_below);
+					}
 				}
 			}
 		}
@@ -269,7 +307,7 @@ void CMapLocation::LoadSpot(LPCSTR type, bool bReload)
 		}
 	}
 
-	if (!m_minimap_spot && !m_level_spot && !m_complex_spot)
+	if (!m_minimap_spot && !m_level_spot && !m_complex_spot && !m_compass_spot)
 	{
 		DisableSpot();
 	}
@@ -584,10 +622,21 @@ void CMapLocation::UpdateSpotPointer(CUICustomMap* map, CMapSpotPointer* sp )
 void CMapLocation::UpdateMiniMap(CUICustomMap* map)
 {
 	CMapSpot* sp = m_minimap_spot;
-	if(!sp) return;
+
+	if(!sp)
+		return;
+
 	if(SpotEnabled())
 		UpdateSpot(map, sp);
 
+	// Compass Spot
+	CMapSpot* sp2 = m_compass_spot;
+
+	if (!sp2)
+		return;
+
+	if (SpotEnabled())
+		UpdateSpot(map, sp2);
 }
 
 void CMapLocation::UpdateLevelMap(CUICustomMap* map)

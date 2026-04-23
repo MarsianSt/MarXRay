@@ -3,6 +3,7 @@
 #include "object_interfaces.h"
 #include "alife_space.h"
 #include "game_graph_space.h"
+#include "ui_defs.h"
 
 class CMapSpot;
 class CMiniMapSpot;
@@ -36,8 +37,12 @@ protected:
 	CMapSpot*				m_level_map_spot_border;
 	CMapSpot*				m_mini_map_spot_border;
 
+	CMiniMapSpot*			m_compass_spot;
 	shared_str				m_compass_spot_texture;
 	u32						m_compass_spot_color;
+
+	xr_vector<ui_shader>	m_compass_spot_icons{};
+	xr_vector<Frect>		m_compass_spot_rects{};
 
 	u16						m_objectID;
 	u16						m_refCount;
@@ -94,6 +99,8 @@ public:
 	void					SetSerializable					(bool b) {m_flags.set(eSerailizable,b);}
 
 	const shared_str&		GetCompassSpotTextureName		() const { return m_compass_spot_texture; }
+	const xr_vector<ui_shader> GetCompassSpotIconShaders	() const { return m_compass_spot_icons; }
+	const xr_vector<Frect>	GetCompassSpotTexRects			() const { return m_compass_spot_rects; }
 	u32						GetCompassSpotColor				() const { return m_compass_spot_color; }
 	bool					GetCompassAvail					() const { return !!m_flags.test(eCompassAvailable); }
 

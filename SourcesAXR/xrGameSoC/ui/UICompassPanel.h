@@ -23,6 +23,8 @@ private:
 		shared_str	text;
 		u32			color;
 		shared_str	spot_texture;
+		xr_vector<ui_shader> spot_icons{};
+		xr_vector<Frect> tex_rects{};
 		bool		show_always;
 		bool		show_name;
 
@@ -105,8 +107,8 @@ public:
 	bool Init				();
 	void InitDirections		(CUIXml& uiXml);
 
-	void AddPoint			(u16 id, CObject* obj, LPCSTR text, u32 color, LPCSTR spot_texture, bool show_always = false, bool show_name = true);
-	void AddPoint			(u16 id, const Fvector& pos, LPCSTR text, u32 color, LPCSTR spot_texture, bool show_always = false, bool show_name = true);
+	void AddPoint			(u16 id, CObject* obj, LPCSTR text, CMapLocation* location, bool show_always = false, bool show_name = true);
+	void AddPoint			(u16 id, const Fvector& pos, LPCSTR text, CMapLocation* location, bool show_always = false, bool show_name = true);
 	void RemovePoint		(u16 id);
 	void ClearPoints		();
 
