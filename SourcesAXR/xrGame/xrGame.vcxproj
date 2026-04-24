@@ -2234,6 +2234,7 @@
     <ClInclude Include="ui\UIMPPlayersAdm.h" />
     <ClInclude Include="ui\UIMPServerAdm.h" />
     <ClInclude Include="ui\UIMpTradeWnd.h" />
+    <ClInclude Include="ui\UIMultiElement.h" />
     <ClInclude Include="ui\UINewsItemWnd.h" />
     <ClInclude Include="ui\UIOptConCom.h" />
     <ClInclude Include="ui\UIOptionsItem.h" />
@@ -8824,6 +8825,7 @@
     <ClCompile Include="ui\UIMpTradeWnd_misc.cpp" />
     <ClCompile Include="ui\UIMpTradeWnd_trade.cpp" />
     <ClCompile Include="ui\UIMpTradeWnd_wpn.cpp" />
+    <ClCompile Include="ui\UIMultiElement.cpp" />
     <ClCompile Include="ui\UINewsItemWnd.cpp" />
     <ClCompile Include="ui\UIOptConCom.cpp" />
     <ClCompile Include="ui\UIOptionsItem.cpp" />

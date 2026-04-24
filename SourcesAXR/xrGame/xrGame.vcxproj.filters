@@ -2530,6 +2530,9 @@
     <Filter Include="Core\Client\Objects\items &amp; weapons\Weapons\Various weapons\Weapon DoubleBarrelShotgun">
       <UniqueIdentifier>{7a727f24-a2e6-40b9-88fa-dded740c2b3f}</UniqueIdentifier>
     </Filter>
+    <Filter Include="UI\UIWindows\MultiElement">
+      <UniqueIdentifier>{028f014a-e91a-478c-9164-8ea544df6457}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="mt_config.h">
@@ -7536,6 +7539,9 @@
     <ClInclude Include="artefact_container_script.h">
       <Filter>Core\Client\Objects\items &amp; weapons\Devices\ArtefactContainer</Filter>
     </ClInclude>
+    <ClInclude Include="ui\UIMultiElement.h">
+      <Filter>UI\UIWindows\MultiElement</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="damage_manager.cpp">
@@ -11304,6 +11310,9 @@
     </ClCompile>
     <ClCompile Include="WeaponBonesController.cpp">
       <Filter>Core\Client\Objects\items &amp; weapons\Weapons\Custom Weapon\Weapon Generic</Filter>
+    </ClCompile>
+    <ClCompile Include="ui\UIMultiElement.cpp">
+      <Filter>UI\UIWindows\MultiElement</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

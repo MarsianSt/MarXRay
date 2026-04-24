@@ -9,6 +9,7 @@
 
 class CUIXml;
 class CUIStatic;
+class CUIMultiElement;
 class CUIProgressBar;
 class CUIProgressShape;
 class CUIFrameLineWnd;
@@ -22,6 +23,7 @@ class CUIDragDropListEx;
 class CUIScrollView;
 class CUIListWnd;
 class CUIAnimatedStatic;
+//class UI_Arrow;
 
 class UIHelper
 {
@@ -29,16 +31,18 @@ public:
 	UIHelper		() {};
 	~UIHelper		() {};
 
-	static	CUIStatic*			CreateStatic		( CUIXml& xml, LPCSTR ui_path, CUIWindow* parent, bool critical = true );
-	static	CUIProgressBar*		CreateProgressBar	( CUIXml& xml, LPCSTR ui_path, CUIWindow* parent, bool critical = true );
-	static	CUIProgressShape*	CreateProgressShape	( CUIXml& xml, LPCSTR ui_path, CUIWindow* parent, bool critical = true );
-	static	CUIFrameLineWnd*	CreateFrameLine		( CUIXml& xml, LPCSTR ui_path, CUIWindow* parent, bool critical = true );
-	static	CUIFrameWindow*		CreateFrameWindow	( CUIXml& xml, LPCSTR ui_path, CUIWindow* parent, bool critical = true );
-	static	CUI3tButton*		Create3tButton		( CUIXml& xml, LPCSTR ui_path, CUIWindow* parent, bool critical = true );
-	static	CUICheckButton*		CreateCheck			( CUIXml& xml, LPCSTR ui_path, CUIWindow* parent, bool critical = true );
-	static	CUIDragDropListEx*	CreateDragDropListEx( CUIXml& xml, LPCSTR ui_path, CUIWindow* parent, bool critical = true );
-	//static	CUIDragDropReferenceList*	CreateDragDropReferenceList( CUIXml& xml, LPCSTR ui_path, CUIWindow* parent, bool critical = true );
-	static	CUIScrollView*		CreateScrollView	( CUIXml& xml, LPCSTR ui_path, CUIWindow* parent, bool critical = true );
-	static	CUIListWnd*			CreateListWnd		( CUIXml& xml, LPCSTR ui_path, CUIWindow* parent, bool critical = true );
-	static	CUIAnimatedStatic*	CreateAnimatedStatic( CUIXml& xml, LPCSTR ui_path, CUIWindow* parent, bool critical = true );
+	static	CUIStatic*			CreateStatic		( CUIXml& xml, LPCSTR ui_path, CUIWindow* parent, bool critical = true);
+	static	CUIMultiElement*	CreateMultiElement	( CUIXml& xml, LPCSTR ui_path, CUIWindow* parent, bool critical = true, bool pos_by_parent = true);
+	static	CUIProgressBar*		CreateProgressBar	( CUIXml& xml, LPCSTR ui_path, CUIWindow* parent, bool critical = true);
+	static	CUIProgressShape*	CreateProgressShape	( CUIXml& xml, LPCSTR ui_path, CUIWindow* parent, bool critical = true);
+	static	CUIFrameLineWnd*	CreateFrameLine		( CUIXml& xml, LPCSTR ui_path, CUIWindow* parent, bool critical = true);
+	static	CUIFrameWindow*		CreateFrameWindow	( CUIXml& xml, LPCSTR ui_path, CUIWindow* parent, bool critical = true);
+	static	CUI3tButton*		Create3tButton		( CUIXml& xml, LPCSTR ui_path, CUIWindow* parent, bool critical = true);
+	static	CUICheckButton*		CreateCheck			( CUIXml& xml, LPCSTR ui_path, CUIWindow* parent, bool critical = true);
+	static	CUIDragDropListEx*	CreateDragDropListEx( CUIXml& xml, LPCSTR ui_path, CUIWindow* parent, bool critical = true);
+	//static	CUIDragDropReferenceList*	CreateDragDropReferenceList( CUIXml& xml, LPCSTR ui_path, CUIWindow* parent, bool critical = true);
+	static	CUIScrollView*		CreateScrollView	( CUIXml& xml, LPCSTR ui_path, CUIWindow* parent, bool critical = true);
+	static	CUIListWnd*			CreateListWnd		( CUIXml& xml, LPCSTR ui_path, CUIWindow* parent, bool critical = true);
+	static	CUIAnimatedStatic*	CreateAnimatedStatic( CUIXml& xml, LPCSTR ui_path, CUIWindow* parent, bool critical = true);
+	//static	UI_Arrow*			CreateArrow			( CUIXml& xml, LPCSTR ui_path, CUIWindow* parent, bool critical = true);
 }; // class UIHelper

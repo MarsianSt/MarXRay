@@ -2151,6 +2151,7 @@
     <ClInclude Include="ui\UIMotionIcon.h" />
     <ClInclude Include="ui\UIMpItemsStoreWnd.h" />
     <ClInclude Include="ui\UIMpTradeWnd.h" />
+    <ClInclude Include="ui\UIMultiElement.h" />
     <ClInclude Include="ui\UIMultiTextStatic.h" />
     <ClInclude Include="ui\UINewsItemWnd.h" />
     <ClInclude Include="ui\UINewsWnd.h" />
@@ -8754,6 +8755,7 @@
     <ClCompile Include="ui\UIMpTradeWnd_misc.cpp" />
     <ClCompile Include="ui\UIMpTradeWnd_trade.cpp" />
     <ClCompile Include="ui\UIMpTradeWnd_wpn.cpp" />
+    <ClCompile Include="ui\UIMultiElement.cpp" />
     <ClCompile Include="ui\UIMultiTextStatic.cpp" />
     <ClCompile Include="ui\UINewsItemWnd.cpp" />
     <ClCompile Include="ui\UINewsWnd.cpp" />

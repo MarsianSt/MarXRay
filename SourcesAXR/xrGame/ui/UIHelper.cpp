@@ -10,6 +10,7 @@
 #include "UIXmlInit.h"
 
 #include "UIStatic.h"
+#include "UIMultiElement.h"
 #include "UIProgressBar.h"
 #include "UIProgressShape.h"
 #include "UIFrameLineWnd.h"
@@ -23,6 +24,7 @@
 #include "UIListWnd.h"
 #include "UIAnimatedStatic.h"
 #include "UIEditBox.h"
+#include "ui_arrow.h"
 
 #include "UIWndCallback.h"
 
@@ -228,5 +230,30 @@ CUIAnimatedStatic* UIHelper::CreateAnimatedStatic(CUIXml& xml, LPCSTR ui_path, C
 	parent->AttachChild				(ui);
 	ui->SetAutoDelete				(true);
 	CUIXmlInit::InitAnimatedStatic	(xml, ui_path, 0, ui);
+	return ui;
+}
+
+CUIMultiElement* UIHelper::CreateMultiElement(CUIXml& xml, LPCSTR ui_path, CUIWindow* parent, bool critical, bool pos_by_parent)
+{
+	// If it's not critical element, then don't crash if it doesn't exist
+	if (!critical && !xml.NavigateToNode(ui_path, 0))
+		return nullptr;
+
+	auto ui = xr_new<CUIMultiElement>();
+	ui->InitFromXml(xml, ui_path, 0, parent, pos_by_parent);
+
+	return ui;
+}
+
+UI_Arrow* UIHelper::CreateArrow(CUIXml& xml, LPCSTR ui_path, CUIWindow* parent, bool critical)
+{
+	// If it's not critical element, then don't crash if it doesn't exist
+	if (!critical && !xml.NavigateToNode(ui_path, 0))
+		return nullptr;
+
+	auto ui = xr_new<UI_Arrow>();
+	ui->SetAutoDelete(true);
+	ui->init_from_xml(xml, ui_path, parent);
+
 	return ui;
 }
