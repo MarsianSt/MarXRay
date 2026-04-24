@@ -13,6 +13,7 @@
 #include "UIMotionIcon.h"
 #include "../hudsound.h"
 #include "../EntityCondition.h"
+#include "UIMultiElement.h"
 
 class					CUIPdaMsgListItem;
 class					CLAItem;
@@ -27,6 +28,7 @@ class					CMissile;
 class					CInventoryItem;
 class					CUIHudStatesWnd;
 class					CUICellItem;
+class					CUIMultiElement;
 
 class CUIMainIngameWnd: public CUIWindow  
 {
@@ -58,23 +60,23 @@ protected:
 
 	CUIStatic*			m_ind_weather_type;
 
-	CUIStatic*			m_ind_boost_psy;
-	CUIStatic*			m_ind_boost_radia;
-	CUIStatic*			m_ind_boost_chem;
-	CUIStatic*			m_ind_boost_wound;
-	CUIStatic*			m_ind_boost_weight;
-	CUIStatic*			m_ind_boost_health;
-	CUIStatic*			m_ind_boost_power;
-	CUIStatic*			m_ind_boost_rad;
-	CUIStatic*			m_ind_boost_satiety;
-	CUIStatic*			m_ind_boost_thirst;
-	CUIStatic*			m_ind_boost_psy_health;
-	CUIStatic*			m_ind_boost_intoxication;
-	CUIStatic*			m_ind_boost_sleepeness;
-	CUIStatic*			m_ind_boost_alcoholism;
-	CUIStatic*			m_ind_boost_hangover;
-	CUIStatic*			m_ind_boost_narcotism;
-	CUIStatic*			m_ind_boost_withdrawal;
+	CUIMultiElement*	m_ind_boost_psy;
+	CUIMultiElement*	m_ind_boost_radia;
+	CUIMultiElement*	m_ind_boost_chem;
+	CUIMultiElement*	m_ind_boost_wound;
+	CUIMultiElement*	m_ind_boost_weight;
+	CUIMultiElement*	m_ind_boost_health;
+	CUIMultiElement*	m_ind_boost_power;
+	CUIMultiElement*	m_ind_boost_rad;
+	CUIMultiElement*	m_ind_boost_satiety;
+	CUIMultiElement*	m_ind_boost_thirst;
+	CUIMultiElement*	m_ind_boost_psy_health;
+	CUIMultiElement*	m_ind_boost_intoxication;
+	CUIMultiElement*	m_ind_boost_sleepeness;
+	CUIMultiElement*	m_ind_boost_alcoholism;
+	CUIMultiElement*	m_ind_boost_hangover;
+	CUIMultiElement*	m_ind_boost_narcotism;
+	CUIMultiElement*	m_ind_boost_withdrawal;
 
 	//иконка, показывающая количество активных PDA
 	CUIStatic			UIPdaOnline;

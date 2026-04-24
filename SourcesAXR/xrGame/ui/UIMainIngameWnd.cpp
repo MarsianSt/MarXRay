@@ -208,25 +208,25 @@ void CUIMainIngameWnd::Init()
 	m_ind_frostbite			= UIHelper::CreateStatic(uiXml, "indicator_frostbite", this);
 	m_ind_heating			= UIHelper::CreateStatic(uiXml, "indicator_heating", this);
 
-	m_ind_boost_psy			= UIHelper::CreateStatic(uiXml, "indicator_booster_psy", this);
-	m_ind_boost_radia		= UIHelper::CreateStatic(uiXml, "indicator_booster_radia", this);
-	m_ind_boost_chem		= UIHelper::CreateStatic(uiXml, "indicator_booster_chem", this);
-	m_ind_boost_wound		= UIHelper::CreateStatic(uiXml, "indicator_booster_wound", this);
-	m_ind_boost_weight		= UIHelper::CreateStatic(uiXml, "indicator_booster_weight", this);
-	m_ind_boost_health		= UIHelper::CreateStatic(uiXml, "indicator_booster_health", this);
-	m_ind_boost_power		= UIHelper::CreateStatic(uiXml, "indicator_booster_power", this);
-	m_ind_boost_rad			= UIHelper::CreateStatic(uiXml, "indicator_booster_rad", this);
+	m_ind_boost_psy			= UIHelper::CreateMultiElement(uiXml, "indicator_booster_psy", this);
+	m_ind_boost_radia		= UIHelper::CreateMultiElement(uiXml, "indicator_booster_radia", this);
+	m_ind_boost_chem		= UIHelper::CreateMultiElement(uiXml, "indicator_booster_chem", this);
+	m_ind_boost_wound		= UIHelper::CreateMultiElement(uiXml, "indicator_booster_wound", this);
+	m_ind_boost_weight		= UIHelper::CreateMultiElement(uiXml, "indicator_booster_weight", this);
+	m_ind_boost_health		= UIHelper::CreateMultiElement(uiXml, "indicator_booster_health", this);
+	m_ind_boost_power		= UIHelper::CreateMultiElement(uiXml, "indicator_booster_power", this);
+	m_ind_boost_rad			= UIHelper::CreateMultiElement(uiXml, "indicator_booster_rad", this);
 
-	m_ind_boost_satiety		= UIHelper::CreateStatic(uiXml, "indicator_booster_satiety", this);
-	m_ind_boost_thirst		= UIHelper::CreateStatic(uiXml, "indicator_booster_thirst", this);
-	m_ind_boost_psy_health	= UIHelper::CreateStatic(uiXml, "indicator_booster_psy_health", this);
-	m_ind_boost_intoxication = UIHelper::CreateStatic(uiXml, "indicator_booster_intoxication", this);
-	m_ind_boost_sleepeness	= UIHelper::CreateStatic(uiXml, "indicator_booster_sleepeness", this);
-	m_ind_boost_alcoholism	= UIHelper::CreateStatic(uiXml, "indicator_booster_alcoholism", this);
-	m_ind_boost_hangover	= UIHelper::CreateStatic(uiXml, "indicator_booster_hangover", this);
-	m_ind_boost_narcotism	= UIHelper::CreateStatic(uiXml, "indicator_booster_narcotism", this);
-	m_ind_boost_withdrawal	= UIHelper::CreateStatic(uiXml, "indicator_booster_withdrawal", this);
-	m_ind_boost_frostbite	= UIHelper::CreateStatic(uiXml, "indicator_booster_frostbite", this);
+	m_ind_boost_satiety		= UIHelper::CreateMultiElement(uiXml, "indicator_booster_satiety", this);
+	m_ind_boost_thirst		= UIHelper::CreateMultiElement(uiXml, "indicator_booster_thirst", this);
+	m_ind_boost_psy_health	= UIHelper::CreateMultiElement(uiXml, "indicator_booster_psy_health", this);
+	m_ind_boost_intoxication = UIHelper::CreateMultiElement(uiXml, "indicator_booster_intoxication", this);
+	m_ind_boost_sleepeness	= UIHelper::CreateMultiElement(uiXml, "indicator_booster_sleepeness", this);
+	m_ind_boost_alcoholism	= UIHelper::CreateMultiElement(uiXml, "indicator_booster_alcoholism", this);
+	m_ind_boost_hangover	= UIHelper::CreateMultiElement(uiXml, "indicator_booster_hangover", this);
+	m_ind_boost_narcotism	= UIHelper::CreateMultiElement(uiXml, "indicator_booster_narcotism", this);
+	m_ind_boost_withdrawal	= UIHelper::CreateMultiElement(uiXml, "indicator_booster_withdrawal", this);
+	m_ind_boost_frostbite	= UIHelper::CreateMultiElement(uiXml, "indicator_booster_frostbite", this);
 
 	m_ind_temperature		= UIHelper::CreateStatic(uiXml, "indicator_temperature", this, false);
 	m_min_temperature_clr	= CUIXmlInit::GetColor(uiXml,	"indicator_temperature:min_color",		0, color_rgba(255, 255, 255, 255));
@@ -1622,6 +1622,8 @@ void CUIMainIngameWnd::UpdateBoosterIndicators(const xr_map<EBoostParams, SBoost
 						m_ind_boost_health->SetColorAnimation(str_flag, flags);
 					else
 						m_ind_boost_health->ResetColorAnimation();
+
+					m_ind_boost_health->SetIconInfo(b->second.fBoostTime, b->second.fBoostTimeMax);
 				}
 				break;
 			case eBoostPowerRestore: 
@@ -1631,6 +1633,8 @@ void CUIMainIngameWnd::UpdateBoosterIndicators(const xr_map<EBoostParams, SBoost
 						m_ind_boost_power->SetColorAnimation(str_flag, flags);
 					else
 						m_ind_boost_power->ResetColorAnimation();
+
+					m_ind_boost_power->SetIconInfo(b->second.fBoostTime, b->second.fBoostTimeMax);
 				}
 				break;
 			case eBoostRadiationRestore: 
@@ -1640,6 +1644,8 @@ void CUIMainIngameWnd::UpdateBoosterIndicators(const xr_map<EBoostParams, SBoost
 						m_ind_boost_rad->SetColorAnimation(str_flag, flags);
 					else
 						m_ind_boost_rad->ResetColorAnimation();
+
+					m_ind_boost_rad->SetIconInfo(b->second.fBoostTime, b->second.fBoostTimeMax);
 				}
 				break;
 			case eBoostBleedingRestore: 
@@ -1649,6 +1655,8 @@ void CUIMainIngameWnd::UpdateBoosterIndicators(const xr_map<EBoostParams, SBoost
 						m_ind_boost_wound->SetColorAnimation(str_flag, flags);
 					else
 						m_ind_boost_wound->ResetColorAnimation();
+
+					m_ind_boost_wound->SetIconInfo(b->second.fBoostTime, b->second.fBoostTimeMax);
 				}
 				break;
 			case eBoostMaxWeight: 
@@ -1658,6 +1666,8 @@ void CUIMainIngameWnd::UpdateBoosterIndicators(const xr_map<EBoostParams, SBoost
 						m_ind_boost_weight->SetColorAnimation(str_flag, flags);
 					else
 						m_ind_boost_weight->ResetColorAnimation();
+
+					m_ind_boost_weight->SetIconInfo(b->second.fBoostTime, b->second.fBoostTimeMax);
 				}
 				break;
 			case eBoostRadiationImmunity: 
@@ -1668,6 +1678,8 @@ void CUIMainIngameWnd::UpdateBoosterIndicators(const xr_map<EBoostParams, SBoost
 						m_ind_boost_radia->SetColorAnimation(str_flag, flags);
 					else
 						m_ind_boost_radia->ResetColorAnimation();
+
+					m_ind_boost_radia->SetIconInfo(b->second.fBoostTime, b->second.fBoostTimeMax);
 				}
 				break;
 			case eBoostTelepaticImmunity: 
@@ -1678,6 +1690,8 @@ void CUIMainIngameWnd::UpdateBoosterIndicators(const xr_map<EBoostParams, SBoost
 						m_ind_boost_psy->SetColorAnimation(str_flag, flags);
 					else
 						m_ind_boost_psy->ResetColorAnimation();
+
+					m_ind_boost_psy->SetIconInfo(b->second.fBoostTime, b->second.fBoostTimeMax);
 				}
 				break;
 			case eBoostChemicalBurnImmunity: 
@@ -1688,6 +1702,8 @@ void CUIMainIngameWnd::UpdateBoosterIndicators(const xr_map<EBoostParams, SBoost
 						m_ind_boost_chem->SetColorAnimation(str_flag, flags);
 					else
 						m_ind_boost_chem->ResetColorAnimation();
+
+					m_ind_boost_chem->SetIconInfo(b->second.fBoostTime, b->second.fBoostTimeMax);
 				}
 				break;
 			case eBoostSatietyRestore:
@@ -1697,6 +1713,8 @@ void CUIMainIngameWnd::UpdateBoosterIndicators(const xr_map<EBoostParams, SBoost
 						m_ind_boost_satiety->SetColorAnimation(str_flag, flags);
 					else
 						m_ind_boost_satiety->ResetColorAnimation();
+
+					m_ind_boost_satiety->SetIconInfo(b->second.fBoostTime, b->second.fBoostTimeMax);
 				}
 				break;
 			case eBoostThirstRestore:
@@ -1706,6 +1724,8 @@ void CUIMainIngameWnd::UpdateBoosterIndicators(const xr_map<EBoostParams, SBoost
 						m_ind_boost_thirst->SetColorAnimation(str_flag, flags);
 					else
 						m_ind_boost_thirst->ResetColorAnimation();
+
+					m_ind_boost_thirst->SetIconInfo(b->second.fBoostTime, b->second.fBoostTimeMax);
 				}
 				break;
 			case eBoostPsyHealthRestore:
@@ -1715,6 +1735,8 @@ void CUIMainIngameWnd::UpdateBoosterIndicators(const xr_map<EBoostParams, SBoost
 						m_ind_boost_psy_health->SetColorAnimation(str_flag, flags);
 					else
 						m_ind_boost_psy_health->ResetColorAnimation();
+
+					m_ind_boost_psy_health->SetIconInfo(b->second.fBoostTime, b->second.fBoostTimeMax);
 				}
 				break;
 			case eBoostIntoxicationRestore:
@@ -1724,6 +1746,8 @@ void CUIMainIngameWnd::UpdateBoosterIndicators(const xr_map<EBoostParams, SBoost
 						m_ind_boost_intoxication->SetColorAnimation(str_flag, flags);
 					else
 						m_ind_boost_intoxication->ResetColorAnimation();
+
+					m_ind_boost_intoxication->SetIconInfo(b->second.fBoostTime, b->second.fBoostTimeMax);
 				}
 				break;
 			case eBoostSleepenessRestore:
@@ -1733,6 +1757,8 @@ void CUIMainIngameWnd::UpdateBoosterIndicators(const xr_map<EBoostParams, SBoost
 						m_ind_boost_sleepeness->SetColorAnimation(str_flag, flags);
 					else
 						m_ind_boost_sleepeness->ResetColorAnimation();
+
+					m_ind_boost_sleepeness->SetIconInfo(b->second.fBoostTime, b->second.fBoostTimeMax);
 				}
 				break;
 			case eBoostAlcoholismRestore:
@@ -1742,6 +1768,8 @@ void CUIMainIngameWnd::UpdateBoosterIndicators(const xr_map<EBoostParams, SBoost
 						m_ind_boost_alcoholism->SetColorAnimation(str_flag, flags);
 					else
 						m_ind_boost_alcoholism->ResetColorAnimation();
+
+					m_ind_boost_alcoholism->SetIconInfo(b->second.fBoostTime, b->second.fBoostTimeMax);
 				}
 				break;
 			case eBoostHangoverRestore:
@@ -1751,6 +1779,8 @@ void CUIMainIngameWnd::UpdateBoosterIndicators(const xr_map<EBoostParams, SBoost
 						m_ind_boost_hangover->SetColorAnimation(str_flag, flags);
 					else
 						m_ind_boost_hangover->ResetColorAnimation();
+
+					m_ind_boost_hangover->SetIconInfo(b->second.fBoostTime, b->second.fBoostTimeMax);
 				}
 				break;
 			case eBoostNarcotismRestore:
@@ -1760,6 +1790,8 @@ void CUIMainIngameWnd::UpdateBoosterIndicators(const xr_map<EBoostParams, SBoost
 						m_ind_boost_narcotism->SetColorAnimation(str_flag, flags);
 					else
 						m_ind_boost_narcotism->ResetColorAnimation();
+
+					m_ind_boost_narcotism->SetIconInfo(b->second.fBoostTime, b->second.fBoostTimeMax);
 				}
 				break;
 			case eBoostWithdrawalRestore:
@@ -1769,6 +1801,8 @@ void CUIMainIngameWnd::UpdateBoosterIndicators(const xr_map<EBoostParams, SBoost
 						m_ind_boost_withdrawal->SetColorAnimation(str_flag, flags);
 					else
 						m_ind_boost_withdrawal->ResetColorAnimation();
+
+					m_ind_boost_withdrawal->SetIconInfo(b->second.fBoostTime, b->second.fBoostTimeMax);
 				}
 				break;
 			case eBoostFrostbiteRestore:
@@ -1778,6 +1812,8 @@ void CUIMainIngameWnd::UpdateBoosterIndicators(const xr_map<EBoostParams, SBoost
 						m_ind_boost_frostbite->SetColorAnimation(str_flag, flags);
 					else
 						m_ind_boost_frostbite->ResetColorAnimation();
+
+					m_ind_boost_frostbite->SetIconInfo(b->second.fBoostTime, b->second.fBoostTimeMax);
 				}
 				break;
 		}

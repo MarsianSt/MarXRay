@@ -80,9 +80,10 @@ static const LPCSTR ef_boosters_section_names[] =
 
 struct SBooster {
 	float fBoostTime;
+	float fBoostTimeMax;
 	float fBoostValue;
 	EBoostParams m_type;
-	SBooster() :fBoostTime(-1.0f) {};
+	SBooster() : fBoostTime(-1.0f), fBoostTimeMax(-1.0f) {};
 	void Load(const shared_str& sect, EBoostParams type);
 };
 
