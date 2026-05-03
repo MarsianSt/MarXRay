@@ -199,6 +199,8 @@ void CWeaponMagazined::Load	(LPCSTR section)
 		if (WeaponSoundExist(section, "snd_reload_1", true))
 			m_sounds.LoadSound(section, "snd_reload_1", "sndReload1", true, m_eSoundReload);
 	}
+
+	m_bIsBoltRiffle = READ_IF_EXISTS(pSettings, r_bool, section, "is_bolt_rifle", false);
 		
 	//звуки и партиклы глушителя, еслит такой есть
 	if ( m_eSilencerStatus == ALife::eAddonAttachable || m_eSilencerStatus == ALife::eAddonPermanent )
@@ -1124,7 +1126,7 @@ void CWeaponMagazined::state_Fire(float dt)
 
 void CWeaponMagazined::state_Misfire	(float dt)
 {
-	if (!m_bIsShotgun)
+	if (!m_bIsShotgun && !m_bIsBoltRiffle)
 	{
 		OnEmptyClick();
 		SwitchState(eIdle);

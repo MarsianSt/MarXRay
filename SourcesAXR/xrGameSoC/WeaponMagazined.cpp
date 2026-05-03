@@ -197,6 +197,8 @@ void CWeaponMagazined::Load	(LPCSTR section)
 			m_sounds.LoadSound(section, "snd_reload_1", "sndReload1", m_eSoundReload);
 	}
 
+	m_bIsBoltRiffle = READ_IF_EXISTS(pSettings, r_bool, section, "is_bolt_rifle", false);
+
 	//звуки и партиклы глушителя, еслит такой есть
 	if (m_eSilencerStatus == ALife::eAddonAttachable)
 	{

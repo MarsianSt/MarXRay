@@ -64,7 +64,6 @@ void CWeaponShotgun::Load	(LPCSTR section)
 			m_sounds.LoadSound(section, "snd_close_weapon_empty,", "sndClose_2_Empty", false, m_eSoundClose_2);
 	};
 
-	m_bIsBoltRiffle = READ_IF_EXISTS(pSettings, r_bool, section, "is_bolt_rifle", false);
 	m_bOnlyTriStateWithScope = READ_IF_EXISTS(pSettings, r_bool, section, "only_tri_state_with_scope", false);
 }
 
