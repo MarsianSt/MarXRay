@@ -109,7 +109,7 @@ void CEatableItem::OnH_A_Independent()
 {
 	inherited::OnH_A_Independent();
 
-	if (!Useful() && this->m_bCanUse)
+	if (!Useful() && GetUseCondResult() && m_bCanUse)
 	{
 		if (object().Local() && OnServer())
 			object().DestroyObject();
@@ -118,7 +118,7 @@ void CEatableItem::OnH_A_Independent()
 
 void CEatableItem::OnH_B_Independent(bool just_before_destroy)
 {
-	if (!Useful())
+	if (!Useful() && GetUseCondResult() && m_bCanUse)
 	{
 		object().setVisible(FALSE);
 		object().setEnabled(FALSE);

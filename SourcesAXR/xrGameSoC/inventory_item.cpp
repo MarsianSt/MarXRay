@@ -337,8 +337,14 @@ const char* CInventoryItem::NameShort()
 
 bool CInventoryItem::Useful() const
 {
-	if (!m_bCanUse) return false;
+	if (!m_bCanUse || !GetUseCondResult())
+		return false;
 
+	return CanTake();
+}
+
+bool CInventoryItem::GetUseCondResult() const
+{
 	if (xr_strcmp(m_use_precondition_func, ""))
 	{
 		luabind::functor<bool> m_functor;
@@ -359,7 +365,7 @@ bool CInventoryItem::Useful() const
 #endif
 	}
 
-	return CanTake();
+	return true;
 }
 
 bool CInventoryItem::Activate() 

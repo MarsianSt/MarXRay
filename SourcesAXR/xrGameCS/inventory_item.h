@@ -156,6 +156,8 @@ public:
 
 			shared_str			GetPropertyBoxUseText()	const { return m_sPropertyBoxUseText; }
 
+			bool				GetUseCondResult	() const;
+
 public:
 	CInventory*					m_pInventory;
 	shared_str					m_section_id;

@@ -68,7 +68,7 @@ void CEatableItemObject::OnH_A_Independent	()
 	CPhysicItem::OnH_A_Independent		();
 
 	// If we are dropping used item before removing - don't show it
-	if (m_bNeedDestroyNotUseful && !Useful())
+	if (m_bNeedDestroyNotUseful && !Useful() && GetUseCondResult() && m_bCanUse)
 	{
 		setVisible(false);
 		setEnabled(false);
