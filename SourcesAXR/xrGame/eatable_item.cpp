@@ -49,7 +49,6 @@ CEatableItem::CEatableItem()
 	m_iAnimLength			= 0;
 	m_bActivated			= false;
 	m_bAnimStartNow			= false;
-	m_bNeedDestroyNotUseful = true;
 
 	m_fRadioactivity		= 0.0f;
 	m_fIrradiationCoef		= 0.0005f;
@@ -80,8 +79,6 @@ void CEatableItem::Load(LPCSTR section)
 	anim_sect_exo				= READ_IF_EXISTS(pSettings, r_string, section, "hud_section_exo", nullptr);
 	m_fEffectorIntensity		= READ_IF_EXISTS(pSettings, r_float, section, "cam_effector_intensity", 1.0f);
 	use_cam_effector			= READ_IF_EXISTS(pSettings, r_string, section, "use_cam_effector", nullptr);
-
-	m_bNeedDestroyNotUseful		= READ_IF_EXISTS(pSettings, r_bool, section, "need_destroy_if_not_useful", true);
 
 	m_fIrradiationCoef			= READ_IF_EXISTS(pSettings, r_float, section, "irradiation_coef", 0.0005f);
 	m_fIrradiationZonePower		= READ_IF_EXISTS(pSettings, r_float, section, "irradiation_zone_power", 0.0f);

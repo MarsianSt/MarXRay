@@ -49,7 +49,6 @@ CEatableItem::CEatableItem()
 	m_iAnimLength			= 0;
 	m_bActivated			= false;
 	m_bAnimStartNow			= false;
-	m_bNeedDestroyNotUseful = true;
 
 	m_fRadioactivity		= 0.0f;
 	m_fIrradiationCoef		= 0.0005f;
@@ -85,8 +84,6 @@ void CEatableItem::Load(LPCSTR section)
 	m_fEffectorIntensity		= READ_IF_EXISTS(pSettings, r_float, section, "cam_effector_intensity", 1.0f);
 	use_cam_effector			= READ_IF_EXISTS(pSettings, r_string, section, "use_cam_effector", nullptr);
 
-	m_bNeedDestroyNotUseful		= READ_IF_EXISTS(pSettings, r_bool, section, "need_destroy_if_not_useful", true);
-
 	m_fIrradiationCoef			= READ_IF_EXISTS(pSettings, r_float, section, "irradiation_coef", 0.0005f);
 	m_fIrradiationZonePower		= READ_IF_EXISTS(pSettings, r_float, section, "irradiation_zone_power", 0.0f);
 	m_fFoodRottingCoef			= READ_IF_EXISTS(pSettings, r_float, section, "rotting_factor", 0.0f);
@@ -111,8 +108,6 @@ bool CEatableItem::Useful() const
 
 void CEatableItem::OnH_A_Independent() 
 {
-	if (!m_bNeedDestroyNotUseful) return;
-
 	inherited::OnH_A_Independent();
 
 	if(!Useful() && GetUseCondResult() && m_bCanUse)
@@ -124,7 +119,7 @@ void CEatableItem::OnH_A_Independent()
 
 void CEatableItem::OnH_B_Independent(bool just_before_destroy)
 {
-	if (m_bNeedDestroyNotUseful && !Useful() && GetUseCondResult() && m_bCanUse)
+	if (!Useful() && GetUseCondResult() && m_bCanUse)
 	{
 		object().setVisible(FALSE);
 		object().setEnabled(FALSE);
