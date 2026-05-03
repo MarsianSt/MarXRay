@@ -161,42 +161,29 @@ void CParticleManager::Update(int effect_id, int alist_id, float dt)
 {
 	ZoneScoped;
 
-	try
+	ParticleEffect* pe = GetEffectPtr(effect_id);
+	ParticleActions* pa = GetActionListPtr(alist_id);
+
+	if (!pa || !pe)
 	{
-		ParticleEffect* pe = GetEffectPtr(effect_id);
-		ParticleActions* pa = GetActionListPtr(alist_id);
-
-		if (!pa || !pe)
-		{
-			Msg("! CParticleManager::Update - invalid effect_id [%d] or alist_id [%d]", effect_id, alist_id);
-			return;
-		}
-
-		std::scoped_lock<std::mutex> m(pa->m_bLocked);
-
-		float kill_old_time = 1.0f;
-		for (PAVecIt it = pa->begin(); it != pa->end(); ++it)
-		{
-			try
-			{
-				if (*it && !IsBadReadPtr(*it, sizeof(void*)))
-				{
-					(*it)->Execute(pe, dt, kill_old_time);
-				}
-				else
-				{
-					Msg("! CParticleManager::Update - invalid action pointer [effect_id: %d]", effect_id);
-				}
-			}
-			catch (...)
-			{
-				Msg("! CParticleManager::Update - exception in action execution [effect_id: %d]", effect_id);
-			}
-		}
+		Msg("! CParticleManager::Update - invalid effect_id [%d] or alist_id [%d]", effect_id, alist_id);
+		return;
 	}
-	catch (...)
+
+	std::scoped_lock<std::mutex> m(pa->m_bLocked);
+
+	float kill_old_time = 1.0f;
+	for (PAVecIt it = pa->begin(); it != pa->end(); ++it)
 	{
-		Msg("! CParticleManager::Update - critical exception [effect_id: %d, alist_id: %d]", effect_id, alist_id);
+		ParticleAction* action = *it;
+
+		if (!action || (uintptr_t)action < 0x10000 || (uintptr_t)action == 0xFFFFFFFFFFFFFFFF)
+		{
+			Msg("! CParticleManager::Update - skipping invalid action: 0x%p", action);
+			continue;
+		}
+
+		action->Execute(pe, dt, kill_old_time);
 	}
 }
 

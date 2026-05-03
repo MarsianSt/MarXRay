@@ -32,9 +32,16 @@ namespace PAPI{
 		IC void			clear			()
         {
 			for (PAVecIt it = m_actions.begin(); it != m_actions.end(); it++)
-				xr_delete(*it);
+			{
+				if (*it)
+				{
+					xr_delete(*it);
+					*it = nullptr;
+				}
+			}
 			m_actions.clear();
 		}
+
 		IC void			append			(ParticleAction* pa)	{ m_actions.push_back(pa);	}
 		IC bool			empty			()						{return	m_actions.empty();}
 		IC PAVecIt		begin			()						{return	m_actions.begin();}
