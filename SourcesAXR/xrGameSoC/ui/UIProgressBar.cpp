@@ -161,3 +161,15 @@ void CUIProgressBar::Draw()
 	}
 	m_last_render_frame	= Device.dwFrame;
 }
+
+void CUIProgressBar::SetColorAnimation(LPCSTR lanim, bool bCyclic, bool bOnlyAlpha, bool bTextColor, bool bTextureColor)
+{
+	m_UIProgressItem.SetClrLightAnim(lanim, bCyclic, bOnlyAlpha, bTextColor, bTextureColor);
+	m_UIBackgroundItem.SetClrLightAnim(lanim, bCyclic, bOnlyAlpha, bTextColor, bTextureColor);
+}
+
+void CUIProgressBar::ResetColorAnimation()
+{
+	m_UIProgressItem.ResetClrAnimation();
+	m_UIBackgroundItem.ResetClrAnimation();
+}

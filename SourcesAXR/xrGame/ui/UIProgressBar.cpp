@@ -162,3 +162,15 @@ void CUIProgressBar::Draw()
 	}
 	m_last_render_frame	= Device.dwFrame;
 }
+
+void CUIProgressBar::SetColorAnimation(LPCSTR lanim, u8 const& flags, float delay)
+{
+	m_UIProgressItem.SetColorAnimation(lanim, flags, delay);
+	m_UIBackgroundItem.SetColorAnimation(lanim, flags, delay);
+}
+
+void CUIProgressBar::ResetColorAnimation()
+{
+	m_UIProgressItem.ResetColorAnimation();
+	m_UIBackgroundItem.ResetColorAnimation();
+}

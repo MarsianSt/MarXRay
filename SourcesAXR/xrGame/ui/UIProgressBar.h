@@ -61,6 +61,9 @@ public:
 	void				ShowBackground				(bool status)				{ m_bBackgroundPresent = status; }
 	bool				IsShownBackground			()							{ return m_bBackgroundPresent; }
 
+	void				SetColorAnimation			(LPCSTR lanim, u8 const& flags, float delay = 0.0f);
+	void				ResetColorAnimation			();
+
 	virtual void		Draw						();
 	virtual void		Update						();
 
