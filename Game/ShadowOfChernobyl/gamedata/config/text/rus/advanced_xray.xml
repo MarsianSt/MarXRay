@@ -895,7 +895,7 @@
 		<text>ќбъЄмный свет</text>
 	</string>
 	<string id="ui_mm_localization">
-		<text>язык игры</text>
+		<text>язык игры|Game language</text>
 	</string>
 	<string id="cze">
 		<text>„ешский</text>
