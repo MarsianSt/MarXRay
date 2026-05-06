@@ -190,23 +190,30 @@ void CUIMainIngameWnd::Init()
 	xml_init.InitScrollView		(uiXml, "icons_scroll_view", 0, m_UIIcons);
 	AttachChild					(m_UIIcons);
 	
-	m_ind_bleeding			= UIHelper::CreateStatic(uiXml, "indicator_bleeding", this);
-	m_ind_radiation			= UIHelper::CreateStatic(uiXml, "indicator_radiation", this);
-	m_ind_starvation		= UIHelper::CreateStatic(uiXml, "indicator_starvation", this);
-	m_ind_thirst			= UIHelper::CreateStatic(uiXml, "indicator_thirst", this);
-	m_ind_intoxication		= UIHelper::CreateStatic(uiXml, "indicator_intoxication", this);
-	m_ind_sleepeness		= UIHelper::CreateStatic(uiXml, "indicator_sleepeness", this);
-	m_ind_alcoholism		= UIHelper::CreateStatic(uiXml, "indicator_alcoholism", this);
-	m_ind_narcotism			= UIHelper::CreateStatic(uiXml, "indicator_narcotism", this);
-	m_ind_psy_health		= UIHelper::CreateStatic(uiXml, "indicator_psy_health", this);
-	m_ind_filter_dirty		= UIHelper::CreateStatic(uiXml, "indicator_filter", this);
-	m_ind_weapon_broken		= UIHelper::CreateStatic(uiXml, "indicator_weapon_broken", this);
-	m_ind_helmet_broken		= UIHelper::CreateStatic(uiXml, "indicator_helmet_broken", this);
-	m_ind_outfit_broken		= UIHelper::CreateStatic(uiXml, "indicator_outfit_broken", this);
-	m_ind_overweight		= UIHelper::CreateStatic(uiXml, "indicator_overweight", this);
-	m_ind_battery			= UIHelper::CreateStatic(uiXml, "indicator_torch_battery", this);
-	m_ind_frostbite			= UIHelper::CreateStatic(uiXml, "indicator_frostbite", this);
-	m_ind_heating			= UIHelper::CreateStatic(uiXml, "indicator_heating", this);
+	m_ind_bleeding			= UIHelper::CreateMultiElement(uiXml, "indicator_bleeding", this);
+	m_ind_radiation			= UIHelper::CreateMultiElement(uiXml, "indicator_radiation", this);
+	m_ind_starvation		= UIHelper::CreateMultiElement(uiXml, "indicator_starvation", this);
+	m_ind_thirst			= UIHelper::CreateMultiElement(uiXml, "indicator_thirst", this);
+	m_ind_intoxication		= UIHelper::CreateMultiElement(uiXml, "indicator_intoxication", this);
+	m_ind_sleepeness		= UIHelper::CreateMultiElement(uiXml, "indicator_sleepeness", this);
+	m_ind_alcoholism		= UIHelper::CreateMultiElement(uiXml, "indicator_alcoholism", this);
+	m_ind_narcotism			= UIHelper::CreateMultiElement(uiXml, "indicator_narcotism", this);
+	m_ind_psy_health		= UIHelper::CreateMultiElement(uiXml, "indicator_psy_health", this);
+	m_ind_filter_dirty		= UIHelper::CreateMultiElement(uiXml, "indicator_filter", this);
+	m_ind_weapon_broken		= UIHelper::CreateMultiElement(uiXml, "indicator_weapon_broken", this);
+	m_ind_helmet_broken		= UIHelper::CreateMultiElement(uiXml, "indicator_helmet_broken", this);
+	m_ind_outfit_broken		= UIHelper::CreateMultiElement(uiXml, "indicator_outfit_broken", this);
+	m_ind_overweight		= UIHelper::CreateMultiElement(uiXml, "indicator_overweight", this);
+	m_ind_battery			= UIHelper::CreateMultiElement(uiXml, "indicator_torch_battery", this);
+	m_ind_frostbite			= UIHelper::CreateMultiElement(uiXml, "indicator_frostbite", this);
+	m_ind_heating			= UIHelper::CreateMultiElement(uiXml, "indicator_heating", this);
+
+	m_ind_temperature		= UIHelper::CreateMultiElement(uiXml, "indicator_temperature", this, false);
+	m_min_temperature_clr	= CUIXmlInit::GetColor(uiXml,	"indicator_temperature:min_color",		0, color_rgba(255, 255, 255, 255));
+	m_mid_temperature_clr	= CUIXmlInit::GetColor(uiXml,	"indicator_temperature:middle_color",	0, color_rgba(255, 255, 255, 255));
+	m_max_temperature_clr	= CUIXmlInit::GetColor(uiXml,	"indicator_temperature:max_color",		0, color_rgba(255, 255, 255, 255));
+
+	m_ind_weather_type		= UIHelper::CreateMultiElement(uiXml, "indicator_weather_icon", this, false);
 
 	m_ind_boost_psy			= UIHelper::CreateMultiElement(uiXml, "indicator_booster_psy", this);
 	m_ind_boost_radia		= UIHelper::CreateMultiElement(uiXml, "indicator_booster_radia", this);
@@ -227,13 +234,6 @@ void CUIMainIngameWnd::Init()
 	m_ind_boost_narcotism	= UIHelper::CreateMultiElement(uiXml, "indicator_booster_narcotism", this);
 	m_ind_boost_withdrawal	= UIHelper::CreateMultiElement(uiXml, "indicator_booster_withdrawal", this);
 	m_ind_boost_frostbite	= UIHelper::CreateMultiElement(uiXml, "indicator_booster_frostbite", this);
-
-	m_ind_temperature		= UIHelper::CreateStatic(uiXml, "indicator_temperature", this, false);
-	m_min_temperature_clr	= CUIXmlInit::GetColor(uiXml,	"indicator_temperature:min_color",		0, color_rgba(255, 255, 255, 255));
-	m_mid_temperature_clr	= CUIXmlInit::GetColor(uiXml,	"indicator_temperature:middle_color",	0, color_rgba(255, 255, 255, 255));
-	m_max_temperature_clr	= CUIXmlInit::GetColor(uiXml,	"indicator_temperature:max_color",		0, color_rgba(255, 255, 255, 255));
-
-	m_ind_weather_type		= UIHelper::CreateStatic(uiXml, "indicator_weather_icon", this, false);
 
 	m_ind_boost_psy			->Show(false);
 	m_ind_boost_radia		->Show(false);
@@ -889,6 +889,8 @@ void CUIMainIngameWnd::UpdateMainIndicators()
 	else
 	{
 		m_ind_bleeding->Show(true);
+		m_ind_bleeding->SetIconInfo(bleeding, 1.0f);
+
 		if(bleeding<0.35f)
 		{
 			m_ind_bleeding->InitTexture("ui_inGame2_circle_bloodloose_green");
@@ -915,6 +917,8 @@ void CUIMainIngameWnd::UpdateMainIndicators()
 	else
 	{
 		m_ind_radiation->Show(true);
+		m_ind_radiation->SetIconInfo(radiation, 1.0f);
+
 		if(radiation<0.35f)
 		{
 			m_ind_radiation->InitTexture("ui_inGame2_circle_radiation_green");
@@ -941,6 +945,8 @@ void CUIMainIngameWnd::UpdateMainIndicators()
 	else
 	{
 		m_ind_starvation->Show(true);
+		m_ind_starvation->SetIconInfo(satiety_koef, 1.0f);
+
 		if(satiety_koef>0.0f)
 			m_ind_starvation->InitTexture("ui_inGame2_circle_hunger_green");
 		else if(satiety_koef>-0.5f)
@@ -958,6 +964,8 @@ void CUIMainIngameWnd::UpdateMainIndicators()
 	else
 	{
 		m_ind_thirst->Show(true);
+		m_ind_thirst->SetIconInfo(thirst_koef, 1.0f);
+
 		if (thirst_koef > 0.0f)
 			m_ind_thirst->InitTexture("ui_inGame2_circle_thirst_green");
 		else if (thirst_koef > -0.5f)
@@ -975,6 +983,8 @@ void CUIMainIngameWnd::UpdateMainIndicators()
 	else
 	{
 		m_ind_intoxication->Show(true);
+		m_ind_intoxication->SetIconInfo(thirst_koef, 1.0f);
+
 		if (intoxication < 0.35f)
 		{
 			m_ind_intoxication->InitTexture("ui_inGame2_circle_intoxication_green");
@@ -998,6 +1008,8 @@ void CUIMainIngameWnd::UpdateMainIndicators()
 	else
 	{
 		m_ind_sleepeness->Show(true);
+		m_ind_sleepeness->SetIconInfo(sleepeness, 1.0f);
+
 		if (sleepeness >= 0.5f && sleepeness <= 0.75f)
 		{
 			m_ind_sleepeness->InitTexture("ui_inGame2_circle_sleepeness_green");
@@ -1022,6 +1034,8 @@ void CUIMainIngameWnd::UpdateMainIndicators()
 	else
 	{
 		m_ind_alcoholism->Show(true);
+		m_ind_alcoholism->SetIconInfo(alcoholism, 5.0f);
+
 		if (alcoholism > 1.0f && alcoholism <= 2.0f)
 		{
 			if (hangover >= 1.0f && hangover <= 2.0f)
@@ -1067,6 +1081,8 @@ void CUIMainIngameWnd::UpdateMainIndicators()
 	else
 	{
 		m_ind_narcotism->Show(true);
+		m_ind_narcotism->SetIconInfo(narcotism, 5.0f);
+
 		if (narcotism > 1.0f && narcotism <= 3.5f)
 		{
 			if (withdrawal >= 1.0f && withdrawal <= 2.0f)
@@ -1111,6 +1127,8 @@ void CUIMainIngameWnd::UpdateMainIndicators()
 	else
 	{
 		m_ind_psy_health->Show(true);
+		m_ind_psy_health->SetIconInfo(psy_health, 1.0f);
+
 		if (psy_health >= 0.5f && psy_health <= 0.75f)
 		{
 			m_ind_psy_health->InitTexture("ui_inGame2_circle_psy_health_green");
@@ -1134,6 +1152,8 @@ void CUIMainIngameWnd::UpdateMainIndicators()
 	else
 	{
 		m_ind_frostbite->Show(true);
+		m_ind_frostbite->SetIconInfo(frostbite, 1.0f);
+
 		if (frostbite >= 0.25f && frostbite < 0.5f)
 		{
 			m_ind_frostbite->InitTexture("ui_inGame2_circle_frostbite_green");
@@ -1157,6 +1177,8 @@ void CUIMainIngameWnd::UpdateMainIndicators()
 	else
 	{
 		m_ind_heating->Show(true);
+		m_ind_heating->SetIconInfo(heating, 1.0f);
+
 		m_ind_heating->InitTexture("ui_inGame2_triangle_heating_green");
 	}
 
@@ -1174,6 +1196,8 @@ void CUIMainIngameWnd::UpdateMainIndicators()
 		if(condition<0.75f)
 		{
 			m_ind_outfit_broken->Show(true);
+			m_ind_outfit_broken->SetIconInfo(condition, 1.0f);
+
 			if(condition>0.5f)
 				m_ind_outfit_broken->InitTexture("ui_inGame2_circle_Armorbroken_green");
 			else if(condition>0.25f)
@@ -1185,6 +1209,8 @@ void CUIMainIngameWnd::UpdateMainIndicators()
 		if (filter_cond < 0.75f && use_filter)
 		{
 			m_ind_filter_dirty->Show(true);
+			m_ind_filter_dirty->SetIconInfo(filter_cond, 1.0f);
+
 			if (filter_cond > 0.5f)
 				m_ind_filter_dirty->InitTexture("ui_inGame2_circle_filter_green");
 			else if (filter_cond > 0.25f)
@@ -1207,6 +1233,8 @@ void CUIMainIngameWnd::UpdateMainIndicators()
 		if(condition<0.75f)
 		{
 			m_ind_helmet_broken->Show(true);
+			m_ind_helmet_broken->SetIconInfo(condition, 1.0f);
+
 			if(condition>0.5f)
 				m_ind_helmet_broken->InitTexture("ui_inGame2_circle_Helmetbroken_green");
 			else if(condition>0.25f)
@@ -1218,6 +1246,8 @@ void CUIMainIngameWnd::UpdateMainIndicators()
 		if (filter_cond < 0.75f && use_filter)
 		{
 			m_ind_filter_dirty->Show(true);
+			m_ind_filter_dirty->SetIconInfo(filter_cond, 1.0f);
+
 			if (filter_cond > 0.5f)
 				m_ind_filter_dirty->InitTexture("ui_inGame2_circle_filter_green");
 			else if (filter_cond > 0.25f)
@@ -1237,6 +1267,8 @@ void CUIMainIngameWnd::UpdateMainIndicators()
 		if (condition < 0.75f)
 		{
 			m_ind_helmet_broken->Show(true);
+			m_ind_helmet_broken->SetIconInfo(condition, 1.0f);
+
 			if (condition > 0.5f)
 				m_ind_helmet_broken->InitTexture("ui_inGame2_circle_Helmetbroken_green");
 			else if (condition > 0.25f)
@@ -1248,6 +1280,8 @@ void CUIMainIngameWnd::UpdateMainIndicators()
 		if (filter_cond < 0.75f && use_filter)
 		{
 			m_ind_filter_dirty->Show(true);
+			m_ind_filter_dirty->SetIconInfo(filter_cond, 1.0f);
+
 			if (filter_cond > 0.5f)
 				m_ind_filter_dirty->InitTexture("ui_inGame2_circle_filter_green");
 			else if (filter_cond > 0.25f)
@@ -1270,6 +1304,8 @@ void CUIMainIngameWnd::UpdateMainIndicators()
 			if(condition<start_misf_cond)
 			{
 				m_ind_weapon_broken->Show(true);
+				m_ind_weapon_broken->SetIconInfo(condition, 1.0f);
+
 				if(condition>(start_misf_cond+end_misf_cond)/2)
 					m_ind_weapon_broken->InitTexture("ui_inGame2_circle_Gunbroken_green");
 				else if(condition>end_misf_cond)
@@ -1286,6 +1322,8 @@ void CUIMainIngameWnd::UpdateMainIndicators()
 	if(cur_weight>=max_weight-10.0f && IsGameTypeSingle())
 	{
 		m_ind_overweight->Show(true);
+		m_ind_overweight->SetIconInfo(cur_weight, max_weight);
+
 		if(cur_weight>max_weight)
 			m_ind_overweight->InitTexture("ui_inGame2_circle_Overweight_red");
 		//else if(cur_weight>max_weight-10.0f)
@@ -1306,6 +1344,8 @@ void CUIMainIngameWnd::UpdateMainIndicators()
 		if (condition <= 0.0f)
 		{
 			m_ind_battery->Show(true);
+			m_ind_battery->SetIconInfo(condition, 1.0f);
+
 			m_ind_battery->InitTexture("ui_inGame2_circle_TorchLowBattery_red");
 		}
 	}
@@ -1316,6 +1356,8 @@ void CUIMainIngameWnd::UpdateMainIndicators()
 		if (condition <= 0.0f)
 		{
 			m_ind_battery->Show(true);
+			m_ind_battery->SetIconInfo(condition, 1.0f);
+
 			m_ind_battery->InitTexture("ui_inGame2_circle_TorchLowBattery_red");
 		}
 	}
@@ -1326,6 +1368,8 @@ void CUIMainIngameWnd::UpdateMainIndicators()
 		if (condition <= 0.0f)
 		{
 			m_ind_battery->Show(true);
+			m_ind_battery->SetIconInfo(condition, 1.0f);
+
 			m_ind_battery->InitTexture("ui_inGame2_circle_TorchLowBattery_red");
 		}
 	}

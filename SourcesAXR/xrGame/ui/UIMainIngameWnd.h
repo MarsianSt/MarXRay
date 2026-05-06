@@ -39,22 +39,23 @@ public:
 	CUIHudStatesWnd*	m_ui_hud_states;
 	CUIArtefactPanel*	UIArtefactsPanel;
 
-	CUIStatic*			m_ind_bleeding;
-	CUIStatic*			m_ind_radiation;
-	CUIStatic*			m_ind_starvation;
-	CUIStatic*			m_ind_thirst;
-	CUIStatic*			m_ind_intoxication;
-	CUIStatic*			m_ind_sleepeness;
-	CUIStatic*			m_ind_alcoholism;
-	CUIStatic*			m_ind_narcotism;
-	CUIStatic*			m_ind_psy_health;
-	CUIStatic*			m_ind_filter_dirty;
-	CUIStatic*			m_ind_frostbite;
-	CUIStatic*			m_ind_heating;
-	CUIStatic*			m_ind_weapon_broken;
-	CUIStatic*			m_ind_helmet_broken;
-	CUIStatic*			m_ind_outfit_broken;
-	CUIStatic*			m_ind_overweight;
+	CUIMultiElement*	m_ind_bleeding;
+	CUIMultiElement*	m_ind_radiation;
+	CUIMultiElement*	m_ind_starvation;
+	CUIMultiElement*	m_ind_thirst;
+	CUIMultiElement*	m_ind_intoxication;
+	CUIMultiElement*	m_ind_sleepeness;
+	CUIMultiElement*	m_ind_alcoholism;
+	CUIMultiElement*	m_ind_narcotism;
+	CUIMultiElement*	m_ind_psy_health;
+	CUIMultiElement*	m_ind_filter_dirty;
+	CUIMultiElement*	m_ind_frostbite;
+	CUIMultiElement*	m_ind_heating;
+	CUIMultiElement*	m_ind_battery;
+	CUIMultiElement*	m_ind_weapon_broken;
+	CUIMultiElement*	m_ind_helmet_broken;
+	CUIMultiElement*	m_ind_outfit_broken;
+	CUIMultiElement*	m_ind_overweight;
 
 	CUIStatic*			m_ind_temperature;
 	u32					m_min_temperature_clr, m_mid_temperature_clr, m_max_temperature_clr;
@@ -79,8 +80,6 @@ public:
 	CUIMultiElement*	m_ind_boost_narcotism;
 	CUIMultiElement*	m_ind_boost_withdrawal;
 	CUIMultiElement*	m_ind_boost_frostbite;
-
-	CUIStatic*			m_ind_battery;
 
 public:
 		void			ShowZoneMap(bool status);
