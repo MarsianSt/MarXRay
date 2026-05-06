@@ -8,6 +8,7 @@
 class CUIStatic;
 class CUIProgressBar;
 class CUIProgressShape;
+class CUIMultiElement;
 class CUIXml;
 class UI_Arrow;
 class CActor;
@@ -71,31 +72,31 @@ protected:
 	bool				_ind_dir_left{};
 	bool				_ind_dir_bottom{};
 	//bool				_ind_is_centered{};
-	CUIStatic*			_ind_radiation;
-	CUIStatic*			_ind_alcohol;
-	CUIStatic*			_ind_starvation;
-	CUIStatic*			_ind_thirst;
-	CUIStatic*			_ind_weapon_broken;
-	CUIStatic*			_ind_bleeding;
-	CUIStatic*			_ind_psyhealth;
-	CUIStatic*			_ind_overweight;
-	CUIStatic*			_ind_stamina;
-	CUIStatic*			_ind_health;
+	CUIMultiElement*	_ind_radiation;
+	CUIMultiElement*	_ind_alcohol;
+	CUIMultiElement*	_ind_starvation;
+	CUIMultiElement*	_ind_thirst;
+	CUIMultiElement*	_ind_weapon_broken;
+	CUIMultiElement*	_ind_bleeding;
+	CUIMultiElement*	_ind_psyhealth;
+	CUIMultiElement*	_ind_overweight;
+	CUIMultiElement*	_ind_stamina;
+	CUIMultiElement*	_ind_health;
 
-	CUIStatic*			_ind_intoxication;
-	CUIStatic*			_ind_sleepeness;
-	CUIStatic*			_ind_alcoholism;
-	CUIStatic*			_ind_hangover;
-	CUIStatic*			_ind_narcotism;
-	CUIStatic*			_ind_withdrawal;
-	CUIStatic*			_ind_drugs;
-	CUIStatic*			_ind_frostbite;
-	CUIStatic*			_ind_heating;
-	CUIStatic*			_ind_outfit_broken;
-	CUIStatic*			_ind_filter;
-	CUIStatic*			_ind_helmet_broken;
-	CUIStatic*			_ind_helmet_2_broken;
-	CUIStatic*			_ind_battery;
+	CUIMultiElement*	_ind_intoxication;
+	CUIMultiElement*	_ind_sleepeness;
+	CUIMultiElement*	_ind_alcoholism;
+	CUIMultiElement*	_ind_hangover;
+	CUIMultiElement*	_ind_narcotism;
+	CUIMultiElement*	_ind_withdrawal;
+	CUIMultiElement*	_ind_drugs;
+	CUIMultiElement*	_ind_frostbite;
+	CUIMultiElement*	_ind_heating;
+	CUIMultiElement*	_ind_outfit_broken;
+	CUIMultiElement*	_ind_filter;
+	CUIMultiElement*	_ind_helmet_broken;
+	CUIMultiElement*	_ind_helmet_2_broken;
+	CUIMultiElement*	_ind_battery;
 
 public:
 //	CZoneList*	m_zones_list; <----- in Level()

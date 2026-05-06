@@ -13,6 +13,7 @@
 #include "UIStatic.h"
 #include "UIProgressBar.h"
 #include "UIProgressShape.h"
+#include "UIMultiElement.h"
 #include "UIXmlInit.h"
 #include "UIHelper.h"
 #include "ui_arrow.h"
@@ -127,31 +128,31 @@ void CUIHudStatesWnd::InitFromXml( CUIXml& xml, LPCSTR path )
 	_ind_dir_bottom				= xml.ReadAttribInt("indicator_line", 0, "dir_bottom", 0) == 1;
 	//_ind_is_centered			= xml.ReadAttribInt("indicator_line", 0, "centered", 0) == 1;
 
-	_ind_bleeding				= UIHelper::CreateStatic( xml, "indicator_bleeding",		this, false);
-	_ind_radiation				= UIHelper::CreateStatic( xml, "indicator_radiation",		this, false);
-	_ind_starvation				= UIHelper::CreateStatic( xml, "indicator_starvation",		this, false);
-	_ind_thirst					= UIHelper::CreateStatic( xml, "indicator_thirst",			this, false);
-	_ind_alcohol				= UIHelper::CreateStatic( xml, "indicator_alcohol",			this, false);
-	_ind_psyhealth				= UIHelper::CreateStatic( xml, "indicator_psy_health",		this, false);
-	_ind_weapon_broken			= UIHelper::CreateStatic( xml, "indicator_weapon_broken",	this, false);
-	_ind_overweight				= UIHelper::CreateStatic( xml, "indicator_overweight",		this, false);
-	_ind_stamina				= UIHelper::CreateStatic( xml, "indicator_stamina",			this, false);
-	_ind_health					= UIHelper::CreateStatic( xml, "indicator_health",			this, false);
+	_ind_bleeding				= UIHelper::CreateMultiElement( xml, "indicator_bleeding",			this, false);
+	_ind_radiation				= UIHelper::CreateMultiElement( xml, "indicator_radiation",			this, false);
+	_ind_starvation				= UIHelper::CreateMultiElement( xml, "indicator_starvation",		this, false);
+	_ind_thirst					= UIHelper::CreateMultiElement( xml, "indicator_thirst",			this, false);
+	_ind_alcohol				= UIHelper::CreateMultiElement( xml, "indicator_alcohol",			this, false);
+	_ind_psyhealth				= UIHelper::CreateMultiElement( xml, "indicator_psy_health",		this, false);
+	_ind_weapon_broken			= UIHelper::CreateMultiElement( xml, "indicator_weapon_broken",		this, false);
+	_ind_overweight				= UIHelper::CreateMultiElement( xml, "indicator_overweight",		this, false);
+	_ind_stamina				= UIHelper::CreateMultiElement( xml, "indicator_stamina",			this, false);
+	_ind_health					= UIHelper::CreateMultiElement( xml, "indicator_health",			this, false);
 
-	_ind_intoxication			= UIHelper::CreateStatic( xml, "indicator_intoxication",	this, false);
-	_ind_sleepeness				= UIHelper::CreateStatic( xml, "indicator_sleepeness",		this, false);
-	_ind_alcoholism				= UIHelper::CreateStatic( xml, "indicator_alcoholism",		this, false);
-	_ind_hangover				= UIHelper::CreateStatic( xml, "indicator_hangover",		this, false);
-	_ind_narcotism				= UIHelper::CreateStatic( xml, "indicator_narcotism",		this, false);
-	_ind_withdrawal				= UIHelper::CreateStatic( xml, "indicator_withdrawal",		this, false);
-	_ind_drugs					= UIHelper::CreateStatic( xml, "indicator_drugs",			this, false);
-	_ind_frostbite				= UIHelper::CreateStatic( xml, "indicator_frostbite",		this, false);
-	_ind_heating				= UIHelper::CreateStatic( xml, "indicator_heating",			this, false);
-	_ind_outfit_broken			= UIHelper::CreateStatic( xml, "indicator_outfit_broken",	this, false);
-	_ind_helmet_broken			= UIHelper::CreateStatic( xml, "indicator_helmet_broken",	this, false);
-	_ind_helmet_2_broken		= UIHelper::CreateStatic( xml, "indicator_helmet_2_broken",	this, false);
-	_ind_filter					= UIHelper::CreateStatic( xml, "indicator_filter",			this, false);
-	_ind_battery				= UIHelper::CreateStatic( xml, "indicator_torch_battery",	this, false);
+	_ind_intoxication			= UIHelper::CreateMultiElement( xml, "indicator_intoxication",		this, false);
+	_ind_sleepeness				= UIHelper::CreateMultiElement( xml, "indicator_sleepeness",		this, false);
+	_ind_alcoholism				= UIHelper::CreateMultiElement( xml, "indicator_alcoholism",		this, false);
+	_ind_hangover				= UIHelper::CreateMultiElement( xml, "indicator_hangover",			this, false);
+	_ind_narcotism				= UIHelper::CreateMultiElement( xml, "indicator_narcotism",			this, false);
+	_ind_withdrawal				= UIHelper::CreateMultiElement( xml, "indicator_withdrawal",		this, false);
+	_ind_drugs					= UIHelper::CreateMultiElement( xml, "indicator_drugs",				this, false);
+	_ind_frostbite				= UIHelper::CreateMultiElement( xml, "indicator_frostbite",			this, false);
+	_ind_heating				= UIHelper::CreateMultiElement( xml, "indicator_heating",			this, false);
+	_ind_outfit_broken			= UIHelper::CreateMultiElement( xml, "indicator_outfit_broken",		this, false);
+	_ind_helmet_broken			= UIHelper::CreateMultiElement( xml, "indicator_helmet_broken",		this, false);
+	_ind_helmet_2_broken		= UIHelper::CreateMultiElement( xml, "indicator_helmet_2_broken",	this, false);
+	_ind_filter					= UIHelper::CreateMultiElement( xml, "indicator_filter",			this, false);
+	_ind_battery				= UIHelper::CreateMultiElement( xml, "indicator_torch_battery",		this, false);
 
 	xml.SetLocalRoot( stored_root );
 }
@@ -474,7 +475,7 @@ void CUIHudStatesWnd::UpdateIndicatorIcons(CActor* actor)
 		? _ind_position_set->GetWndPos().x
 		: _ind_position_set->GetWndPos().y;
 
-	auto CreateIndicator = [&](CUIStatic* ind_name, float state, float state_crit, float state_start, bool reverse)
+	auto CreateIndicator = [&](CUIMultiElement* ind_name, float state, float state_crit, float state_start, bool reverse)
 		{
 			if (ind_name)
 			{
@@ -563,6 +564,8 @@ void CUIHudStatesWnd::UpdateIndicatorIcons(CActor* actor)
 
 						ind_name->Show(true);
 						ind_name->SetWndPos(pos);
+						ind_name->SetIconInfo(state);
+
 						if (_ind_is_vertical_attrib)
 						{
 							(_ind_dir_bottom) ? pos_shift += ((ind_name->GetWndSize().y) + _ind_pos_shift_add)
