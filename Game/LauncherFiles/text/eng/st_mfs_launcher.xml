@@ -102,8 +102,14 @@
 	<string id="ui_launcher_pb_files">
 		<text>files)</text>
 	</string>
+	<string id="ui_launcher_steps">
+		<text>Step</text>
+	</string>
 	<string id="ui_launcher_download">
 		<text>Download</text>
+	</string>
+	<string id="ui_launcher_continue_download">
+		<text>Continue</text>
 	</string>
 	<string id="ui_launcher_mod_descr">
 		<text>Description:</text>
