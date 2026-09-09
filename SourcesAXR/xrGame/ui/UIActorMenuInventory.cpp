@@ -1,4 +1,4 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 #include "pch_script.h"
 #include "UIActorMenu.h"
 #include "../inventory.h"
@@ -352,7 +352,7 @@ void CUIActorMenu::OnInventoryAction(PIItem pItem, u16 action_type)
 					pl.slot_id = GRENADE_SLOT;
 				}
 #ifndef MASTER_GOLD
-		Msg("item place [%d]", pl);
+		LogInfo("item place [%d]", pl);
 #endif // #ifndef MASTER_GOLD
 
 			if (pl.type == eItemPlaceSlot)
@@ -424,7 +424,7 @@ void CUIActorMenu::OnInventoryAction(PIItem pItem, u16 action_type)
 			if (RemoveItemFromList(curr, pItem))
 			{
 #ifdef DEBUG
-				Msg("all ok. item [%d] removed from list", pItem->object_id());
+				LogInfo("all ok. item [%d] removed from list", pItem->object_id());
 #endif
 				break;
 			}

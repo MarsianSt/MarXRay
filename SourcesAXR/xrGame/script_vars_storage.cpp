@@ -1,4 +1,4 @@
-////////////////////////////////////////////////////////////////////////////
+﻿////////////////////////////////////////////////////////////////////////////
 //	Module 		: script_vars_storage.cpp
 //	Created 	: 19.10.2014
 //  Modified 	: 22.10.2014
@@ -105,7 +105,7 @@ int CScriptVarsTable::load(IReader& memory_stream)
         u32 pos = memory_stream.tell();
         if (-1 == memory_stream.r_s32())
         {
-            Msg("!#ERROR: script vars table %s loaded vars %d from %d, and found EOT flag ", name(), n_var, var_count);
+            LogInfo("!#ERROR: script vars table %s loaded vars %d from %d, and found EOT flag ", name(), n_var, var_count);
             // return;
         }
         else
@@ -147,7 +147,7 @@ int CScriptVarsTable::load(IReader& memory_stream)
                 memory_stream.r(sv.data, sv.size);
 
                 if (LUA_TSTRING == sv.eff_type() && -1 == *(int*)sv.data) // явный выход за пределы чтения
-                    Msg("!#WARN: probably string load failed = %s ", (LPCSTR)sv.data);
+                    LogInfo("!#WARN: probably string load failed = %s ", (LPCSTR)sv.data);
             }
             else
                 memory_stream.r(&sv.s_value, sv.size);
@@ -230,7 +230,7 @@ int CScriptVarsStorage::load(IReader& memory_stream)
     }
 
     int loaded = inherited::load(memory_stream);
-    Msg("* %d script vars are successfully loaded", loaded);
+    LogInfo("* %d script vars are successfully loaded", loaded);
     return loaded;
 }
 
@@ -243,7 +243,7 @@ int CScriptVarsStorage::save(IWriter& memory_stream)
     int saved = inherited::save(memory_stream);
     memory_stream.close_chunk();
 
-    Msg("* %d script vars are successfully saved", saved);
+    LogInfo("* %d script vars are successfully saved", saved);
     return saved;
 }
 
@@ -273,7 +273,7 @@ int script_vars_dump(lua_State* L, CScriptVarsTable* svt, bool unpack) // дам
         int tidx = lua_gettop(L);
         if (tidx > 100)
         {
-            Msg("script_vars_dump:  to many nested tables in dump");
+            LogInfo("script_vars_dump:  to many nested tables in dump");
             return 1;
         }
 
@@ -447,7 +447,7 @@ void CScriptVarsTable::set(lua_State* L, LPCSTR k, int index, int key_type)
     case LUA_TNIL:
         if (exists)
         {
-            // Msg("# deleting script_var %s ", k);
+            // LogInfo("# deleting script_var %s ", k);
             map().erase(it);
         }
         sv.release();
@@ -511,7 +511,7 @@ void CScriptVarsTable::set(lua_State* L, LPCSTR k, int index, int key_type)
         break;
     }
     default:
-        Msg("script_vars not supported lua type %d for var %s", sv.type, *key);
+        LogInfo("script_vars not supported lua type %d for var %s", sv.type, *key);
         if (exists)
             map().erase(it);
         sv.release();

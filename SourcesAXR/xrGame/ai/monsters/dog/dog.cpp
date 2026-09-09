@@ -1,4 +1,4 @@
-#include "stdafx.h"
+п»ї#include "stdafx.h"
 #include "dog.h"
 #include "dog_state_manager.h"
 #include "../monster_velocity_space.h"
@@ -352,23 +352,23 @@ LPCSTR CAI_Dog::get_current_animation()
 {
 	switch(current_anim)
 	{
-	case 1:  return "stand_idle_smelling_up_0";			//Нюхает вверх
-	case 2:  return "stand_idle_smelling_down_0";		//Нюхает вниз
-	case 3:  return "stand_idle_smelling_look_around_0";	//Нюхает по кругу
-	case 4:  return "stand_idle_dig_ground_0";			//Обнюховает и роет землю
-	case 5:  return "stand_idle_howl_0";					//Воет
-	case 6:  return "stand_growl_idle_0";				//Рычит стоя
-	case 7:  return "stand_idle_shake_0";				//Отряхивается !!!!!
-	case 8:  return "stand_sit_down_0";				//Садиться
-	case 9:  return "sit_idle_0";				//Cидит
-	case 10: return "sit_idle_1";				//Чухается сидя
-	case 11: return "sit_idle_2";				//Оглядывается сидя
-	case 12: return "sit_stand_up_0";				//Встает
-	case 13: return "sit_lie_down_0";			//Ложится
-	case 14: return "lie_to_sit_0";				//Подымается
-	case 15: return "stand_eat_0";			//Отрывает куски
-	case 16: return "stand_threaten_0";			//Лает
-	default: return "stand_idle_1";						//Нюхает вперед
+	case 1:  return "stand_idle_smelling_up_0";			//пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ
+	case 2:  return "stand_idle_smelling_down_0";		//пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ
+	case 3:  return "stand_idle_smelling_look_around_0";	//пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅ
+	case 4:  return "stand_idle_dig_ground_0";			//пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ
+	case 5:  return "stand_idle_howl_0";					//пїЅпїЅпїЅпїЅ
+	case 6:  return "stand_growl_idle_0";				//пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ
+	case 7:  return "stand_idle_shake_0";				//пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ !!!!!
+	case 8:  return "stand_sit_down_0";				//пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
+	case 9:  return "sit_idle_0";				//CпїЅпїЅпїЅпїЅ
+	case 10: return "sit_idle_1";				//пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ
+	case 11: return "sit_idle_2";				//пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ
+	case 12: return "sit_stand_up_0";				//пїЅпїЅпїЅпїЅпїЅпїЅ
+	case 13: return "sit_lie_down_0";			//пїЅпїЅпїЅпїЅпїЅпїЅпїЅ
+	case 14: return "lie_to_sit_0";				//пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
+	case 15: return "stand_eat_0";			//пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ
+	case 16: return "stand_threaten_0";			//пїЅпїЅпїЅпїЅ
+	default: return "stand_idle_1";						//пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
 	}
 }
 
@@ -416,7 +416,7 @@ void CAI_Dog::debug_on_key(int key)
 
 	switch (key){
 	case DIK_1:
-		Msg("Ohhhhhhhhhhhhhhh! Here it is!");
+		LogInfo("Ohhhhhhhhhhhhhhh! Here it is!");
 		// strafe left
 		//com_man().seq_run(skel->ID_Cycle_Safe("stand_turn_ls_0"));
 		break;
@@ -429,7 +429,7 @@ void CAI_Dog::debug_on_key(int key)
 		com_man().seq_run(skel->ID_Cycle_Safe("stand_threaten_0"));
 		break;
 	case DIK_0:
-		Msg("Ohhhhhhhhhhhhhhh! Here it is!");
+		LogInfo("Ohhhhhhhhhhhhhhh! Here it is!");
 		break;
 	}
 }

@@ -1,4 +1,4 @@
-#include "stdafx.h"
+п»ї#include "stdafx.h"
 #include "player_hud.h"
 #include "HudItem.h"
 #include "ui_base.h"
@@ -16,19 +16,19 @@ Fvector _wpn_root_pos;
 
 extern BOOL	m_b_advanced_shoot_effectors;
 
-// Рассчитать стартовую секунду анимации --#SM+#--
+// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ --#SM+#--
 float CalculateMotionStartSeconds(float fStartFromTime, float fMotionLength)
 {
 	R_ASSERT(fStartFromTime >= -1.0f);
 
 	//if (fStartFromTime >= 0.0f)
 	//{ 
-	//    // Выставляем время в точных значениях
+	//    // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 	//    clamp(fStartFromTime, 0.0f, fMotionLength);
 	//    return abs(fStartFromTime);
 	//}
 	//else
-	{   // Выставляем время в процентных значениях (от всей длины анимации)
+	{   // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ (пїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ)
 		return (abs(fStartFromTime) * fMotionLength);
 	}
 }
@@ -144,7 +144,7 @@ void player_hud_motion_container::load(IKinematicsAnimated* model, const shared_
 					pm->m_animations.back().eff_name = READ_IF_EXISTS(pSettings, r_string, sect, strconcat(sizeof(eff_param), eff_param, _b->first.c_str(), "_effector"), nullptr);
 
 #ifdef DEBUG
-//					Msg(" alias=[%s] base=[%s] name=[%s]",pm->m_alias_name.c_str(), pm->m_base_name.c_str(), buff);
+//					LogInfo(" alias=[%s] base=[%s] name=[%s]",pm->m_alias_name.c_str(), pm->m_base_name.c_str(), buff);
 #endif // #ifdef DEBUG
 				}
 			}
@@ -152,7 +152,7 @@ void player_hud_motion_container::load(IKinematicsAnimated* model, const shared_
 
 			if (pm->m_animations.empty())
 			{
-				Msg("! [%s] motion [%s](%s) not found in section [%s]", __FUNCTION__, pm->m_base_name.c_str(), _b->first.c_str(), sect.c_str());
+				LogInfo("! [%s] motion [%s](%s) not found in section [%s]", __FUNCTION__, pm->m_base_name.c_str(), _b->first.c_str(), sect.c_str());
 				continue;
 			}
 		}
@@ -496,7 +496,7 @@ u32 attachable_hud_item::anim_play(const shared_str& anm_name_b, BOOL bMixIn, co
 			M2							= ka->ID_Cycle_Safe("idle");
 		else
 			if(bDebug)
-				Msg						("playing item animation [%s]",item_anm_name.c_str());
+				LogInfo("playing item animation [%s]",item_anm_name.c_str());
 		
 		R_ASSERT3(M2.valid(), make_string("model has no motion [idle], section %s", m_sect_name.c_str()).c_str(), pSettings->r_string(m_sect_name, "item_visual"));
 
@@ -792,7 +792,7 @@ void player_hud::load(const shared_str& player_hud_sect)
 		}
 	}
 	
-//	Msg("hands visual changed to[%s] [%s] [%s]", model_name.c_str(), b_reload?"R":"", m_attached_items[0]?"Y":"");
+//	LogInfo("hands visual changed to[%s] [%s] [%s]", model_name.c_str(), b_reload?"R":"", m_attached_items[0]?"Y":"");
 
 	if(!b_reload)
 	{
@@ -865,7 +865,7 @@ u32 player_hud::motion_length_script(LPCSTR section, LPCSTR anm_name, float spee
 {
 	if (!pSettings->section_exist(section))
 	{
-		Msg("!script motion section [%s] does not exist", section);
+		LogInfo("!script motion section [%s] does not exist", section);
 		return 0;
 	}
 
@@ -876,7 +876,7 @@ u32 player_hud::motion_length_script(LPCSTR section, LPCSTR anm_name, float spee
 	player_hud_motion* phm = pm->find_motion(anm_name);
 	if (!phm)
 	{
-		Msg("!script motion [%s] not found in section [%s]", anm_name, section);
+		LogInfo("!script motion [%s] not found in section [%s]", anm_name, section);
 		return 0;
 	}
 
@@ -1214,7 +1214,7 @@ u32 player_hud::script_anim_play(u8 hand, LPCSTR section, LPCSTR anm_name, bool 
 {
 	if (!pSettings->section_exist(section))
 	{
-		Msg("!script motion section [%s] does not exist", section);
+		LogInfo("!script motion section [%s] does not exist", section);
 		m_bStopAtEndScriptAnimIsRunning = true;
 		script_anim_end = Device.dwTimeGlobal;
 		return 0;
@@ -1274,7 +1274,7 @@ u32 player_hud::script_anim_play(u8 hand, LPCSTR section, LPCSTR anm_name, bool 
 
 	if (!phm)
 	{
-		Msg("!script motion [%s] not found in section [%s]", anm_name, section);
+		LogInfo("!script motion [%s] not found in section [%s]", anm_name, section);
 		m_bStopAtEndScriptAnimIsRunning = true;
 		script_anim_end = Device.dwTimeGlobal;
 		return 0;
@@ -1658,7 +1658,7 @@ attachable_hud_item* player_hud::create_hud_item(const shared_str& sect)
 	attachable_hud_item* res	= xr_new<attachable_hud_item>(this);
 	res->load					(sect);
 	res->m_hand_motions.load	(m_model, sect);
-	res->m_hand_motions.load	(m_model_2, sect);		// cari0us - верно ли тут?
+	res->m_hand_motions.load	(m_model_2, sect);		// cari0us - пїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅ?
 	m_pool.push_back			(res);
 
 	return	res;

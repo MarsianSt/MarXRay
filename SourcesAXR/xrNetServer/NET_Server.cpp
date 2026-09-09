@@ -1,4 +1,4 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 #include "DxErr/src/dxerr.h"
 #include "NET_Common.h"
 #include "net_server.h"
@@ -39,7 +39,7 @@ void ip_address::set(LPCSTR src_string)
 		m_data.a4	= u8(buff[3]&0xff);
 	}else
 	{
-		Msg			("! Bad ipAddress format [%s]",src_string);
+		LogInfo("! Bad ipAddress format [%s]",src_string);
 		m_data.data		= 0;
 	}
 }
@@ -72,7 +72,7 @@ void IBannedClient::Load(CInifile& ini, const shared_str& sect)
 
 	BanTime						= mktime(&_tm_banned);
 	
-	Msg("- loaded banned client %s to %s", HAddr.to_string().c_str(), BannedTimeTo().c_str());
+	LogInfo("- loaded banned client %s to %s", HAddr.to_string().c_str(), BannedTimeTo().c_str());
 }
 
 void IBannedClient::Save(CInifile& ini)
@@ -173,7 +173,7 @@ void
 IPureServer::_Recieve( const void* data, u32 data_size, u32 param )
 {
 	if (data_size >= NET_PacketSizeLimit) {
-		Msg		("! too large packet size[%d] received, DoS attack?", data_size);
+		LogInfo("! too large packet size[%d] received, DoS attack?", data_size);
 		return;
 	}
 
@@ -183,7 +183,7 @@ IPureServer::_Recieve( const void* data, u32 data_size, u32 param )
     id.set( param );
     packet.construct( data, data_size );
 	//DWORD currentThreadId = GetCurrentThreadId();
-	//Msg("-S- Entering to csMessages from _Receive [%d]", currentThreadId);
+	//LogInfo("-S- Entering to csMessages from _Receive [%d]", currentThreadId);
 	csMessage.Enter();
 	//LogStackTrace(
 	//		make_string("-S- Entered to csMessages [%d]", currentThreadId).c_str());
@@ -198,7 +198,7 @@ IPureServer::_Recieve( const void* data, u32 data_size, u32 param )
 	}
 	//---------------------------------------
 	u32	result = OnMessage( packet, id );
-	//Msg("-S- Leaving from csMessages [%d]", currentThreadId);
+	//LogInfo("-S- Leaving from csMessages [%d]", currentThreadId);
 	csMessage.Leave();
 	
 	if( result )		
@@ -279,7 +279,7 @@ IPureServer::EConnect IPureServer::Connect(LPCSTR options, GameDescriptionData &
 	}
 	if (dwMaxPlayers > 32 || dwMaxPlayers<1) dwMaxPlayers = 32;
 #ifdef DEBUG
-	Msg("MaxPlayers = %d", dwMaxPlayers);
+	LogInfo("MaxPlayers = %d", dwMaxPlayers);
 #endif // #ifdef DEBUG
 
 	//-------------------------------------------------------------------
@@ -400,12 +400,12 @@ if(!psNET_direct_connect)
 //			xr_string res = Debug.error2string(HostSuccess);
 				if (bPortWasSet) 
 				{
-					Msg("! IPureServer : port %d is BUSY!", psNET_Port);
+					LogInfo("! IPureServer : port %d is BUSY!", psNET_Port);
 					return ErrConnect;
 				}
 				else
 				{
-					Msg("! IPureServer : port %d is BUSY!", psNET_Port);
+					LogInfo("! IPureServer : port %d is BUSY!", psNET_Port);
 				}
 
 				psNET_Port++;
@@ -416,7 +416,7 @@ if(!psNET_direct_connect)
 		}
 		else
 		{
-			Msg("- IPureServer : created on port %d!", psNET_Port);
+			LogInfo("- IPureServer : created on port %d!", psNET_Port);
 		}
 	};
 	
@@ -577,7 +577,7 @@ void	IPureServer::Flush_Clients_Buffers	()
 	ZoneScoped;
 
     #if NET_LOG_PACKETS
-    Msg( "#flush server send-buf" );
+    LogInfo( "#flush server send-buf" );
     #endif
 	
 	struct LocalSenderFunctor
@@ -642,7 +642,7 @@ void	IPureServer::SendTo_LL(ClientID ID/*DPNID ID*/, void* data, u32 size, u32 d
 		);
 
 	
-//	Msg("- IPureServer::SendTo_LL [%d]", size);
+//	LogInfo("- IPureServer::SendTo_LL [%d]", size);
 
 	if (SUCCEEDED(_hr) || (DPNERR_CONNECTIONLOST==_hr))	return;
 
@@ -718,11 +718,11 @@ u32	IPureServer::OnMessage	(NET_Packet& P, ClientID sender)	// Non-Zero means br
 
 void IPureServer::OnCL_Connected		(IClient* CL)
 {
-	Msg("* Player 0x%08x connected.\n",	CL->ID.value());
+	LogInfo("* Player 0x%08x connected.\n",	CL->ID.value());
 }
 void IPureServer::OnCL_Disconnected		(IClient* CL)
 {
-	Msg("* Player 0x%08x disconnected.\n", CL->ID.value());
+	LogInfo("* Player 0x%08x disconnected.\n", CL->ID.value());
 }
 
 BOOL IPureServer::HasBandwidth			(IClient* C)
@@ -901,7 +901,7 @@ void IPureServer::BanAddress(const ip_address& Address, u32 BanTimeSec)
 {
 	if (GetBannedClient(Address)) 
 	{
-		Msg("Already banned\n");
+		LogInfo("Already banned\n");
 		return;
 	};
 
@@ -920,7 +920,7 @@ void IPureServer::UnBanAddress	(const ip_address& Address)
 {
 	if (!GetBannedClient(Address)) 
 	{
-		Msg("! Can't find address %s in ban list.", Address.to_string().c_str() );
+		LogInfo("! Can't find address %s in ban list.", Address.to_string().c_str() );
 		return;
 	};
 
@@ -931,7 +931,7 @@ void IPureServer::UnBanAddress	(const ip_address& Address)
 		{
 			xr_delete				(BannedAddresses[it]);
 			BannedAddresses.erase	(BannedAddresses.begin()+it);
-			Msg						("Unbanning %s", Address.to_string().c_str() );
+			LogInfo("Unbanning %s", Address.to_string().c_str() );
 			BannedList_Save			();
 			break;
 		}
@@ -940,13 +940,13 @@ void IPureServer::UnBanAddress	(const ip_address& Address)
 
 void IPureServer::Print_Banned_Addreses	()
 {
-	Msg("- ----banned ip list begin-------");
+	LogInfo("- ----banned ip list begin-------");
 	for (u32 i=0; i<BannedAddresses.size(); i++)
 	{
 		IBannedClient* pBClient = BannedAddresses[i];
-		Msg("- %s to %s", pBClient->HAddr.to_string().c_str(), pBClient->BannedTimeTo().c_str() );
+		LogInfo("- %s to %s", pBClient->HAddr.to_string().c_str(), pBClient->BannedTimeTo().c_str() );
 	}
-	Msg("- ----banned ip list end-------");
+	LogInfo("- ----banned ip list end-------");
 }
 
 void IPureServer::BannedList_Save	()
@@ -984,12 +984,12 @@ void IPureServer::BannedList_Load()
 
 void IPureServer::IpList_Load()
 {
-	Msg("* Initializing IP filter.");
+	LogInfo("* Initializing IP filter.");
 	m_ip_filter.load();
 }
 void IPureServer::IpList_Unload()
 {
-	Msg("* Deinitializing IP filter.");
+	LogInfo("* Deinitializing IP filter.");
 	m_ip_filter.unload();
 }
 bool IPureServer::IsPlayerIPDenied(u32 ip_address)

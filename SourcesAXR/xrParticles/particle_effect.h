@@ -1,4 +1,4 @@
-//---------------------------------------------------------------------------
+п»ї//---------------------------------------------------------------------------
 #ifndef particle_effectH
 #define particle_effectH
 
@@ -28,7 +28,7 @@ namespace PAPI
 			particles_allocated		= max_particles;
 
 			particles = xr_alloc<Particle>(max_particles);
-			//Msg( "Allocated %u bytes (%u particles) with base address 0x%p" , max_particles * sizeof( Particle ) , max_particles , particles );
+			//LogInfo( "Allocated %u bytes (%u particles) with base address 0x%p" , max_particles * sizeof( Particle ) , max_particles , particles );
 		}
 
 		~ParticleEffect() { xr_free(particles); }
@@ -56,7 +56,7 @@ namespace PAPI
 				return max_particles;
 			}
 
-			//Msg("Re-allocated %u bytes (%u particles) with base address 0x%p", max_count * sizeof(Particle), max_count, new_particles);
+			//LogInfo("Re-allocated %u bytes (%u particles) with base address 0x%p", max_count * sizeof(Particle), max_count, new_particles);
 
 			CopyMemory			(new_particles, particles, p_count * sizeof(Particle));
 			xr_free(particles);
@@ -72,8 +72,8 @@ namespace PAPI
         	if (0==p_count)			return;
 			Particle& m				= particles[i];
             if (d_cb)				d_cb(owner,param,m,i);
-            m 						= particles[--p_count]; // не менять правило удаления !!! (dependence ParticleGroup)
-			// Msg( "pDel() : %u" , p_count );
+            m 						= particles[--p_count]; // пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ !!! (dependence ParticleGroup)
+			// LogInfo( "pDel() : %u" , p_count );
 		}
 
 		IC BOOL		Add				(const pVector &pos, const pVector &posB,
@@ -94,7 +94,7 @@ namespace PAPI
 				P.flags.assign(flags); 
 	            if (b_cb)	b_cb(owner,param,P,p_count);
 				p_count++;
-				// Msg( "pAdd() : %u" , p_count );
+				// LogInfo( "pAdd() : %u" , p_count );
 				return TRUE;
 			}
 		}

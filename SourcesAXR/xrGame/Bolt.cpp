@@ -1,4 +1,4 @@
-#include "stdafx.h"
+п»ї#include "stdafx.h"
 #include "bolt.h"
 #include "ParticlesObject.h"
 #include "../xrphysics/PhysicsShell.h"
@@ -51,7 +51,7 @@ void CBolt::State(u32 state)
 				if (Local())
 				{
 #ifdef DEBUG
-					Msg("Destroying local bolt[%d][%d]", ID(), Device.dwFrame);
+					LogInfo("Destroying local bolt[%d][%d]", ID(), Device.dwFrame);
 #endif
 					DestroyObject();
 				}
@@ -108,7 +108,7 @@ void CBolt::PutNextToSlot()
 	if (OnClient()) return;
 
 	VERIFY(!getDestroy());
-	//выкинуть болт из инвентаря
+	//пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 	NET_Packet						P;
 	if (m_pInventory)
 	{
@@ -119,7 +119,7 @@ void CBolt::PutNextToSlot()
 		this->u_EventSend(P);
 	}
 	else
-		Msg("! Bolt PutNextToSlot : m_pInventory = NULL [%d][%d]", ID(), Device.dwFrame);
+		LogInfo("! Bolt PutNextToSlot : m_pInventory = NULL [%d][%d]", ID(), Device.dwFrame);
 
 	if (smart_cast<CInventoryOwner*>(H_Parent()) && m_pInventory)
 	{

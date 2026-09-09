@@ -1,4 +1,4 @@
-#include "stdafx.h"
+п»ї#include "stdafx.h"
 #include "game_sv_deathmatch.h"
 #include "xrserver_objects_alife_monsters.h"
 #include "level.h"
@@ -763,7 +763,7 @@ void game_sv_Deathmatch::assign_RP(CSE_Abstract* E, game_PlayerState* ps_who)
 	VERIFY				(E);
 	u32		Team		= RP_2_Use(E);
 #ifdef DEBUG
-	Msg("--- Deathmatch RPoint for %s uses team %d", ps_who->getName(), Team);
+	LogInfo("--- Deathmatch RPoint for %s uses team %d", ps_who->getName(), Team);
 #endif // #ifdef DEBUG
 	VERIFY				(rpoints[Team].size());
 
@@ -971,7 +971,7 @@ void	game_sv_Deathmatch::OnPlayerBuyFinished		(ClientID id_who, NET_Packet& P)
 	{
 		s16	ItemID;
 		P.r_s16(ItemID);
-//		Msg("------------- Player wants %d", ItemID);
+//		LogInfo("------------- Player wants %d", ItemID);
 		ItemsDesired.push_back(ItemID);
 	};
 
@@ -983,7 +983,7 @@ void	game_sv_Deathmatch::OnPlayerBuyFinished		(ClientID id_who, NET_Packet& P)
 		xr_vector<u16>				ItemsToDelete;
 
 		bool ExactMatch	= true;
-		//проверяем пояс
+		//пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ
 		TIItemContainer::const_iterator	IBelt = pActor->inventory().m_belt.begin();
 		TIItemContainer::const_iterator	EBelt = pActor->inventory().m_belt.end();
 
@@ -993,7 +993,7 @@ void	game_sv_Deathmatch::OnPlayerBuyFinished		(ClientID id_who, NET_Packet& P)
 			CheckItem(ps, pItem, &ItemsDesired, &ItemsToDelete, ExactMatch);
 		};
 
-		//проверяем ruck
+		//пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ ruck
 		TIItemContainer::const_iterator	IRuck = pActor->inventory().m_ruck.begin();
 		TIItemContainer::const_iterator	ERuck = pActor->inventory().m_ruck.end();
 
@@ -1004,7 +1004,7 @@ void	game_sv_Deathmatch::OnPlayerBuyFinished		(ClientID id_who, NET_Packet& P)
 			CheckItem(ps, pItem, &ItemsDesired, &ItemsToDelete, ExactMatch);
 		};
 
-		//проверяем слоты
+		//пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ
 		TISlotArr::const_iterator	ISlot = pActor->inventory().m_slots.begin();
 		TISlotArr::const_iterator	ESlot = pActor->inventory().m_slots.end();
 
@@ -1047,7 +1047,7 @@ void	game_sv_Deathmatch::SpawnWeaponsForActor(CSE_Abstract* pE, game_PlayerState
 	{
 		u16 ItemID			= ps->pItemList.front();
 #ifdef DEBUG
-		Msg("--- Server: spawning item [%d] for actor [%s]", ItemID, ps->getName());
+		LogInfo("--- Server: spawning item [%d] for actor [%s]", ItemID, ps->getName());
 #endif // #ifdef DEBUG
 		SpawnWeapon4Actor	(pA->ID, *m_strWeaponsData->GetItemName(ItemID& 0x00FF), u8((ItemID & 0xFF00)>>0x08), ps->pItemList);
 		//Game().m_WeaponUsageStatistic->OnWeaponBought(ps, *m_strWeaponsData->GetItemName(ItemID& 0x00FF));
@@ -1066,18 +1066,18 @@ void game_sv_Deathmatch::LoadSkinsForTeam(const shared_str& caSection, TEAM_SKIN
 	string256			SkinSingleName;
 	string4096			Skins;
 
-	// Поле strSectionName должно содержать имя секции
+	// пїЅпїЅпїЅпїЅ strSectionName пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
 	R_ASSERT(xr_strcmp(caSection,""));
 
 	pTeamSkins->clear();
 
-	// Имя поля
+	// пїЅпїЅпїЅ пїЅпїЅпїЅпїЅ
 	if (!pSettings->line_exist(caSection, "skins")) return;
 
-	// Читаем данные этого поля
+	// пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ
 	xr_strcpy(Skins, pSettings->r_string(caSection, "skins"));
 	u32 count	= _GetItemCount(Skins);
-	// теперь для каждое имя оружия, разделенные запятыми, заносим в массив
+	// пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
 	for (u32 i = 0; i < count; ++i)
 	{
 		_GetItem(Skins, i, SkinSingleName);
@@ -1090,18 +1090,18 @@ void game_sv_Deathmatch::LoadDefItemsForTeam(const shared_str& caSection, DEF_IT
 	string256			ItemName;
 	string4096			DefItems;
 
-	// Поле strSectionName должно содержать имя секции
+	// пїЅпїЅпїЅпїЅ strSectionName пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
 	R_ASSERT(xr_strcmp(caSection,""));
 
 	pDefItems->clear();
 
-	// Имя поля
+	// пїЅпїЅпїЅ пїЅпїЅпїЅпїЅ
 	if (!pSettings->line_exist(caSection, "default_items")) return;
 
-	// Читаем данные этого поля
+	// пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ
 	xr_strcpy(DefItems, pSettings->r_string(caSection, "default_items"));
 	u32 count	= _GetItemCount(DefItems);
-	// теперь для каждое имя оружия, разделенные запятыми, заносим в массив
+	// пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
 	for (u32 i = 0; i < count; ++i)
 	{
 		_GetItem(DefItems, i, ItemName);
@@ -1118,14 +1118,14 @@ void game_sv_Deathmatch::SetSkin(CSE_Abstract* E, u16 Team, u16 ID)
 	//-------------------------------------------
 	string256 SkinName;
 	xr_strcpy(SkinName, pSettings->r_string("mp_skins_path", "skin_path"));
-	//загружены ли скины для этой комманды
+	//пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 //	if (SkinID != -1) ID = u16(SkinID);
 
 	if (!TeamList.empty()	&&
 		TeamList.size() > Team	&&
 		!TeamList[Team].aSkins.empty())
 	{
-		//загружено ли достаточно скинов для этой комманды
+		//пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 		if (TeamList[Team].aSkins.size() > ID)
 		{
 			xr_strcat(SkinName, TeamList[Team].aSkins[ID].c_str());
@@ -1135,7 +1135,7 @@ void game_sv_Deathmatch::SetSkin(CSE_Abstract* E, u16 Team, u16 ID)
 	}
 	else
 	{
-		//скины для такой комманды не загружены
+		//пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 		switch (Team)
 		{
 		case 0:
@@ -1153,7 +1153,7 @@ void game_sv_Deathmatch::SetSkin(CSE_Abstract* E, u16 Team, u16 ID)
 		};
 	};
 	xr_strcat(SkinName, ".ogf");
-	Msg("* Skin - %s", SkinName);
+	LogInfo("* Skin - %s", SkinName);
 	int len = xr_strlen(SkinName);
 	R_ASSERT2(len < 64, "Skin Name is too LONG!!!");
 	pV->set_visual(SkinName);
@@ -1563,7 +1563,7 @@ void	game_sv_Deathmatch::StartAnomalies			(int AnomalySet)
 		Send_EventPack_for_AnomalySet(m_dwLastAnomalySetID, CCustomZone::eZoneStateIdle); //Idle
 	m_dwLastAnomalyStartTime = Level().timeServer();
 #ifdef DEBUG
-	Msg("Anomaly Set %d Activated", m_dwLastAnomalySetID);
+	LogInfo("Anomaly Set %d Activated", m_dwLastAnomalySetID);
 #endif
 };
 
@@ -2043,7 +2043,7 @@ void game_sv_Deathmatch::OnPostCreate(u16 eid_who)
 	ANOMALIES_it It = std::find(m_AnomaliesPermanent.begin(), m_AnomaliesPermanent.end(),pCustomZone->name_replace());
 	if (It == m_AnomaliesPermanent.end())
 	{
-		Msg("! Anomaly Not Found in any Set : %s", pCustomZone->name_replace());
+		LogInfo("! Anomaly Not Found in any Set : %s", pCustomZone->name_replace());
 
 		NET_Packet P;
 		u_EventGen		(P,GE_ZONE_STATE_CHANGE,eid_who);
@@ -2244,7 +2244,7 @@ void game_sv_Deathmatch::FillDeathActorRejectItems(CSE_ActorMP *actor, xr_vector
 //	R_ASSERT2( pActor, make_string("Actor not found. actor_id = [%d]", actor->ID).c_str() );
 	VERIFY2  ( pActor, make_string("Actor not found. actor_id = [%d]", actor->ID).c_str() );
 	if ( !pActor ) {
-		Msg             ( "! ERROR: Actor not found. actor_id = [%d]", actor->ID );
+		LogInfo( "! ERROR: Actor not found. actor_id = [%d]", actor->ID );
 		return;
 	}
 
@@ -2258,7 +2258,7 @@ void game_sv_Deathmatch::FillDeathActorRejectItems(CSE_ActorMP *actor, xr_vector
 		if (!item)
 		{
 #ifndef MASTER_GOLD
-			Msg("! ERROR: item from slot[%d] is NULL", active_slot);
+			LogInfo("! ERROR: item from slot[%d] is NULL", active_slot);
 #endif // #ifndef MASTER_GOLD
 			return;
 		}
@@ -2266,7 +2266,7 @@ void game_sv_Deathmatch::FillDeathActorRejectItems(CSE_ActorMP *actor, xr_vector
 		if (!server_item)
 		{
 #ifndef MASTER_GOLD
-			Msg("! ERROR: server entity is NULL, object_id = [%d]", item->object_id());
+			LogInfo("! ERROR: server entity is NULL, object_id = [%d]", item->object_id());
 #endif // #ifndef MASTER_GOLD
 			return;
 		}

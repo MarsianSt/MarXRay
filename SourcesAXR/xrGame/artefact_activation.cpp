@@ -1,4 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////
+﻿////////////////////////////////////////////////////////////////////////////////
 //	Module		:	artefact_activation.cpp
 //	Created		:	19.12.2007
 //	Modified	:	19.12.2007
@@ -202,7 +202,7 @@ void SArtefactActivation::SpawnAnomaly()
 		Level().Send				(P,net_flags(TRUE));
 		F_entity_Destroy			(object);
 //. #ifdef DEBUG
-		Msg("artefact [%s] spawned a zone [%s] at [%f]", *m_af->cName(), zone_sect, Device.fTimeGlobal);
+		LogInfo("artefact [%s] spawned a zone [%s] at [%f]", *m_af->cName(), zone_sect, Device.fTimeGlobal);
 //. #endif
 }
 shared_str clear_brackets(LPCSTR src)

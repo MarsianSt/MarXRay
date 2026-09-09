@@ -1,4 +1,4 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 //#include "../../xrEngine/xr_effgamma.h"
 #include "xr_effgamma.h"
 #include "dxRenderDeviceRender.h"
@@ -170,7 +170,7 @@ void CRender::ScreenshotImpl	(ScreenshotMode mode, LPCSTR name, CMemoryWriter* m
 					HRESULT hr = pSrcTexture->QueryInterface(__uuidof(ID3D11Texture2D), (void**)&pSrcTexture2D);
 					if (FAILED(hr))
 					{
-						Msg("! [ERROR] Failed to cast ID3D11Resource to ID3D11Texture2D");
+						LogInfo("! [ERROR] Failed to cast ID3D11Resource to ID3D11Texture2D");
 						return;
 					}
 
@@ -239,7 +239,7 @@ void CRender::ScreenshotImpl	(ScreenshotMode mode, LPCSTR name, CMemoryWriter* m
 					HRESULT hr = pSrcTexture->QueryInterface(__uuidof(ID3D11Texture2D), (void**)&pSrcTexture2D);
 					if (FAILED(hr))
 					{
-						Msg("! [ERROR] Failed to cast ID3D11Resource to ID3D11Texture2D");
+						LogInfo("! [ERROR] Failed to cast ID3D11Resource to ID3D11Texture2D");
 						return;
 					}
 
@@ -354,7 +354,7 @@ void CRender::ScreenshotImpl	(ScreenshotMode mode, LPCSTR name, CMemoryWriter* m
 		if(name && FS.exist(name))
 			FS.file_delete(0,name);
 
-		Log("~ Can't capture screen while in windowed mode...");
+		LogInfo("%s", "~ Can't capture screen while in windowed mode...");
 		return;
 	}*/
 
@@ -595,7 +595,7 @@ void CRender::Screenshot(ScreenshotMode mode, CMemoryWriter& memory_writer)
 {
 	if (mode != SM_FOR_MPSENDING)
 	{
-		Log("~ Not implemented screenshot mode...");
+		LogInfo("%s", "~ Not implemented screenshot mode...");
 		return;
 	} 
 	ScreenshotImpl(mode, NULL, &memory_writer);

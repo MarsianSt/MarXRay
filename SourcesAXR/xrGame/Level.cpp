@@ -114,6 +114,7 @@ CLevel::CLevel():IPureClient	(Device.GetTimerGlobal())
 
 	game_configured				= FALSE;
 	m_bGameConfigStarted		= FALSE;
+	m_bGameSpecificAfterPending	= FALSE;
 	m_connect_server_err		= xrServer::ErrNoError;
 
 	eChangeRP					= Engine.Event.Handler_Attach	("LEVEL:ChangeRP",this);
@@ -203,7 +204,7 @@ CLevel::CLevel():IPureClient	(Device.GetTimerGlobal())
 //	m_aDemoData.clear();
 //	m_bDemoStarted	= FALSE;
 
-	Msg("%s", Core.Params);
+	LogInfo("%s", Core.Params);
 	/*
 	if (strstr(Core.Params,"-tdemo ") || strstr(Core.Params,"-tdemof ")) {		
 		string1024				f_name;
@@ -241,7 +242,7 @@ CLevel::~CLevel()
 	delete_data					(hud_zones_list);
 	hud_zones_list				= NULL;
 
-	Msg							("- Destroying level");
+	LogInfo("- Destroying level");
 
 	Engine.Event.Handler_Detach	(eEntitySpawn,	this);
 
@@ -404,18 +405,18 @@ void CLevel::cl_Process_Event				(u16 dest, u16 type, NET_Packet& P)
 {
 	ZoneScoped;
 
-	//			Msg				("--- event[%d] for [%d]",type,dest);
+	//			LogInfo("--- event[%d] for [%d]",type,dest);
 	CObject*	 O	= Objects.net_Find	(dest);
 	if (0==O)		{
 #ifdef DEBUG
-		Msg("* WARNING: c_EVENT[%d] to [%d]: unknown dest",type,dest);
+		LogInfo("* WARNING: c_EVENT[%d] to [%d]: unknown dest",type,dest);
 #endif // DEBUG
 		return;
 	}
 	CGameObject* GO = smart_cast<CGameObject*>(O);
 	if (!GO)		{
 #ifndef MASTER_GOLD
-		Msg("! ERROR: c_EVENT[%d] : non-game-object",dest);
+		LogInfo("! ERROR: c_EVENT[%d] : non-game-object",dest);
 #endif // #ifndef MASTER_GOLD
 		return;
 	}
@@ -427,7 +428,7 @@ void CLevel::cl_Process_Event				(u16 dest, u16 type, NET_Packet& P)
 //			if ( GO->H_Parent() )
 //			{
 // = GameObject.cpp (210)
-//				Msg( "! ERROR (Level): GE_DESTROY arrived to object[%d][%s], that has parent[%d][%s], frame[%d]",
+//				LogInfo( "! ERROR (Level): GE_DESTROY arrived to object[%d][%s], that has parent[%d][%s], frame[%d]",
 //					GO->ID(), GO->cNameSect().c_str(),
 //					GO->H_Parent()->ID(), GO->H_Parent()->cName().c_str(), Device.dwFrame );
 //			}
@@ -444,7 +445,7 @@ void CLevel::cl_Process_Event				(u16 dest, u16 type, NET_Packet& P)
 		CObject			*D	= Objects.net_Find	(id);
 		if (0==D)		{
 #ifndef MASTER_GOLD
-			Msg			("! ERROR: c_EVENT[%d] : unknown dest",id);
+			LogInfo("! ERROR: c_EVENT[%d] : unknown dest",id);
 #endif // #ifndef MASTER_GOLD
 			ok			= false;
 		}
@@ -452,7 +453,7 @@ void CLevel::cl_Process_Event				(u16 dest, u16 type, NET_Packet& P)
 		CGameObject		*GD = smart_cast<CGameObject*>(D);
 		if (!GD)		{
 #ifndef MASTER_GOLD
-			Msg			("! ERROR: c_EVENT[%d] : non-game-object",id);
+			LogInfo("! ERROR: c_EVENT[%d] : non-game-object",id);
 #endif // #ifndef MASTER_GOLD
 			ok			= false;
 		}
@@ -477,7 +478,7 @@ void CLevel::ProcessGameEvents		()
 
 		/*
 		if (!game_events->queue.empty())	
-			Msg("- d[%d],ts[%d] -- E[svT=%d],[evT=%d]",Device.dwTimeGlobal,timeServer(),svT,game_events->queue.begin()->timestamp);
+			LogInfo("- d[%d],ts[%d] -- E[svT=%d],[evT=%d]",Device.dwTimeGlobal,timeServer(),svT,game_events->queue.begin()->timestamp);
 		*/
 
 		m_just_destroyed.clear();
@@ -615,7 +616,7 @@ void CLevel::OnFrame	()
 		if (OnClient() && GameID() != eGameIDSingle)
 		{
 #ifdef DEBUG
-			Msg("--- I'm disconnected, so clear all objects...");
+			LogInfo("--- I'm disconnected, so clear all objects...");
 #endif // #ifdef DEBUG
 			ClearAllObjects();
 		}
@@ -1061,7 +1062,7 @@ void CLevel::make_NetCorrectionPrediction	()
 	physics_world()->StepsNum() -= m_dwNumSteps;
 	if(ph_console::g_bDebugDumpPhysicsStep&&m_dwNumSteps>10)
 	{
-		Msg("!!!TOO MANY PHYSICS STEPS FOR CORRECTION PREDICTION = %d !!!",m_dwNumSteps);
+		LogInfo("!!!TOO MANY PHYSICS STEPS FOR CORRECTION PREDICTION = %d !!!",m_dwNumSteps);
 		m_dwNumSteps = 10;
 	};
 //////////////////////////////////////////////////////////////////////////////////

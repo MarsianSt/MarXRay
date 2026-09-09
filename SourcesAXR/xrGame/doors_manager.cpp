@@ -1,4 +1,4 @@
-////////////////////////////////////////////////////////////////////////////
+﻿////////////////////////////////////////////////////////////////////////////
 //	Created		: 23.06.2009
 //	Author		: Dmitriy Iassenev
 //	Copyright (C) GSC Game World - 2009
@@ -32,31 +32,31 @@ manager::~manager					( )
 //{
 //	CObject const* const object = Level().Objects.FindObjectByName("shkaf_work_01_door_0000");
 //	if ( !object ) {
-//		Msg					( "there is now object[\"shkaf_work_01_door_0000\"] found" );
+//		LogInfo( "there is now object[\"shkaf_work_01_door_0000\"] found" );
 //		return;
 //	}
 //
 //	CGameObject const* const game_object = smart_cast<CGameObject const*>(object);
 //	VERIFY					( game_object );
 //	if ( !game_object->lua_game_object()->m_door ) {
-//		Msg					( "object[\"shkaf_work_01_door_0000\"] has not been registered as a door yet" );
+//		LogInfo( "object[\"shkaf_work_01_door_0000\"] has not been registered as a door yet" );
 //		return;
 //	}
 //
 //	door const* const found	= m_doors.find( game_object->lua_game_object()->m_door->position() );
 //	if ( !found ) {
-//		Msg					( "object[\"shkaf_work_01_door_0000\"] has been unregistered already[0x%08x]?", game_object->lua_game_object()->m_door );
+//		LogInfo( "object[\"shkaf_work_01_door_0000\"] has been unregistered already[0x%08x]?", game_object->lua_game_object()->m_door );
 //		return;
 //	}
 //
-//	Msg						( "object[\"shkaf_work_01_door_0000\"] has been registered as a door" );
+//	LogInfo( "object[\"shkaf_work_01_door_0000\"] has been registered as a door" );
 //}
 //
 CDoor* manager::register_door		( CPhysicObject& object )
 {
 	CDoor* const result		= xr_new<CDoor>( &object );
 	//if ( !xr_strcmp(result->get_name(),"shkaf_work_01_door_0000") ) {
-	//	Msg					( "registering door[\"shkaf_work_01_door_0000\"][%f][%f][%f]", VPUSH(result->position()) );
+	//	LogInfo( "registering door[\"shkaf_work_01_door_0000\"][%f][%f][%f]", VPUSH(result->position()) );
 	//}
 	//check_bug_door			( );
 	m_doors.insert			( result );
@@ -67,7 +67,7 @@ CDoor* manager::register_door		( CPhysicObject& object )
 void manager::unregister_door		(CDoor*& door )
 {
 	//if ( !xr_strcmp(door->get_name(),"shkaf_work_01_door_0000") ) {
-	//	Msg					( "UNregistering door[\"shkaf_work_01_door_0000\"][%f][%f][%f]", VPUSH(door->position()) );
+	//	LogInfo( "UNregistering door[\"shkaf_work_01_door_0000\"][%f][%f][%f]", VPUSH(door->position()) );
 	//}
 	//check_bug_door			( );
 	m_doors.remove			( door );

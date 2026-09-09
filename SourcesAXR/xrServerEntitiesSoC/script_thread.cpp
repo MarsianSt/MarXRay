@@ -1,4 +1,4 @@
-////////////////////////////////////////////////////////////////////////////
+﻿////////////////////////////////////////////////////////////////////////////
 //	Module 		: script_thread.cpp
 //	Created 	: 19.09.2003
 //  Modified 	: 29.06.2004
@@ -24,9 +24,9 @@ const LPCSTR main_function = "console_command_run_string_main_thread_function";
 
 //void print_stack_(lua_State *L)
 //{
-//	Msg(" ");
+//	LogInfo(" ");
 //	for (int i=0; lua_type(L, -i-1); i++)
-//		Msg("%2d : %s",-i-1,lua_typename(L, lua_type(L, -i-1)));
+//		LogInfo("%2d : %s",-i-1,lua_typename(L, lua_type(L, -i-1)));
 //}
 
 CScriptThread::CScriptThread(LPCSTR caNamespaceName, bool do_string, bool reload)
@@ -70,7 +70,7 @@ CScriptThread::CScriptThread(LPCSTR caNamespaceName, bool do_string, bool reload
 //			ai().script_engine().script_log	(ScriptStorage::eLuaMessageTypeInfo,"%s",g_ca_stdout);
 //			fflush							(stderr);
 //		}
-//		Msg					("lua get top %d",lua_gettop(ai().script_engine().lua()));
+//		LogInfo("lua get top %d",lua_gettop(ai().script_engine().lua()));
 //		print_stack_		(ai().script_engine().lua());
 		
 #ifdef DEBUG
@@ -100,7 +100,7 @@ CScriptThread::CScriptThread(LPCSTR caNamespaceName, bool do_string, bool reload
 CScriptThread::~CScriptThread()
 {
 #ifdef DEBUG
-	Msg						("* Destroying script thread %s",*m_script_name);
+	LogInfo("* Destroying script thread %s",*m_script_name);
 #endif
 	try {
 #ifndef LUABIND_HAS_BUGS_WITH_LUA_THREADS

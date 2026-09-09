@@ -1,4 +1,4 @@
-////////////////////////////////////////////////////////////////////////////
+﻿////////////////////////////////////////////////////////////////////////////
 //	Module 		: sound_player.cpp
 //	Created 	: 27.12.2003
 //  Modified 	: 27.12.2003
@@ -175,7 +175,7 @@ float CSoundPlayer::play				(u32 internal_type, u32 max_start_time, u32 min_star
 	if ((*I).second.second->m_sounds.empty())
 	{
 #ifdef DEBUG
-		Msg("- There are no sounds in sound collection \"%s\" with internal type %d (sound_script = %d)", *sound.m_sound_prefix, internal_type, StalkerSpace::eStalkerSoundScript);
+		LogInfo("- There are no sounds in sound collection \"%s\" with internal type %d (sound_script = %d)", *sound.m_sound_prefix, internal_type, StalkerSpace::eStalkerSoundScript);
 #endif
 		return 0.f;
 	}
@@ -271,7 +271,7 @@ CSoundPlayer::CSoundCollection::CSoundCollection	(const CSoundCollectionParams &
 	}
 #ifdef DEBUG
 	if (m_sounds.empty())
-		Msg								("- There are no sounds with prefix %s",*params.m_sound_prefix);
+		LogInfo("- There are no sounds with prefix %s",*params.m_sound_prefix);
 #endif
 }
 

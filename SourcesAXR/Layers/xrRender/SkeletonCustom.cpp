@@ -1,4 +1,4 @@
-//---------------------------------------------------------------------------
+﻿//---------------------------------------------------------------------------
 #include 	"stdafx.h"
 #pragma hdrstop
 
@@ -157,7 +157,7 @@ CSkeletonX* CKinematics::LL_GetChild	(u32 idx)
 
 void	CKinematics::Load(const char* N, IReader *data, u32 dwFlags)
 {
-	//Msg				("skeleton: %s",N);
+	//LogInfo("skeleton: %s",N);
 	inherited::Load	(N, data, dwFlags);
 
     pUserData		= NULL;
@@ -215,8 +215,8 @@ void	CKinematics::Load(const char* N, IReader *data, u32 dwFlags)
 
     visimask.zero	();
 	int dwCount 	= data->r_u32();
-	// Msg				("!!! %d bones",dwCount);
-	// if (dwCount >= 64)	Msg			("!!! More than 64 bones is a crazy thing! (%d), %s",dwCount,N);
+	// LogInfo("!!! %d bones",dwCount);
+	// if (dwCount >= 64)	LogInfo("!!! More than 64 bones is a crazy thing! (%d), %s",dwCount,N);
 	VERIFY3			(dwCount <= 64, "More than 64 bones is a crazy thing!",N);
 	for (; dwCount; dwCount--)		{
 		string256	buf;
@@ -361,7 +361,7 @@ void CKinematics::LL_Validate()
                     BD.IK_data.ik_flags.set(SJointIKData::flBreakable,FALSE);
             }
 #ifdef DEBUG            
-            Msg						("! ERROR: Invalid breakable object: '%s'",*dbg_name);
+            LogInfo("! ERROR: Invalid breakable object: '%s'",*dbg_name);
 #endif
         }
     }
@@ -423,7 +423,7 @@ void CKinematics::Depart		()
 		u32 count = bones->size();
 #ifdef DEBUG
     	if (count > 64)
-        	Msg("ahtung !!! %d", count);
+        	LogInfo("ahtung !!! %d", count);
 #endif // #ifdef DEBUG
 		for (u32 b=0; b<count; b++) visimask.set((u64(1)<<b),TRUE);
 	}
@@ -807,7 +807,7 @@ CSkeletonWallmark::~CSkeletonWallmark()
 {
 		if(used_in_render!=u32(-1))
 		{
-			Msg		("used_in_render=%d",used_in_render);
+			LogInfo("used_in_render=%d",used_in_render);
 			VERIFY	(used_in_render==u32(-1));
 		}
 }

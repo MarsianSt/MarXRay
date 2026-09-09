@@ -1,4 +1,4 @@
-////////////////////////////////////////////////////////////////////////////
+﻿////////////////////////////////////////////////////////////////////////////
 //	Module 		: inventory_upgrade_manager.cpp
 //	Created 	: 19.10.2007
 //	Author		: Dmitriy Iassenev, Evgeniy Sokolov
@@ -144,7 +144,7 @@ Property* Manager::add_property( shared_str const& property_id )
 bool Manager::item_upgrades_exist( shared_str const& item_id )
 {
 	if (!pSettings->section_exist(item_id))
-		Msg("! Upgrades: Inventory item [%s] does not exist!", item_id.c_str());
+		LogInfo("! Upgrades: Inventory item [%s] does not exist!", item_id.c_str());
 
 	if( !pSettings->line_exist( item_id, "upgrades" ) || !pSettings->r_string( item_id, "upgrades" ) )
 	{
@@ -167,7 +167,7 @@ void Manager::load_all_inventory()
 
 	if ( g_upgrades_log == 1 )
 	{
-		Msg( "# Inventory upgrade manager is loaded." );
+		LogInfo( "# Inventory upgrade manager is loaded." );
 	}
 
 	CInifile::Sect&		inv_section = pSettings->r_section( items_section );
@@ -183,14 +183,14 @@ void Manager::load_all_inventory()
 
 	if ( g_upgrades_log == 1 )
 	{
-		Msg( "# Upgrades of inventory items loaded." );
+		LogInfo( "# Upgrades of inventory items loaded." );
 	}
 
 	/*
 	float low, high; ///? <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 	LPCSTR param = "cost";
 	compute_range( param, low ,high );
-	Msg( "Parameter <%s> min = %.3f, max = %.3f", param, low, high );
+	LogInfo( "Parameter <%s> min = %.3f, max = %.3f", param, low, high );
 	*/
 }
 
@@ -212,7 +212,7 @@ void Manager::load_all_properties()
 
 	if ( g_upgrades_log == 1 )
 	{
-		Msg( "# Upgrades properties of inventory itmes loaded." );
+		LogInfo( "# Upgrades properties of inventory itmes loaded." );
 	}
 }
 
@@ -223,46 +223,46 @@ void Manager::load_all_properties()
 void Manager::log_hierarchy()
 {
 	{ // roots
-		Msg( "# inventory upgrades roots: [%d] ", m_roots.size() );
+		LogInfo( "# inventory upgrades roots: [%d] ", m_roots.size() );
 		Roots_type::iterator ib = m_roots.begin();
 		Roots_type::iterator ie = m_roots.end();
 		for ( ; ib != ie ; ++ib )
 		{
-			Msg( "   %s", (*ib).first.c_str() );
+			LogInfo( "   %s", (*ib).first.c_str() );
 		}
 	}
 
 	{ // groups
-		Msg( "# inventory upgrades groups: [%d] ", m_groups.size() );
+		LogInfo( "# inventory upgrades groups: [%d] ", m_groups.size() );
 		Groups_type::iterator ib = m_groups.begin();
 		Groups_type::iterator ie = m_groups.end();
 		for ( ; ib != ie ; ++ib )
 		{
-			Msg( "   %s", (*ib).first.c_str() );
+			LogInfo( "   %s", (*ib).first.c_str() );
 		}
 	}
 
 	{ // upgrades
-		Msg( "# inventory upgrades: [%d] ", m_upgrades.size() );
+		LogInfo( "# inventory upgrades: [%d] ", m_upgrades.size() );
 		Upgrades_type::iterator ib = m_upgrades.begin();
 		Upgrades_type::iterator ie = m_upgrades.end();
 		for ( ; ib != ie ; ++ib )
 		{
-			Msg( "   %s", (*ib).first.c_str() );
+			LogInfo( "   %s", (*ib).first.c_str() );
 		}
 	}
 
 	{ // properties
-		Msg( "# inventory upgrade properties: [%d] ", m_properties.size() );
+		LogInfo( "# inventory upgrade properties: [%d] ", m_properties.size() );
 		Properties_type::iterator ib = m_properties.begin();
 		Properties_type::iterator ie = m_properties.end();
 		for ( ; ib != ie ; ++ib )
 		{
-			Msg( "   %s", (*ib).first.c_str() );
+			LogInfo( "   %s", (*ib).first.c_str() );
 		}
 	}
 
-	Msg( "- ----- ----- ----- inventory upgrades hierarchy: begin ----- ----- -----" );
+	LogInfo( "- ----- ----- ----- inventory upgrades hierarchy: begin ----- ----- -----" );
 	
 	Roots_type::iterator ib = m_roots.begin();
 	Roots_type::iterator ie = m_roots.end();
@@ -271,7 +271,7 @@ void Manager::log_hierarchy()
 		((*ib).second)->log_hierarchy( "" );
 	}
 	
-	Msg( "- ----- ----- ----- inventory upgrades hierarchy: end   ----- ----- -----" );
+	LogInfo( "- ----- ----- ----- inventory upgrades hierarchy: end   ----- ----- -----" );
 }
 
 void Manager::test_all_upgrades( CInventoryItem& item )
@@ -282,7 +282,7 @@ void Manager::test_all_upgrades( CInventoryItem& item )
 
 	if ( g_upgrades_log == 1 )
 	{
-		Msg( "- Checking all upgrades of item <%s> (id = %d) is successful.", root_p->id_str(), item.object_id() );
+		LogInfo( "- Checking all upgrades of item <%s> (id = %d) is successful.", root_p->id_str(), item.object_id() );
 	}
 }
 
@@ -355,7 +355,7 @@ bool Manager::upgrade_install( CInventoryItem& item, shared_str const& upgrade_i
 
 			if ( g_upgrades_log == 1 )
 			{
-				Msg( "# Upgrade <%s> of inventory item [%s] (id = %d) is installed.",
+				LogInfo( "# Upgrade <%s> of inventory item [%s] (id = %d) is installed.",
 					upgrade_id.c_str(), item.m_section_id.c_str(), item.object_id() );
 			}
 			return true;
@@ -369,7 +369,7 @@ bool Manager::upgrade_install( CInventoryItem& item, shared_str const& upgrade_i
 
 	if ( g_upgrades_log == 1 )
 	{
-		Msg( "- Upgrade <%s> of inventory item [%s] (id = %d) can`t be installed. Error = %d",
+		LogInfo( "- Upgrade <%s> of inventory item [%s] (id = %d) can`t be installed. Error = %d",
 			upgrade_id.c_str(), item.m_section_id.c_str(), item.object_id(), res );
 	}
 	return false;

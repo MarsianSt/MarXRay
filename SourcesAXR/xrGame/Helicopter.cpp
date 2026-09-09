@@ -1,4 +1,4 @@
-#include "pch_script.h"
+﻿#include "pch_script.h"
 #include "helicopter.h"
 #include "xrserver_objects_alife.h"
 #include "../xrphysics/PhysicsShell.h"
@@ -323,10 +323,10 @@ void CHelicopter::MoveStep()
 		m_movement.curLinearSpeed += m_movement.curLinearAcc*STEP;
 		static bool aaa = false;
 		if(aaa)
-			Log("1-m_movement.curLinearSpeed=",m_movement.curLinearSpeed);
+			LogInfo("%s", "1-m_movement.curLinearSpeed=",m_movement.curLinearSpeed);
 		clamp(m_movement.curLinearSpeed,0.0f,1000.0f);
 		if(aaa)
-			Log("2-m_movement.curLinearSpeed=",m_movement.curLinearSpeed);
+			LogInfo("%s", "2-m_movement.curLinearSpeed=",m_movement.curLinearSpeed);
 	}else{ //go stopping
 		if( !fis_zero(m_movement.curLinearSpeed) ){
 			m_movement.curLinearAcc = -m_movement.LinearAcc_bk;

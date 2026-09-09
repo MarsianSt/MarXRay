@@ -1,4 +1,4 @@
-// File:		UISubLine.cpp
+﻿// File:		UISubLine.cpp
 // Description:	Text line. Owns color attribute
 // Created:		04.04.2005
 // Author:		Serge Vynnycheko
@@ -20,10 +20,10 @@ struct DBGList{
 };
 xr_vector<DBGList>	dbg_list_sublines;
 void dump_list_sublines(){
-	Msg("------Total  SubLines %d",dbg_list_sublines.size());
+	LogInfo("------Total  SubLines %d",dbg_list_sublines.size());
 	xr_vector<DBGList>::iterator _it = dbg_list_sublines.begin();
 	for(;_it!=dbg_list_sublines.end();++_it)
-		Msg("--leak detected ---- SubLine = %d",(*_it).num);
+		LogInfo("--leak detected ---- SubLine = %d",(*_it).num);
 }
 #else
 void dump_list_sublines(){}
@@ -76,7 +76,7 @@ CUISubLine::~CUISubLine(){
 		}
 	}
 	if(!bOK)
-		Msg("CUISubLine::~CUISubLine()!!!!!!!!!!!!!!!!!!!!!!! cannot find window in list");
+		LogInfo("CUISubLine::~CUISubLine()!!!!!!!!!!!!!!!!!!!!!!! cannot find window in list");
 #endif
 
 }

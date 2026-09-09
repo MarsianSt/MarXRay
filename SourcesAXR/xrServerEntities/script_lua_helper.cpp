@@ -1,4 +1,4 @@
-#include "pch_script.h"
+﻿#include "pch_script.h"
 #include "script_lua_helper.h"
 #include "script_debugger.h"
 
@@ -176,9 +176,9 @@ void CDbgLuaHelper::func_hook (lua_State *l, lua_Debug *ar)
 
 void print_stack(lua_State *L)
 {
-	Msg(" ");
+	LogInfo(" ");
 	for (int i=0; lua_type(L, -i-1); i++)
-		Msg("%2d : %s",-i-1,lua_typename(L, lua_type(L, -i-1)));
+		LogInfo("%2d : %s",-i-1,lua_typename(L, lua_type(L, -i-1)));
 }
 
 int CDbgLuaHelper::hookLuaBind (lua_State *l)
@@ -187,23 +187,23 @@ int CDbgLuaHelper::hookLuaBind (lua_State *l)
 	L =l;
 	int top1 = lua_gettop(L);
 	
-	Msg	("hookLuaBind start");
+	LogInfo("hookLuaBind start");
 	print_stack(L);
 
 	if (lua_isstring(L,-1))
 		errormessageLuaBind(L);
-//		Msg("Tope string %s",lua_tostring(L,-1));
+//		LogInfo("Tope string %s",lua_tostring(L,-1));
 	
 	lua_Debug ar;
 	lua_getstack(L,0,&ar);
 	lua_getinfo (L,"lnuS",&ar);
 	hookLua(L,&ar);
 	
-	Msg	("hookLuaBind end");
+	LogInfo("hookLuaBind end");
 	print_stack(L);
 
 	if (lua_isstring(L,-1))
-		Msg("Tope string %s",lua_tostring(L,-1));
+		LogInfo("Tope string %s",lua_tostring(L,-1));
 
 	int top2 = lua_gettop(L);
 	VERIFY(top2==top1);
@@ -216,7 +216,7 @@ void CDbgLuaHelper::hookLua (lua_State *l, lua_Debug *ar)
 	L = l;
 	int top1 = lua_gettop(L);
 	
-//	Msg	("hookLua start");
+//	LogInfo("hookLua start");
 //	print_stack(L);
 	
 	switch(ar->event)
@@ -231,7 +231,7 @@ void CDbgLuaHelper::hookLua (lua_State *l, lua_Debug *ar)
 		break;
 	}
 	
-//	Msg	("hookLua end");
+//	LogInfo("hookLua end");
 //	print_stack(L);
 	
 	int top2 = lua_gettop(L);

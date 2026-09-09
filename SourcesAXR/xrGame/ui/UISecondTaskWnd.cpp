@@ -1,4 +1,4 @@
-////////////////////////////////////////////////////////////////////////////
+﻿////////////////////////////////////////////////////////////////////////////
 //	Module 		: UISecondTaskWnd.cpp
 //	Created 	: 30.05.2008
 //	Author		: Evgeniy Sokolov
@@ -297,13 +297,13 @@ void UITaskListWndItem::SendMessage( CUIWindow* pWnd, s16 msg, void* pData )
 		if ( m_bt_view->GetCheck() && msg == BUTTON_CLICKED )
 		{
 			GetMessageTarget()->SendMessage( this, PDA_TASK_HIDE_MAP_SPOT, (void*)m_task );
-//			Msg( " HIDE task  id = %d", m_task->m_ID );
+//			LogInfo( " HIDE task  id = %d", m_task->m_ID );
 			return;
 		}
 		if ( !m_bt_view->GetCheck() && msg == BUTTON_CLICKED )
 		{
 			GetMessageTarget()->SendMessage( this, PDA_TASK_SHOW_MAP_SPOT, (void*)m_task );
-//			Msg( " show task  id = %d", m_task->m_ID );
+//			LogInfo( " show task  id = %d", m_task->m_ID );
 			return;
 		}
 	}

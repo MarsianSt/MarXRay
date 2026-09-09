@@ -7,6 +7,15 @@
 
 CPHGeometryOwner::CPHGeometryOwner()
 {
+	{
+		HMODULE hm = 0;
+		GetModuleHandleExA(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS, (LPCSTR)(void*)PGMLib, &hm);
+		char mf[260] = {0};
+		if (hm) GetModuleFileNameA(hm, mf, sizeof(mf));
+		CGameMtlLibrary& gl = GMLibrary();
+		LogInfo("--- bgfxport PHCtor: ph_world=%p impPGMLib=%p [%s] gle=%p cnt=%u",
+			(void*)ph_world, (void*)PGMLib, mf, (void*)&gl, gl.CountMaterial());
+	}
 	b_builded=false;
 	m_mass_center.set(0,0,0);
 	VERIFY( ph_world );

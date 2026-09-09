@@ -1,4 +1,4 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 #pragma hdrstop
 
 #include "fs_internal.h"
@@ -29,7 +29,7 @@ void register_file_mapping			(void *address, const u32 &size, LPCSTR file_name)
 	VERIFY							(I == g_file_mappings.end());
 	g_file_mappings.insert			(std::make_pair(*(u32*)&address,std::make_pair(size,shared_str(file_name))));
 
-//	Msg								("++register_file_mapping(%2d):   [0x%08x]%s", g_file_mapped_count + 1, *((u32*)&address), file_name);
+//	LogInfo("++register_file_mapping(%2d):   [0x%08x]%s", g_file_mapped_count + 1, *((u32*)&address), file_name);
 
 	g_file_mapped_memory			+= size;
 	++g_file_mapped_count;
@@ -49,7 +49,7 @@ void unregister_file_mapping		(void *address, const u32 &size)
 	g_file_mapped_memory			-= (*I).second.first;
 	--g_file_mapped_count;
 
-//	Msg								("--unregister_file_mapping(%2d): [0x%08x]%s", g_file_mapped_count + 1, *((u32*)&address), (*I).second.second.c_str());
+//	LogInfo("--unregister_file_mapping(%2d): [0x%08x]%s", g_file_mapped_count + 1, *((u32*)&address), (*I).second.second.c_str());
 
 	g_file_mappings.erase			(I);
 
@@ -60,12 +60,12 @@ void unregister_file_mapping		(void *address, const u32 &size)
 
 XRCORE_API void dump_file_mappings	()
 {
-	Msg								("* active file mappings (%d):",g_file_mappings.size());
+	LogInfo("* active file mappings (%d):",g_file_mappings.size());
 
 	FILE_MAPPINGS::const_iterator	I = g_file_mappings.begin();
 	FILE_MAPPINGS::const_iterator	E = g_file_mappings.end();
 	for ( ; I != E; ++I)
-		Msg							(
+		LogInfo(
 			"* [0x%08x][%d][%s]",
 			(*I).first,
 			(*I).second.first,
@@ -194,7 +194,7 @@ void*  FileDecompress	(const char *fn, const char* sign, u32* size)
 	R_ASSERT2(H>0,fn);
 	_read	(H,&F,8);
 	if (strncmp(M,F,8)!=0)		{
-		F[8]=0;		Msg("FATAL: signatures doesn't match, file(%s) / requested(%s)",F,sign);
+		F[8]=0;		LogInfo("FATAL: signatures doesn't match, file(%s) / requested(%s)",F,sign);
 	}
     R_ASSERT(strncmp(M,F,8)==0);
 

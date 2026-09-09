@@ -1,4 +1,4 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 #include "level.h"
 #include "Level_Bullet_Manager.h"
 #include "xrserver.h"
@@ -137,7 +137,7 @@ bool CLevel::net_start1				()
 			int							id = pApp->Level_ID(map_data.m_name.c_str(), l_ver.c_str(), true);
 
 			if (id<0) {
-				Log						("Can't find level: ",map_data.m_name.c_str());
+				LogInfo("%s", "Can't find level: ",map_data.m_name.c_str());
 				net_start_result_total	= FALSE;
 				return true;
 			}
@@ -159,7 +159,7 @@ bool CLevel::net_start2				()
 		if ((m_connect_server_err=Server->Connect(m_caServerOptions, game_descr))!=xrServer::ErrNoError)
 		{
 			net_start_result_total = false;
-			Msg				("! Failed to start server.");
+			LogInfo("! Failed to start server.");
 			return true;
 		}
 		Server->SLS_Default		();
@@ -270,7 +270,7 @@ bool CLevel::net_start6				()
 			Console->Execute		(buf);
 		}
 	}else{
-		Msg				("! Failed to start client. Check the connection or level existance.");
+		LogInfo("! Failed to start client. Check the connection or level existance.");
 		
 		if (m_connect_server_err==xrServer::ErrConnect&&!psNET_direct_connect) 
 		{
@@ -340,6 +340,7 @@ void CLevel::InitializeClientGame	(NET_Packet& P)
 {
 	ZoneScoped;
 
+	LogInfo("--- bgfxport InitializeClientGame: enter, game=%p", (void*)game);
 	string256 game_type_name;
 	P.r_stringZ(game_type_name);
 	if(game && !xr_strcmp(game_type_name, game->type_name()) )
@@ -347,19 +348,26 @@ void CLevel::InitializeClientGame	(NET_Packet& P)
 	
 	xr_delete(game);
 #ifdef DEBUG
-	Msg("- Game configuring : Started ");
+	LogInfo("- Game configuring : Started ");
 #endif // #ifdef DEBUG
 	CLASS_ID clsid			= game_GameState::getCLASS_ID(game_type_name,false);
 	game					= smart_cast<game_cl_GameState*> ( NEW_INSTANCE ( clsid ) );
 	game->set_type_name		(game_type_name);
 	game->Init				();
 	m_bGameConfigStarted	= TRUE;
+	LogInfo("--- bgfxport InitializeClientGame: created, game=%p", (void*)game);
 
 	if (!IsGameTypeSingle())
 	{
 		init_compression();
 	}
 	
-	R_ASSERT				(Load_GameSpecific_After ());
+	// BGFX port: when the config arrives before CLevel::Load (single-player with
+	// our early config wait), pLevel/ObjectSpace are not created yet, so defer the
+	// game-specific level load until net_start_client3 finishes loading the level.
+	if (pLevel)
+		R_ASSERT				(Load_GameSpecific_After ());
+	else
+		m_bGameSpecificAfterPending	= TRUE;
 }
 

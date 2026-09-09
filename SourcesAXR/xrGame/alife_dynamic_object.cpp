@@ -1,4 +1,4 @@
-////////////////////////////////////////////////////////////////////////////
+﻿////////////////////////////////////////////////////////////////////////////
 //	Module 		: alife_dynamic_object.cpp
 //	Created 	: 27.10.2005
 //  Modified 	: 27.10.2005
@@ -20,7 +20,7 @@
 void CSE_ALifeDynamicObject::on_spawn				()
 {
 #ifdef DEBUG
-//	Msg			("[LSS] spawning object [%d][%d][%s][%s]",ID,ID_Parent,name(),name_replace());
+//	LogInfo("[LSS] spawning object [%d][%d][%s][%s]",ID,ID_Parent,name(),name_replace());
 #endif
 }
 
@@ -189,8 +189,8 @@ void CSE_ALifeInventoryBox::add_online	(const bool &update_registries)
 
 #ifdef DEBUG
 //		if (psAI_Flags.test(aiALife))
-//			Msg					("[LSS] Spawning item [%s][%s][%d]",l_tpALifeInventoryItem->base()->name_replace(),*l_tpALifeInventoryItem->base()->s_name,l_tpALifeDynamicObject->ID);
-		Msg						(
+//			LogInfo("[LSS] Spawning item [%s][%s][%d]",l_tpALifeInventoryItem->base()->name_replace(),*l_tpALifeInventoryItem->base()->s_name,l_tpALifeDynamicObject->ID);
+		LogInfo(
 			"[LSS][%d] Going online [%d][%s][%d] with parent [%d][%s] on '%s'",
 			Device.dwFrame,
 			Device.dwTimeGlobal,
@@ -225,8 +225,8 @@ void CSE_ALifeInventoryBox::add_offline	(const xr_vector<ALife::_OBJECT_ID> &sav
 		VERIFY2					(inventory_item,"Non inventory item object has parent?!");
 #ifdef DEBUG
 //		if (psAI_Flags.test(aiALife))
-//			Msg					("[LSS] Destroying item [%s][%s][%d]",inventory_item->base()->name_replace(),*inventory_item->base()->s_name,inventory_item->base()->ID);
-		Msg						(
+//			LogInfo("[LSS] Destroying item [%s][%s][%d]",inventory_item->base()->name_replace(),*inventory_item->base()->s_name,inventory_item->base()->ID);
+		LogInfo(
 			"[LSS][%d] Going offline [%d][%s][%d] with parent [%d][%s] on '%s'",
 			Device.dwFrame,
 			Device.dwTimeGlobal,
@@ -263,7 +263,7 @@ void CSE_ALifeDynamicObject::clear_client_data()
 {
 #ifdef DEBUG
 	if (!client_data.empty())
-		Msg						("CSE_ALifeDynamicObject::switch_offline: client_data is cleared for [%d][%s]",ID,name_replace());
+		LogInfo("CSE_ALifeDynamicObject::switch_offline: client_data is cleared for [%d][%s]",ID,name_replace());
 #endif // DEBUG
 	if (!keep_saved_data_anyway())
 		client_data.clear		();
@@ -296,8 +296,8 @@ void CSE_ALifeCar::add_online(const bool& update_registries)
 
 #ifdef DEBUG
 		//		if (psAI_Flags.test(aiALife))
-		//			Msg					("[LSS] Spawning item [%s][%s][%d]",l_tpALifeInventoryItem->base()->name_replace(),*l_tpALifeInventoryItem->base()->s_name,l_tpALifeDynamicObject->ID);
-		Msg(
+		//			LogInfo("[LSS] Spawning item [%s][%s][%d]",l_tpALifeInventoryItem->base()->name_replace(),*l_tpALifeInventoryItem->base()->s_name,l_tpALifeDynamicObject->ID);
+		LogInfo(
 			"[LSS][%d] Going online [%d][%s][%d] with parent [%d][%s] on '%s'",
 			Device.dwFrame,
 			Device.dwTimeGlobal,
@@ -332,8 +332,8 @@ void CSE_ALifeCar::add_offline(const xr_vector<ALife::_OBJECT_ID>& saved_childre
 		VERIFY2(inventory_item, "Non inventory item object has parent?!");
 #ifdef DEBUG
 		//		if (psAI_Flags.test(aiALife))
-		//			Msg					("[LSS] Destroying item [%s][%s][%d]",inventory_item->base()->name_replace(),*inventory_item->base()->s_name,inventory_item->base()->ID);
-		Msg(
+		//			LogInfo("[LSS] Destroying item [%s][%s][%d]",inventory_item->base()->name_replace(),*inventory_item->base()->s_name,inventory_item->base()->ID);
+		LogInfo(
 			"[LSS][%d] Going offline [%d][%s][%d] with parent [%d][%s] on '%s'",
 			Device.dwFrame,
 			Device.dwTimeGlobal,
@@ -357,7 +357,7 @@ void CSE_ALifeCar::add_offline(const xr_vector<ALife::_OBJECT_ID>& saved_childre
 
 #ifdef DEBUG
 		if (!client_data.empty())
-			Msg("CSE_InventoryBox::add_offline: client_data is cleared for [%d][%s]", ID, name_replace());
+			LogInfo("CSE_InventoryBox::add_offline: client_data is cleared for [%d][%s]", ID, name_replace());
 #endif // DEBUG
 		if (!child->keep_saved_data_anyway())
 			child->client_data.clear();

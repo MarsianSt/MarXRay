@@ -1,4 +1,4 @@
-////////////////////////////////////////////////////////////////////////////
+﻿////////////////////////////////////////////////////////////////////////////
 //	Module 		: smart_cover_loophole.cpp
 //	Created 	: 16.08.2007
 //	Author		: Alexander Dudin
@@ -53,7 +53,7 @@ loophole::loophole	(luabind::object const &description) :
 
 	m_fov_direction	= parse_fvector(description, "fov_direction");
 	if (m_fov_direction.square_magnitude() < EPS_L) {
-		Msg				("! fov direction for loophole %s is setup incorrectly", m_id.c_str());
+		LogInfo("! fov direction for loophole %s is setup incorrectly", m_id.c_str());
 		m_fov_direction.set(0.f, 0.f, 1.f);
 	}
 	else
@@ -61,7 +61,7 @@ loophole::loophole	(luabind::object const &description) :
 
 	m_danger_fov_direction	= parse_fvector(description, "danger_fov_direction");
 	if (m_danger_fov_direction.square_magnitude() < EPS_L) {
-		Msg				("! danger fov direction for loophole %s is setup incorrectly", m_id.c_str());
+		LogInfo("! danger fov direction for loophole %s is setup incorrectly", m_id.c_str());
 		m_danger_fov_direction.set(0.f, 0.f, 1.f);
 	}
 	else
@@ -70,7 +70,7 @@ loophole::loophole	(luabind::object const &description) :
 	m_enter_direction	= parse_fvector(description, "enter_direction");
 
 	if (m_enter_direction.square_magnitude() < EPS_L) {
-		Msg				("! enter direction for loophole %s is setup incorrectly", m_id.c_str());
+		LogInfo("! enter direction for loophole %s is setup incorrectly", m_id.c_str());
 		m_enter_direction.set(0.f, 0.f, 1.f);
 	}
 	else

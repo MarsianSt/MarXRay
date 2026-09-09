@@ -1,4 +1,4 @@
-////////////////////////////////////////////////////////////////////////////
+﻿////////////////////////////////////////////////////////////////////////////
 //	Module 		: script_binder_object.cpp
 //	Created 	: 29.03.2004
 //  Modified 	: 29.03.2004
@@ -19,7 +19,7 @@ CScriptBinderObject::~CScriptBinderObject	()
 {
 #ifdef DEBUG
 	if (m_object)
-		Msg			("Destroying binded object %s",m_object->Name());
+		LogInfo("Destroying binded object %s",m_object->Name());
 #endif
 }
 

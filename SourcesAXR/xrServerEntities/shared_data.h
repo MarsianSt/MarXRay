@@ -1,4 +1,4 @@
-#pragma once
+п»ї#pragma once
 
 // Singleton template definition 
 template <class T> class CSingleton {
@@ -16,7 +16,7 @@ public:
 	
 	static			void DestroySingleton	()	{
 		if(!_self) return;
-		Log			("DestroySingleton::RefCounter:",_refcount);
+		LogInfo("%s", "DestroySingleton::RefCounter:",_refcount);
 		VERIFY(_on_self_delete == false); 
 		VERIFY(_refcount == 0);
 		xr_delete(_self);
@@ -108,7 +108,7 @@ public:
 	const SHARED_TYPE		*get_sd			() const	{return _sd;}
 	
 	
-	// управление загрузкой данных при компонентном подходе (загрузка данных вручную)
+	// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ (пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ)
 	bool start_load_shared	 (KEY_TYPE key){ 
 		_sd = pSharedObj->get_shared(key);
 		if (get_sd()->IsLoaded()) return false;
@@ -147,7 +147,7 @@ public:
 //
 //	//5. access to shared data
 //	void Smth() {
-//		Msg("shared: a = [%d] b =[%d]", inherited_shared::get_sd()->a, inherited_shared::get_sd()->b);
+//		LogInfo("shared: a = [%d] b =[%d]", inherited_shared::get_sd()->a, inherited_shared::get_sd()->b);
 //	}
 //};
 

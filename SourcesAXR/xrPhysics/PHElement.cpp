@@ -1,4 +1,4 @@
-#include "StdAfx.h"
+﻿#include "StdAfx.h"
 #include "PHDynamicData.h"
 #include "Physics.h"
 #include "tri-colliderknoopc/dTriList.h"
@@ -441,18 +441,18 @@ void CPHElement::PhDataUpdate(dReal step){
 #ifdef DEBUG
 	if(!dV_valid(angular_velocity))
 	{
-		Msg("angular vel %f,%f,%f",angular_velocity[0],angular_velocity[1],angular_velocity[2]);
-		Msg("linear vel %f,%f,%f",linear_velocity[0],linear_velocity[1],linear_velocity[2]);
-		Msg("position  %f,%f,%f",dBodyGetPosition(m_body)[0],dBodyGetPosition(m_body)[1],dBodyGetPosition(m_body)[2]);
-		Msg("quaternion  %f,%f,%f,%f",dBodyGetQuaternion(m_body)[0],dBodyGetQuaternion(m_body)[1],dBodyGetQuaternion(m_body)[2],dBodyGetQuaternion(m_body)[3]);
-		Msg("matrix");
-		Msg("x  %f,%f,%f",dBodyGetRotation(m_body)[0],dBodyGetRotation(m_body)[4],dBodyGetRotation(m_body)[8]);
-		Msg("y  %f,%f,%f",dBodyGetRotation(m_body)[1],dBodyGetRotation(m_body)[5],dBodyGetRotation(m_body)[9]);
-		Msg("z  %f,%f,%f",dBodyGetRotation(m_body)[2],dBodyGetRotation(m_body)[6],dBodyGetRotation(m_body)[10]);
+		LogInfo("angular vel %f,%f,%f",angular_velocity[0],angular_velocity[1],angular_velocity[2]);
+		LogInfo("linear vel %f,%f,%f",linear_velocity[0],linear_velocity[1],linear_velocity[2]);
+		LogInfo("position  %f,%f,%f",dBodyGetPosition(m_body)[0],dBodyGetPosition(m_body)[1],dBodyGetPosition(m_body)[2]);
+		LogInfo("quaternion  %f,%f,%f,%f",dBodyGetQuaternion(m_body)[0],dBodyGetQuaternion(m_body)[1],dBodyGetQuaternion(m_body)[2],dBodyGetQuaternion(m_body)[3]);
+		LogInfo("matrix");
+		LogInfo("x  %f,%f,%f",dBodyGetRotation(m_body)[0],dBodyGetRotation(m_body)[4],dBodyGetRotation(m_body)[8]);
+		LogInfo("y  %f,%f,%f",dBodyGetRotation(m_body)[1],dBodyGetRotation(m_body)[5],dBodyGetRotation(m_body)[9]);
+		LogInfo("z  %f,%f,%f",dBodyGetRotation(m_body)[2],dBodyGetRotation(m_body)[6],dBodyGetRotation(m_body)[10]);
 		IPhysicsShellHolder* ph=PhysicsRefObject();
-		Msg("name visual %s",ph->ObjectNameVisual());
-		Msg("name obj %s",ph->ObjectName());
-		Msg("name section %s",ph->ObjectNameSect());
+		LogInfo("name visual %s",ph->ObjectNameVisual());
+		LogInfo("name obj %s",ph->ObjectName());
+		LogInfo("name section %s",ph->ObjectNameSect());
 		VERIFY2(0,"bad angular velocity");
 	}
 #endif
@@ -1102,7 +1102,7 @@ void CPHElement::set_LinearVel			  (const Fvector& velocity)
 	Fvector vel = velocity;
 #ifdef DEBUG
 	if( velocity.magnitude() > m_l_limit )
-		Msg(" CPHElement::set_LinearVel set velocity magnitude is too large %f",velocity.magnitude());
+		LogInfo(" CPHElement::set_LinearVel set velocity magnitude is too large %f",velocity.magnitude());
 #endif
 	put_in_range(vel,m_l_limit);
 	dBodySetLinearVel(m_body,vel.x,vel.y,vel.z);
@@ -1118,7 +1118,7 @@ void CPHElement::set_AngularVel			  (const Fvector& velocity)
 	Fvector vel = velocity;
 #ifdef DEBUG
 	if( velocity.magnitude() > m_w_limit )
-		Msg("CPHElement::set_AngularVel set velocity magnitude is too large %f",velocity.magnitude());
+		LogInfo("CPHElement::set_AngularVel set velocity magnitude is too large %f",velocity.magnitude());
 #endif
 	put_in_range(vel,m_w_limit);
 	dBodySetAngularVel(m_body,vel.x,vel.y,vel.z);

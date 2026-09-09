@@ -1,4 +1,4 @@
-////////////////////////////////////////////////////////////////////////////
+﻿////////////////////////////////////////////////////////////////////////////
 //	Module 		: script_effector.cpp
 //	Created 	: 06.02.2004
 //  Modified 	: 06.02.2004
@@ -13,7 +13,7 @@
 
 CScriptEffector::~CScriptEffector	()
 {
-	Msg								("CScriptEffector::~CScriptEffector() called");
+	LogInfo("CScriptEffector::~CScriptEffector() called");
 }
 
 BOOL CScriptEffector::Process		(SPPInfo	&pp)

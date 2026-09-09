@@ -1,4 +1,4 @@
-
+﻿
 #include "stdafx.h"
 
 #include "phmovementcontrol.h"
@@ -71,12 +71,12 @@ bool CPHMovementControl:: ActivateBoxDynamic(DWORD id,int num_it/*=8*/,int num_s
 
 		SetPosition(pos);
 		
-		//Msg("can not activate!");
+		//LogInfo("can not activate!");
 	}
 	else
 	{
 		ActivateBox(id);
-		//Msg("activate!");
+		//LogInfo("activate!");
 	}
 
 //	SetOjectContactCallback(saved_callback);

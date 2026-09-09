@@ -3,6 +3,8 @@
 
 #include "stdafx.h"
 #include "XR_IOConsole.h"
+#undef LOG_MODULE
+#define LOG_MODULE "Console"
 #include "line_editor.h"
 
 #include "igame_level.h"
@@ -84,6 +86,64 @@ bool CConsole::is_mark( Console_mark type )
 		break;
 	}
 	return false;
+}
+
+u32 CConsole::get_level_color( LPCSTR line )
+{
+	// Format: [HH:MM:SS.mmm][Level][Module] Message
+	if (!line || line[0] != '[')
+		return default_font_color;
+
+	// Find second ']' — marks end of [Level] tag
+	LPCSTR p = strchr(line + 1, ']');
+	if (!p) return default_font_color;
+	p++; // skip ']'
+	if (*p != '[') return default_font_color;
+	p++; // skip '['
+
+	// Now p points to level name: "Info", "Warning", "Error", "Debug"
+	if (strncmp(p, "Info]", 5) == 0)       return color_rgba(205, 205, 205, 255); // light gray
+	if (strncmp(p, "Warning]", 8) == 0)    return color_rgba(255, 255,   0, 255); // yellow
+	if (strncmp(p, "Error]", 6) == 0)      return color_rgba(255,   0,   0, 255); // red
+	if (strncmp(p, "Debug]", 6) == 0)      return color_rgba(128, 128, 128, 255); // gray
+
+	return default_font_color;
+}
+
+LPCSTR CConsole::skip_log_prefix( LPCSTR line )
+{
+	// Format: [HH:MM:SS.mmm][Level][Module][TID] Message
+	// Return pointer to "Message" part
+	if (!line || line[0] != '[')
+		return line;
+
+	LPCSTR p = strchr(line + 1, ']');
+	if (!p) return line;
+	p++; // after timestamp ]
+
+	// Skip [Level]
+	if (*p != '[') return line;
+	p++;
+	LPCSTR lvl_end = strchr(p, ']');
+	if (!lvl_end) return line;
+	p = lvl_end + 1;
+
+	// Skip [Module]
+	if (*p != '[') return line;
+	p++;
+	LPCSTR mod_end = strchr(p, ']');
+	if (!mod_end) return line;
+	p = mod_end + 1;
+
+	// Skip [TID]
+	if (*p != '[') return line;
+	p++;
+	LPCSTR tid_end = strchr(p, ']');
+	if (!tid_end) return line;
+	p = tid_end + 1;
+	if (*p == ' ') p++; // skip space
+
+	return p;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -351,10 +411,11 @@ void CConsole::OnRender()
 		{
 			continue;
 		}
-		Console_mark cm = (Console_mark)ls[0];
-		pFont->SetColor( get_mark_color( cm ) );
-		//u8 b = (is_mark( cm ))? 2 : 0;
-		//OutFont( ls + b, ypos );
+		// Skip Debug messages in console
+		if ( strstr(ls, "[Debug]") )
+			continue;
+		u32 color = get_level_color( ls );
+		pFont->SetColor( color );
 		OutFont( ls, ypos );
 	}
 	
@@ -546,13 +607,9 @@ void CConsole::ExecuteCommand( LPCSTR cmd_str, bool record_cmd )
 	}
 	if ( record_cmd )
 	{
-		char c[2];
-		c[0] = mark2;
-		c[1] = 0;
-
 		if ( m_last_cmd.c_str() == 0 || xr_strcmp( m_last_cmd, edt ) != 0 )
 		{
-			Log( c, edt );
+			LogInfo("@ %s", edt );
 			add_cmd_history( edt );
 			m_last_cmd = edt;
 		}
@@ -570,17 +627,18 @@ void CConsole::ExecuteCommand( LPCSTR cmd_str, bool record_cmd )
 			{
 				strlwr( last );
 			}
-			if ( last[0] == 0 )
-			{
-				if ( cc->bEmptyArgsHandled )
-				{
-					cc->Execute( last );
-				}
+ 			if ( last[0] == 0 )
+ 			{
+ 				if ( cc->bEmptyArgsHandled )
+ 				{
+ 					LogDebug("[Console] Executing '%s' with empty args", cc->Name());
+ 					cc->Execute( last );
+ 				}
 				else
 				{
 					IConsole_Command::TStatus stat;
 					cc->Status( stat );
-					Msg( "- %s %s", cc->Name(), stat );
+					LogInfo( "- %s %s", cc->Name(), stat );
 				}
 			}
 			else
@@ -594,13 +652,13 @@ void CConsole::ExecuteCommand( LPCSTR cmd_str, bool record_cmd )
 		}
 		else
 		{
-			Log("! Command disabled.");
-		}
+		LogInfo( "! Command disabled." );
+	}
 	}
 	else
 	{
 		//first[CONSOLE_BUF_SIZE-21] = 0;
-		Log( "! Unknown command: ", first );
+		LogInfo( "! Unknown command: %s", first );
 	}
 
 	if ( record_cmd )

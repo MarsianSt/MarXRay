@@ -1,4 +1,4 @@
-#include "StdAfx.h"
+﻿#include "StdAfx.h"
 
 #include "UITeamState.h"
 #include "UITeamPanels.h"
@@ -164,7 +164,7 @@ void UITeamState::AddPlayer(ClientID const & clientId)
 	VERIFY(pi != playersMap.end());
 	/*if (pi == playersMap.end())
 	{
-		Msg("--- Player not found by ClientID = 0x%08x", clientId.value());
+		LogInfo("--- Player not found by ClientID = 0x%08x", clientId.value());
 		return;
 	}*/
 	game_PlayerState *ps = pi->second;
@@ -180,7 +180,7 @@ void UITeamState::AddPlayer(ClientID const & clientId)
 	}
 
 #ifdef DEBUG
-	Msg("--- UITeamState: adding player (ClientID = 0x%08x) to %d team (0x%08x)", clientId.value(), myTeam, this);
+	LogInfo("--- UITeamState: adding player (ClientID = 0x%08x) to %d team (0x%08x)", clientId.value(), myTeam, this);
 #endif // #ifdef DEBUG
 
 	UIPlayerItem* tempPlayerItem = xr_new<UIPlayerItem>(static_cast<ETeam>(ps->team), 
@@ -238,7 +238,7 @@ bool UITeamState::UpdatePlayer(ClientID const & clientId)
 		VERIFY(ps);
 		/*if (!ps)
 		{
-			Msg("--- Player state of ClientID = 0x%08x is NULL", clientId.value());
+			LogInfo("--- Player state of ClientID = 0x%08x is NULL", clientId.value());
 			return true;
 		}*/
 		if (Game().IsPlayerInTeam(ps, myTeam) == false)
@@ -306,7 +306,7 @@ void UITeamState::Update()
 			MapClientIdToUIPlayer::iterator tempIter = myPlayers.find(*i);
 			VERIFY2(tempIter != myPlayers.end(), "player not found while deleting");
 #ifdef DEBUG
-			Msg("--- UITeamState: deleting player (ClientID = 0x%08x) from %d team (0x%08x)", i->value(), myTeam, this);
+			LogInfo("--- UITeamState: deleting player (ClientID = 0x%08x) from %d team (0x%08x)", i->value(), myTeam, this);
 #endif // #ifdef DEBUG
 			VERIFY(m_scroll_panels.size() > tempIter->second.m_panel_number);
 			m_scroll_panels[tempIter->second.m_panel_number].first->RemoveWindow(tempIter->second.m_player_wnd);

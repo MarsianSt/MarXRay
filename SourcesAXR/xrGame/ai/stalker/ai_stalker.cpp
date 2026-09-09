@@ -1,4 +1,4 @@
-////////////////////////////////////////////////////////////////////////////
+﻿////////////////////////////////////////////////////////////////////////////
 //	Module 		: ai_stalker.cpp
 //	Created 	: 25.02.2003
 //  Modified 	: 25.02.2003
@@ -140,7 +140,7 @@ void CAI_Stalker::reinit			()
 
 #ifdef DEBUG_MEMORY_MANAGER
 	if (g_bMEMO)
-		Msg					("CAI_Stalker::LoadSounds() : %d",Memory.mem_usage() - start);
+		LogInfo("CAI_Stalker::LoadSounds() : %d",Memory.mem_usage() - start);
 #endif // DEBUG_MEMORY_MANAGER
 
 	m_pPhysics_support->in_Init		();
@@ -256,7 +256,7 @@ void CAI_Stalker::reload			(LPCSTR section)
 
 #ifdef DEBUG_MEMORY_MANAGER
 	if (g_bMEMO)
-		Msg					("get_brain().setup() : %d",Memory.mem_usage() - start);
+		LogInfo("get_brain().setup() : %d",Memory.mem_usage() - start);
 #endif // DEBUG_MEMORY_MANAGER
 
 	CCustomMonster::reload			(section);
@@ -679,7 +679,7 @@ BOOL CAI_Stalker::net_Spawn			(CSE_Abstract* DC)
 
 #ifdef DEBUG_MEMORY_MANAGER
 	if (g_bMEMO)
-		Msg					("CStalkerAnimationManager::reload() : %d",Memory.mem_usage() - _start);
+		LogInfo("CStalkerAnimationManager::reload() : %d",Memory.mem_usage() - _start);
 #endif // DEBUG_MEMORY_MANAGER
 
 	get_movement().m_head.current.yaw	= get_movement().m_head.target.yaw = get_movement().m_body.current.yaw = get_movement().m_body.target.yaw	= angle_normalize_signed(-tpHuman->o_torso.yaw);
@@ -762,7 +762,7 @@ BOOL CAI_Stalker::net_Spawn			(CSE_Abstract* DC)
 
 #ifdef DEBUG_MEMORY_MANAGER
 	if (g_bMEMO) {
-		Msg							("CAI_Stalker::net_Spawn() : %d",Memory.mem_usage() - start);
+		LogInfo("CAI_Stalker::net_Spawn() : %d",Memory.mem_usage() - start);
 	}
 #endif // DEBUG_MEMORY_MANAGER
 
@@ -923,12 +923,12 @@ void CAI_Stalker::update_object_handler	()
 		}
 #ifdef DEBUG
 		catch (const luabind::cast_failed& message) {
-			Msg						("! Expression \"%s\" from luabind::object to %s",message.what(),message.info().name());
+			LogInfo("! Expression \"%s\" from luabind::object to %s",message.what(),message.info().name());
 			throw;
 		}
 #endif
 		catch (std::exception &message) {
-			Msg						("! Expression \"%s\"",message.what());
+			LogInfo("! Expression \"%s\"",message.what());
 			throw;
 		}
 		catch(...) {
@@ -1091,7 +1091,7 @@ void CAI_Stalker::shedule_Update		( u32 DT )
 		STOP_PROFILE
 	}
 //	if (Position().distance_to(Level().CurrentEntity()->Position()) <= 50.f)
-//		Msg				("[%6d][SH][%s]",Device.dwTimeGlobal,*cName());
+//		LogInfo("[%6d][SH][%s]",Device.dwTimeGlobal,*cName());
 	// Queue shrink
 	VERIFY				(_valid(Position()));
 	u32	dwTimeCL		= Level().timeServer()-NET_Latency;
@@ -1236,22 +1236,22 @@ void CAI_Stalker::Think			()
 //		}
 #ifdef DEBUG
 //		catch (luabind::cast_failed &message) {
-//			Msg						("! Expression \"%s\" from luabind::object to %s",message.what(),message.info()->name());
+//			LogInfo("! Expression \"%s\" from luabind::object to %s",message.what(),message.info()->name());
 			//throw;
 //		}
 #endif
 //		catch (std::exception &message) {
-//			Msg						("! Expression \"%s\"",message.what());
+//			LogInfo("! Expression \"%s\"",message.what());
 //			throw;
 //		}
 //		catch (...) {
-//			Msg						("! unknown exception occured");
+//			LogInfo("! unknown exception occured");
 //			throw;
 //		}
 //	}
 //	catch(...) {
 #ifdef DEBUG
-//		Msg						("! Last action being executed : %s",get_brain().current_action().m_action_name);
+//		LogInfo("! Last action being executed : %s",get_brain().current_action().m_action_name);
 #endif
 //		get_brain().setup			(this);
 //		get_brain().update			(update_delta);
@@ -1267,19 +1267,19 @@ void CAI_Stalker::Think			()
 //	}
 #if 0//def DEBUG
 	catch (luabind::cast_failed &message) {
-		Msg						("! Expression \"%s\" from luabind::object to %s",message.what(),message.info()->name());
+		LogInfo("! Expression \"%s\" from luabind::object to %s",message.what(),message.info()->name());
 		get_movement().initialize	();
 		get_movement().update		(update_delta);
 		throw;
 	}
 	catch (std::exception &message) {
-		Msg						("! Expression \"%s\"",message.what());
+		LogInfo("! Expression \"%s\"",message.what());
 		get_movement().initialize	();
 		get_movement().update		(update_delta);
 		throw;
 	}
 	catch (...) {
-		Msg						("! unknown exception occured");
+		LogInfo("! unknown exception occured");
 		get_movement().initialize	();
 		get_movement().update		(update_delta);
 		throw;
@@ -1357,7 +1357,7 @@ DLL_Pure *CAI_Stalker::_construct			()
 
 #ifdef DEBUG_MEMORY_MANAGER
 	if (g_bMEMO)
-		Msg								("CAI_Stalker::_construct() : %d",Memory.mem_usage() - start);
+		LogInfo("CAI_Stalker::_construct() : %d",Memory.mem_usage() - start);
 #endif // DEBUG_MEMORY_MANAGER
 
 	return								(this);

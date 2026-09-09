@@ -1,4 +1,4 @@
-////////////////////////////////////////////////////////////////////////////
+﻿////////////////////////////////////////////////////////////////////////////
 //	Module 		: agent_location_manager.cpp
 //	Created 	: 24.05.2004
 //  Modified 	: 14.01.2005
@@ -122,7 +122,7 @@ void CAgentLocationManager::make_suitable	(CAI_Stalker *object, const CCoverPoin
 
 		// check if member cover is too close
 		if ((*I)->cover()->m_position.distance_to_sqr(location->position()) <= _sqr(5.f)) {
-//			Msg						("%6d : object [%s] disabled cover for object [%s]",Device.dwFrame,*object->cName(),*(*I)->object().cName());
+//			LogInfo("%6d : object [%s] disabled cover for object [%s]",Device.dwFrame,*object->cName(),*(*I)->object().cName());
 			(*I)->object().on_cover_blocked	((*I)->cover());
 			(*I)->cover						(0);
 		}

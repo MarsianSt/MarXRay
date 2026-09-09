@@ -1,4 +1,4 @@
-////////////////////////////////////////////////////////////////////////////
+﻿////////////////////////////////////////////////////////////////////////////
 //	Module 		: restricted_object.cpp
 //	Created 	: 18.08.2004
 //  Modified 	: 23.08.2004
@@ -87,13 +87,13 @@ BOOL CRestrictedObject::net_Spawn			(CSE_Abstract* data)
 	construct_id_string			(temp2,monster->m_dynamic_out_restrictions);
 	construct_id_string			(temp3,monster->m_dynamic_in_restrictions);
 
-	Msg							("Restricting object %s with",monster->name_replace());
-	Msg							("STATIC OUT  : %s",*monster->m_out_space_restrictors);
-	Msg							("STATIC IN   : %s",*monster->m_in_space_restrictors);
-	Msg							("DYNAMIC OUT : %s",temp2);
-	Msg							("DYNAMIC IN  : %s",temp3);
-	Msg							("OUT         : %s",temp0);
-	Msg							("IN          : %s",temp1);
+	LogInfo("Restricting object %s with",monster->name_replace());
+	LogInfo("STATIC OUT  : %s",*monster->m_out_space_restrictors);
+	LogInfo("STATIC IN   : %s",*monster->m_in_space_restrictors);
+	LogInfo("DYNAMIC OUT : %s",temp2);
+	LogInfo("DYNAMIC IN  : %s",temp3);
+	LogInfo("OUT         : %s",temp0);
+	LogInfo("IN          : %s",temp1);
 #endif
 
 	Level().space_restriction_manager().restrict	(monster->ID,temp0,temp1);

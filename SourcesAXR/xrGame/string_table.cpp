@@ -1,4 +1,4 @@
-#include "stdafx.h"
+п»ї#include "stdafx.h"
 #include "string_table.h"
 
 #include "ui/xrUIXmlParser.h"
@@ -32,7 +32,7 @@ void CStringTable::Init		()
     
 	pData				= xr_new<STRING_TABLE_DATA>();
 	
-	//имя языка, если не задано (NULL), то первый <text> в <string> в XML
+	//пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ (NULL), пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ <text> пїЅ <string> пїЅ XML
 	pData->m_sLanguage	= pSettings->r_string("string_table", "language");
 
 	FillLanguageToken();
@@ -55,7 +55,7 @@ void CStringTable::Init		()
 		Load			(fn);
 	}
 #ifdef DEBUG
-	Msg("StringTable: loaded %d files", fset.size());
+	LogInfo("StringTable: loaded %d files", fset.size());
 #endif // #ifdef DEBUG
 //---
 	ReparseKeyBindings();
@@ -124,7 +124,7 @@ void CStringTable::FillLanguageToken()
 
 void CStringTable::SetLanguage()
 {
-	Msg("cur lang: %s", pData->m_sLanguage.c_str());
+	LogInfo("cur lang: %s", pData->m_sLanguage.c_str());
 	if (LanguageID != std::numeric_limits<u32>::max())
 		pData->m_sLanguage = languagesToken.at(LanguageID).name;
 	else
@@ -148,7 +148,7 @@ void CStringTable::Load	(LPCSTR xml_file_full)
 
 	uiXml.Load					(CONFIG_PATH, _s, xml_file_full);
 
-	//общий список всех записей таблицы в файле
+	//пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅ
 	int string_num = uiXml.GetNodesNum		(uiXml.GetRoot(), "string");
 
 	for(int i=0; i<string_num; ++i)
@@ -160,7 +160,7 @@ void CStringTable::Load	(LPCSTR xml_file_full)
 		LPCSTR string_text		= uiXml.Read(uiXml.GetRoot(), "string:text", i,  NULL);
 
 		if(m_bWriteErrorsToLog && string_text)
-			Msg("[string table] '%s' no translation in '%s'", string_name, pData->m_sLanguage.c_str() );
+			LogInfo("[string table] '%s' no translation in '%s'", string_name, pData->m_sLanguage.c_str() );
 		
 		STRING_VALUE str_val		= ParseLine(string_text, string_name, true);
 		

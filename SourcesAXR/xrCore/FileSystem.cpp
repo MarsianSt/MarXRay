@@ -1,4 +1,4 @@
-//----------------------------------------------------
+﻿//----------------------------------------------------
 // file: FileSystem.cpp
 //----------------------------------------------------
 
@@ -183,13 +183,13 @@ bool EFS_Utils::GetOpenNameInternal( LPCSTR initial,  LPSTR buffer, int sz_buf, 
 	    switch(err)
         {
         	case FNERR_BUFFERTOOSMALL:
-            	Log("Too many files selected.");
+            	LogInfo("Too many files selected.");
             break;
         }
 	}
     if (bRes && bMulti)
     {
-    	Log				("buff=",buffer);
+    	LogInfo("buff=",buffer);
 		int cnt			= _GetItemCount(buffer,0x0);
         if (cnt>1)
         {
@@ -200,7 +200,7 @@ bool EFS_Utils::GetOpenNameInternal( LPCSTR initial,  LPSTR buffer, int sz_buf, 
             xr_strcpy		(dir, buffer);
             xr_strcpy		(fns, dir);
             xr_strcat		(fns, "\\");
-            xr_strcat		(fns, _GetItem	(buffer,1,buf,0x0));
+            xr_strcat		(fns, _GetItem	(buffer, 1, buf, 0x0));
 
             for (int i=2; i<cnt; i++)
             {
@@ -267,7 +267,7 @@ bool EFS_Utils::GetSaveName( LPCSTR initial, string_path& buffer, LPCSTR offset,
     if (!bRes){
 	    u32 err = CommDlgExtendedError();
 	    switch(err){
-        case FNERR_BUFFERTOOSMALL: 	Log("Too many file selected."); break;
+        case FNERR_BUFFERTOOSMALL: 	LogInfo("Too many file selected."); break;
         }
 	}
     strlwr(buffer);

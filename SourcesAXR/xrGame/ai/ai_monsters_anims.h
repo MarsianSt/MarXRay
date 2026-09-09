@@ -1,4 +1,4 @@
-////////////////////////////////////////////////////////////////////////////
+﻿////////////////////////////////////////////////////////////////////////////
 //	Module 		: ai_monsters_anims.h
 //	Created 	: 23.05.2003
 //  Modified 	: 23.05.2003
@@ -36,7 +36,7 @@ public:
 			A[i]		= tpKinematics->ID_Cycle_Safe(S);
 #ifdef DEBUG
 			if (A[i] && psAI_Flags.test(aiAnimation))
-				Msg		("* Loaded animation %s",S);
+				LogInfo("* Loaded animation %s",S);
 #endif
 		}
 	}

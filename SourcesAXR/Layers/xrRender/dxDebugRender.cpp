@@ -1,4 +1,4 @@
-#include "stdafx.h"
+п»ї#include "stdafx.h"
 
 #include "dxDebugRender.h"
 #include "dxUIShader.h"
@@ -82,15 +82,15 @@ void dxDebugRender::add_lines(Fvector const* vertices, u32 const& vertex_count, 
 		all_inds_count += line_indices.at(color).size();
 	}
 
-	//Лимиты превышать нельзя ни в коем случае - убавить лимит если будут краши в R_DStreams.cpp
+	//пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ - пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅ R_DStreams.cpp
 	if ((all_verts_count + vertex_count) >= u16(-1))
 	{
-		//Msg("~~[%s.1] Rendered [%u] verts and [%u] inds", __FUNCTION__, all_verts_count, all_inds_count);
+		//LogInfo("~~[%s.1] Rendered [%u] verts and [%u] inds", __FUNCTION__, all_verts_count, all_inds_count);
 		Render();
 	}
 	else if ((all_inds_count + 2 * pair_count) >= u16(-1))
 	{
-		//Msg("~~[%s.2] Rendered [%u] verts and [%u] inds", __FUNCTION__, all_verts_count, all_inds_count);
+		//LogInfo("~~[%s.2] Rendered [%u] verts and [%u] inds", __FUNCTION__, all_verts_count, all_inds_count);
 		Render();
 	}
 

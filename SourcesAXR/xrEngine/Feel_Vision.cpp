@@ -1,4 +1,4 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 #include "feel_vision.h"
 #include "render.h"
 #include "xr_object.h"
@@ -234,12 +234,12 @@ namespace Feel {
 				if (I->Cache.result&&I->Cache.similar(P,D,f)){
 					// similar with previous query
 					feel_params.vis			= I->Cache_vis;
-//					Log("cache 0");
+//					LogInfo("cache 0");
 				}else{
 					float _u,_v,_range;
-					if (CDB::TestRayTri(P,D,I->Cache.verts,_u,_v,_range,false)&&(_range>0 && _range<f))	{
+					if (CDB::TestRayTri(P, D, I->Cache.verts, _u, _v, _range, false)&&(_range>0 && _range<f))	{
 						feel_params.vis		= 0.f;
-//						Log("cache 1");
+//						LogInfo("%s", "cache 1");
 					}else{
 						// cache outdated. real query.
 						VERIFY(!fis_zero(RD.dir.magnitude()));
@@ -249,10 +249,10 @@ namespace Feel {
 						}else{
 							I->Cache.set	(P,D,f,FALSE)		;
 						}
-//						Log("query");
+//						LogInfo("query");
 					}
 				}
-//				Log("Vis",feel_params.vis);
+//				LogInfo("Vis",feel_params.vis);
 
 				if (CallOfPripyatMode)
 				{

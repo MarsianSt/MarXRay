@@ -1,4 +1,4 @@
-//---------------------------------------------------------------------------
+﻿//---------------------------------------------------------------------------
 #include 	"stdafx.h"
 #pragma hdrstop
 
@@ -18,7 +18,7 @@ u16 CPartition::part_id(const shared_str& name) const
 		if(pd.Name == name)
 			return i;
 	}
-	Msg("!there is no part named [%s]", name.c_str() );
+	LogInfo("!there is no part named [%s]", name.c_str() );
 	return u16(-1);
 }
 
@@ -109,13 +109,13 @@ BOOL motions_value::load		(LPCSTR N, IReader *data, vecBones* bones)
 				if (*b_it==BI_NONE )
                 {
 					bRes		= false;
-					Msg			("!Can't find bone '%s' requested from animations library: '%s'!", buf, N);
+					LogInfo("!Can't find bone '%s' requested from animations library: '%s'!", buf, N);
 				}
 
 				if (rm_bones.size() <= m_idx)
                 {
 					bRes		= false;
-					Msg			("!Can't load: '%s' invalid bones count", N);
+					LogInfo("!Can't load: '%s' invalid bones count", N);
 				}
 #else
 				R_ASSERT2		(*b_it != BI_NONE, make_string("Can't find bone '%s' requested from animations library: '%s'!", buf, N).c_str());
@@ -128,7 +128,7 @@ BOOL motions_value::load		(LPCSTR N, IReader *data, vecBones* bones)
 #ifdef _EDITOR
 		if (part_bone_cnt!=(u16)bones->size()){
 			bRes = false;
-			Msg("!Different bone count[%s] [Object: '%d' <-> Motions: '%d']", N, bones->size(),part_bone_cnt);
+			LogInfo("!Different bone count[%s] [Object: '%d' <-> Motions: '%d']", N, bones->size(),part_bone_cnt);
 		}
 #else
 		VERIFY3(part_bone_cnt==(u16)bones->size(),"Different bone count '%s'",N);
@@ -260,7 +260,7 @@ BOOL motions_value::load		(LPCSTR N, IReader *data, vecBones* bones)
 			}
 		}
 	}
-//	Msg("Motions %d/%d %4d/%4d/%d, %s",p_cnt,m_cnt, m_load,m_total,m_r,N);
+//	LogInfo("Motions %d/%d %4d/%4d/%d, %s",p_cnt,m_cnt, m_load,m_total,m_r,N);
 	MS->close();
 
 	return bRes;
@@ -343,14 +343,14 @@ void motions_container::dump()
 {
 	SharedMotionsMapIt it	= container.begin();
 	SharedMotionsMapIt _E	= container.end();
-	Log	("--- motion container --- begin:");
+	LogInfo("%s", "--- motion container --- begin:");
 	u32 sz					= sizeof(*this);
 	for (u32 k=0; it!=_E; k++,it++){
 		sz					+= it->second->mem_usage();
-		Msg("#%3d: [%3d/%5d Kb] - %s",k,it->second->m_dwReference,it->second->mem_usage()/1024,it->first.c_str());
+		LogInfo("#%3d: [%3d/%5d Kb] - %s",k,it->second->m_dwReference,it->second->mem_usage()/1024,it->first.c_str());
 	}
-	Msg ("--- items: %d, mem usage: %d Kb ",container.size(),sz/1024);
-	Log	("--- motion container --- end.");
+	LogInfo("--- items: %d, mem usage: %d Kb ",container.size(),sz/1024);
+	LogInfo("%s", "--- motion container --- end.");
 }
 
 //////////////////////////////////////////////////////////////////////////

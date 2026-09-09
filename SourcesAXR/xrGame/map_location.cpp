@@ -1,4 +1,4 @@
-#include "stdafx.h"
+п»ї#include "stdafx.h"
 #include "map_location.h"
 #include "map_spot.h"
 #include "map_manager.h"
@@ -188,7 +188,7 @@ void CMapLocation::LoadSpot(LPCSTR type, bool bReload)
 			VERIFY(!(bReload && m_minimap_spot));
 		}
 
-		// Чтение параметров точек компаса. Если их нет, читаются стандартные от миникарты
+		// пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ. пїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅ, пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 		LPCSTR compass_spot = g_uiSpotXml->ReadAttrib(path, 0, "compass_spot", "");
 		if (xr_strlen(compass_spot))
 		{
@@ -200,7 +200,7 @@ void CMapLocation::LoadSpot(LPCSTR type, bool bReload)
 			string512 buf;
 			xr_strconcat(buf, compass_spot, ":texture");
 
-			// Текстура и цвет
+			// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅ
 			if (g_uiSpotXml->NavigateToNode(buf, 0))
 			{
 				m_compass_spot_texture = g_uiSpotXml->Read(buf, 0, "");
@@ -228,7 +228,7 @@ void CMapLocation::LoadSpot(LPCSTR type, bool bReload)
 				string512 buf;
 				xr_strconcat(buf, map_spot, ":texture");
 
-				// Текстура и цвет
+				// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅ
 				if (g_uiSpotXml->NavigateToNode(buf, 0))
 				{
 					m_compass_spot_texture = g_uiSpotXml->Read(buf, 0, "");
@@ -531,22 +531,22 @@ void CMapLocation::UpdateSpot(CUICustomMap* map, CMapSpot* sp )
 			static bool bbb = false;
 			if(!bDone&&bbb)
 			{
-				Msg("! Error. Path from actor to selected map spot does not contain level changer :(");
-				Msg("Path:");
+				LogInfo("! Error. Path from actor to selected map spot does not contain level changer :(");
+				LogInfo("Path:");
 				xr_vector<u32>::iterator it			= map_point_path.begin();
 				xr_vector<u32>::iterator it_e		= map_point_path.end();
 				for(; it!=it_e;++it){
-					//					Msg("%d-%s",(*it),ai().game_graph().vertex(*it));
-					Msg("[%d] level[%s]",(*it),*ai().game_graph().header().level(ai().game_graph().vertex(*it)->level_id()).name());
+					//					LogInfo("%d-%s",(*it),ai().game_graph().vertex(*it));
+					LogInfo("[%d] level[%s]",(*it),*ai().game_graph().header().level(ai().game_graph().vertex(*it)->level_id()).name());
 				}
-				Msg("- Available LevelChangers:");
+				LogInfo("- Available LevelChangers:");
 				xr_vector<CLevelChanger*>::iterator lit,lit_e;
 				lit_e							= g_lchangers.end();
 				for(lit=g_lchangers.begin();lit!=lit_e; ++lit){
 					GameGraph::_GRAPH_ID gid = (*lit)->ai_location().game_vertex_id();
-					Msg("[%d]",gid);
+					LogInfo("[%d]",gid);
 					Fvector p = ai().game_graph().vertex(gid)->level_point();
-					Msg("lch_name=%s pos=%f %f %f",*ai().game_graph().header().level(ai().game_graph().vertex(gid)->level_id()).name(), p.x, p.y, p.z);
+					LogInfo("lch_name=%s pos=%f %f %f",*ai().game_graph().header().level(ai().game_graph().vertex(gid)->level_id()).name(), p.x, p.y, p.z);
 				}
 
 
@@ -961,6 +961,6 @@ void CRelationMapLocation::UpdateLevelMap(CUICustomMap* map)
 void CRelationMapLocation::Dump							()
 {
 	inherited::Dump();
-	Msg("--CRelationMapLocation m_curr_spot_name=[%s]",*m_curr_spot_name);
+	LogInfo("--CRelationMapLocation m_curr_spot_name=[%s]",*m_curr_spot_name);
 }
 #endif

@@ -1,4 +1,4 @@
-////////////////////////////////////////////////////////////////////////////
+﻿////////////////////////////////////////////////////////////////////////////
 //	Module 		: memory_manager.cpp
 //	Created 	: 02.10.2001
 //  Modified 	: 19.11.2003
@@ -326,8 +326,8 @@ void CMemoryManager::make_object_visible_somewhen	(const CEntityAlive *enemy)
 	squad_mask_type				mask = stalker().agent_manager().get_member().mask(&stalker());
 	MemorySpace::CVisibleObject	*obj = visual().visible_object(enemy);
 //	if (obj) {
-//		Msg						("------------------------------------------------------");
-//		Msg						("[%6d] make_object_visible_somewhen [%s] = %x",Device.dwTimeGlobal,*enemy->cName(),obj->m_squad_mask.get());
+//		LogInfo("------------------------------------------------------");
+//		LogInfo("[%6d] make_object_visible_somewhen [%s] = %x",Device.dwTimeGlobal,*enemy->cName(),obj->m_squad_mask.get());
 //	}
 //	LogStackTrace				("-------------make_object_visible_somewhen-------------");
 	bool						prev = obj ? obj->visible(mask) : false;
@@ -335,7 +335,7 @@ void CMemoryManager::make_object_visible_somewhen	(const CEntityAlive *enemy)
 	MemorySpace::CVisibleObject	*obj1 = object().get_memory().visual().visible_object(enemy);
 	VERIFY						(obj1);
 //	if (obj1)
-//		Msg						("[%6d] make_object_visible_somewhen [%s] = %x",Device.dwTimeGlobal,*enemy->cName(),obj1->m_squad_mask.get());
+//		LogInfo("[%6d] make_object_visible_somewhen [%s] = %x",Device.dwTimeGlobal,*enemy->cName(),obj1->m_squad_mask.get());
 	obj1->visible				(mask,prev);
 }
 

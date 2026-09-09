@@ -61,7 +61,7 @@ struct CWrapperBase : public T, public luabind::wrap_base {
 		}
 		static  void STATE_Read_static(inherited* ptr, NET_Packet* p1)
 		{
-			Log("Attempt to call pure virtual method STATE_Read in CSE_Abstract");
+			LogInfo("Attempt to call pure virtual method STATE_Read in CSE_Abstract");
 			//ptr->self_type::inherited::STATE_Read(*p1);
 		}
 		virtual void STATE_Write(NET_Packet& p1)
@@ -70,7 +70,7 @@ struct CWrapperBase : public T, public luabind::wrap_base {
 		}
 		static  void STATE_Write_static(inherited* ptr, NET_Packet* p1)
 		{
-			Log("Attempt to call pure virtual method STATE_Write in CSE_Abstract");
+			LogInfo("Attempt to call pure virtual method STATE_Write in CSE_Abstract");
 			//ptr->self_type::inherited::STATE_Write(*p1);
 		}
 
@@ -80,7 +80,7 @@ struct CWrapperBase : public T, public luabind::wrap_base {
 		}
 		static  void UPDATE_Read_static(inherited* ptr, NET_Packet* p1)
 		{
-			Log("Attempt to call pure virtual method UPDATE_Read in CSE_Abstract");
+			LogInfo("Attempt to call pure virtual method UPDATE_Read in CSE_Abstract");
 			//ptr->self_type::inherited::UPDATE_Read(*p1);
 		}
 		virtual void UPDATE_Write(NET_Packet& p1)
@@ -89,7 +89,7 @@ struct CWrapperBase : public T, public luabind::wrap_base {
 		}
 		static  void UPDATE_Write_static(inherited* ptr, NET_Packet* p1)
 		{
-			Log("Attempt to call pure virtual method UPDATE_Write in CSE_Abstract");
+			LogInfo("Attempt to call pure virtual method UPDATE_Write in CSE_Abstract");
 			//ptr->self_type::inherited::UPDATE_Write(*p1);
 		}
 
@@ -99,11 +99,11 @@ struct CWrapperBase : public T, public luabind::wrap_base {
 void CPureServerObject::script_register(lua_State *L)
 {
 	module(L)[
-		class_<IPureLîadableObject<IReader> >
+		class_<IPureLoadableObject<IReader> >
 			("ipure_alife_load_object"),
 		class_<IPureSavableObject<IWriter> >
 			("ipure_alife_save_object"),
-		class_<IPureSerializeObject<IReader,IWriter>,bases<IPureLîadableObject<IReader>,IPureSavableObject<IWriter> > >
+		class_<IPureSerializeObject<IReader,IWriter>,bases<IPureLoadableObject<IReader>,IPureSavableObject<IWriter> > >
 			("ipure_alife_load_save_object"),
 		class_<IPureServerObject,IPureSerializeObject<IReader,IWriter> >
 			("ipure_server_object"),

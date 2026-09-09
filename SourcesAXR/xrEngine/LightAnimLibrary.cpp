@@ -1,4 +1,4 @@
-//---------------------------------------------------------------------------
+п»ї//---------------------------------------------------------------------------
 #include "stdafx.h"
 #pragma hdrstop
 
@@ -105,20 +105,20 @@ u32 CLAItem::InterpolateRGB(int frame)
 
     KeyPairIt A=Keys.find(frame);
     KeyPairIt B;
-    if (A!=Keys.end()){  			// ключ - возвращаем цвет ключа
+    if (A!=Keys.end()){  			// пїЅпїЅпїЅпїЅ - пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ
     	return A->second;
-    }else{							// не ключ
-    	B=Keys.upper_bound(frame);  // ищем следующий ключ
-        if (B==Keys.end()){			// если его нет вернем цвет последнего ключа
+    }else{							// пїЅпїЅ пїЅпїЅпїЅпїЅ
+    	B=Keys.upper_bound(frame);  // пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ
+        if (B==Keys.end()){			// пїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ
 	    	B--;
         	return B->second;
         }
-    	A=B;        				// иначе в A занесем предыдущий ключ
+    	A=B;        				// пїЅпїЅпїЅпїЅпїЅ пїЅ A пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ
         A--;
     }
 
     R_ASSERT(Keys.size()>1);
-    // интерполируем цвет
+    // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ
     Fcolor c, c0, c1;
     float a0=(float)A->first;
     float a1=(float)B->first;
@@ -253,7 +253,7 @@ void ELightAnimLibrary::Save()
     FS.update_path	(fn,_game_data_,"lanims.xr");
 
     if (!F.save_to(fn))
-        Log			("!Can't save color animations:",fn);
+        LogInfo("%s", "!Can't save color animations:",fn);
 }
 
 void ELightAnimLibrary::Reload()

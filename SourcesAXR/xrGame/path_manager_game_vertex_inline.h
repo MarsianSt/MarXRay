@@ -1,4 +1,4 @@
-////////////////////////////////////////////////////////////////////////////
+﻿////////////////////////////////////////////////////////////////////////////
 //	Module 		: path_manager_game_vertex_inline.h
 //	Created 	: 05.07.2006
 //  Modified 	: 05.07.2006
@@ -64,7 +64,7 @@ IC	bool CGameVertexPathManager::is_accessible	(const _index_type &vertex_id) con
 	typedef _Parameters::VERTEX_TYPES::const_iterator	const_iterator;
 #ifdef DEBUG
 	if (m_evaluator->m_vertex_types->empty()) {
-		Msg					("! warning : empty vertex types");
+		LogInfo("! warning : empty vertex types");
 	}
 #endif
 	const_iterator			I = m_evaluator->m_vertex_types->begin();

@@ -1,4 +1,4 @@
-////////////////////////////////////////////////////////////////////////////
+п»ї////////////////////////////////////////////////////////////////////////////
 //	Module 		: VisualBulletSystem.cpp
 //	Created 	: 24.01.2026
 //	Modified 	: 05.03.2026
@@ -160,7 +160,7 @@ void CVisualBulletSystem::ReloadShotgun(const bool forced, const bool unload_mod
 
 	if (id >= bullet_bones_sets.size())
 	{
-		Msg("!! [%s] No bone set for ammoType %d (max: %d)", __FUNCTION__, id, bullet_bones_sets.size() - 1);
+		LogInfo("!! [%s] No bone set for ammoType %d (max: %d)", __FUNCTION__, id, bullet_bones_sets.size() - 1);
 		return;
 	}
 
@@ -192,7 +192,7 @@ void CVisualBulletSystem::ReloadShotgun(const bool forced, const bool unload_mod
 		if (bone_id != BI_NONE)
 			m_pWeapon->HudItemData()->set_bone_visible(bone_name, true, TRUE);
 		else
-			Msg("!! [%s] Bone [%s] not found in model for ammoType %d", __FUNCTION__, bone_name, id);
+			LogInfo("!! [%s] Bone [%s] not found in model for ammoType %d", __FUNCTION__, bone_name, id);
 	}
 
 	current_bullet_bones = bones_to_show;
@@ -231,7 +231,7 @@ void CVisualBulletSystem::ReloadWeaponGL(const bool forced, const bool unload_mo
 	if (current_bone_id != BI_NONE)
 		m_pWeapon->HudItemData()->set_bone_visible(grenade_bone_name.c_str(), TRUE, TRUE);
 	else
-		Msg("!! [%s] Grenade bone [%s] not found in model", __FUNCTION__, grenade_bone_name.c_str());
+		LogInfo("!! [%s] Grenade bone [%s] not found in model", __FUNCTION__, grenade_bone_name.c_str());
 
 	current_grenade_bone = grenade_bone_name;
 }
@@ -250,11 +250,11 @@ void CVisualBulletSystem::ReloadRevolver(const bool forced, const bool unload_mo
 
 	if (id >= bullet_bones_sets.size())
 	{
-		Msg("!! [%s] No bone set for ammoType %d (max: %d)", __FUNCTION__, id, bullet_bones_sets.size() - 1);
+		LogInfo("!! [%s] No bone set for ammoType %d (max: %d)", __FUNCTION__, id, bullet_bones_sets.size() - 1);
 		return;
 	}
 
-	// Cкрываем все кости из bullet_bones_in_model
+	// CпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅ bullet_bones_in_model
 	for (u8 i = 0; i < bullet_bones_in_model.size(); i++)
 	{
 		u16 bone_id = m_pWeapon->HudItemData()->m_model->LL_BoneID(bullet_bones_in_model[i].c_str());
@@ -285,7 +285,7 @@ void CVisualBulletSystem::ReloadRevolver(const bool forced, const bool unload_mo
 			m_pWeaponMagazined->HudItemData()->set_bone_visible(bone_name, should_show);
 		}
 		else
-			Msg("!! [%s] Bone [%s] not found in model for ammoType %d", __FUNCTION__, bone_name, id);
+			LogInfo("!! [%s] Bone [%s] not found in model for ammoType %d", __FUNCTION__, bone_name, id);
 	}
 
 	temp = shell_bones_sets[unload_mode ? cur_ammo_type : id].c_str();
@@ -302,7 +302,7 @@ void CVisualBulletSystem::ReloadRevolver(const bool forced, const bool unload_mo
 			m_pWeaponMagazined->HudItemData()->set_bone_visible(bone_name, spring_visible);
 		}
 		else
-			Msg("!! [%s] Bone [%s] not found in model for ammoType %d", __FUNCTION__, bone_name, id);
+			LogInfo("!! [%s] Bone [%s] not found in model for ammoType %d", __FUNCTION__, bone_name, id);
 	}
 }
 
@@ -347,7 +347,7 @@ void CVisualBulletSystem::ReloadMagazined(const bool forced, const bool unload_m
 					m_pWeaponMagazined->HudItemData()->set_bone_visible(bone_name, spring_visible);
 				}
 				else
-					Msg("!! [%s] Bone [%s] not found in model", __FUNCTION__, bone_name);
+					LogInfo("!! [%s] Bone [%s] not found in model", __FUNCTION__, bone_name);
 			}
 		}
 
@@ -366,7 +366,7 @@ void CVisualBulletSystem::ReloadMagazined(const bool forced, const bool unload_m
 					m_pWeaponMagazined->HudItemData()->set_bone_visible(bone_name, feeder_visible);
 				}
 				else
-					Msg("!! [%s] Bone [%s] not found in model", __FUNCTION__, bone_name);
+					LogInfo("!! [%s] Bone [%s] not found in model", __FUNCTION__, bone_name);
 			}
 		}
 	}

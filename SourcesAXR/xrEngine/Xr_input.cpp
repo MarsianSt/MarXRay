@@ -1,4 +1,4 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 
 #include "xr_input.h"
 #include "IInputReceiver.h"
@@ -45,7 +45,7 @@ CInput::CInput						( BOOL bExclusive, int deviceForInit)
 
 	g_exclusive							= !!bExclusive;
 
-	Log("Starting INPUT device...");
+	LogInfo("%s", "Starting INPUT device...");
 
 	pDI 								=	NULL;
 	pMouse								=	NULL;
@@ -142,7 +142,7 @@ HRESULT CInput::CreateInputDevice( LPDIRECTINPUTDEVICE8* device, GUID guidDevice
 #endif // #ifdef INGAME_EDITOR
 	{
 		HRESULT	_hr = (*device)->SetCooperativeLevel( RDEVICE.m_hWnd, dwFlags );
-		if (FAILED(_hr) && (_hr==E_NOTIMPL)) Msg("! INPUT: Can't set coop level. Emulation???");
+		if (FAILED(_hr) && (_hr==E_NOTIMPL)) LogInfo("! INPUT: Can't set coop level. Emulation???");
 		else R_CHK(_hr);
 	}
 
@@ -320,7 +320,7 @@ bool CInput::get_dik_name(int dik, LPSTR dest_str, int dest_sz)
 	int cnt						= WideCharToMultiByte(CP_ACP,0,keyname.wsz,-1,dest_str,dest_sz,NULL,NULL);
 	if(cnt==-1)
 	{
-		Msg("! cant convert dik_name for dik[%d], prop=[%S]", dik, keyname.wsz);
+		LogInfo("! cant convert dik_name for dik[%d], prop=[%S]", dik, keyname.wsz);
 		return					false;
 	}
 	return						(cnt!=-1);

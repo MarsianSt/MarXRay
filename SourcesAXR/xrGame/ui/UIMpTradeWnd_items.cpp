@@ -1,4 +1,4 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 #include "UIMpTradeWnd.h"
 #include "../inventory_item.h"
 #include "../PhysicsShellHolder.h"
@@ -849,15 +849,15 @@ void CUIMpTradeWnd::DumpAllItems(LPCSTR s)
 	std::sort		(m_all_items.begin(), m_all_items.end(), items_sorter());
 
 #ifndef MASTER_GOLD
-	Msg("CUIMpTradeWnd::DumpAllItems.total[%d] reason [%s]", m_all_items.size(), s);
+	LogInfo("CUIMpTradeWnd::DumpAllItems.total[%d] reason [%s]", m_all_items.size(), s);
 	ITEMS_vec_cit it = m_all_items.begin();
 	ITEMS_vec_cit it_e = m_all_items.end();
 	for(;it!=it_e;++it)
 	{
 		SBuyItemInfo* iinfo = *it;
-		Msg("[%s] state[%s]", iinfo->m_name_sect.c_str(), iinfo->GetStateAsText());
+		LogInfo("[%s] state[%s]", iinfo->m_name_sect.c_str(), iinfo->GetStateAsText());
 	}
-	Msg("------");
+	LogInfo("------");
 #endif // #ifndef MASTER_GOLD
 }
 
@@ -868,19 +868,19 @@ void CUIMpTradeWnd::DumpPreset(ETradePreset idx)
 	preset_items::const_iterator it		= v.begin();
 	preset_items::const_iterator it_e	= v.end();
 
-	Msg("dump preset [%d]", idx);
+	LogInfo("dump preset [%d]", idx);
 	for(;it!=it_e;++it)
 	{
 		const _preset_item& _one		= *it;
 
-		Msg("[%s]-[%d]", _one.sect_name.c_str(), _one.count);
+		LogInfo("[%s]-[%d]", _one.sect_name.c_str(), _one.count);
 
 		if(_one.addon_names[0].c_str())
-			Msg("	[%s]",_one.addon_names[0].c_str());
+			LogInfo("	[%s]",_one.addon_names[0].c_str());
 		if(_one.addon_names[1].c_str())
-			Msg("	[%s]",_one.addon_names[1].c_str());
+			LogInfo("	[%s]",_one.addon_names[1].c_str());
 		if(_one.addon_names[2].c_str())
-			Msg("	[%s]",_one.addon_names[2].c_str());
+			LogInfo("	[%s]",_one.addon_names[2].c_str());
 	}
 #endif // #ifndef MASTER_GOLD
 }

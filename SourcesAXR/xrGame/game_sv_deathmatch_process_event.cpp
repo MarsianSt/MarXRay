@@ -1,4 +1,4 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 #include "game_sv_deathmatch.h"
 #include "xrServer.h"
 #include "xrMessages.h"
@@ -21,7 +21,7 @@ void	game_sv_Deathmatch::OnEvent (NET_Packet &P, u16 type, u32 time, ClientID se
 		{
 			xrClientData *l_pC = m_server->ID_to_client(sender);
 #ifdef DEBUG
-			Msg("--- On player [%d] buy finishing...", l_pC->ID);
+			LogInfo("--- On player [%d] buy finishing...", l_pC->ID);
 #endif // #ifdef DEBUG
 			OnPlayerBuyFinished(l_pC->ID, P);
 		}break;

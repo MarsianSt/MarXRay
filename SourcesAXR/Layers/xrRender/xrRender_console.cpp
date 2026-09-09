@@ -609,7 +609,7 @@ public:
 				int		m0		= iFloor(mid)	% 4;
 				int		m1		= (m0+1)		% 4;
 				float	frc		= mid - float(iFloor(mid));
-				Msg		("* material set to [%s]-[%s], with lerp of [%f]",name[m0],name[m1],frc);
+				LogInfo("* material set to [%s]-[%s], with lerp of [%f]",name[m0],name[m1],frc);
 			}
 		}
 	}
@@ -779,27 +779,27 @@ public		:
 
 		dxRenderDeviceRender::Instance().ResourcesGetMemoryUsage( m_base, c_base, m_lmaps, c_lmaps );
 
-		Msg		("memory usage  mb \t \t video    \t managed      \t system \n" );
+		LogInfo("memory usage  mb \t \t video    \t managed      \t system \n" );
 
 		float vb_video		= (float)HW.stats_manager.memory_usage_summary[enum_stats_buffer_type_vertex][D3DPOOL_DEFAULT]/1024/1024;
 		float vb_managed	= (float)HW.stats_manager.memory_usage_summary[enum_stats_buffer_type_vertex][D3DPOOL_MANAGED]/1024/1024;
 		float vb_system		= (float)HW.stats_manager.memory_usage_summary[enum_stats_buffer_type_vertex][D3DPOOL_SYSTEMMEM]/1024/1024;
-		Msg		("vertex buffer      \t \t %f \t %f \t %f ",	vb_video, vb_managed, vb_system);
+		LogInfo("vertex buffer      \t \t %f \t %f \t %f ",	vb_video, vb_managed, vb_system);
 
 		float ib_video		= (float)HW.stats_manager.memory_usage_summary[enum_stats_buffer_type_index][D3DPOOL_DEFAULT]/1024/1024; 
 		float ib_managed	= (float)HW.stats_manager.memory_usage_summary[enum_stats_buffer_type_index][D3DPOOL_MANAGED]/1024/1024; 
 		float ib_system		= (float)HW.stats_manager.memory_usage_summary[enum_stats_buffer_type_index][D3DPOOL_SYSTEMMEM]/1024/1024; 
-		Msg		("index buffer      \t \t %f \t %f \t %f ",	ib_video, ib_managed, ib_system);
+		LogInfo("index buffer      \t \t %f \t %f \t %f ",	ib_video, ib_managed, ib_system);
 		
 		float textures_managed = (float)(m_base+m_lmaps)/1024/1024;
-		Msg		("textures          \t \t %f \t %f \t %f ",	0.f, textures_managed, 0.f);
+		LogInfo("textures          \t \t %f \t %f \t %f ",	0.f, textures_managed, 0.f);
 
 		float rt_video		= (float)HW.stats_manager.memory_usage_summary[enum_stats_buffer_type_rtarget][D3DPOOL_DEFAULT]/1024/1024;
 		float rt_managed	= (float)HW.stats_manager.memory_usage_summary[enum_stats_buffer_type_rtarget][D3DPOOL_MANAGED]/1024/1024;
 		float rt_system		= (float)HW.stats_manager.memory_usage_summary[enum_stats_buffer_type_rtarget][D3DPOOL_SYSTEMMEM]/1024/1024;
-		Msg		("R-Targets         \t \t %f \t %f \t %f ",	rt_video, rt_managed, rt_system);									
+		LogInfo("R-Targets         \t \t %f \t %f \t %f ",	rt_video, rt_managed, rt_system);									
 
-		Msg		("\nTotal             \t \t %f \t %f \t %f ",	vb_video+ib_video+rt_video,
+		LogInfo("\nTotal             \t \t %f \t %f \t %f ",	vb_video+ib_video+rt_video,
 																textures_managed + vb_managed+ib_managed+rt_managed,
 																vb_system+ib_system+rt_system);
 	}
@@ -838,8 +838,8 @@ public:
 		{
 			char	pBuf[256];
 			sprintf_s( pBuf, sizeof(pBuf)/sizeof(pBuf[0]), "float value greater or equal to r2_dof_focus+0.1");
-			Msg("~ Invalid syntax in call to '%s'",cName);
-			Msg("~ Valid arguments: %s", pBuf);
+			LogInfo("~ Invalid syntax in call to '%s'",cName);
+			LogInfo("~ Valid arguments: %s", pBuf);
 			Console->Execute("r2_dof_focus");
 		}
 		else
@@ -868,8 +868,8 @@ public:
 		{
 			char	pBuf[256];
 			sprintf_s( pBuf, sizeof(pBuf)/sizeof(pBuf[0]), "float value less or equal to r2_dof_focus-0.1");
-			Msg("~ Invalid syntax in call to '%s'",cName);
-			Msg("~ Valid arguments: %s", pBuf);
+			LogInfo("~ Invalid syntax in call to '%s'",cName);
+			LogInfo("~ Valid arguments: %s", pBuf);
 			Console->Execute("r2_dof_focus");
 		}
 		else
@@ -898,16 +898,16 @@ public:
 		{
 			char	pBuf[256];
 			sprintf_s( pBuf, sizeof(pBuf)/sizeof(pBuf[0]), "float value less or equal to r2_dof_far-0.1");
-			Msg("~ Invalid syntax in call to '%s'",cName);
-			Msg("~ Valid arguments: %s", pBuf);
+			LogInfo("~ Invalid syntax in call to '%s'",cName);
+			LogInfo("~ Valid arguments: %s", pBuf);
 			Console->Execute("r2_dof_far");
 		}
 		else if (v<ps_r2_dof.x+0.1f)
 		{
 			char	pBuf[256];
 			sprintf_s( pBuf, sizeof(pBuf)/sizeof(pBuf[0]), "float value greater or equal to r2_dof_far-0.1");
-			Msg("~ Invalid syntax in call to '%s'",cName);
-			Msg("~ Valid arguments: %s", pBuf);
+			LogInfo("~ Invalid syntax in call to '%s'",cName);
+			LogInfo("~ Valid arguments: %s", pBuf);
 			Console->Execute("r2_dof_near");
 		}
 		else{
@@ -935,8 +935,8 @@ public:
 		else if ( (v.x > v.y-0.1f) || (v.z < v.y+0.1f))
 		{
 			InvalidSyntax();
-			Msg("x <= y - 0.1");
-			Msg("y <= z - 0.1");
+			LogInfo("x <= y - 0.1");
+			LogInfo("y <= z - 0.1");
 		}
 		else
 		{

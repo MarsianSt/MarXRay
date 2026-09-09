@@ -1,4 +1,4 @@
-#include "stdafx.h"
+п»ї#include "stdafx.h"
 #include "control_path_builder.h"
 #include "control_manager.h"
 #include "BaseMonster/base_monster.h"
@@ -75,7 +75,7 @@ void CControlPathBuilder::update_schedule()
 	if (m_data.enable) {
 		detail().set_path_type				(eDetailPathTypeSmooth);
 
-		// установить direction
+		// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ direction
 		detail().set_use_dest_orientation	(m_data.use_dest_orientation);
 		if (m_data.use_dest_orientation)	detail().set_dest_direction	(m_data.dest_orientation);
 
@@ -133,7 +133,7 @@ bool CControlPathBuilder::build_special(const Fvector &target, u32 node, u32 vel
 	if (!accessible(target)) return false;
 	
 	if (node == u32(-1)) {
-		// нода в прямой видимости?
+		// пїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ?
 		restrictions().add_border(object().Position(), target);
 		node = ai().level_graph().check_position_in_direction(object().ai_location().level_vertex_id(),object().Position(),target);
 		restrictions().remove_border();
@@ -229,7 +229,7 @@ void CControlPathBuilder::fix_position(const Fvector &pos, u32 node, Fvector &re
 		
 #ifdef DEBUG		
 		if (level_vertex_id != node) {
-			Msg		("! src_node[%d] res_node[%d] src_pos[%f,%f,%f] res_pos[%f,%f,%f]",node,level_vertex_id,VPUSH(pos),VPUSH(res_pos));
+			LogInfo("! src_node[%d] res_node[%d] src_pos[%f,%f,%f] res_pos[%f,%f,%f]",node,level_vertex_id,VPUSH(pos),VPUSH(res_pos));
 		}
 		VERIFY3((level_vertex_id == node) || show_restrictions(m_restricted_object),"Invalid restrictions (see log for details) for object ",*(CControl_Com::m_object->cName()));
 #endif

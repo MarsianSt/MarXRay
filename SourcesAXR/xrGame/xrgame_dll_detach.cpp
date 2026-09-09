@@ -47,18 +47,31 @@ void init_game_globals()
 {
 	ZoneScoped;
 
+	LogInfo("[GP] init_game_globals: CreateUIGeom");
 	CreateUIGeom									();
+	LogInfo("[GP] init_game_globals: InitHudSoundSettings");
 	InitHudSoundSettings							();
+	LogInfo("[GP] init_game_globals: CInfoPortion::InitInternal");
 	CInfoPortion::InitInternal					();
+	LogInfo("[GP] init_game_globals: CEncyclopediaArticle::InitInternal");
 	CEncyclopediaArticle::InitInternal			();
+	LogInfo("[GP] init_game_globals: CPhraseDialog::InitInternal");
 	CPhraseDialog::InitInternal					();
+	LogInfo("[GP] init_game_globals: InventoryUtilities::CreateShaders");
 	InventoryUtilities::CreateShaders			();
+	LogInfo("[GP] init_game_globals: CCharacterInfo::InitInternal");
 	CCharacterInfo::InitInternal					();
+	LogInfo("[GP] init_game_globals: CSpecificCharacter::InitInternal");
 	CSpecificCharacter::InitInternal				();
+	LogInfo("[GP] init_game_globals: CHARACTER_COMMUNITY::InitInternal");
 	CHARACTER_COMMUNITY::InitInternal				();
+	LogInfo("[GP] init_game_globals: CHARACTER_RANK::InitInternal");
 	CHARACTER_RANK::InitInternal					();
+	LogInfo("[GP] init_game_globals: CHARACTER_REPUTATION::InitInternal");
 	CHARACTER_REPUTATION::InitInternal				();
+	LogInfo("[GP] init_game_globals: MONSTER_COMMUNITY::InitInternal");
 	MONSTER_COMMUNITY::InitInternal					();
+	LogInfo("[GP] init_game_globals: done");
 }
 
 extern CUIXml*	g_uiSpotXml;
@@ -107,11 +120,11 @@ void clean_game_globals()
 	//static shader for blood
 	CEntityAlive::UnloadBloodyWallmarks				();
 	CEntityAlive::UnloadFireParticles				();
-	//очищение памяти таблицы строк
+	//пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ
 	CStringTable::Destroy							();
-	// Очищение таблицы цветов
+	// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
 	CUIXmlInit::DeleteColorDefs						();
-	// Очищение таблицы идентификаторов рангов и отношений сталкеров
+	// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 	InventoryUtilities::ClearCharacterInfoStrings	();
 
 	xr_delete										(g_sound_collection_storage);

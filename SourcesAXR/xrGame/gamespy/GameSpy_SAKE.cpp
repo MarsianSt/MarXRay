@@ -1,4 +1,4 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 #include "GameSpy_Full.h"
 #include "GameSpy_SAKE.h"
 #include "../MainMenu.h"
@@ -47,7 +47,7 @@ void CGameSpy_SAKE::Init()
 	VERIFY(startup_result == SAKEStartupResult_SUCCESS);
 	if (startup_result != SAKEStartupResult_SUCCESS)
 	{
-		Msg("! GameSpy SAKE: failed to initialize, error code: %d", startup_result);
+		LogInfo("! GameSpy SAKE: failed to initialize, error code: %d", startup_result);
 	}
 }
 

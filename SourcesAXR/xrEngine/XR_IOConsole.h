@@ -162,6 +162,11 @@ protected:
 	
 	bool	is_mark				( Console_mark type );
 	u32		get_mark_color		( Console_mark type );
+	u32		get_level_color		( LPCSTR line );
+
+	// Parse [Level] tag from formatted log line, return pointer past the tag
+	// Returns nullptr if format not recognized
+	static LPCSTR skip_log_prefix	( LPCSTR line );
 
 	void	DrawBackgrounds		( bool bGame );
 	void	DrawRect			( Frect const& r, u32 color );

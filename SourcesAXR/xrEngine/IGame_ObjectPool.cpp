@@ -1,4 +1,4 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 #include "igame_level.h"
 #include "IGame_Persistent.h"
 #include "igame_objectpool.h"
@@ -55,7 +55,7 @@ CObject*	IGame_ObjectPool::create			( LPCSTR	name	)
 	if (!O)
 	{
 		LogStackTrace("");
-		Msg("xrFactory_Create | failed to create %s by clsid %d", name, CLS);
+		LogInfo("xrFactory_Create | failed to create %s by clsid %d", name, CLS);
 		return (0);
 	}
 	O->cNameSect_set	(name);
@@ -103,10 +103,10 @@ void IGame_ObjectPool::prefetch	()
 	u32		p_mem		= Memory.mem_usage() - mem_0;
 	if (p_count){
 		float 	a_time		= float(p_time)/float(p_count);
-		Msg					("* [Object-prefetch] objects: %d",		p_count);
-		Msg					("* [Object-prefetch] time:    %d ms",	iFloor(p_time));
-		Msg					("* [Object-prefetch] memory:  %dKb",	p_mem/1024);
-		Msg					("* [Object-prefetch] average: %2.2f ms, %d bytes", a_time, p_mem/p_count);
+		LogInfo("* [Object-prefetch] objects: %d",		p_count);
+		LogInfo("* [Object-prefetch] time:    %d ms",	iFloor(p_time));
+		LogInfo("* [Object-prefetch] memory:  %dKb",	p_mem/1024);
+		LogInfo("* [Object-prefetch] average: %2.2f ms, %d bytes", a_time, p_mem/p_count);
 	}
 }
 
@@ -130,7 +130,7 @@ CObject*	IGame_ObjectPool::create			( LPCSTR	name	)
 		return				O;
 	} else {
 		// Create and load _new instance
-		// Msg				("! Uncached loading '%s'...",name);
+		// LogInfo("! Uncached loading '%s'...",name);
 		CLASS_ID CLS		=	pSettings->r_clsid		(name,"class");
 		CObject* O			=	(CObject*) NEW_INSTANCE	(CLS);
 		O->Load				(name);

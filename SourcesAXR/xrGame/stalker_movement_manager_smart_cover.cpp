@@ -1,4 +1,4 @@
-////////////////////////////////////////////////////////////////////////////
+﻿////////////////////////////////////////////////////////////////////////////
 //	Module 		: stalker_movement_manager_smart_cover.cpp
 //	Created 	: 27.12.2003
 //	Modified	: 13.02.2008
@@ -110,7 +110,7 @@ void stalker_movement_manager_smart_cover::enter_smart_cover			()
 
 	if ( !m_current.cover() && (m_enter_cover_id != "") && ((m_target.cover_id() != m_enter_cover_id) || (m_target.cover_loophole_id() != m_enter_loophole_id)) ) {
 #ifdef DEBUG
-		Msg								("setting up cover: %s (%s)", m_enter_cover_id.c_str(), m_enter_cover_id.c_str());
+		LogInfo("setting up cover: %s (%s)", m_enter_cover_id.c_str(), m_enter_cover_id.c_str());
 #endif // #ifdef DEBUG
 		m_current.cover_id				(m_enter_cover_id);
 		m_current.cover_loophole_id		(m_enter_loophole_id);
@@ -313,7 +313,7 @@ void stalker_movement_manager_smart_cover::on_smart_cover_exit		()
 	m_animation_selector->finalize		();
 	unbind_global_selector				();
 #ifdef DEBUG
-	Msg									("exiting from cover: %s", m_current.cover_id().c_str());
+	LogInfo("exiting from cover: %s", m_current.cover_id().c_str());
 #endif // #ifdef DEBUG
 	m_current.cover_id					("");
 	inherited::update					(m_current);
@@ -412,7 +412,7 @@ void  stalker_movement_manager_smart_cover::unbind_global_selector							()
 stalker_movement_manager_smart_cover::transition_action const &stalker_movement_manager_smart_cover::current_transition	()
 {
 #ifdef DEBUG
-	Msg						(
+	LogInfo(
 		"m_current_transition guard: [%s][%s] -> [%s][%s], [%d]",
 		m_current.cover() ? m_current.cover()->id().c_str() :			"<world>",
 		m_current.cover() ? m_current.cover_loophole()->id().c_str() :	"<no loophole>",
@@ -460,12 +460,12 @@ void stalker_movement_manager_smart_cover::target_selector					(CScriptCallbackE
 void stalker_movement_manager_smart_cover::target_idle						()
 {
 //	if (!m_current.cover()) {
-//		Msg								("! Cannot set target idle. Bad or absent smart_cover.");
+//		LogInfo("! Cannot set target idle. Bad or absent smart_cover.");
 //		return;
 //	}
 
 //	if (!m_current.cover_loophole()->is_action_available("idle")) {
-//		Msg								("! Cannot set target idle. Loophole has no such action.");
+//		LogInfo("! Cannot set target idle. Loophole has no such action.");
 //		return;
 //	}
 
@@ -475,12 +475,12 @@ void stalker_movement_manager_smart_cover::target_idle						()
 void stalker_movement_manager_smart_cover::target_lookout					()
 {
 //	if (!m_current.cover()) {
-//		Msg								("! Cannot set target lookout. Bad or absent smart_cover.");
+//		LogInfo("! Cannot set target lookout. Bad or absent smart_cover.");
 //		return;
 //	}
 
 //	if (!m_current.cover_loophole()->is_action_available("lookout")) {
-//		Msg								("! Cannot set target lookout. Loophole has no such action.");
+//		LogInfo("! Cannot set target lookout. Loophole has no such action.");
 //		return;
 //	}
 
@@ -490,17 +490,17 @@ void stalker_movement_manager_smart_cover::target_lookout					()
 void stalker_movement_manager_smart_cover::target_fire						()
 {
 //	if (!m_current.cover()) {
-//		Msg								("! Cannot set target fire. Bad or absent smart_cover.");
+//		LogInfo("! Cannot set target fire. Bad or absent smart_cover.");
 //		return;
 //	}
 
 //	if (!m_current.cover_loophole()->is_action_available("fire")) {
-//		Msg								("! Cannot set target fire. Loophole has no such action.");
+//		LogInfo("! Cannot set target fire. Loophole has no such action.");
 //		return;
 //	}
 
 //	if (!enemy_in_fov()) {
-//		Msg								("! Cannot set target fire. Enemy is not in current loophole's fov.");
+//		LogInfo("! Cannot set target fire. Enemy is not in current loophole's fov.");
 //		return;
 //	}
 
@@ -510,12 +510,12 @@ void stalker_movement_manager_smart_cover::target_fire						()
 void stalker_movement_manager_smart_cover::target_fire_no_lookout			()
 {
 //	if (!current_params().cover()) {
-//		Msg								("! Cannot set target fire_no_lookout. Bad or absent smart_cover.");
+//		LogInfo("! Cannot set target fire_no_lookout. Bad or absent smart_cover.");
 //		return;
 //	}
 
 //	if (!current_params().cover_loophole()->is_action_available("fire_no_lookout")) {
-//		Msg								("! Cannot set target fire_no_lookout. Loophole has no such action.");
+//		LogInfo("! Cannot set target fire_no_lookout. Loophole has no such action.");
 //		return;
 //	}
 
@@ -525,12 +525,12 @@ void stalker_movement_manager_smart_cover::target_fire_no_lookout			()
 void stalker_movement_manager_smart_cover::target_default					(bool const& value)
 {
 //	if (!current_params().cover()) {
-//		Msg								("! Cannot set target fire_no_lookout. Bad or absent smart_cover.");
+//		LogInfo("! Cannot set target fire_no_lookout. Bad or absent smart_cover.");
 //		return;
 //	}
 
 //	if (!current_params().cover_loophole()->is_action_available("fire_no_lookout")) {
-//		Msg								("! Cannot set target fire_no_lookout. Loophole has no such action.");
+//		LogInfo("! Cannot set target fire_no_lookout. Loophole has no such action.");
 //		return;
 //	}
 

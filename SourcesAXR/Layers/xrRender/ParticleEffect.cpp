@@ -1,4 +1,4 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 #pragma hdrstop
 
 #include "ParticleEffect.h"
@@ -81,7 +81,7 @@ CParticleEffect::CParticleEffect()
 }
 CParticleEffect::~CParticleEffect()
 {
-	// Log					("--- destroy PE");
+	// LogInfo("%s", "--- destroy PE");
 	OnDeviceDestroy			();
 	ParticleManager()->DestroyEffect		(m_HandleEffect);
 	ParticleManager()->DestroyActionList	(m_HandleActionList);

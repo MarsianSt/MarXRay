@@ -1,4 +1,4 @@
-////////////////////////////////////////////////////////////////////////////
+п»ї////////////////////////////////////////////////////////////////////////////
 //	Module 		: alife_trader_abstract.cpp
 //	Created 	: 27.10.2005
 //  Modified 	: 27.10.2005
@@ -38,9 +38,9 @@ void CSE_ALifeTraderAbstract::spawn_supplies	()
 
 	if(m_SpecificCharacter.size())
 	{
-		//если в custom data объекта есть
-		//секция [dont_spawn_character_supplies]
-		//то не вызывать spawn из selected_char.SupplySpawn()
+		//пїЅпїЅпїЅпїЅ пїЅ custom data пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ
+		//пїЅпїЅпїЅпїЅпїЅпїЅ [dont_spawn_character_supplies]
+		//пїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ spawn пїЅпїЅ selected_char.SupplySpawn()
 		bool specific_character_supply = true;	
 
 		if (xr_strlen(dynamic_object->m_ini_string))
@@ -105,7 +105,7 @@ bool CSE_ALifeTraderAbstract::check_inventory_consistency	()
 
 #ifdef DEBUG
 //	if (psAI_Flags.test(aiALife)) {
-//		Msg						("[LSS] [%s] inventory is consistent [%f][%d]",base()->name_replace(),mass,volume);
+//		LogInfo("[LSS] [%s] inventory is consistent [%f][%d]",base()->name_replace(),mass,volume);
 //	}
 #endif
 
@@ -176,8 +176,8 @@ void add_online_impl						(CSE_ALifeDynamicObject *object, const bool &update_re
 
 #ifdef DEBUG
 //		if (psAI_Flags.test(aiALife))
-//			Msg					("[LSS] Spawning item [%s][%s][%d]",l_tpALifeInventoryItem->base()->name_replace(),*l_tpALifeInventoryItem->base()->s_name,l_tpALifeDynamicObject->ID);
-		Msg						(
+//			LogInfo("[LSS] Spawning item [%s][%s][%d]",l_tpALifeInventoryItem->base()->name_replace(),*l_tpALifeInventoryItem->base()->s_name,l_tpALifeDynamicObject->ID);
+		LogInfo(
 			"[LSS][%d] Going online [%d][%s][%d] with parent [%d][%s] on '%s'",
 			Device.dwFrame,
 			Device.dwTimeGlobal,
@@ -223,8 +223,8 @@ void add_offline_impl						(CSE_ALifeDynamicObject *object, const xr_vector<ALif
 		VERIFY2					(inventory_item,"Non inventory item object has parent?!");
 #ifdef DEBUG
 //		if (psAI_Flags.test(aiALife))
-//			Msg					("[LSS] Destroying item [%s][%s][%d]",inventory_item->base()->name_replace(),*inventory_item->base()->s_name,inventory_item->base()->ID);
-		Msg						(
+//			LogInfo("[LSS] Destroying item [%s][%s][%d]",inventory_item->base()->name_replace(),*inventory_item->base()->s_name,inventory_item->base()->ID);
+		LogInfo(
 			"[LSS][%d] Going offline [%d][%s][%d] with parent [%d][%s] on '%s'",
 			Device.dwFrame,
 			Device.dwTimeGlobal,

@@ -1,4 +1,4 @@
-////////////////////////////////////////////////////////////////////////////
+﻿////////////////////////////////////////////////////////////////////////////
 //	Module 		: game_graph_inline.h
 //	Created 	: 18.02.2003
 //  Modified 	: 13.11.2003
@@ -168,7 +168,7 @@ IC	const GameGraph::SLevel &GameGraph::CHeader::level				(LPCSTR level_name) con
 			return				((*I).second);
 	
 #ifdef DEBUG
-	Msg							("! There is no specified level %s in the game graph!",level_name);
+	LogInfo("! There is no specified level %s in the game graph!",level_name);
 	return						(levels().begin()->second);
 #else
 	R_ASSERT3					(false,"There is no specified level in the game graph!",level_name);

@@ -1,4 +1,4 @@
-#include "pch_script.h"
+п»ї#include "pch_script.h"
 #include "physicobject.h"
 #include "../xrphysics/PhysicsShell.h"
 //#include "Physics.h"
@@ -121,7 +121,7 @@ void		CPhysicObject::play_bones_sound()
 {
 	if(!bones_snd_player)
 	{
-		Msg( "! no sound loaded for obj: %s, model :%s - can not play", cName().c_str(), cNameVisual().c_str() );
+		LogInfo( "! no sound loaded for obj: %s, model :%s - can not play", cName().c_str(), cNameVisual().c_str() );
 		return;
 	}
 	if( is_active( bones_snd_player ) )
@@ -228,7 +228,7 @@ IC	bool check_blend(CBlend * b, LPCSTR name, LPCSTR sect, LPCSTR visual)
 {
 #ifdef	DEBUG
 	if(!b)
-		Msg(" ! can not control anim - model is not animated name[%s] sect[%s] visual[%s]", name, sect, visual);
+		LogInfo(" ! can not control anim - model is not animated name[%s] sect[%s] visual[%s]", name, sect, visual);
 #endif
 	return !!b;
 }
@@ -271,7 +271,7 @@ void	CPhysicObject::		anim_time_set					( float time )
 	if( time < 0.f || time > m_anim_blend->timeTotal )
 	{
 #ifdef	DEBUG	
-		Msg( " ! can not set blend time %f - it must be in range 0 - %f(timeTotal) obj: %s, model: %s, anim: %s", time, m_anim_blend->timeTotal, cName().c_str(), cNameVisual().c_str(), smart_cast<IKinematicsAnimated*>( PPhysicsShell()->PKinematics() )->LL_MotionDefName_dbg( m_anim_blend->motionID ).first );
+		LogInfo( " ! can not set blend time %f - it must be in range 0 - %f(timeTotal) obj: %s, model: %s, anim: %s", time, m_anim_blend->timeTotal, cName().c_str(), cNameVisual().c_str(), smart_cast<IKinematicsAnimated*>( PPhysicsShell()->PKinematics() )->LL_MotionDefName_dbg( m_anim_blend->motionID ).first );
 #endif
 		return;
 	}
@@ -341,8 +341,8 @@ void CPhysicObject::UpdateCL()
 {
 	inherited::UpdateCL();
 
-	//Если наш физический объект анимированный, то 
-	//двигаем объект за анимацией
+	//пїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅ 
+	//пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 	if (m_pPhysicsShell->PPhysicsShellAnimator())
 	{
 		m_pPhysicsShell->AnimatorOnFrame();
@@ -528,7 +528,7 @@ JOINT_P_PAIR_IT		I = l_tpJointMap->begin();
 JOINT_P_PAIR_IT		E = l_tpJointMap->end();
 for ( ; I != E; ++I) {
 (*I).second->joint_method();
-Msg("%s",(*I).first);
+LogInfo("%s",(*I).first);
 }
 
 */
@@ -598,12 +598,12 @@ void CPhysicObject::net_Export_PH_Params(NET_Packet& P, SPHNetState& State, mask
 {
 	//UI().Font().pFontStat->OutSet(100.0f,100.0f);
 	P.w_vec3				(State.force);
-	//Msg("Export State.force.y:%4.6f",State.force.y);
+	//LogInfo("Export State.force.y:%4.6f",State.force.y);
 	P.w_vec3				(State.torque);
 	//UI().Font().pFontStat->OutNext("Export State.torque:%4.6f",State.torque.magnitude());
 	P.w_vec3				(State.position);
-	//Msg("Export State.position.y:%4.6f",State.position.y);
-	//Msg("Export State.enabled:%i",int(State.enabled));
+	//LogInfo("Export State.position.y:%4.6f",State.position.y);
+	//LogInfo("Export State.enabled:%i",int(State.enabled));
 
 	float					magnitude = _sqrt(State.quaternion.magnitude());
 	if (fis_zero(magnitude)) {
@@ -650,11 +650,11 @@ void CPhysicObject::net_Export_PH_Params(NET_Packet& P, SPHNetState& State, mask
 		P.w_float		(State.linear_vel.x);
 		P.w_float		(State.linear_vel.y);
 		P.w_float		(State.linear_vel.z);
-		//Msg("Export State.linear_vel.y:%4.6f",State.linear_vel.y);
+		//LogInfo("Export State.linear_vel.y:%4.6f",State.linear_vel.y);
 	}
 	else
 	{
-		//Msg("Export State.linear_vel.y:%4.6f",0.0f);
+		//LogInfo("Export State.linear_vel.y:%4.6f",0.0f);
 	}
 }
 
@@ -709,7 +709,7 @@ void CPhysicObject::net_Import			(NET_Packet& P)
 	if (!m_activated)
 	{
 #ifdef DEBUG
-		Msg("Activating object [%d] before interpolation starts", ID());		
+		LogInfo("Activating object [%d] before interpolation starts", ID());		
 #endif // #ifdef DEBUG
 		processing_activate();
 		m_activated = true;
@@ -723,11 +723,11 @@ void CPhysicObject::net_Import_PH_Params(NET_Packet& P, net_update_PItem& N, mas
 	//N.State.torque.set			(0.f,0.f,0.f);
 	//UI().Font().pFontStat->OutSet(100.0f,100.0f);
 	P.r_vec3					(N.State.force);
-	//Msg("Import N.State.force.y:%4.6f",N.State.force.y);
+	//LogInfo("Import N.State.force.y:%4.6f",N.State.force.y);
 	P.r_vec3					(N.State.torque);
 
 	P.r_vec3					(N.State.position);
-	//Msg("Import N.State.position.y:%4.6f",N.State.position.y);
+	//LogInfo("Import N.State.position.y:%4.6f",N.State.position.y);
 
 	P.r_float(N.State.quaternion.x);
 	P.r_float(N.State.quaternion.y);
@@ -753,7 +753,7 @@ void CPhysicObject::net_Import_PH_Params(NET_Packet& P, net_update_PItem& N, mas
 	}
 	else
 		N.State.linear_vel.set	(0.f,0.f,0.f);
-	//Msg("Import N.State.linear_vel.y:%4.6f",N.State.linear_vel.y);
+	//LogInfo("Import N.State.linear_vel.y:%4.6f",N.State.linear_vel.y);
 	
 	N.State.previous_position	= N.State.position;
 	N.State.previous_quaternion	= N.State.quaternion;
@@ -839,14 +839,14 @@ void CPhysicObject::Interpolate()
 		{
 
 			float ret_interpolate = interpolate_states(p->NET_IItem.front(), p->NET_IItem.back(), newState);
-			//Msg("Interpolation factor is %0.4f", ret_interpolate);
-			//Msg("Current position is: x = %3.3f, y = %3.3f, z = %3.3f", newState.position.x, newState.position.y, newState.position.z);
+			//LogInfo("Interpolation factor is %0.4f", ret_interpolate);
+			//LogInfo("Current position is: x = %3.3f, y = %3.3f, z = %3.3f", newState.position.x, newState.position.y, newState.position.z);
 			if (ret_interpolate >= 1.f)
 			{
 				p->NET_IItem.pop_front();
 				if (m_activated)
 				{
-					Msg("Deactivating object [%d] after interpolation finish", ID());
+					LogInfo("Deactivating object [%d] after interpolation finish", ID());
 					processing_deactivate();
 					m_activated = false;
 				}

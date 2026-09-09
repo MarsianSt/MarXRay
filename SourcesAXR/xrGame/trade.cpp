@@ -1,4 +1,4 @@
-#include "pch_script.h"
+п»ї#include "pch_script.h"
 #include "trade.h"
 #include "actor.h"
 #include "ai/stalker/ai_stalker.h"
@@ -25,12 +25,12 @@ CTrade::CTrade(CInventoryOwner *p_io)
 
 	m_bNeedToUpdateArtefactTasks = false;
 
-	// Заполнить pThis
+	// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ pThis
 	CAI_Trader *pTrader;
 	CActor *pActor;
 	CAI_Stalker *pStalker;
 
-	// Определяем потомка этого экземпляра класса
+	// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
 	pTrader = smart_cast<CAI_Trader *>(p_io);
 	if (pTrader) 
 		pThis.Set(TT_TRADER, pTrader, p_io);
@@ -56,15 +56,15 @@ void CTrade::RemovePartner()
 {
 	pPartner.Set(TT_NONE,0,0);
 }
-//// предложение торговли
+//// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 //void CTrade::Communicate() 
 //{
-//	// Вывести приветствие
-////	Msg("--TRADE::----------------------------------------------");
-////	Msg("--TRADE::          TRADE ACIVATED                      ");
-////	Msg("--TRADE::----------------------------------------------");
-////	Msg("--TRADE:: - Hello, my name is [%s]", *pThis.base->cName());
-////	Msg("--TRADE::   Wanna trade with me?" );
+//	// пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
+////	LogInfo("--TRADE::----------------------------------------------");
+////	LogInfo("--TRADE::          TRADE ACIVATED                      ");
+////	LogInfo("--TRADE::----------------------------------------------");
+////	LogInfo("--TRADE:: - Hello, my name is [%s]", *pThis.base->cName());
+////	LogInfo("--TRADE::   Wanna trade with me?" );
 //
 //	if (pPartner.inv_owner->GetTrade()->OfferTrade(pThis)) { 
 //		StartTrade();
@@ -98,9 +98,9 @@ bool CTrade::SetPartner(CEntity *p)
 }
 
 
-//// Man предлагает торговать 
-//// возвращает true, если данный trader готов торговать с man
-//// т.е. принятие торговли
+//// Man пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ 
+//// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ true, пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ trader пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ man
+//// пїЅ.пїЅ. пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 //bool CTrade::OfferTrade(SInventoryOwner man)
 //{
 //	StartTrade();
@@ -163,7 +163,7 @@ void CTrade::StopTrade()
 {
 	TradeState = false;
 	m_dwLastTradeTime = 0;
-//	Msg("--TRADE:: [%s]: Trade stopped...",*pThis.base->cName());
+//	LogInfo("--TRADE:: [%s]: Trade stopped...",*pThis.base->cName());
 
 	CAI_Trader* pTrader = NULL;
 	if (pThis.type == TT_TRADER)

@@ -1,4 +1,4 @@
-#pragma once
+п»ї#pragma once
 
 #define CMD0(cls)					{ static cls x##cls();				Console->AddCommand(&x##cls);}
 #define CMD1(cls,p1)				{ static cls x##cls(p1);			Console->AddCommand(&x##cls);}
@@ -6,7 +6,7 @@
 #define CMD3(cls,p1,p2,p3)			{ static cls x##cls(p1,p2,p3);		Console->AddCommand(&x##cls);}
 #define CMD4(cls,p1,p2,p3,p4)		{ static cls x##cls(p1,p2,p3,p4);	Console->AddCommand(&x##cls);}
 
-// FX: Память не высвобождается, использовать на свой страх и риск
+// FX: пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅ
 #define CMD4_X(cls,p1,p2,p3,p4)		{ cls* x##cls = new cls(p1,p2,p3,p4);	Console->AddCommand(x##cls);}
 
 #include "xrSASH.h"
@@ -65,8 +65,8 @@ public		:
 	LPCSTR			Name()			{ return cName;	}
 	void			InvalidSyntax() {
 		TInfo I; Info(I);
-		Msg("~ Invalid syntax in call to '%s'",cName);
-		Msg("~ Valid arguments: %s", I);
+		LogInfo("~ Invalid syntax in call to '%s'",cName);
+		LogInfo("~ Valid arguments: %s", I);
 
 		g_SASH.OnConsoleInvalidSyntax("~ Invalid syntax in call to '%s'",cName, false);
 		g_SASH.OnConsoleInvalidSyntax("~ Valid arguments: %s", I, true);
@@ -143,7 +143,7 @@ public		:
 		value->set(mask,!GetValue());
 		TStatus S;
 		strconcat(sizeof(S),S,cName," is ", value->test(mask)?"on":"off");
-		Log(S);
+		LogInfo("%s", S);
 	}
 	virtual void	Status	(TStatus& S)
 	{	xr_strcpy(S,value->test(mask)?"on":"off"); }

@@ -1,4 +1,4 @@
-////////////////////////////////////////////////////////////////////////////
+﻿////////////////////////////////////////////////////////////////////////////
 //	Module 		: embedded_editor_person_attach.cpp
 //	Created 	: 05.01.2025
 //  Modified 	: 20.07.2025
@@ -199,7 +199,7 @@ void SaveAttachesCfg(LPCSTR parent_section, CWeapon* parent_wpn)
 			.c_str());
 	}
 
-	Msg("[%s] Weapon attaches data saved to %s", __FUNCTION__, fname);
+	LogInfo("[%s] Weapon attaches data saved to %s", __FUNCTION__, fname);
 }
 
 void SaveToFile(CAttachmentOwner* owner)
@@ -481,7 +481,7 @@ void SaveToFile(CAttachmentOwner* owner)
 			.c_str());
 	}
 
-	Msg("[%s] Actor attaches data saved to %s", __FUNCTION__, fname);
+	LogInfo("[%s] Actor attaches data saved to %s", __FUNCTION__, fname);
 }
 
 void ShowPersonAttachEditor(bool& show)

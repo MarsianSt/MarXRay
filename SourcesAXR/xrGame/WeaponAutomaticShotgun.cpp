@@ -1,4 +1,4 @@
-#include "stdafx.h"
+п»ї#include "stdafx.h"
 #include "WeaponAutomaticShotgun.h"
 #include "entity.h"
 #include "ParticlesObject.h"
@@ -64,7 +64,7 @@ bool CWeaponAutomaticShotgun::Action(u16 cmd, u32 flags)
 
 	if(	m_bTriStateReload && GetState()==eReload && !IsMisfire() &&
 		cmd==kWPN_FIRE && flags&CMD_START &&
-		m_sub_state==eSubstateReloadInProcess		)//остановить перезагрузку
+		m_sub_state==eSubstateReloadInProcess		)//пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 	{
 		AddCartridge(1);
 		m_sub_state = eSubstateReloadEnd;
@@ -205,7 +205,7 @@ void CWeaponAutomaticShotgun::switch2_EndReload	()
 	{
 		bMisfire = false;
 
-		if (GetAmmoElapsed() > 0) //xrKrodin: хз, надо ли удалять заклинивший патрон в данном случае. Надо подумать над этим.
+		if (GetAmmoElapsed() > 0) //xrKrodin: пїЅпїЅ, пїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ. пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅ.
 			SetAmmoElapsed(GetAmmoElapsed() - 1);
 
 		SwitchState(eIdle);
@@ -308,7 +308,7 @@ u8 CWeaponAutomaticShotgun::AddCartridge		(u8 cnt)
 
 	VERIFY((u32)iAmmoElapsed == m_magazine.size());
 
-	//выкинуть коробку патронов, если она пустая
+	//пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
 	if(m_pCurrentAmmo && !m_pCurrentAmmo->m_boxCurr && OnServer()) 
 		m_pCurrentAmmo->SetDropManual(TRUE);
 
@@ -337,7 +337,7 @@ void	CWeaponAutomaticShotgun::net_Import	(NET_Packet& P)
 		CCartridge& l_cartridge = *(m_magazine.begin()+i);
 		if (LocalAmmoType == l_cartridge.m_LocalAmmoType) continue;
 #ifdef DEBUG
-		Msg("! %s reload to %s", *l_cartridge.m_ammoSect, m_ammoTypes[LocalAmmoType].c_str());
+		LogInfo("! %s reload to %s", *l_cartridge.m_ammoSect, m_ammoTypes[LocalAmmoType].c_str());
 #endif
 		l_cartridge.Load( m_ammoTypes[LocalAmmoType].c_str(), LocalAmmoType );
 	}

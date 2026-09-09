@@ -1,4 +1,4 @@
-////////////////////////////////////////////////////////////////////////////
+﻿////////////////////////////////////////////////////////////////////////////
 //	Module 		: aimers_base.cpp
 //	Created 	: 04.04.2008
 //  Modified 	: 08.04.2008
@@ -58,7 +58,7 @@ void base::aim_at_position		(
 	)
 {
 #if 0
-	Msg									(
+	LogInfo(
 		"[%d][%s] bone_position[%f][%f][%f] object_position[%f][%f][%f] object_direction[%f][%f][%f]",
 		Device.dwFrame,
 		m_animated.LL_MotionDefName_dbg(m_animation_id).first,

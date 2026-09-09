@@ -1,4 +1,4 @@
-// Copyright (c) 2004 Daniel Wallin
+﻿// Copyright (c) 2004 Daniel Wallin
 
 // Permission is hereby granted, free of charge, to any person obtaining a
 // copy of this software and associated documentation files (the "Software"),
@@ -225,7 +225,7 @@ namespace luabind { namespace detail {
     {
         // class is already registered
 		if (m_classes.find(info) != m_classes.end())
-			Msg("*FATAL*: you are trying to register a class twice [%s]", crep->name()); //To XRay Log
+			LogInfo("*FATAL*: you are trying to register a class twice [%s]", crep->name()); //To XRay Log
 
         assert((m_classes.find(info) == m_classes.end()) && "you are trying to register a class twice");
         m_classes[info] = crep;

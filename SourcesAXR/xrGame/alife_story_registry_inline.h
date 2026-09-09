@@ -1,4 +1,4 @@
-////////////////////////////////////////////////////////////////////////////
+﻿////////////////////////////////////////////////////////////////////////////
 //	Module 		: alife_story_registry_inline.h
 //	Created 	: 02.06.2004
 //  Modified 	: 02.06.2004
@@ -16,7 +16,7 @@ IC	void CALifeStoryRegistry::remove					(ALife::_STORY_ID id, bool no_assert)
 	ALife::STORY_P_PAIR_IT	I = m_objects.find(id);
 	if (I == m_objects.end()) {
 		if (!no_assert) {
-			Msg				("Cannot find story object with id [%d] in the Story registry!",id);
+			LogInfo("Cannot find story object with id [%d] in the Story registry!",id);
 			THROW			(false);
 		}
 		return;
@@ -37,7 +37,7 @@ IC	CSE_ALifeDynamicObject *CALifeStoryRegistry::object	(ALife::_STORY_ID id, boo
 	STORY_REGISTRY::const_iterator	I = m_objects.find(id);
 	if (I == m_objects.end()) {
 		if (!no_assert) {
-			Msg				("Cannot find story object with id [%d] in the Story registry!",id);
+			LogInfo("Cannot find story object with id [%d] in the Story registry!",id);
 			THROW			(false);
 		}
 		return				(0);

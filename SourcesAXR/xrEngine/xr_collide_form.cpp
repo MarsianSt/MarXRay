@@ -1,4 +1,4 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 #include "igame_level.h"
 #include "xr_collide_form.h"
 #include "xr_object.h"
@@ -158,12 +158,12 @@ void CCF_Skeleton::BuildState()
 				bool b						= I->b_IM.invert_b	(TW);
 				// check matrix validity
 				if (!b)	{
-					Msg						("! ERROR: invalid bone xform . Bone disabled.");
-					Msg						("! ERROR: bone_id=[%d], world_pos[%f,%f,%f]",I->elem_id,VPUSH(TW.c));
-					Msg						("visual name %s",owner->cNameVisual().c_str());
-					Msg						("object name %s",owner->cName().c_str());
+					LogInfo("! ERROR: invalid bone xform . Bone disabled.");
+					LogInfo("! ERROR: bone_id=[%d], world_pos[%f,%f,%f]",I->elem_id,VPUSH(TW.c));
+					LogInfo("visual name %s",owner->cNameVisual().c_str());
+					LogInfo("object name %s",owner->cName().c_str());
 #ifdef DEBUG
-					Msg						( dbg_object_full_dump_string( owner ).c_str() );
+					LogInfo( dbg_object_full_dump_string( owner ).c_str() );
 #endif //#ifdef DEBUG
 					I->elem_id				= u16(-1);				//. hack - disable invalid bone
 				}

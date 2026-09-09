@@ -250,34 +250,54 @@ int __stdcall GetLimitModulesArray ( HMODULE * pahMod , UINT uiSize )
 
 LONG __stdcall CrashHandlerExceptionFilter (EXCEPTION_POINTERS* pExPtrs)
 {
+    HANDLE hFile = CreateFileA("E:\\XRay-engine\\game\\crash_debug.txt", GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+    if (hFile != INVALID_HANDLE_VALUE) {
+        char buf[512];
+        wsprintf(buf, "CrashHandlerExceptionFilter called! code=0x%08X addr=0x%p\n", pExPtrs->ExceptionRecord->ExceptionCode, pExPtrs->ExceptionRecord->ExceptionAddress);
+        DWORD written;
+        WriteFile(hFile, buf, strlen(buf), &written, NULL);
+        CloseHandle(hFile);
+    }
     LONG lRet = EXCEPTION_CONTINUE_SEARCH ;
 
-    // If the exception is an EXCEPTION_STACK_OVERFLOW, there isn't much
-    // you can do because the stack is blown. If you try to do anything,
-    // the odds are great that you'll just double-fault and bomb right
-    // out of your exception filter. Although I don't recommend doing so,
-    // you could play some games with the stack register and
-    // manipulate it so that you could regain enough space to run these
-    // functions. Of course, if you did change the stack register, you'd
-    // have problems walking the stack.
-    // I take the safe route and make some calls to OutputDebugString here.
-    // I still might double-fault, but because OutputDebugString does very
-    // little on the stack (something like 8-16 bytes), it's worth a
-    // shot. You can have your users download Mark Russinovich's
-    // DebugView/Enterprise Edition (www.sysinternals.com) so they can
-    // at least tell you what they see.
-    // The only problem is that I can't even be sure there's enough
-    // room on the stack to convert the instruction pointer.
-    // Fortunately, EXCEPTION_STACK_OVERFLOW doesn't happen very often.
-
-    // Note that I still call your crash handler. I'm doing the logging
-    // work here in case the blown stack kills your crash handler.
     if ( EXCEPTION_STACK_OVERFLOW ==
                               pExPtrs->ExceptionRecord->ExceptionCode )
     {
         OutputDebugString ( "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n" ) ;
         OutputDebugString ( "EXCEPTION_STACK_OVERFLOW occurred\n" ) ;
         OutputDebugString ( "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n" ) ;
+    }
+
+    DWORD code = pExPtrs->ExceptionRecord->ExceptionCode;
+    void* addr = pExPtrs->ExceptionRecord->ExceptionAddress;
+    char buf[1024];
+    wsprintf(buf, "====== CRASH: 0x%08X at 0x%p PID=%lu TID=%lu ======\r\n", code, addr, GetCurrentProcessId(), GetCurrentThreadId());
+    OutputDebugString(buf);
+
+    if (code == EXCEPTION_ACCESS_VIOLATION && pExPtrs->ExceptionRecord->NumberParameters >= 2)
+    {
+        ULONG_PTR readWrite = pExPtrs->ExceptionRecord->ExceptionInformation[0];
+        ULONG_PTR faultAddr = pExPtrs->ExceptionRecord->ExceptionInformation[1];
+        wsprintf(buf, "AV: %s at 0x%p\r\n",
+            readWrite == 0 ? "READ" : (readWrite == 1 ? "WRITE" : "DEP"),
+            (void*)faultAddr);
+        OutputDebugString(buf);
+    }
+
+    MEMORYSTATUSEX memInfo;
+    memInfo.dwLength = sizeof(memInfo);
+    if (GlobalMemoryStatusEx(&memInfo))
+    {
+        wsprintf(buf, "RAM: %llu MB total, %llu MB free (%lu%%)\r\n",
+            memInfo.ullTotalPhys / (1024*1024), memInfo.ullAvailPhys / (1024*1024), memInfo.dwMemoryLoad);
+        OutputDebugString(buf);
+    }
+
+    PROCESS_MEMORY_COUNTERS_EX pmc;
+    if (GetProcessMemoryInfo(GetCurrentProcess(), (PROCESS_MEMORY_COUNTERS*)&pmc, sizeof(pmc)))
+    {
+        wsprintf(buf, "Process: WS=%llu MB Private=%llu MB\r\n", pmc.WorkingSetSize/(1024*1024), pmc.PrivateUsage/(1024*1024));
+        OutputDebugString(buf);
     }
 
     __try

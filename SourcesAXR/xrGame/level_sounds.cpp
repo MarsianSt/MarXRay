@@ -1,4 +1,4 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 #pragma hdrstop
 
 #include "level.h"
@@ -167,7 +167,7 @@ void CLevelSoundManager::Load()
 			LPCSTR music_sect		= gameLtx.r_string(Level().name(),"music_tracks");
 			if (music_sect && music_sect[0]){
 #ifdef DEBUG
-				Msg("- Loading music tracks from '%s'...",music_sect);
+				LogInfo("- Loading music tracks from '%s'...",music_sect);
 #endif // #ifdef DEBUG
 				CInifile::Sect&	S	= gameLtx.r_section	(music_sect);
 				CInifile::SectCIt it	= S.Data.begin(), end = S.Data.end();
@@ -232,7 +232,7 @@ void CLevelSoundManager::Update()
 				SMusicTrack& T	= m_MusicTracks[m_CurrentTrack];
 				T.Play			();
 #ifdef DEBUG
-				Log				("- Play music track:",T.m_DbgName.c_str());
+				LogInfo("%s", "- Play music track:",T.m_DbgName.c_str());
 #endif
 			}else{
 				m_NextTrackTime	= engine_time+10000; // next check after 10 sec

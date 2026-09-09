@@ -1,4 +1,4 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 #include "xrServer.h"
 #include "xrserver_objects.h"
 
@@ -29,7 +29,7 @@ CSE_Abstract* xrServer::Process_spawn(NET_Packet& P, ClientID sender, BOOL bSpaw
 			)
 		{
 #ifndef MASTER_GOLD
-			Msg			("- SERVER: Entity [%s] incompatible with current game type.",*E->s_name);
+			LogInfo("- SERVER: Entity [%s] incompatible with current game type.",*E->s_name);
 #endif // #ifndef MASTER_GOLD
 			F_entity_Destroy(E);
 			return			NULL;
@@ -158,7 +158,7 @@ CSE_Abstract* xrServer::Process_spawn(NET_Packet& P, ClientID sender, BOOL bSpaw
 	};
 
 	// log
-	//Msg		("- SERVER: Spawning '%s'(%d,%d,%d) as #%d, on '%s'", E->s_name_replace, E->g_team(), E->g_squad(), E->g_group(), E->ID, CL?CL->Name:"*SERVER*");
+	//LogInfo("- SERVER: Spawning '%s'(%d,%d,%d) as #%d, on '%s'", E->s_name_replace, E->g_team(), E->g_squad(), E->g_group(), E->ID, CL?CL->Name:"*SERVER*");
 	return E;
 }
 

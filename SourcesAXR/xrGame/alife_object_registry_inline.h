@@ -1,5 +1,5 @@
-////////////////////////////////////////////////////////////////////////////
-//	Module 		: alife_object_registry_øòäøòó.h
+ï»¿////////////////////////////////////////////////////////////////////////////
+//	Module 		: alife_object_registry_ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½.h
 //	Created 	: 15.01.2003
 //  Modified 	: 12.05.2004
 //	Author		: Dmitriy Iassenev
@@ -37,7 +37,7 @@ IC	CSE_ALifeDynamicObject *CALifeObjectRegistry::object	(const ALife::_OBJECT_ID
 	if (objects().end() == I) {
 #ifdef DEBUG
 		if (!no_assert)
-			Msg					("There is no object with id %d!",id);
+			LogInfo("There is no object with id %d!",id);
 #endif
 		THROW2					(no_assert,"Specified object hasn't been found in the object registry!");
 		return					(0);

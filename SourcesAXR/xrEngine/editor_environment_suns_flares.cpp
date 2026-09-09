@@ -1,4 +1,4 @@
-////////////////////////////////////////////////////////////////////////////
+﻿////////////////////////////////////////////////////////////////////////////
 //	Module 		: editor_environment_suns_flares.cpp
 //	Created 	: 26.01.2008
 //  Modified 	: 26.01.2008
@@ -77,7 +77,7 @@ void flares::load	(CInifile& config, shared_str const& section)
 	u32						max_string_count= _max(_max(_max(flare_opacity.size(), flare_position.size()), flare_radius.size()), flare_textures.size()) + 1;
 
 	if (min_flare_count != max_flare_count)
-		Msg					("! flare count for sun [%s] is setup incorrectly. only %d flares are correct", section.c_str(), min_flare_count);
+		LogInfo("! flare count for sun [%s] is setup incorrectly. only %d flares are correct", section.c_str(), min_flare_count);
 
 	u32 const buffer_size	= max_string_count*sizeof(char);
 	LPSTR					result = (LPSTR)_alloca(buffer_size);

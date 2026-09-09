@@ -1,4 +1,4 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 
 #ifdef USE_MEMORY_MONITOR
 #	include <time.h>
@@ -147,9 +147,9 @@ void memory_monitor::make_checkpoint	(LPCSTR checkpoint_name)
 	string_path				fn;
 	strconcat				(sizeof(fn),fn,output_folder,checkpoint_name,output_extension);
 
-	Msg						("Creating memory checkpoint file[%s]...", fn);
+	LogInfo("Creating memory checkpoint file[%s]...", fn);
 	CopyFile				(file_name(),fn,FALSE);
-	Msg						("Done");
+	LogInfo("Done");
 }
 
 #endif // USE_MEMORY_MONITOR

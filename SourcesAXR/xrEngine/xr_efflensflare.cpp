@@ -297,7 +297,7 @@ void CLensFlare::OnFrame(shared_str id)
         }
     break;
     }
-//	Msg				("%6d : [%s] -> [%s]", Device.dwFrame, state_to_string(previous_state), state_to_string(m_State));
+//	LogInfo("%6d : [%s] -> [%s]", Device.dwFrame, state_to_string(previous_state), state_to_string(m_State));
     clamp(m_StateBlend,0.f,1.f);
 
     if ((m_Current==0)||(LightColor.magnitude_rgb()==0.f)){bRender=false; return;}

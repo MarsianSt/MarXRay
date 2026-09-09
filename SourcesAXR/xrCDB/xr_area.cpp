@@ -1,4 +1,4 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 //#include "igame_level.h"
 
 #include "xr_area.h"
@@ -112,7 +112,7 @@ void CObjectSpace::Load(LPCSTR path, LPCSTR fname,
 	CDB::deserialize_callback deserialize_callback)
 {
 #ifdef USE_ARENA_ALLOCATOR
-	Msg( "CObjectSpace::Load, g_collision_allocator.get_allocated_size() - %d", int(g_collision_allocator.get_allocated_size()/1024.0/1024) );
+	LogInfo( "CObjectSpace::Load, g_collision_allocator.get_allocated_size() - %d", int(g_collision_allocator.get_allocated_size()/1024.0/1024) );
 #endif // #ifdef USE_ARENA_ALLOCATOR
 	IReader *F					= FS.r_open	(path, fname);
 	R_ASSERT					(F);
@@ -155,13 +155,13 @@ void CObjectSpace::Create(Fvector* verts, CDB::TRI* tris, const hdrCFORM& H,
 	if (bUseCache && FS.exist(fName) && Static.deserialize(fName, checkCrc32, deserialize_callback))
 	{
 #ifndef MASTER_GOLD
-		Msg("* Loaded ObjectSpace cache (%s)...", fName);
+		LogInfo("* Loaded ObjectSpace cache (%s)...", fName);
 #endif
 	}
 	else
 	{
 #ifndef MASTER_GOLD
-		Msg("* ObjectSpace cache for '%s' was not loaded. "
+		LogInfo("* ObjectSpace cache for '%s' was not loaded. "
 			"Building the model from scratch..", fName);
 #endif
 		Static.build(verts, H.vertcount, tris, H.facecount, build_callback);

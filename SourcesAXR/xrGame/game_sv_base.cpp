@@ -1,4 +1,4 @@
-#include "stdafx.h"
+п»ї#include "stdafx.h"
 #include "LevelGameDef.h"
 #include "script_process.h"
 #include "xrServer_Objects_ALife_Monsters.h"
@@ -513,7 +513,7 @@ void	game_sv_GameState::assign_RP				(CSE_Abstract* E, game_PlayerState* ps_who)
 	{
 		l_uc_team = tpSpectator->g_team();
 #ifdef DEBUG
-		Msg("--- game_sv_GameState RPoint for Spectators uses team [%d]", l_uc_team);
+		LogInfo("--- game_sv_GameState RPoint for Spectators uses team [%d]", l_uc_team);
 #endif // #ifdef DEBUG
 	} else
 	{
@@ -522,7 +522,7 @@ void	game_sv_GameState::assign_RP				(CSE_Abstract* E, game_PlayerState* ps_who)
 		{
 			l_uc_team = tpTeamed->g_team();
 #ifdef DEBUG
-		Msg("--- game_sv_GameState RPoint for AlifeCreature uses team [%d]", l_uc_team);
+		LogInfo("--- game_sv_GameState RPoint for AlifeCreature uses team [%d]", l_uc_team);
 #endif // #ifdef DEBUG
 		} else
 		{
@@ -534,7 +534,7 @@ void	game_sv_GameState::assign_RP				(CSE_Abstract* E, game_PlayerState* ps_who)
 	
 	xr_vector<RPoint>&	rp	= rpoints[l_uc_team];
 #ifdef DEBUG
-	Msg("---Size of rpoints of team [%d] is [%d]", l_uc_team, rp.size());
+	LogInfo("---Size of rpoints of team [%d] is [%d]", l_uc_team, rp.size());
 #endif
 	//-----------------------------------------------------------
 	xr_vector<u32>	xrp;//	= rpoints[l_uc_team];
@@ -561,7 +561,7 @@ void	game_sv_GameState::assign_RP				(CSE_Abstract* E, game_PlayerState* ps_who)
 	}
 	//-----------------------------------------------------------
 #ifdef DEBUG
-	Msg("--- Result rpoint is [%d]", rpoint);
+	LogInfo("--- Result rpoint is [%d]", rpoint);
 #endif // #ifdef DEBUG
 	RPoint&				r	= rp[rpoint];
 	if (!tpSpectator)
@@ -921,7 +921,7 @@ public:
 	}
 	bool __stdcall PredicateForAll(GameEvent* const ge)
 	{
-		Msg("- Erasing [%d] event before start.", ge->type);
+		LogInfo("- Erasing [%d] event before start.", ge->type);
 		return true;
 	}
 
@@ -951,7 +951,7 @@ public:
 	{
 		if (ge && (ge->sender == m_client_id))
 		{
-			Msg("- Erasing event for not valid client [0x%08x]", m_client_id.value());
+			LogInfo("- Erasing event for not valid client [0x%08x]", m_client_id.value());
 			return true;
 		}
 		return false;
@@ -1026,20 +1026,20 @@ void game_sv_GameState::MapRotation_ListMaps	()
 {
 	if (m_pMapRotation_List.empty())
 	{
-		Msg ("- Currently there are no any maps in list.");
+		LogInfo("- Currently there are no any maps in list.");
 		return;
 	}
 	CStringTable st;
-	Msg("- ----------- Maps ---------------");
+	LogInfo("- ----------- Maps ---------------");
 	for (u32 i=0; i<m_pMapRotation_List.size(); i++)
 	{
 		SMapRot& R = m_pMapRotation_List[i];
 		if (i==0)
-			Msg("~   %d. %s (%s) (current)", i+1, st.translate(R.map_name).c_str(), R.map_name.c_str());
+			LogInfo("~   %d. %s (%s) (current)", i+1, st.translate(R.map_name).c_str(), R.map_name.c_str());
 		else
-			Msg("  %d. %s (%s)", i+1, st.translate(R.map_name).c_str(), R.map_name.c_str());
+			LogInfo("  %d. %s (%s)", i+1, st.translate(R.map_name).c_str(), R.map_name.c_str());
 	}
-	Msg("- --------------------------------");
+	LogInfo("- --------------------------------");
 };
 
 void game_sv_GameState::OnRoundStart			()
@@ -1056,7 +1056,7 @@ void game_sv_GameState::OnRoundStart			()
 		}
 	};
 	rpointsBlocked.clear			();
-}// старт раунда
+}// пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
 
 void game_sv_GameState::OnRoundEnd()
 { 
@@ -1074,7 +1074,7 @@ void game_sv_GameState::OnRoundEnd()
 	{
 		m_bFastRestart = true;
 	}
-}// конец раунда
+}// пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
 
 void game_sv_GameState::SaveMapList				()
 {

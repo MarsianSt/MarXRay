@@ -1,4 +1,4 @@
-// Portal.cpp: implementation of the CPortal class.
+﻿// Portal.cpp: implementation of the CPortal class.
 //
 //////////////////////////////////////////////////////////////////////
 
@@ -198,7 +198,7 @@ void CSector::traverse			(CFrustum &F, _scissor& R_scissor)
 				if (t.y > bb.max.y) bb.max.y	= t.y;
 				if (t.z < depth)	depth		= t.z;
 			}
-			// Msg	("bb(%s): (%f,%f)-(%f,%f), d=%f", PORTAL->bDualRender?"true":"false",bb.min.x, bb.min.y, bb.max.x, bb.max.y,depth);
+			// LogInfo("bb(%s): (%f,%f)-(%f,%f), d=%f", PORTAL->bDualRender?"true":"false",bb.min.x, bb.min.y, bb.max.x, bb.max.y,depth);
 			if (depth<EPS)	{
 				scissor	= R_scissor;
 
@@ -215,7 +215,7 @@ void CSector::traverse			(CFrustum &F, _scissor& R_scissor)
 				if (bb.max.y < R_scissor.max.y) scissor.max.y = bb.max.y; else scissor.max.y = R_scissor.max.y;
 				scissor.depth	= depth;
 
-				// Msg	("scissor: (%f,%f)-(%f,%f)", scissor.min.x, scissor.min.y, scissor.max.x, scissor.max.y);
+				// LogInfo("scissor: (%f,%f)-(%f,%f)", scissor.min.x, scissor.min.y, scissor.max.x, scissor.max.y);
 				// Check if box is non-empty
 				if (scissor.min.x >= scissor.max.x)	continue;
 				if (scissor.min.y >= scissor.max.y)	continue;

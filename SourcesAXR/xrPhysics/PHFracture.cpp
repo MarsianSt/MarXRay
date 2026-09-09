@@ -1,4 +1,4 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 #include "PHFracture.h"
 #include "Physics.h"
 #include "PHElement.h"
@@ -554,7 +554,7 @@ bool CPHFracture::Update(CPHElement* element)
 #endif
 	}
 #ifdef DBG_BREAK
-Msg("bone_id %d break_torque - %f(max %f) break_force %f (max %f) breaked %d",m_bone_id,btm_dbg,m_break_torque,bfm,m_break_force,m_breaked);
+LogInfo("bone_id %d break_torque - %f(max %f) break_force %f (max %f) breaked %d",m_bone_id,btm_dbg,m_break_torque,bfm,m_break_force,m_breaked);
 #endif
 	return m_breaked;
 }

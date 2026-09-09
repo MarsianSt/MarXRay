@@ -1,4 +1,4 @@
-// BlenderDefault.cpp: implementation of the CBlender_BmmD class.
+﻿// BlenderDefault.cpp: implementation of the CBlender_BmmD class.
 //
 //////////////////////////////////////////////////////////////////////
 
@@ -91,7 +91,7 @@ void	CBlender_BmmD::Compile	(CBlender_Compile& C)
 	{
 		if (C.L_textures.size()<2)
 		{
-			Msg("! xrRender_R1: WARNING! Not enought textures for shader, base tex: %s", *C.L_textures[0]);
+			LogInfo("! xrRender_R1: WARNING! Not enought textures for shader, base tex: %s", *C.L_textures[0]);
 			//Debrovski: using VERY noticeable placeholder-texture
 			C.L_textures.emplace_back("$shadertest");
 			C.L_textures.emplace_back("$shadertest");

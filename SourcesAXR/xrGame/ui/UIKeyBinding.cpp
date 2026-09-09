@@ -1,4 +1,4 @@
-#include "StdAfx.h"
+﻿#include "StdAfx.h"
 #include "UIKeyBinding.h"
 #include "UIXmlInit.h"
 #include "xrUIXmlParser.h"
@@ -70,7 +70,7 @@ void CUIKeyBinding::FillUpList(CUIXml& xml_doc_ui, LPCSTR path_ui)
 #ifdef DEBUG
 			if ( kNOTBINDED == action_name_to_id(*exe) )
 			{
-				Msg("action [%s] not exist. update data",exe.c_str());
+				LogInfo("action [%s] not exist. update data",exe.c_str());
 				continue;
 			}
 #endif

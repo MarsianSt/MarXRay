@@ -1,4 +1,4 @@
-// DetailManager.cpp: implementation of the CDetailManager class.
+﻿// DetailManager.cpp: implementation of the CDetailManager class.
 //
 //////////////////////////////////////////////////////////////////////
 
@@ -181,7 +181,7 @@ void dump	(CDetailManager::vis_list& lst)
 {
 	for (int i=0; i<lst.size(); i++)
 	{
-		Msg("%8x / %8x / %8x",	lst[i]._M_start, lst[i]._M_finish, lst[i]._M_end_of_storage._M_data);
+		LogInfo("%8x / %8x / %8x",	lst[i]._M_start, lst[i]._M_finish, lst[i]._M_end_of_storage._M_data);
 	}
 }
 */

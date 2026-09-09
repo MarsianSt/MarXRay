@@ -30,7 +30,7 @@ void	CSoundRender_Core::i_start		(CSoundRender_Emitter* E)
 		if (T->get_emitter())
 		{
 #ifdef DEBUG
-			Msg("[xrSound] : increasing max_targets to %u", s_targets.size() + 1);
+			LogInfo("[xrSound] : increasing max_targets to %u", s_targets.size() + 1);
 #endif
 			CSoundRender_Target* T2 = xr_new<CSoundRender_TargetA>();
 			if (T2->_initialize())
@@ -41,7 +41,7 @@ void	CSoundRender_Core::i_start		(CSoundRender_Emitter* E)
 			else
 			{
 #ifdef DEBUG
-				Msg("[xrSound] : can't increase max_targets from %u", s_targets.size());
+				LogInfo("[xrSound] : can't increase max_targets from %u", s_targets.size());
 #endif
 				T2->_destroy();
 				xr_delete(T2);
@@ -65,7 +65,7 @@ void	CSoundRender_Core::i_start		(CSoundRender_Emitter* E)
 
 void	CSoundRender_Core::i_stop		(CSoundRender_Emitter* E)
 {
-	// Msg					("- %10s : %3d[%1.4f] : %s","i_stop",E->dbg_ID,E->priority(),E->source->fname);
+	// LogInfo("- %10s : %3d[%1.4f] : %s","i_stop",E->dbg_ID,E->priority(),E->source->fname);
 	R_ASSERT			(E);
 	R_ASSERT			(E == E->target->get_emitter());
 	E->target->stop		();
@@ -74,7 +74,7 @@ void	CSoundRender_Core::i_stop		(CSoundRender_Emitter* E)
 
 void	CSoundRender_Core::i_rewind		(CSoundRender_Emitter* E)
 {
-	// Msg					("- %10s : %3d[%1.4f] : %s","i_rewind",E->dbg_ID,E->priority(),E->source->fname);
+	// LogInfo("- %10s : %3d[%1.4f] : %s","i_rewind",E->dbg_ID,E->priority(),E->source->fname);
 	R_ASSERT			(E);
 	R_ASSERT			(E == E->target->get_emitter());
 	E->target->rewind	();

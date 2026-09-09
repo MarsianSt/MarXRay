@@ -1,4 +1,4 @@
-////////////////////////////////////////////////////////////////////////////
+﻿////////////////////////////////////////////////////////////////////////////
 //	Module 		: alife_object_registry.cpp
 //	Created 	: 15.01.2003
 //  Modified 	: 12.05.2004
@@ -59,7 +59,7 @@ void CALifeObjectRegistry::save				(IWriter &memory_stream, CSE_ALifeDynamicObje
 
 void CALifeObjectRegistry::save				(IWriter &memory_stream)
 {
-	Msg							("* Saving objects...");
+	LogInfo("* Saving objects...");
 	memory_stream.open_chunk	(OBJECT_CHUNK_DATA);
 
 	u32							position = memory_stream.tell();
@@ -88,7 +88,7 @@ void CALifeObjectRegistry::save				(IWriter &memory_stream)
 
 	memory_stream.close_chunk	();
 	
-	Msg							("* %d objects are successfully saved",object_count);
+	LogInfo("* %d objects are successfully saved",object_count);
 }
 
 CSE_ALifeDynamicObject *CALifeObjectRegistry::get_object		(IReader &file_stream)
@@ -105,7 +105,7 @@ CSE_ALifeDynamicObject *CALifeObjectRegistry::get_object		(IReader &file_stream)
 	tNetPacket.r_stringZ	(s_name);
 #ifdef DEBUG
 	if (psAI_Flags.test(aiALife)) {
-		Msg					("Loading object %s [%d]b", s_name, tNetPacket.B.count);
+		LogInfo("Loading object %s [%d]b", s_name, tNetPacket.B.count);
 	}
 #endif
 	// create entity
@@ -127,7 +127,7 @@ CSE_ALifeDynamicObject *CALifeObjectRegistry::get_object		(IReader &file_stream)
 
 void CALifeObjectRegistry::load				(IReader &file_stream)
 { 
-	Msg							("* Loading objects...");
+	LogInfo("* Loading objects...");
 	R_ASSERT2					(file_stream.find_chunk(OBJECT_CHUNK_DATA),"Can't find chunk OBJECT_CHUNK_DATA!");
 
 	m_objects.clear				();
@@ -142,5 +142,5 @@ void CALifeObjectRegistry::load				(IReader &file_stream)
 		add						(*I);
 	}
 
-	Msg							("* %d objects are successfully loaded",count);
+	LogInfo("* %d objects are successfully loaded",count);
 }

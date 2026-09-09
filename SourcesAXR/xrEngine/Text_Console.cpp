@@ -1,4 +1,4 @@
-#include "stdafx.h"
+ï»¿#include "stdafx.h"
 #include "Text_Console.h"
 #include "line_editor.h"
 
@@ -187,7 +187,7 @@ void CTextConsole::Destroy()
 	DestroyWindow( m_hConsoleWnd );
 }
 
-void CTextConsole::OnRender() {} //disable ÑConsole::OnRender()
+void CTextConsole::OnRender() {} //disable ï¿½Console::OnRender()
 
 void CTextConsole::OnPaint()
 {
@@ -216,7 +216,7 @@ void CTextConsole::OnPaint()
 			wRC.left, wRC.top,
 			SRCCOPY); //(FullUpdate) ? SRCCOPY : NOTSRCCOPY);
 /*
-	Msg ("URect - %d:%d - %d:%d", ps.rcPaint.left, ps.rcPaint.top, ps.rcPaint.right, ps.rcPaint.bottom);
+	LogInfo("URect - %d:%d - %d:%d", ps.rcPaint.left, ps.rcPaint.top, ps.rcPaint.right, ps.rcPaint.bottom);
 */
 	EndPaint( m_hLogWnd, &ps );
 }
@@ -288,13 +288,13 @@ void CTextConsole::DrawLog( HDC hDC, RECT* pRect )
 		{
 			continue;
 		}
-		Console_mark cm = (Console_mark)ls[0];
-		COLORREF     c2 = (COLORREF)bgr2rgb( get_mark_color( cm ) );
+		// Skip Debug messages in console
+		if ( strstr(ls, "[Debug]") )
+			continue;
+		COLORREF c2 = (COLORREF)bgr2rgb( get_level_color( ls ) );
 		SetTextColor( hDC, c2 );
-		u8 b = (is_mark( cm ))? 2 : 0;
-		LPCSTR pOut = ls + b;
 
-		BOOL res = TextOut( hDC, 10, ypos, pOut, xr_strlen(pOut) );
+		BOOL res = TextOut( hDC, 10, ypos, ls, xr_strlen(ls) );
 		if ( !res )
 		{
 			R_ASSERT2( 0, "TextOut(..) return NULL" );

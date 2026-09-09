@@ -1,4 +1,4 @@
-////////////////////////////////////////////////////////////////////////////
+﻿////////////////////////////////////////////////////////////////////////////
 //	Module 		: alife_storage_manager.cpp
 //	Created 	: 25.12.2002
 //  Modified 	: 12.05.2004
@@ -51,7 +51,7 @@ void CALifeStorageManager::save	(LPCSTR save_name_no_check, bool update_name)
 	}
 	else {
 		if (!xr_strlen(m_save_name)) {
-			Log					("There is no file name specified!");
+			LogInfo("%s", "There is no file name specified!");
 			return;
 		}
 	}
@@ -87,9 +87,9 @@ void CALifeStorageManager::save	(LPCSTR save_name_no_check, bool update_name)
 	xr_free						(dest_data);
 	FS.w_close					(writer);
 #ifdef DEBUG
-	Msg							("* Game %s is successfully saved to file '%s' (%d bytes compressed to %d)",m_save_name,temp,source_count,dest_count + 4);
+	LogInfo("* Game %s is successfully saved to file '%s' (%d bytes compressed to %d)",m_save_name,temp,source_count,dest_count + 4);
 #else // DEBUG
-	Msg							("* Game %s is successfully saved to file '%s'",m_save_name,temp);
+	LogInfo("* Game %s is successfully saved to file '%s'",m_save_name,temp);
 #endif // DEBUG
 
 	if (!update_name)
@@ -161,7 +161,7 @@ bool CALifeStorageManager::load	(LPCSTR save_name_no_check)
 	IReader						*stream;
 	stream						= FS.r_open(file_name);
 	if (!stream) {
-		Msg						("* Cannot find saved game %s",file_name);
+		LogInfo("* Cannot find saved game %s",file_name);
 		xr_strcpy				(m_save_name,save);
 		return					(false);
 	}
@@ -187,7 +187,7 @@ bool CALifeStorageManager::load	(LPCSTR save_name_no_check)
 
 	VERIFY						(graph().actor());
 	
-	Msg							("* Game %s is successfully loaded from file '%s' (%.3fs)",save_name, file_name,timer.GetElapsed_sec());
+	LogInfo("* Game %s is successfully loaded from file '%s' (%.3fs)",save_name, file_name,timer.GetElapsed_sec());
 
 	return						(true);
 }

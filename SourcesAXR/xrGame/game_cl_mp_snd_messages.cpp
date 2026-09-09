@@ -1,4 +1,4 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 #include "game_cl_mp.h"
 #include "game_cl_mp_snd_messages.h"
 #include "Level.h"
@@ -80,7 +80,7 @@ void	game_cl_mp::PlaySndMessage			(u32 ID)
 #ifdef DEBUG
 	if (MaxDelay>0) 
 	{
-		Msg("- SndMsgDelay - %d", MaxDelay);
+		LogInfo("- SndMsgDelay - %d", MaxDelay);
 	};
 #endif
 	

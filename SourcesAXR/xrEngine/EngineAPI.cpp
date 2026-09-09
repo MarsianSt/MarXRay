@@ -1,18 +1,15 @@
-// EngineAPI.cpp: implementation of the CEngineAPI class.
+﻿// EngineAPI.cpp: implementation of the CEngineAPI class.
 //
 //////////////////////////////////////////////////////////////////////
 
 #include "stdafx.h"
 #include "EngineAPI.h"
 #include "../xrcdb/xrXRC.h"
-#include "../Layers/xrAPI/xrGameManager.h"
 #include "../../xrEngine/XR_IOConsole.h"
 
 extern xr_vector<xr_token> vid_quality_token;
 
-constexpr const char* r1_name = "xrRender_R1";
-constexpr const char* r2_name = "xrRender_R2";
-constexpr const char* r4_name = "xrRender_R4";
+constexpr const char* bgfx_name = "xrRenderBGFX";
 
 //////////////////////////////////////////////////////////////////////
 // Construction/Destruction
@@ -48,74 +45,20 @@ ENGINE_API bool is_enough_address_space_available	()
 
 void CEngineAPI::InitializeRenderer()
 {
-	// If we failed to load render,
-	// then try to fallback to lower one.
-
-	if (psDeviceFlags.test(rsR4))
-	{
-		// try to initialize R4
-		Log				("Loading DLL:",	r4_name);
-		hRender			= LoadLibrary		(r4_name);
-		if (0==hRender)	
-		{
-			// try to load R1
-			Msg			("! ...Failed - incompatible hardware/pre-Vista OS.");
-			psDeviceFlags.set(rsR2, true);
-		}
-		else
-			g_current_renderer = 4;
-	}
-
-	if (psDeviceFlags.test(rsR2))	
-	{
-		// try to initialize R2
-		Log				("Loading DLL:",	r2_name);
-		hRender			= LoadLibrary		(r2_name);
-		if (0==hRender)	
-		{
-			// try to load R1
-			Msg			("! ...Failed - incompatible hardware.");
-			psDeviceFlags.set(rsR1, true);
-		}
-		else
-			g_current_renderer	= 2;
-	}
-
-	if (psDeviceFlags.test(rsR1))
-	{
-		// try to load R1
-		renderer_value = 0; //con cmd
-
-		Log("Loading DLL:", r1_name);
-		hRender = LoadLibrary(r1_name);
-		if (0 == hRender)
-		{
-			// try to load R1
-			Msg("! ...Failed - incompatible hardware.");
-		}
-		else
-			g_current_renderer = 1;
-	}
+	LogInfo("%s", "Loading DLL:", bgfx_name);
+	hRender = LoadLibrary(bgfx_name);
+	if (0 == hRender)
+		LogInfo("! ...Failed - incompatible hardware.");
+	else
+		g_current_renderer = renderer_value;
 }
 
 void CEngineAPI::Initialize(void)
 {
 	//////////////////////////////////////////////////////////////////////////
 	// render
+	renderer_value = 6; // force bgfx
 	InitializeRenderer();
-
-	if (0 == hRender && vid_quality_token[0].id != -1)
-	{
-		// if engine failed to load renderer
-		// but there is at least one available
-		// then try again
-		string32 buf;
-		xr_sprintf(buf, "renderer %s", vid_quality_token[0].name);
-		Console->Execute(buf);
-
-		// Second attempt
-		InitializeRenderer();
-	}
 
 	if (0 == hRender)
 		R_CHK(GetLastError());
@@ -126,26 +69,8 @@ void CEngineAPI::Initialize(void)
 
 	// game	
 	{
-		LPCSTR			g_name = "";
-		switch (xrGameManager::GetGame())
-		{
-		case EGame::COP:
-			{
-				g_name = "xrGame.dll";
-
-			} break;
-			case EGame::CS:
-			{
-				g_name = "xrGameCS.dll";
-
-			} break;
-			case EGame::SHOC:
-			{
-				g_name = "xrGameSoC.dll";
-
-			} break;
-		}
-		Log				("Loading DLL:",g_name);
+		LPCSTR			g_name = "xrGame.dll";
+		LogInfo("%s", "Loading DLL:",g_name);
 		hGame			= LoadLibrary	(g_name);
 		if (0==hGame)	R_CHK			(GetLastError());
 		R_ASSERT2		(hGame,"Game DLL raised exception during loading or there is no game DLL at all");
@@ -158,7 +83,7 @@ void CEngineAPI::Initialize(void)
 	tune_enabled		= FALSE;
 	if (strstr(Core.Params,"-tune"))	{
 		LPCSTR			g_name	= "vTuneAPI.dll";
-		Log				("Loading DLL:",g_name);
+		LogInfo("%s", "Loading DLL:",g_name);
 		hTuner			= LoadLibrary	(g_name);
 		if (0==hTuner)	R_CHK			(GetLastError());
 		R_ASSERT2		(hTuner,"Intel vTune is not installed");
@@ -178,10 +103,14 @@ void CEngineAPI::Destroy	(void)
 	XRC.r_clear_compact		();
 }
 
+void CEngineAPI::SwitchRenderer()
+{
+	// bgfx-only build, no switching
+	LogInfo("Renderer switching not supported in bgfx-only build");
+}
+
 extern "C" {
-	typedef bool __cdecl SupportsAdvancedRendering	(void);
-	typedef bool _declspec(dllexport) SupportsDX10Rendering();
-	typedef bool _declspec(dllexport) SupportsDX11Rendering();
+	typedef bool _declspec(dllexport) SupportsVulkanRendering();
 };
 
 void CEngineAPI::CreateRendererList()
@@ -193,51 +122,27 @@ void CEngineAPI::CreateRendererList()
 
 	xr_vector<xr_token> modes;
 
-	// try to initialize R1
-	Log("Loading DLL:", r1_name);
-	hRender = LoadLibrary(r1_name);
-	if (hRender)
-	{
-		modes.emplace_back(xr_token("renderer_r1", 0));
-		FreeLibrary(hRender);
-	}
-
-	// try to initialize R2
-	Log("Loading DLL:", r2_name);
-	hRender = LoadLibrary(r2_name);
-	if (hRender)
-	{
-		modes.push_back(xr_token("renderer_r2a", 1));
-		modes.emplace_back(xr_token("renderer_r2", 2));
-		SupportsAdvancedRendering *test_rendering = (SupportsAdvancedRendering*)GetProcAddress(hRender, "SupportsAdvancedRendering");
-		if (test_rendering && test_rendering())
-			modes.emplace_back(xr_token("renderer_r2.5", 3));
-		FreeLibrary(hRender);
-	}
-
-	// try to initialize R4
-	Log("Loading DLL:", r4_name);
-	//	Hide "d3d10 not found" message box for XP
+	// try to initialize BGFX
+	LogInfo("%s", "Loading DLL:", bgfx_name);
 	SetErrorMode(SEM_FAILCRITICALERRORS);
-	hRender = LoadLibrary(r4_name);
-	//	Restore error handling
+	hRender = LoadLibrary(bgfx_name);
 	SetErrorMode(0);
 	if (hRender)
 	{
-		SupportsDX11Rendering *test_dx11_rendering = (SupportsDX11Rendering*)GetProcAddress(hRender, "SupportsDX11Rendering");
-		if (test_dx11_rendering && test_dx11_rendering())
-			modes.emplace_back(xr_token("renderer_r4", 5));
+		SupportsVulkanRendering *test_vk_rendering = (SupportsVulkanRendering*)GetProcAddress(hRender, "SupportsVulkanRendering");
+		if (test_vk_rendering && test_vk_rendering())
+			modes.emplace_back(xr_token("renderer_bgfx", 6));
 		FreeLibrary(hRender);
 	}
 
-	modes.emplace_back(xr_token(nullptr, -1));
-
 	hRender = nullptr;
 
-	Msg("Available render modes[%d]:", modes.size());
+	modes.emplace_back(xr_token(nullptr, -1));
+
+	LogInfo(R"(Available render modes[%d]:)", modes.size());
 	for (auto& mode : modes)
 		if (mode.name)
-			Log(mode.name);
+			LogInfo("%s", mode.name);
 
 	vid_quality_token = std::move(modes);
 }

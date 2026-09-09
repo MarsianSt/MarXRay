@@ -1,4 +1,4 @@
-////////////////////////////////////////////////////////////////////////////
+﻿////////////////////////////////////////////////////////////////////////////
 //	Module 		: UIInvUpgradeProperty.cpp
 //	Created 	: 22.11.2007
 //  Modified 	: 13.03.2009
@@ -180,7 +180,7 @@ void UIInvUpgPropertiesWnd::init_from_xml( LPCSTR xml_name )
 		property_id._set( (*ib).first );
 		if ( !ui_property->init_property( property_id ) )
 		{
-			Msg( "! Invalid property <%s> in inventory upgrade manager!", property_id );
+			LogInfo( "! Invalid property <%s> in inventory upgrade manager!", property_id );
 			xr_delete(ui_property);
 			continue;
 		}

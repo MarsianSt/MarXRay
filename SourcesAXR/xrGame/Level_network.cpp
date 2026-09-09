@@ -1,4 +1,4 @@
-#include "pch_script.h"
+﻿#include "pch_script.h"
 #include "Level.h"
 #include "Level_Bullet_Manager.h"
 #include "xrserver.h"
@@ -32,7 +32,7 @@ void CLevel::remove_objects	()
 {
 	m_is_removing_objects = true;
 
-	if (!IsGameTypeSingle()) Msg("CLevel::remove_objects - Start");
+	if (!IsGameTypeSingle()) LogInfo("CLevel::remove_objects - Start");
 	BOOL						b_stored = psDeviceFlags.test(rsDisableObjectsAsCrows);
 	
 	int loop = 5;
@@ -59,7 +59,7 @@ void CLevel::remove_objects	()
 			ProcessGameEvents		();
 			Objects.Update			(false);
 			#ifdef DEBUG
-			Msg						("Update objects list...");
+			LogInfo("Update objects list...");
 			#endif // #ifdef DEBUG
 			Objects.dump_all_objects();
 		}
@@ -69,7 +69,7 @@ void CLevel::remove_objects	()
 		else
 		{
 			--loop;
-			Msg						("Objects removal next loop. Active objects count=%d", Objects.o_count());
+			LogInfo("Objects removal next loop. Active objects count=%d", Objects.o_count());
 		}
 
 	}
@@ -107,7 +107,7 @@ void CLevel::remove_objects	()
 	
 //.	xr_delete									(m_seniority_hierarchy_holder);
 //.	m_seniority_hierarchy_holder				= xr_new<CSeniorityHierarchyHolder>();
-	if (!IsGameTypeSingle()) Msg("CLevel::remove_objects - End");
+	if (!IsGameTypeSingle()) LogInfo("CLevel::remove_objects - End");
 
 	m_is_removing_objects = false;
 }
@@ -121,7 +121,7 @@ extern CUISequencer * g_tutorial2;
 
 void CLevel::net_Stop		()
 {
-	Msg							("- Disconnect");
+	LogInfo("- Disconnect");
 
 	if(CurrentGameUI())
 	{
@@ -137,6 +137,7 @@ void CLevel::net_Stop		()
 
 	bReady						= false;
 	m_bGameConfigStarted		= FALSE;
+	m_bGameSpecificAfterPending	= FALSE;
 
 	if (m_file_transfer)
 		xr_delete(m_file_transfer);
@@ -240,15 +241,15 @@ u32	CLevel::Objects_net_Save	(NET_Packet* _Packet, u32 start, u32 max_object_siz
 	for (; start<Objects.o_count(); start++)	{
 		CObject		*_P = Objects.o_get_by_iterator(start);
 		CGameObject *P = smart_cast<CGameObject*>(_P);
-//		Msg			("save:iterating:%d:%s, size[%d]",P->ID(),*P->cName(), Packet.w_tell() );
+//		LogInfo("save:iterating:%d:%s, size[%d]",P->ID(),*P->cName(), Packet.w_tell() );
 		if (P && !P->getDestroy() && P->net_SaveRelevant())	{
 			Packet.w_u16			(u16(P->ID())	);
 			Packet.w_chunk_open16	(position);
-//			Msg						("save:saving:%d:%s",P->ID(),*P->cName());
+//			LogInfo("save:saving:%d:%s",P->ID(),*P->cName());
 			P->net_Save				(Packet);
 #ifdef DEBUG
 			u32 size				= u32		(Packet.w_tell()-position)-sizeof(u16);
-//			Msg						("save:saved:%d bytes:%d:%s",size,P->ID(),*P->cName());
+//			LogInfo("save:saved:%d bytes:%d:%s",size,P->ID(),*P->cName());
 			if				(size>=65536)			{
 				Debug.fatal	(DEBUG_INFO,"Object [%s][%d] exceed network-data limit\n size=%d, Pend=%d, Pstart=%d",
 					*P->cName(), P->ID(), size, Packet.w_tell(), position);
@@ -384,7 +385,7 @@ BOOL			CLevel::Connect2Server				(LPCSTR options)
 		}
 		//-----------------------------------------
 	}
-	Msg							("%c client : connection %s - <%s>", m_bConnectResult ?'*':'!', m_bConnectResult ? "accepted" : "rejected", m_sConnectResult.c_str());
+	LogInfo("%c client : connection %s - <%s>", m_bConnectResult ?'*':'!', m_bConnectResult ? "accepted" : "rejected", m_sConnectResult.c_str());
 	if		(!m_bConnectResult) 
 	{
 		if(Server)
@@ -414,8 +415,8 @@ BOOL			CLevel::Connect2Server				(LPCSTR options)
 	};
 
 	//---------------------------------------------------------------------------
-	//P.w_begin	(M_CLIENT_REQUEST_CONNECTION_DATA);
-	//Send		(P, net_flags(TRUE, TRUE, TRUE, TRUE));
+	P.w_begin	(M_CLIENT_REQUEST_CONNECTION_DATA);
+	Send		(P, net_flags(TRUE, TRUE, TRUE, TRUE));
 	//---------------------------------------------------------------------------
 	return TRUE;
 };
@@ -426,7 +427,7 @@ void			CLevel::OnBuildVersionChallenge		()
 	P.w_begin				(M_CL_AUTH);
 #ifdef USE_DEBUG_AUTH
 	u64 auth = MP_DEBUG_AUTH;
-	Msg("* Sending auth value ...");
+	LogInfo("* Sending auth value ...");
 #else
 	u64 auth = FS.auth_get();
 #endif //#ifdef DEBUG
@@ -535,7 +536,7 @@ void			CLevel::ClearAllObjects				()
 			ParentFound = true;
 			//-------------------------------------------------------------
 #ifdef DEBUG
-			Msg ("Rejection of %s[%d] from %s[%d]", *(pObj->cNameSect()), pObj->ID(), *(pObj->H_Parent()->cNameSect()), pObj->H_Parent()->ID());
+			LogInfo("Rejection of %s[%d] from %s[%d]", *(pObj->cNameSect()), pObj->ID(), *(pObj->H_Parent()->cNameSect()), pObj->H_Parent()->ID());
 #endif
 		};
 		ProcessGameEvents();
@@ -553,7 +554,7 @@ void			CLevel::ClearAllObjects				()
 				FATAL("pObj->H_Parent()==NULL");
 			} else
 			{
-				Msg("! ERROR: object's parent is not NULL");
+				LogInfo("! ERROR: object's parent is not NULL");
 			}
 		}
 		
@@ -570,7 +571,7 @@ void			CLevel::ClearAllObjects				()
 		ParentFound = true;
 		//-------------------------------------------------------------
 #ifdef DEBUG
-		Msg ("Destruction of %s[%d]", *(pObj->cNameSect()), pObj->ID());
+		LogInfo("Destruction of %s[%d]", *(pObj->cNameSect()), pObj->ID());
 #endif
 	};
 	ProcessGameEvents();

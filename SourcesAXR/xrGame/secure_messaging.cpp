@@ -1,4 +1,4 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 #include "secure_messaging.h"
 
 namespace secure_messaging
@@ -39,7 +39,7 @@ u32 const	generate_key	(s32 const seed, key_t& result_key)
 #endif
 	}
 #ifdef DEBUG
-	Msg("* next key generated (seed=0x%08x):%s", seed, tmp_str);
+	LogInfo("* next key generated (seed=0x%08x):%s", seed, tmp_str);
 #endif
 	return result_key.m_key_length;
 }

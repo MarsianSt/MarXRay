@@ -1,4 +1,4 @@
-#include "stdafx.h"
+п»ї#include "stdafx.h"
 
 #include "ActorEffector.h"
 #include "PostprocessAnimator.h"
@@ -41,7 +41,7 @@ void AddEffector(CActor* A, int type, const shared_str& sect_name)
 	int cam_index = 1;
 	bool random_cam_mode = READ_IF_EXISTS(pSettings, r_bool, sect_name, "random_cam_effects", false);
 
-	// Обычный режим
+	// пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ
 	if (!random_cam_mode)
 	{
 		while (true)
@@ -76,7 +76,7 @@ void AddEffector(CActor* A, int type, const shared_str& sect_name)
 			cam_index++;
 		}
 	}
-	else // Режим рандомного запуска камеры
+	else // пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
 	{
 		xr_vector<shared_str> available_effects{};
 
@@ -156,7 +156,7 @@ void AddEffector(CActor* A, int type, const shared_str& sect_name, CEffectorCont
 	int cam_index = 1;
 	bool random_cam_mode = READ_IF_EXISTS(pSettings, r_bool, sect_name, "random_cam_effects", false);
 
-	// Обычный режим
+	// пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ
 	if (!random_cam_mode)
 	{
 		while (true)
@@ -191,7 +191,7 @@ void AddEffector(CActor* A, int type, const shared_str& sect_name, CEffectorCont
 			cam_index++;
 		}
 	}
-	else // Режим рандомного запуска камеры
+	else // пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
 	{
 		xr_vector<shared_str> available_effects{};
 
@@ -272,7 +272,7 @@ void AddEffector(CActor* A, int type, const shared_str& sect_name, GET_KOEFF_FUN
 	int cam_index = 1;
 	bool random_cam_mode = READ_IF_EXISTS(pSettings, r_bool, sect_name, "random_cam_effects", false);
 
-	// Обычный режим
+	// пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ
 	if (!random_cam_mode)
 	{
 		while (true)
@@ -308,7 +308,7 @@ void AddEffector(CActor* A, int type, const shared_str& sect_name, GET_KOEFF_FUN
 			cam_index++;
 		}
 	}
-	else // Режим рандомного запуска камеры
+	else // пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
 	{
 		xr_vector<shared_str> available_effects{};
 
@@ -415,7 +415,7 @@ void AddEffector(CActor* A, int type, const shared_str& sect_name, float factor)
 	int cam_index = 1;
 	bool random_cam_mode = READ_IF_EXISTS(pSettings, r_bool, sect_name, "random_cam_effects", false);
 
-	// Обычный режим
+	// пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ
 	if (!random_cam_mode)
 	{
 		while (true)
@@ -454,7 +454,7 @@ void AddEffector(CActor* A, int type, const shared_str& sect_name, float factor)
 			cam_index++;
 		}
 	}
-	else // Режим рандомного запуска камеры
+	else // пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
 	{
 		xr_vector<shared_str> available_effects{};
 
@@ -570,7 +570,7 @@ void AddEffectorEditor(CActor* A, int type, const shared_str& sect_name, float f
 	int cam_index = 1;
 	bool random_cam_mode = eff->random_cam_effects;
 
-	// Обычный режим
+	// пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ
 	if (!random_cam_mode)
 	{
 		while (true)
@@ -604,7 +604,7 @@ void AddEffectorEditor(CActor* A, int type, const shared_str& sect_name, float f
 			cam_index++;
 		}
 	}
-	else // Режим рандомного запуска камеры
+	else // пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
 	{
 		xr_vector<shared_str> available_effects{};
 
@@ -715,7 +715,7 @@ BOOL CAnimatorCamEffector::ProcessCam(SCamEffectorInfo& info, float m_fFactorMod
 		Mdef.k						= info.d;
 		Mdef.i.crossproduct			(info.n, info.d);
 		Mdef.c						= info.p;
-//		Msg("fr[%d] %2.3f,%2.3f,%2.3f", Device.dwFrame,m.c.x,m.c.y,m.c.z);
+//		LogInfo("fr[%d] %2.3f,%2.3f,%2.3f", Device.dwFrame,m.c.x,m.c.y,m.c.z);
 		Fmatrix mr;
 		mr.mul						(Mdef,m);
 		info.d						= mr.k;
@@ -937,7 +937,7 @@ BOOL CControllerPsyHitCamEffector::ProcessCam(SCamEffectorInfo& info, float m_fF
 	
 	//////////////////////////////////////////////////////////////////////////
 
-	// Установить углы смещения
+	// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 	Fmatrix		R;
 	if (m_time_current > m_time_total) 
 		R.identity	();

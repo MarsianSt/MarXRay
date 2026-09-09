@@ -1,4 +1,4 @@
-////////////////////////////////////////////////////////////////////////////
+﻿////////////////////////////////////////////////////////////////////////////
 //	Module 		: space_restriction_manager.cpp
 //	Created 	: 17.08.2004
 //  Modified 	: 27.08.2004
@@ -36,15 +36,15 @@ void show_restriction				(const shared_str &restrictions)
 {
 	string256						temp;
 	for (int i=0, n=_GetItemCount(*restrictions); i<n; ++i)
-		Msg							("     %s",_GetItem(*restrictions,i,temp));
+		LogInfo("     %s",_GetItem(*restrictions,i,temp));
 }
 
 typedef intrusive_ptr<CSpaceRestriction,RestrictionSpace::CTimeIntrusiveBase> CRestrictionPtr;
 void show_restriction				(const CRestrictionPtr &restriction)
 {
-	Msg								("out");
+	LogInfo("out");
 	show_restriction				(restriction->out_restrictions());
-	Msg								("in");
+	LogInfo("in");
 	show_restriction				(restriction->in_restrictions());
 }
 

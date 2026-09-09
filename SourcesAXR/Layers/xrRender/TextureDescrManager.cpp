@@ -1,4 +1,4 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 #pragma hdrstop
 #include "TextureDescrManager.h"
 #include "ETextureParams.h"
@@ -127,7 +127,7 @@ void CTextureDescrMngr::LoadTHM(LPCSTR initial)
 	}
 
 #ifdef DEBUG
-	Msg						("count of .thm files=%d", flist.size());
+	LogInfo("count of .thm files=%d", flist.size());
 #endif // #ifdef DEBUG
 	FS_FileSetIt It			= flist.begin();
 	FS_FileSetIt It_e		= flist.end();
@@ -211,7 +211,7 @@ void CTextureDescrMngr::LoadTHM()
 		}
 	}
 
-	Msg						("count of .thm files=%d", flist.size());
+	LogInfo("count of .thm files=%d", flist.size());
 	FS_FileSetIt It			= flist.begin();
 	FS_FileSetIt It_e		= flist.end();
 	STextureParams			tp;
@@ -299,7 +299,7 @@ void CTextureDescrMngr::Load()
 	}
 
 #ifdef DEBUG
-	Msg("load time=%d ms",TT.GetElapsed_ms());
+	LogInfo("load time=%d ms",TT.GetElapsed_ms());
 #endif // #ifdef DEBUG
 }
 

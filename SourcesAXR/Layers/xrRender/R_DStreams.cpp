@@ -1,4 +1,4 @@
-#include "stdafx.h"
+п»ї#include "stdafx.h"
 #pragma hdrstop
 
 #include "ResourceManager.h"
@@ -9,7 +9,7 @@
 // Construction/Destruction
 //////////////////////////////////////////////////////////////////////
 
-int		rsDVB_Size			= 4096; // Фикс вылета (bytes_need<=mSize) && vl_Count 
+int		rsDVB_Size			= 4096; // пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ (bytes_need<=mSize) && vl_Count 
 int		rsDIB_Size			= 512;
 
 void _VertexStream::Create	()
@@ -38,7 +38,7 @@ void _VertexStream::Create	()
 	mPosition				= 0;
 	mDiscardID				= 0;
 
-	Msg("* DVB created: %dK", mSize/1024);
+	LogInfo("* DVB created: %dK", mSize/1024);
 }
 
 void _VertexStream::Destroy	()
@@ -55,7 +55,7 @@ void* _VertexStream::Lock	( u32 vl_Count, u32 Stride, u32& vOffset )
 #endif
 
 #ifdef DEBUG
-	PGO					(Msg("PGO:VB_LOCK:%d",vl_Count));
+	PGO					(LogInfo("PGO:VB_LOCK:%d",vl_Count));
 	VERIFY				(0==dbg_lock);
 	dbg_lock			++;
 #endif
@@ -85,7 +85,7 @@ void* _VertexStream::Lock	( u32 vl_Count, u32 Stride, u32& vOffset )
 		HRESULT res = pVB->Lock( mPosition, bytes_need, (void**)&pData, LOCKFLAGS_FLUSH);
 
 		if( res != D3D_OK )
-			Msg( " pVB->Lock - failed: res = %d,mPosition = %d, bytes_need = %d, &pData = %x, LOCKFLAGS_FLUSH", res, mPosition, bytes_need, (void**)&pData );
+			LogInfo( " pVB->Lock - failed: res = %d,mPosition = %d, bytes_need = %d, &pData = %x, LOCKFLAGS_FLUSH", res, mPosition, bytes_need, (void**)&pData );
 
 #endif	//	USE_DX11
 	} else {
@@ -101,7 +101,7 @@ void* _VertexStream::Lock	( u32 vl_Count, u32 Stride, u32& vOffset )
 		HRESULT res = pVB->Lock			( mPosition, bytes_need, (void**)&pData, LOCKFLAGS_APPEND);
 		
 		if( res != D3D_OK )
-			Msg( " pVB->Lock - failed: res = %d,mPosition = %d, bytes_need = %d, &pData = %x, LOCKFLAGS_APPEND", res, mPosition, bytes_need, (void**)&pData );
+			LogInfo( " pVB->Lock - failed: res = %d,mPosition = %d, bytes_need = %d, &pData = %x, LOCKFLAGS_APPEND", res, mPosition, bytes_need, (void**)&pData );
 
 #endif	//	USE_DX11
 	}
@@ -113,7 +113,7 @@ void* _VertexStream::Lock	( u32 vl_Count, u32 Stride, u32& vOffset )
 void	_VertexStream::Unlock		( u32 Count, u32 Stride)
 {
 #ifdef DEBUG
-	PGO					(Msg("PGO:VB_UNLOCK:%d",Count));
+	PGO					(LogInfo("PGO:VB_UNLOCK:%d",Count));
 	VERIFY				(1==dbg_lock);
 	dbg_lock			--;
 #endif
@@ -182,7 +182,7 @@ void	_IndexStream::Create	()
 	mPosition				= 0;
 	mDiscardID				= 0;
 
-	Msg("* DIB created: %dK", mSize/1024);
+	LogInfo("* DIB created: %dK", mSize/1024);
 }
 
 void	_IndexStream::Destroy()
@@ -197,7 +197,7 @@ u16*	_IndexStream::Lock	( u32 Count, u32& vOffset )
 #ifdef USE_DX11
 	D3D11_MAPPED_SUBRESOURCE MappedSubRes;
 #endif
-	PGO						(Msg("PGO:IB_LOCK:%d",Count));
+	PGO						(LogInfo("PGO:IB_LOCK:%d",Count));
 	vOffset					= 0;
 	BYTE* pLockedData		= 0;
 
@@ -232,7 +232,7 @@ u16*	_IndexStream::Lock	( u32 Count, u32& vOffset )
 
 void	_IndexStream::Unlock(u32 RealCount)
 {
-	PGO						(Msg("PGO:IB_UNLOCK:%d",RealCount));
+	PGO						(LogInfo("PGO:IB_UNLOCK:%d",RealCount));
 	mPosition				+=	RealCount;
 	VERIFY					(pIB);
 #ifdef USE_DX11

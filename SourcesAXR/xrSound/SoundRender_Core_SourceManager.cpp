@@ -1,4 +1,4 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 #pragma hdrstop
 
 #include "SoundRender_Core.h"
@@ -47,5 +47,5 @@ void CSoundRender_Core::i_create_all_sources()
 		s_sources.push_back(S);
 	}
 
-	Msg("Finished creating %d sound sources. Duration: %d ms", flist.size(), T.GetElapsed_ms());
+	LogInfo("Finished creating %d sound sources. Duration: %d ms", flist.size(), T.GetElapsed_ms());
 }

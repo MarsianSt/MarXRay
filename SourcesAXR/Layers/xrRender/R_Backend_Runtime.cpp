@@ -1,4 +1,4 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 #pragma hdrstop
 
 #pragma warning(push)
@@ -35,7 +35,7 @@ void CBackend::OnFrameEnd	()
 void CBackend::OnFrameBegin	()
 {
 	{
-		PGO					(Msg("PGO:*****frame[%d]*****",RDEVICE.dwFrame));
+		PGO					(LogInfo("PGO:*****frame[%d]*****",RDEVICE.dwFrame));
 #ifdef USE_DX11
 		Invalidate();
 
@@ -228,7 +228,7 @@ void CBackend::set_Textures			(STextureList* _T)
 #endif
 				if (load_surf)			
 				{
-					PGO					(Msg("PGO:tex%d:%s",load_id,load_surf->cName.c_str()));
+					PGO					(LogInfo("PGO:tex%d:%s",load_id,load_surf->cName.c_str()));
 					load_surf->bind		(load_id);
 //					load_surf->Apply	(load_id);
 				}
@@ -252,7 +252,7 @@ void CBackend::set_Textures			(STextureList* _T)
 #endif
 				if (load_surf)
 				{
-					PGO					(Msg("PGO:tex%d:%s",load_id,load_surf->cName.c_str()));
+					PGO					(LogInfo("PGO:tex%d:%s",load_id,load_surf->cName.c_str()));
 					load_surf->bind		(load_id);
 //					load_surf->Apply	(load_id);
 				}
@@ -275,7 +275,7 @@ void CBackend::set_Textures			(STextureList* _T)
 #endif
 				if (load_surf)
 				{
-					PGO					(Msg("PGO:tex%d:%s",load_id,load_surf->cName.c_str()));
+					PGO					(LogInfo("PGO:tex%d:%s",load_id,load_surf->cName.c_str()));
 					load_surf->bind		(load_id);
 					//					load_surf->Apply	(load_id);
 				}
@@ -298,7 +298,7 @@ void CBackend::set_Textures			(STextureList* _T)
 #endif
 				if (load_surf)
 				{
-					PGO					(Msg("PGO:tex%d:%s",load_id,load_surf->cName.c_str()));
+					PGO					(LogInfo("PGO:tex%d:%s",load_id,load_surf->cName.c_str()));
 					load_surf->bind		(load_id);
 					//					load_surf->Apply	(load_id);
 				}
@@ -320,7 +320,7 @@ void CBackend::set_Textures			(STextureList* _T)
 #endif
 				if (load_surf)
 				{
-					PGO					(Msg("PGO:tex%d:%s",load_id,load_surf->cName.c_str()));
+					PGO					(LogInfo("PGO:tex%d:%s",load_id,load_surf->cName.c_str()));
 					load_surf->bind		(load_id);
 					//					load_surf->Apply	(load_id);
 				}
@@ -342,7 +342,7 @@ void CBackend::set_Textures			(STextureList* _T)
 #endif
 				if (load_surf)
 				{
-					PGO					(Msg("PGO:tex%d:%s",load_id,load_surf->cName.c_str()));
+					PGO					(LogInfo("PGO:tex%d:%s",load_id,load_surf->cName.c_str()));
 					load_surf->bind		(load_id);
 					//					load_surf->Apply	(load_id);
 				}

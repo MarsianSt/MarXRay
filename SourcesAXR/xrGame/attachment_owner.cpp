@@ -1,4 +1,4 @@
-////////////////////////////////////////////////////////////////////////////
+п»ї////////////////////////////////////////////////////////////////////////////
 //	Module 		: attachment_owner.cpp
 //	Created 	: 12.02.2004
 //  Modified 	: 12.02.2004
@@ -47,11 +47,11 @@ void CAttachmentOwner::net_Destroy()
 {
 #ifdef DEBUG
 	if (!attached_objects().empty()) {
-		Msg						("Object %s has attached items :",*this->cast_game_object()->cName());
+		LogInfo("Object %s has attached items :",*this->cast_game_object()->cName());
 //		xr_vector<CAttachableItem*>::const_iterator	I = attached_objects().begin();
 //		xr_vector<CAttachableItem*>::const_iterator	E = attached_objects().end();
 //		for ( ; I != E; ++I)
-//			Msg					("* %s",*(*I)->item().object().cName());
+//			LogInfo("* %s",*(*I)->item().object().cName());
 	}
 #endif
 	R_ASSERT					(attached_objects().empty());
@@ -181,11 +181,11 @@ bool CAttachmentOwner::can_attach			(const CInventoryItem *inventory_item) const
 	if (!item || !item->enabled() || !item->can_be_attached())
 		return			(false);
 
-	//можно ли присоединять объекты такого типа
+	//пїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ
 	if( m_attach_item_sections.end() == std::find(m_attach_item_sections.begin(),m_attach_item_sections.end(),inventory_item->object().cNameSect()) )
 		return false;
 
-	//если уже есть присоединненый объет такого типа 
+	//пїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ 
 	if(attached(inventory_item->object().cNameSect()))
 		return false;
 

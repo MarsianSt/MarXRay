@@ -1,4 +1,4 @@
-////////////////////////////////////////////////////////////////////////////
+﻿////////////////////////////////////////////////////////////////////////////
 //	Module 		: stalker_sound_data_visitor.cpp
 //	Created 	: 02.02.2005
 //  Modified 	: 02.02.2005
@@ -48,7 +48,7 @@ void CStalkerSoundDataVisitor::visit				(CStalkerSoundData *data)
 	if (!object().g_Alive())
 		return;
 #ifdef DEBUG
-	Msg								("%s : Adding fiction hit by sound info from stalker %s",*object().cName(),*data->object().cName());
+	LogInfo("%s : Adding fiction hit by sound info from stalker %s",*object().cName(),*data->object().cName());
 #endif //#ifdef DEBUG
 	object().get_memory().make_object_visible_somewhen	(data->object().get_memory().get_enemy().selected());
 

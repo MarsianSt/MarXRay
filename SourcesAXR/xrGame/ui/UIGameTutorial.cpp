@@ -1,4 +1,4 @@
-#include "pch_script.h"
+﻿#include "pch_script.h"
 #include "UIGameTutorial.h"
 #include "UIWindow.h"
 #include "UIStatic.h"
@@ -120,7 +120,7 @@ bool CUISequencer::Start(LPCSTR tutor_name)
 	int items_count				= uiXml.GetNodesNum	(tutor_name, 0, "item");	
 	if (items_count <= 0)
 	{
-		Msg("! can't find tutorial [%s]", tutor_name);
+		LogInfo("! can't find tutorial [%s]", tutor_name);
 		return false;
     }
 

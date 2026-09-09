@@ -1,4 +1,4 @@
-#ifndef MATH_UTILS_H
+﻿#ifndef MATH_UTILS_H
 #define MATH_UTILS_H
 
 
@@ -388,9 +388,9 @@ const float				DET_CHECK_FATAL_EPS =0.8f					;//scale -35%  !? ;)
 	float d=DET(M);\
 	if( !fsimilar(d,1.f,DET_CHECK_EPS) ){\
 		\
-		Msg("! matrix: %s ",get_string(M).c_str());	\
-		Msg("! determinant: %f ",d);	\
-		Msg("! Is not valid rotational matrix");\
+		LogInfo("! matrix: %s ",get_string(M).c_str());	\
+		LogInfo("! determinant: %f ",d);	\
+		LogInfo("! Is not valid rotational matrix");\
 		VERIFY(fsimilar(d,1.f,DET_CHECK_FATAL_EPS));\
 	}};
 #else

@@ -45,9 +45,6 @@
 // Our headers
 #include "engine.h"
 #include "defines.h"
-#ifndef NO_XRLOG
-#include "../xrcore/log.h"
-#endif
 #include "device.h"
 #include "../xrcore/fs.h"
 

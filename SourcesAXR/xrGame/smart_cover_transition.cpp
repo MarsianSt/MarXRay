@@ -1,4 +1,4 @@
-////////////////////////////////////////////////////////////////////////////
+﻿////////////////////////////////////////////////////////////////////////////
 //	Module 		: smart_cover_transition.cpp
 //	Created 	: 20.12.2007
 //	Author		: Alexander Dudin
@@ -91,7 +91,7 @@ animation_action const &action::get_animation	(MonsterSpace::EBodyState const &t
 	
 	if (found == m_animations.end()) {
 #ifndef MASTER_GOLD
-		Msg						("! There is no animation which can transfer bot to body_state [%i], selecting random transition", target_body_state);
+		LogInfo("! There is no animation which can transfer bot to body_state [%i], selecting random transition", target_body_state);
 #endif // #ifndef MASTER_GOLD
 		return					(get_animation());
 	}

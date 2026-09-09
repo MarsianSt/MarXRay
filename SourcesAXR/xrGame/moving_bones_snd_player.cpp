@@ -1,4 +1,4 @@
-#include	"stdafx.h"
+﻿#include	"stdafx.h"
 
 #include	"moving_bones_snd_player.h"
 
@@ -84,7 +84,7 @@ void moving_bones_snd_player::update( float time_delta, CGameObject &object )
 		DBG_OutText( "max_factor=										 : %f", max_factor );
 		DBG_OutText( "frequency_factor=									 : %f", frequency_factor );
 		//DBG_OutText( "time delta            : %f", time_delta );
-		//Msg( "smoothed angular speed: %f, angular speed: %f, factor: %f time delta: %f ", smothed_velocity, aw_speed, factor, time_delta );
+		//LogInfo( "smoothed angular speed: %f, angular speed: %f, factor: %f time delta: %f ", smothed_velocity, aw_speed, factor, time_delta );
 	}
 #endif
 	

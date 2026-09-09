@@ -1,4 +1,4 @@
-////////////////////////////////////////////////////////////////////////////
+﻿////////////////////////////////////////////////////////////////////////////
 //	Module 		: smart_cover_evaluators.cpp
 //	Created 	: 05.11.2007
 //	Author		: Alexander Dudin
@@ -212,7 +212,7 @@ _value_type can_exit_loophole_with_animation::evaluate			()
 	smart_cover::cover const*	target_cover = target.cover();
 	if (current_cover != target_cover) {
 #ifdef DEBUG
-		Msg						(
+		LogInfo(
 			"transition guard(cover): [%s] -> [%s]",
 			current_cover ? current_cover->id().c_str() : "<world>",
 			target_cover ? target_cover->id().c_str() : "<world>"
@@ -225,7 +225,7 @@ _value_type can_exit_loophole_with_animation::evaluate			()
 	smart_cover::loophole const*target_loophole = target.cover_loophole();
 	if (current_loophole != target_loophole) {
 #ifdef DEBUG
-		Msg						(
+		LogInfo(
 			"transition guard(loophole): [%s] -> [%s]",
 			current_loophole ? current_loophole->id().c_str() : "<world>",
 			target_loophole ? target_loophole->id().c_str() : "<world>"

@@ -1,4 +1,4 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 #include "xrUIXmlParser.h"
 
 #ifdef XRGAME_EXPORTS
@@ -28,11 +28,11 @@ struct DBGList_{
 xr_vector<DBGList_>	dbg_list_xmls;
 void dump_list_xmls()
 {
-	Msg("------Total  xmls %d",dbg_list_xmls.size());
+	LogInfo("------Total  xmls %d",dbg_list_xmls.size());
 	xr_vector<DBGList_>::iterator _it = dbg_list_xmls.begin();
 	for(;_it!=dbg_list_xmls.end();++_it)
 		if(!(*_it).closed)
-			Msg("--leak detected ---- xml = %d",(*_it).num);
+			LogInfo("--leak detected ---- xml = %d",(*_it).num);
 }
 #else
 	void dump_list_xmls(){}
@@ -62,11 +62,11 @@ CUIXml::~CUIXml()
 			break;
 		}
 		if( (*_it).num==m_dbg_id && (*_it).closed){
-			Msg("--XML [%d] already deleted", m_dbg_id);
+			LogInfo("--XML [%d] already deleted", m_dbg_id);
 			bOK = true;
 		}
 	}
 	if(!bOK)
-		Msg("CUIXml::~CUIXml.[%d] cannot find xml in list", m_dbg_id);
+		LogInfo("CUIXml::~CUIXml.[%d] cannot find xml in list", m_dbg_id);
 #endif
 }

@@ -1,4 +1,4 @@
-////////////////////////////////////////////////////////////////////////////
+﻿////////////////////////////////////////////////////////////////////////////
 //	Module 		: stalker_animation_manager.cpp
 //	Created 	: 25.02.2003
 //  Modified 	: 19.11.2004
@@ -121,7 +121,7 @@ void CStalkerAnimationManager::play_fx(float power_factor, int fx_index)
 #ifdef DEBUG
 	if (psAI_Flags.is(aiAnimation)) {
 		LPCSTR					name = m_skeleton_animated->LL_MotionDefName_dbg(m_data_storage->m_part_animations.A[object().get_movement().body_state()].m_global.A[0].A[fx_index]).first;
-		Msg						("%6d [%s][%s][%s][%f]",Device.dwTimeGlobal,*object().cName(),"FX",name,power_factor);
+		LogInfo("%6d [%s][%s][%s][%f]",Device.dwTimeGlobal,*object().cName(),"FX",name,power_factor);
 	}
 #endif
 	m_skeleton_animated->PlayFX	(m_data_storage->m_part_animations.A[object().get_movement().body_state()].m_global.A[0].A[fx_index],power_factor);

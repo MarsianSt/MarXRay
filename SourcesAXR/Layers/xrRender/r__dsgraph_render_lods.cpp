@@ -1,4 +1,4 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 #include "flod.h"
 
 #ifdef _EDITOR
@@ -32,9 +32,9 @@ void R_dsgraph_structure::r_dsgraph_render_lods	(bool _setup_zb, bool _clear)
 	const u32	uiImpostersFit		= RCache.Vertex.GetSize()
 		/ (firstV->geom->vb_stride*uiVertexPerImposter);
 
-	//Msg						("dbg_lods: shid[%d],firstV[%X]",shid,u32((void*)firstV));
-	//Msg						("dbg_lods: shader[%X]",u32((void*)firstV->shader._get()));
-	//Msg						("dbg_lods: shader_E[%X]",u32((void*)cur_S._get()));
+	//LogInfo("dbg_lods: shid[%d],firstV[%X]",shid,u32((void*)firstV));
+	//LogInfo("dbg_lods: shader[%X]",u32((void*)firstV->shader._get()));
+	//LogInfo("dbg_lods: shader_E[%X]",u32((void*)cur_S._get()));
 
 	for (u32 i=0; i<lstLODs.size(); i++)
 	{

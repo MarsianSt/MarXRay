@@ -1,4 +1,4 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 #pragma hdrstop
 
 #include "SoundRender_TargetA.h"
@@ -39,7 +39,7 @@ BOOL	CSoundRender_TargetA::_initialize		()
 	}
 	else
 	{
-		Msg("[OpenA] Can't create source. Error: %s.", (LPCSTR)alGetString(err_));
+		LogInfo("[OpenA] Can't create source. Error: %s.", (LPCSTR)alGetString(err_));
 		return false;
     }
 }
@@ -117,7 +117,7 @@ void	CSoundRender_TargetA::update			()
 	alGetSourcei(pSource, AL_BUFFERS_PROCESSED, &processed);
 	if (alGetError() != AL_NO_ERROR)
 	{
-		Msg("!![%s]Error checking source state!", __FUNCTION__);
+		LogInfo("!![%s]Error checking source state!", __FUNCTION__);
 		return;
 	}
 
@@ -130,7 +130,7 @@ void	CSoundRender_TargetA::update			()
 		processed--;
 		if (alGetError() != AL_NO_ERROR)
 		{
-			Msg("!![%s]Error buffering data", __FUNCTION__);
+			LogInfo("!![%s]Error buffering data", __FUNCTION__);
 			return;
 		}
 	}
@@ -147,7 +147,7 @@ void	CSoundRender_TargetA::update			()
 		alSourcePlay(pSource);
 		if (alGetError() != AL_NO_ERROR)
 		{
-			Msg("!![%s]Error restarting playback", __FUNCTION__);
+			LogInfo("!![%s]Error restarting playback", __FUNCTION__);
 			return;
         }
     }

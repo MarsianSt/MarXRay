@@ -1,4 +1,4 @@
-////////////////////////////////////////////////////////////////////////////
+﻿////////////////////////////////////////////////////////////////////////////
 //	Module 		: stalker_animation_script.cpp
 //	Created 	: 25.02.2003
 //  Modified 	: 19.11.2004
@@ -24,7 +24,7 @@ void CStalkerAnimationManager::script_play_callback(CBlend *blend)
 	const SCRIPT_ANIMATIONS		&animations = animation_manager.script_animations();
 
 #if 0
-	Msg							(
+	LogInfo(
 		"%6d Script callback [%s]",
 		Device.dwTimeGlobal,
 		animations.empty()
@@ -56,7 +56,7 @@ void CStalkerAnimationManager::add_script_animation	(LPCSTR animation, bool hand
 		return;
 	}
 
-//	Msg("add_script_animation %f,%f,%f %f,%f,%f local=%s [%s]",
+//	LogInfo("add_script_animation %f,%f,%f %f,%f,%f local=%s [%s]",
 //		position.x,position.y,position.z, 
 //		rotation.x,rotation.y,rotation.z,
 //		local_animation ? "true" : "false",

@@ -1,4 +1,4 @@
-////////////////////////////////////////////////////////////////////////////
+﻿////////////////////////////////////////////////////////////////////////////
 //	Module 		: ai_rat_animations.cpp
 //	Created 	: 21.06.2002
 //  Modified 	: 06.11.2002
@@ -95,7 +95,7 @@ void CAI_Rat::SelectAnimation(const Fvector& /**_view/**/, const Fvector& /**_mo
 #ifdef DEBUG
 	if (psAI_Flags.is(aiAnimation)) {
 		IKinematicsAnimated	*skeleton_animated = smart_cast<IKinematicsAnimated*>(Visual());
-		Msg					("%6d %s animation : %s (%f,%f)",Device.dwTimeGlobal,"Global",skeleton_animated->LL_MotionDefName_dbg(m_tpCurrentGlobalAnimation),get_movement().m_body.current.yaw,get_movement().m_body.target.yaw);
+		LogInfo("%6d %s animation : %s (%f,%f)",Device.dwTimeGlobal,"Global",skeleton_animated->LL_MotionDefName_dbg(m_tpCurrentGlobalAnimation),get_movement().m_body.current.yaw,get_movement().m_body.target.yaw);
 	}
 #endif
 }

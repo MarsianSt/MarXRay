@@ -1,4 +1,4 @@
-#include "stdafx.h"
+п»ї#include "stdafx.h"
 #include "UIGameCTA.h"
 
 #include <dinput.h>
@@ -670,7 +670,7 @@ void CUIGameCTA::ShowSkinMenu(s8 currentSkin)
 	if (!m_pCurSkinMenu)
 	{
 #ifdef CLIENT_CTA_LOG
-		Msg("Warning: current skin window not initialized while trying to show it");
+		LogInfo("Warning: current skin window not initialized while trying to show it");
 #endif
 		return;
 	}
@@ -939,10 +939,10 @@ void CUIGameCTA::LoadTeamDefaultPresetItems	(const shared_str& caSection)
 	
 	string256			ItemName;
 	string4096			DefItems;
-	// Читаем данные этого поля
+	// пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ
 	xr_strcpy(DefItems, pSettings->r_string(caSection, "default_items"));
 	u32 count	= _GetItemCount(DefItems);
-	// теперь для каждое имя оружия, разделенные запятыми, заносим в массив
+	// пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
 	for (u32 i = 0; i < count; ++i)
 	{
 		_GetItem(DefItems, i, ItemName);

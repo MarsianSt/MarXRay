@@ -1,4 +1,4 @@
-
+﻿
     #include "stdafx.h"
         
     #include "NET_Common.h"
@@ -30,10 +30,10 @@ void PrintParsedPacket(const char* message, u16 message_type, const void* packet
 			tNetPacket.r_u16			(RespawnTime	);
 			tNetPacket.r_u16			(ID				);
 			
-			Msg("%s M_SPAWN for [%s]-[%d]", message, s_name.c_str(), ID);
+			LogInfo("%s M_SPAWN for [%s]-[%d]", message, s_name.c_str(), ID);
 		} else
 		{
-			Msg("%s NOT_IMPLEMENTED_PRINT type[%d]", message, message_type);
+			LogInfo("%s NOT_IMPLEMENTED_PRINT type[%d]", message, message_type);
 		}
 	}
 }
@@ -156,7 +156,7 @@ MultipacketSender::_FlushSendBuffer( u32 timeout, Buffer* buf )
         // dump/log if needed
 
         #if NET_LOG_PACKETS
-        Msg( "#send %smulti-packet %u    flags= %08X", 
+        LogInfo( "#send %smulti-packet %u    flags= %08X", 
              (buf->last_flags & DPNSEND_IMMEDIATELLY)?"IMMEDIATE ":"",
              buf->buffer.B.count, buf->last_flags 
            );
@@ -205,7 +205,7 @@ MultipacketReciever::RecievePacket( const void* packet_data, u32 packet_sz, u32 
                          );
 
     #if NET_LOG_PACKETS
-    Msg( "#receive multi-packet %u", packet_sz );
+    LogInfo( "#receive multi-packet %u", packet_sz );
     #endif
 
     if( strstr( Core.Params,"-dump_traffic") ) 
@@ -241,7 +241,7 @@ MultipacketReciever::RecievePacket( const void* packet_data, u32 packet_sz, u32 
             dat += sizeof(u16);
 
         #if NET_LOG_PACKETS
-        Msg( "  packet %u", size );
+        LogInfo( "  packet %u", size );
         #endif
 
 

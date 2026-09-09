@@ -1,4 +1,4 @@
-#include "pch_script.h"
+п»ї#include "pch_script.h"
 #include "GameTaskManager.h"
 #include "alife_registry_wrappers.h"
 #include "ui/xrUIXmlParser.h"
@@ -71,7 +71,7 @@ vGameTasks&	CGameTaskManager::GetGameTasks	()
 	{
 		m_gametasks = &m_gametasks_wrapper->registry().objects();
 #ifdef DEBUG
-		Msg("m_gametasks size=%d",m_gametasks->size());
+		LogInfo("m_gametasks size=%d",m_gametasks->size());
 #endif // #ifdef DEBUG
 	}
 
@@ -93,7 +93,7 @@ CGameTask*	CGameTaskManager::GiveGameTaskToActor(CGameTask* t, u32 timeToComplet
 	t->CommitScriptHelperContents	();
 	if(/* bCheckExisting &&*/ HasGameTask(t->m_ID, true) ) 
 	{
- 		Msg("! task [%s] already inprocess",t->m_ID.c_str());
+ 		LogInfo("! task [%s] already inprocess",t->m_ID.c_str());
 		VERIFY2( 0, make_string( "give_task : Task [%s] already inprocess!", t->m_ID.c_str()) );
 		return NULL;
 	}
@@ -119,7 +119,7 @@ CGameTask*	CGameTaskManager::GiveGameTaskToActor(CGameTask* t, u32 timeToComplet
 
 	SetActiveTask( t );
 
-	//установить флажок необходимости прочтения тасков в PDA
+	//пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅ PDA
 	if (CurrentGameUI())
 	{
 		CurrentGameUI()->UpdatePda();
@@ -141,14 +141,14 @@ void CGameTaskManager::GiveTaskScript(LPCSTR task)
 
 	if (task == nullptr)
 	{
-		Msg("! [g_task] : task is [NULL]");
+		LogInfo("! [g_task] : task is [NULL]");
 		VERIFY2(0, make_string("[g_task] : Task is [NULL]!"));
 		return;
 	}
 
 	if (has_task)
 	{
-		Msg("! [g_task] : task [%s] already inprocess", has_task->m_ID.c_str());
+		LogInfo("! [g_task] : task [%s] already inprocess", has_task->m_ID.c_str());
 		VERIFY2(0, make_string("[g_task] : Task [%s] already inprocess!", has_task->m_ID.c_str()));
 		return;
 	}
@@ -177,7 +177,7 @@ void CGameTaskManager::SetTaskState(CGameTask* t, ETaskState state)
 void CGameTaskManager::SetTaskState(const shared_str& id, ETaskState state)
 {
 	CGameTask* t				= HasGameTask(id, true);
-	if (NULL==t)				{Msg("actor does not has task [%s] or it is completed", *id);	return;}
+	if (NULL==t)				{LogInfo("actor does not has task [%s] or it is completed", *id);	return;}
 	SetTaskState				(t, state);
 }
 
@@ -403,7 +403,7 @@ void CGameTaskManager::DumpTasks()
 	for(; it!=it_e; ++it)
 	{
 		const CGameTask* gt = (*it).game_task;
-		Msg( " ID=[%s] state=[%s] prio=[%d] ",
+		LogInfo( " ID=[%s] state=[%s] prio=[%d] ",
 			gt->m_ID.c_str(),
 			sTaskStates[gt->GetTaskState()],
 			gt->m_priority );

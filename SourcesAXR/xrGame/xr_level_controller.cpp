@@ -1,4 +1,4 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 #include <dinput.h>
 #include "../xrEngine/xr_ioconsole.h"
 #include "../xrEngine/xr_input.h"
@@ -188,7 +188,7 @@ void initialize_bindings()
 			if(_k2.key_name==NULL)	break;
 			if(_k1.dik==_k2.dik && i1!=i2)
 			{
-				Msg("%s==%s",_k1.key_name,_k2.key_name);
+				LogInfo("%s==%s",_k1.key_name,_k2.key_name);
 			}
 			++i2;
 		}
@@ -215,7 +215,7 @@ void remap_keys()
 		else
 			kb.key_local_name	= kb.key_name;
 
-//.		Msg("[%s]-[%s]",kb.key_name, kb.key_local_name.c_str());
+//.		LogInfo("[%s]-[%s]",kb.key_name, kb.key_local_name.c_str());
 		++idx;
 	}
 }
@@ -229,7 +229,7 @@ LPCSTR id_to_action_name(EGameActions _id)
 			return actions[idx].action_name;
 		++idx;
 	}
-	Msg				("! cant find corresponding [action_name] for id");
+	LogInfo("! cant find corresponding [action_name] for id");
 	return			NULL;
 }
 
@@ -251,7 +251,7 @@ _action* action_name_to_ptr(LPCSTR _name)
 			return &actions[idx];
 		++idx;
 	}
-	Msg				("! cant find corresponding [id] for action_name [%s]", _name);
+	LogInfo("! cant find corresponding [id] for action_name [%s]", _name);
 	return			NULL;
 }
 
@@ -275,7 +275,7 @@ _keyboard* dik_to_ptr(int _dik, bool bSafe)
 		++idx;
 	}	
 	if (!bSafe)
-		Msg			("! cant find corresponding [_keyboard] for dik");
+		LogInfo("! cant find corresponding [_keyboard] for dik");
 	return			NULL;
 }
 
@@ -296,7 +296,7 @@ _keyboard*	keyname_to_ptr(LPCSTR _name)
 		++idx;
 	}	
 
-	Msg				("! cant find corresponding [_keyboard*] for keyname %s", _name);
+	LogInfo("! cant find corresponding [_keyboard*] for keyname %s", _name);
 	return			NULL;
 }
 
@@ -501,13 +501,13 @@ public:
 	{ bEmptyArgsHandled=TRUE; };
 
 	virtual void Execute(LPCSTR args) {
-		Log("- --- Action list start ---");
+		LogInfo("%s", "- --- Action list start ---");
 		for(int idx=0; idx<bindings_count;++idx)
 		{
 			_binding* pbinding = &g_key_bindings[idx];
-			Log("-", pbinding->m_action->action_name);
+			LogInfo("%s", "-", pbinding->m_action->action_name);
 		}
-		Log("- --- Action list end   ---");
+		LogInfo("- --- Action list end   ---");
 	}
 };
 
@@ -552,7 +552,7 @@ public:
 	{ bEmptyArgsHandled=TRUE; };
 
 	virtual void Execute(LPCSTR args) {
-		Log				("- --- Bind list start ---");
+		LogInfo("%s", "- --- Bind list start ---");
 		string512		buff;			
 		
 		for(int idx=0; idx<bindings_count;++idx)
@@ -562,9 +562,9 @@ public:
 						pbinding->m_action->action_name,
 						(pbinding->m_keyboard[0])?pbinding->m_keyboard[0]->key_local_name.c_str():"NULL",
 						(pbinding->m_keyboard[1])?pbinding->m_keyboard[1]->key_local_name.c_str():"NULL");
-			Log		(buff);
+			LogInfo("%s", buff);
 		}
-		Log				("- --- Bind list end   ---");
+		LogInfo("%s", "- --- Bind list end   ---");
 	}
 };
 

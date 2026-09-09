@@ -1,4 +1,4 @@
-////////////////////////////////////////////////////////////////////////////
+﻿////////////////////////////////////////////////////////////////////////////
 //	Module 		: xrServer_Objects_ALife_Smartcovers.cpp
 //	Created 	: 17.12.2008
 //  Modified 	: 
@@ -61,7 +61,7 @@ BOOL is_combat_cover			(shared_str const &table_id)
 
 	value						= table["is_combat_cover"];
 	if (value.type() == LUA_TNIL) {
-		Msg						("! is_combat_cover flag not found for smart_cover [%s], forcing to \"true\"", table_id.c_str());
+		LogInfo("! is_combat_cover flag not found for smart_cover [%s], forcing to \"true\"", table_id.c_str());
 		return					(TRUE);
 	}
 
@@ -358,7 +358,7 @@ void CSE_SmartCover::fill_visuals()
 			return;
 
 		if (I->animation_id.size() == 0) {
-			Msg						("cover [%s] doesn't have idle_2_fire animation", I->string_identifier.c_str());
+			LogInfo("cover [%s] doesn't have idle_2_fire animation", I->string_identifier.c_str());
 			return;
 		}
 
@@ -465,7 +465,7 @@ void CSE_SmartCover::load_draw_data () {
 		);
 
 	if (!result) {
-		Msg						("no or invalid smart cover description (bad or missing loopholes table in smart_cover [%s])", temp);
+		LogInfo("no or invalid smart cover description (bad or missing loopholes table in smart_cover [%s])", temp);
 		return;
 		//		VERIFY2					(result, make_string("bad or missing loopholes table in smart_cover [%s]", temp));
 	}
@@ -505,7 +505,7 @@ void CSE_SmartCover::load_draw_data () {
 		H.fov_direction			= parse_fvector(table, "fov_direction");
 
 		if (H.fov_direction.square_magnitude() < EPS_L) {
-			Msg				("! fov direction for loophole %s is setup incorrectly", H.string_identifier.c_str());
+			LogInfo("! fov direction for loophole %s is setup incorrectly", H.string_identifier.c_str());
 			H.fov_direction.set(0.f, 0.f, 1.f);
 		}
 		else
@@ -514,7 +514,7 @@ void CSE_SmartCover::load_draw_data () {
 		H.enter_direction		= parse_fvector(table, "enter_direction");
 
 		if (H.enter_direction.square_magnitude() < EPS_L) {
-			Msg				("! enter direction for loophole %s is setup incorrectly", H.string_identifier.c_str());
+			LogInfo("! enter direction for loophole %s is setup incorrectly", H.string_identifier.c_str());
 			H.enter_direction.set(0.f, 0.f, 1.f);
 		}
 		else

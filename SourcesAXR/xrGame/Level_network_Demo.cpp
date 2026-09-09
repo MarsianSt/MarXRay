@@ -1,4 +1,4 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 #include "Level.h"
 #include "UIGameDM.h"
 #include "xrServer.h"
@@ -28,7 +28,7 @@ void CLevel::PrepareToSaveDemo		()
 		Time.wMinute,
 		Time.wSecond
 	);
-	Msg					("Demo would be stored in - %s", demo_name);
+	LogInfo("Demo would be stored in - %s", demo_name);
 	FS.update_path      (demo_path, "$logs$", demo_name);
 	m_writer			= FS.w_open(demo_path);
 	m_DemoSave			= TRUE;
@@ -40,12 +40,12 @@ bool CLevel::PrepareToPlayDemo		(shared_str const & file_name)
 	m_reader	= FS.rs_open("$logs$", file_name.c_str());
 	if (!m_reader)
 	{
-		Msg("ERROR: failed to open file [%s] to play demo...", file_name.c_str());
+		LogInfo("ERROR: failed to open file [%s] to play demo...", file_name.c_str());
 		return false;
 	}
 	if (!LoadDemoHeader())
 	{
-		Msg("ERROR: bad demo file...");
+		LogInfo("ERROR: bad demo file...");
 		return false;
 	}
 	m_DemoPlay	= TRUE;
@@ -71,7 +71,7 @@ void CLevel::StartPlayDemo()
 	SetDemoPlaySpeed	(1.0f);
 	m_starting_spawns_pos	= 0;
 	m_starting_spawns_dtime	= 0;
-	Msg("! ------------- Demo Started ------------");
+	LogInfo("! ------------- Demo Started ------------");
 	CatchStartingSpawns	();
 
 	//if using some filter ...
@@ -90,7 +90,7 @@ void CLevel::RestartPlayDemo()
 {
 	if (!IsDemoPlay() || (m_starting_spawns_pos == 0))
 	{
-		Msg("! ERROR: no demo play started");
+		LogInfo("! ERROR: no demo play started");
 		return;
 	}
 	if (IsDemoPlayStarted())
@@ -114,7 +114,7 @@ void CLevel::RestartPlayDemo()
 	m_reader->seek		(m_starting_spawns_pos);
 
 	SetDemoPlaySpeed	(1.0f);
-	Msg("! ------------- Demo ReStarted ------------");
+	LogInfo("! ------------- Demo ReStarted ------------");
 }
 
 void CLevel::StopPlayDemo()
@@ -127,7 +127,7 @@ void CLevel::StopPlayDemo()
 		m_DemoPlayStarted	= FALSE;
 		m_DemoPlayStoped	= TRUE;
 	}
-	Msg("! ------------- Demo Stoped ------------");
+	LogInfo("! ------------- Demo Stoped ------------");
 }
 
 void CLevel::StartSaveDemo(shared_str const & server_options)
@@ -291,18 +291,18 @@ void CLevel::SetDemoPlayPos(float const pos)
 {
 	if (!IsDemoPlayStarted())
 	{
-		Msg("! ERROR: demo play not started");
+		LogInfo("! ERROR: demo play not started");
 		return;
 	}
 	if (pos > 1.f)
 	{
-		Msg("! ERROR: incorect demo play position");
+		LogInfo("! ERROR: incorect demo play position");
 		return;
 	}
 	float cur_pos = GetDemoPlayPos();
 	if (cur_pos >= pos)
 	{
-		Msg("! demo play position must be greater than current position");
+		LogInfo("! demo play position must be greater than current position");
 		return;
 	}
 	
@@ -311,7 +311,7 @@ void CLevel::SetDemoPlayPos(float const pos)
 	u32				file_pos = u32(float(m_reader->length()) * pos);
 	if (file_pos <= old_file_pos)
 	{
-		Msg("! demo play position already at the current point");
+		LogInfo("! demo play position already at the current point");
 		return;
 	}
 
@@ -338,12 +338,12 @@ void CLevel::SetDemoPlaySpeed(float const time_factor)
 {
 	if (!IsDemoPlayStarted())
 	{
-		Msg("! ERROR: demo play not started");
+		LogInfo("! ERROR: demo play not started");
 		return;
 	}
 	if (time_factor > MAX_PLAY_SPEED)
 	{
-		Msg("! Sorry, maximum play speed is: %1.1f", MAX_PLAY_SPEED);
+		LogInfo("! Sorry, maximum play speed is: %1.1f", MAX_PLAY_SPEED);
 		return;
 	}
 	Device.time_factor(time_factor);

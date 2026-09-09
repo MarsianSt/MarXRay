@@ -1,4 +1,4 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 #pragma hdrstop
 #ifdef DEBUG
 
@@ -283,7 +283,7 @@ bool CCar::isObjectVisible			(CScriptGameObject* O_)
 
 		if(!O_)
 		{
-			Msg("Attempt to call CCar::isObjectVisible method wihth passed NULL parameter");
+			LogInfo("Attempt to call CCar::isObjectVisible method wihth passed NULL parameter");
 			return false;
 		}
 		CObject* O = &O_->object();

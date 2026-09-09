@@ -1,6 +1,6 @@
-//////////////////////////////////////////////////////////////////////
-// ExplosiveRocket.cpp:	ракета, которой стреляет RocketLauncher 
-//						взрывается при столкновении
+п»ї//////////////////////////////////////////////////////////////////////
+// ExplosiveRocket.cpp:	пїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ RocketLauncher 
+//						пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 //////////////////////////////////////////////////////////////////////
 
 #include "stdafx.h"
@@ -116,7 +116,7 @@ void CExplosiveRocket::PH_A_CrPr			()
 		VERIFY( K );
 		if (!obj.PPhysicsShell())
 		{
-			Msg("! ERROR: PhysicsShell is NULL, object [%s][%d]", obj.cName().c_str(), obj.ID());
+			LogInfo("! ERROR: PhysicsShell is NULL, object [%s][%d]", obj.cName().c_str(), obj.ID());
 			return;
 		}
 		if(!obj.PPhysicsShell()->isFullActive())

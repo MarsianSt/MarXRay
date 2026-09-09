@@ -1,4 +1,4 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 #include "xrMessages.h"
 #include "xrGameSpyServer.h"
 #include "../xrEngine/igame_persistent.h"
@@ -89,7 +89,7 @@ xrGameSpyServer::EConnect xrGameSpyServer::Connect(shared_str &session_name, Gam
 		shared_str result_string;
 		if (!GSA.CheckAvailableServices(result_string))
 		{
-			Msg(*result_string);
+			LogInfo(*result_string);
 		};
 
 		//------ Init of QR2 SDK -------------
@@ -150,7 +150,7 @@ void			xrGameSpyServer::OnCL_Disconnected	(IClient* _CL)
 
 	if (m_bCDKey_Initialized)
 	{
-		Msg("Server : Disconnecting Client");
+		LogInfo("Server : Disconnecting Client");
 		m_GCDServer.DisconnectUser(int(_CL->ID.value()));
 	};
 }
@@ -172,14 +172,14 @@ u32				xrGameSpyServer::OnMessage(NET_Packet& P, ClientID sender)			// Non-Zero 
 			if (!CL->m_bCDKeyAuth)
 			{
 #ifndef MASTER_GOLD
-				Msg("Server : Respond accepted, Authenticate client.");
+				LogInfo("Server : Respond accepted, Authenticate client.");
 #endif // #ifndef MASTER_GOLD
 				m_GCDServer.AuthUser(int(CL->ID.value()), CL->m_cAddress.m_data.data, CL->m_pChallengeString, ResponseStr, this);
 				xr_strcpy(CL->m_guid,128,this->GCD_Server()->GetKeyHash(CL->ID.value()));
 			}
 			else
 			{
-				Msg("Server : Respond accepted, ReAuthenticate client.");
+				LogInfo("Server : Respond accepted, ReAuthenticate client.");
 				m_GCDServer.ReAuthUser(int(CL->ID.value()), CL->m_iCDKeyReauthHint, ResponseStr);
 			}
 
@@ -214,7 +214,7 @@ void xrGameSpyServer::Assign_ServerType( string512& res )
 			{
 				ServerFlags.set( server_flag_protected, 1 );
 				xr_strcpy( res, "# Server started as protected, using users list." );
-				Msg( res );
+				LogInfo( res );
 				return;
 			}else{
 				xr_strcpy( res, "Users count in list is null." );
@@ -226,10 +226,10 @@ void xrGameSpyServer::Assign_ServerType( string512& res )
 		xr_strcpy( res, "File <server_users.ltx> not found in folder <$app_data_root$>." );
 	}// if FS.exist(fn)
 
-	Msg( res );
+	LogInfo( res );
 	ServerFlags.set( server_flag_protected, 0 );
 	xr_strcpy( res, "# Server started without users list." );
-	Msg( res );
+	LogInfo( res );
 }
 
 void xrGameSpyServer::GetServerInfo( CServerInfo* si )

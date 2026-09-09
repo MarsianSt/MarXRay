@@ -1,4 +1,4 @@
-////////////////////////////////////////////////////////////////////////////
+﻿////////////////////////////////////////////////////////////////////////////
 //	Module 		: alife_communication_manager.cpp
 //	Created 	: 03.09.2003
 //  Modified 	: 14.05.2004
@@ -99,20 +99,20 @@ CALifeCommunicationManager::~CALifeCommunicationManager	()
 #ifdef DEBUG
 void CALifeCommunicationManager::vfPrintItems(CSE_ALifeHumanAbstract *tpALifeHumanAbstract, ITEM_P_VECTOR &tpItemVector)
 {
-	Msg					("%s[%d]",tpALifeHumanAbstract->name_replace(),tpALifeHumanAbstract->m_dwMoney);
+	LogInfo("%s[%d]",tpALifeHumanAbstract->name_replace(),tpALifeHumanAbstract->m_dwMoney);
 	ITEM_P_IT			I = tpItemVector.begin();
 	ITEM_P_IT			E = tpItemVector.end();
 	for ( ; I != E; ++I)
-		Msg				(" %s",(*I)->base()->name_replace());
+		LogInfo(" %s",(*I)->base()->name_replace());
 }
 
 void CALifeCommunicationManager::vfPrintItems(CSE_ALifeHumanAbstract *tpALifeHumanAbstract)
 {
-	Msg					("%s[%d]",tpALifeHumanAbstract->name_replace(),tpALifeHumanAbstract->m_dwMoney);
+	LogInfo("%s[%d]",tpALifeHumanAbstract->name_replace(),tpALifeHumanAbstract->m_dwMoney);
 	OBJECT_IT			I = tpALifeHumanAbstract->children.begin();
 	OBJECT_IT			E = tpALifeHumanAbstract->children.end();
 	for ( ; I != E; ++I)
-		Msg				(" %s",objects().object(*I)->name_replace());
+		LogInfo(" %s",objects().object(*I)->name_replace());
 }
 #endif
 
@@ -446,7 +446,7 @@ bool CALifeCommunicationManager::bfCheckForInventoryCapacity(CSE_ALifeHumanAbstr
 
 #ifdef DEBUG
 			if (psAI_Flags.test(aiALife)) {
-				Msg			("%s\n Can trade!",S);
+				LogInfo("%s\n Can trade!",S);
 			}
 #endif
 			return			(true);
@@ -499,7 +499,7 @@ bool CALifeCommunicationManager::bfCheckForTrade	(CSE_ALifeHumanAbstract *tpALif
 	if (I == E) {
 #ifdef DEBUG
 		if (psAI_Flags.test(aiALife)) {
-			Msg				("Can't trade!\n");
+			LogInfo("Can't trade!\n");
 		}
 #endif
 		return				(false);
@@ -513,7 +513,7 @@ bool CALifeCommunicationManager::bfCheckIfCanNullTradersBalance(CSE_ALifeHumanAb
 	if (!iBalance) {
 #ifdef DEBUG
 		if (psAI_Flags.test(aiALife)) {
-			Msg			("Balance is null");
+			LogInfo("Balance is null");
 		}
 #endif
 		return			(true);
@@ -525,7 +525,7 @@ bool CALifeCommunicationManager::bfCheckIfCanNullTradersBalance(CSE_ALifeHumanAb
 			tpALifeHumanAbstract2->m_dwMoney -= iBalance;
 #ifdef DEBUG
 			if (psAI_Flags.test(aiALife)) {
-				Msg		("Balance is covered by money");
+				LogInfo("Balance is covered by money");
 			}
 #endif
 			return	(true);
@@ -537,7 +537,7 @@ bool CALifeCommunicationManager::bfCheckIfCanNullTradersBalance(CSE_ALifeHumanAb
 			tpALifeHumanAbstract2->m_dwMoney -= iBalance;
 #ifdef DEBUG
 			if (psAI_Flags.test(aiALife)) {
-				Msg			("Balance is covered by money");
+				LogInfo("Balance is covered by money");
 			}
 #endif
 			return	(true);
@@ -557,7 +557,7 @@ bool CALifeCommunicationManager::bfCheckIfCanNullTradersBalance(CSE_ALifeHumanAb
 				S1				+= xr_sprintf(S1,"%s [%5d]: ",tpALifeHumanAbstract1->name_replace(),tpALifeHumanAbstract1->m_dwMoney);
 				for (int i=0, n=m_tpTrader1.size(); i<n; ++i)
 					S1			+= xr_sprintf(S1,"%6d",m_tpTrader1[i]->m_dwCost);
-				Msg				("%s",S);
+				LogInfo("%s",S);
 			}
 			{
 				string4096		S;
@@ -565,9 +565,9 @@ bool CALifeCommunicationManager::bfCheckIfCanNullTradersBalance(CSE_ALifeHumanAb
 				S1				+= xr_sprintf(S1,"%s [%5d]: ",tpALifeHumanAbstract2->name_replace(),tpALifeHumanAbstract2->m_dwMoney);
 				for (int i=0, n=m_tpTrader2.size(); i<n; ++i)
 					S1			+= xr_sprintf(S1,"%6d",m_tpTrader2[i]->m_dwCost);
-				Msg				("%s",S);
+				LogInfo("%s",S);
 			}
-			Msg					("Balance : %6d",iBalance);
+			LogInfo("Balance : %6d",iBalance);
 		}
 #endif
 
@@ -584,7 +584,7 @@ bool CALifeCommunicationManager::bfCheckIfCanNullTradersBalance(CSE_ALifeHumanAb
 				INT_IT			E = m_tpSums1.end();
 				for ( ; I != E; ++I)
 					S1			+= xr_sprintf(S1,"%6d",*I);
-				Msg				("%s",S);
+				LogInfo("%s",S);
 			}
 			{
 				string4096		S;
@@ -594,7 +594,7 @@ bool CALifeCommunicationManager::bfCheckIfCanNullTradersBalance(CSE_ALifeHumanAb
 				INT_IT			E = m_tpSums2.end();
 				for ( ; I != E; ++I)
 					S1			+= xr_sprintf(S1,"%6d",*I);
-				Msg				("%s",S);
+				LogInfo("%s",S);
 			}
 		}
 #endif
@@ -639,7 +639,7 @@ void CALifeCommunicationManager::vfPerformTrading(CSE_ALifeHumanAbstract *tpALif
 		tpALifeHumanAbstract2->get_brain().m_dwTotalMoney = u32(-1);
 #ifdef DEBUG
 		if (psAI_Flags.test(aiALife)) {
-			Msg			("There is no money and valuable items to trade");
+			LogInfo("There is no money and valuable items to trade");
 		}
 #endif
 		return;
@@ -825,7 +825,7 @@ void CALifeCommunicationManager::communicate_with_customer(CSE_ALifeHumanAbstrac
 	// trade items
 #ifdef DEBUG
 	if (psAI_Flags.test(aiALife)) {
-		Msg									("Selling all the items to %s",tpALifeTrader->name_replace());
+		LogInfo("Selling all the items to %s",tpALifeTrader->name_replace());
 	}
 #endif
 	CSE_ALifeItemPDA						*original_pda = 0;
@@ -884,7 +884,7 @@ void CALifeCommunicationManager::communicate_with_customer(CSE_ALifeHumanAbstrac
 
 #ifdef DEBUG
 	if (psAI_Flags.test(aiALife)) {
-		Msg									("Assigning correct parents");
+		LogInfo("Assigning correct parents");
 	}
 #endif
 #ifdef FAST_OWNERSHIP

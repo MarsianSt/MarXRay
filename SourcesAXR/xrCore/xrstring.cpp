@@ -1,4 +1,4 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 #pragma hdrstop
 
 #include "xrstring.h"
@@ -70,7 +70,7 @@ struct str_container_impl
 
 	void			 verify ()
 	{
-		Msg			("strings verify started");
+		LogInfo("strings verify started");
 		for ( u32 i=0; i<buffer_size; ++i )
 		{
 			str_value* value = buffer[i];
@@ -83,7 +83,7 @@ struct str_container_impl
 				value = value->next;
 			}
 		}
-		Msg			("strings verify completed");
+		LogInfo("strings verify completed");
 	}
 
 	void			dump (FILE* f) const
@@ -185,7 +185,7 @@ str_value*	str_container::dock		(str_c value)
 		if ( is_leaked_string )
 		{
 			++num_leaked_string;
-			Msg("leaked_string: %d 0x%08x", num_leaked_string, result);
+			LogInfo("leaked_string: %d 0x%08x", num_leaked_string, result);
 		}
 #endif // DEBUG
 
@@ -274,7 +274,7 @@ str_value*	str_container::dock		(str_c value)
 // 	++impl->num_docs;
 // 	if ( impl->num_docs == 10000000 )
 // 	{
-// 		Msg("shared_strings");
+// 		LogInfo("shared_strings");
 // 		g_find_chunk_counter.flush();
 // 	}
 // 
@@ -333,7 +333,7 @@ str_value*	str_container::dock		(str_c value)
 		if ( is_leaked_string )
 		{
 			++num11;
-			Msg("leaked_string: %d 0x%08x", num11, result);
+			LogInfo("leaked_string: %d 0x%08x", num11, result);
 		}
 
 //		DUMP_PHASE;

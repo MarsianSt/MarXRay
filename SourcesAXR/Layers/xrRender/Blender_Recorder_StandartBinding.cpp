@@ -1,4 +1,4 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 #pragma hdrstop
 
 #pragma warning(push)
@@ -230,7 +230,7 @@ class cl_rain_params : public R_constant_setup
 
         LPCSTR wetness_comment = "Wetness accumulator:";
 
-            //Log(wetness_comment, wetness_accum);
+            //LogInfo("%s", wetness_comment, wetness_accum);
 
         RCache.set_c (C, rainDensity, wetness_accum, 0, 0);
     }

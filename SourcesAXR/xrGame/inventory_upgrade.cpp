@@ -1,4 +1,4 @@
-////////////////////////////////////////////////////////////////////////////
+﻿////////////////////////////////////////////////////////////////////////////
 //	Module 		: inventory_upgrade.cpp
 //	Created 	: 01.11.2007
 //  Modified 	: 27.11.2007
@@ -135,7 +135,7 @@ void Upgrade::log_hierarchy( LPCSTR nest )
 	PSTR	nest2 = (PSTR)_alloca( sz );
 	xr_strcpy( nest2, sz, nest );
 	xr_strcat( nest2, sz, "   " );
-	Msg( "%s<u> %s", nest2, id_str() );
+	LogInfo( "%s<u> %s", nest2, id_str() );
 
 	inherited::log_hierarchy( nest2 );
 }

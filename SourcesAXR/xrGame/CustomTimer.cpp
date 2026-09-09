@@ -1,4 +1,4 @@
-////////////////////////////////////////////////////////////////////////////
+﻿////////////////////////////////////////////////////////////////////////////
 //	Module 		: CustomTimer.cpp
 //	Created 	: 15.08.2023
 //  Modified 	: 29.09.2025
@@ -37,7 +37,7 @@ void CCustomTimer::StartCustomTimer()
 	m_iStartTime = ai().alife().time_manager().game_time();
 
 #ifdef DEBUG
-	Msg("Custom Timer: %s : Started", m_sTimerName.c_str());
+	LogInfo("Custom Timer: %s : Started", m_sTimerName.c_str());
 #endif
 }
 
@@ -46,14 +46,14 @@ void CCustomTimer::StopCustomTimer()
 	m_bIsActive = false;
 
 #ifdef DEBUG
-	Msg("Custom Timer: %s : Stopped (timer value: %d)", m_sTimerName.c_str(), m_iTimerCurValue);
+	LogInfo("Custom Timer: %s : Stopped (timer value: %d)", m_sTimerName.c_str(), m_iTimerCurValue);
 #endif
 }
 
 void CCustomTimer::ResetCustomTimer()
 {
 #ifdef DEBUG
-	Msg("Custom Timer: %s : Reset (timer value: %d)", m_sTimerName.c_str(), m_iTimerCurValue);
+	LogInfo("Custom Timer: %s : Reset (timer value: %d)", m_sTimerName.c_str(), m_iTimerCurValue);
 #endif
 
 	StopCustomTimer();
@@ -89,7 +89,7 @@ void CCustomTimer::Update()
     {
         return;
 #ifdef DEBUG
-        Msg("! Custom Timer update was skipped because it was not found!");
+        LogInfo("! Custom Timer update was skipped because it was not found!");
 #endif
     }
 
@@ -131,13 +131,13 @@ void CTimerManager::CreateTimer(std::string name, ALife::_TIME_ID value, ETimerM
 	{
 		if (timer && ((*timer).getName() == name))
 		{
-			Msg("! Custom Timer with name [%s] already exists!");
+			LogInfo("! Custom Timer with name [%s] already exists!");
 			return;
 		}
 #ifdef DEBUG
 		else
 		{
-			Msg("Custom Timer: %s : Created (start value: %d)", (*timer).getName().c_str(), (*timer).getValue());
+			LogInfo("Custom Timer: %s : Created (start value: %d)", (*timer).getName().c_str(), (*timer).getValue());
 		}
 #endif
 	}
@@ -155,7 +155,7 @@ bool CTimerManager::DeleteTimer(std::string name)
 			Timers.erase(it);
 
 #ifdef DEBUG
-			Msg("Custom Timer: %s : Deleted", (*it)->getName().c_str());
+			LogInfo("Custom Timer: %s : Deleted", (*it)->getName().c_str());
 #endif
 			return true;
 		}

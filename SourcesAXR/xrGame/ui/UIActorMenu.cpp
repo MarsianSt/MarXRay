@@ -165,32 +165,32 @@ void CUIActorMenu::SetMenuMode(EMenuMode mode)
 		{
 		case mmUndefined:
 #ifdef DEBUG
-			Msg("* now is Undefined mode");
+			LogInfo("* now is Undefined mode");
 #endif // #ifdef DEBUG
 			ResetMode();
 			break;
 		case mmInventory:
 			InitInventoryMode();
 #ifdef DEBUG
-			Msg("* now is Inventory mode");
+			LogInfo("* now is Inventory mode");
 #endif // #ifdef DEBUG
 			break;
 		case mmTrade:
 			InitTradeMode();
 #ifdef DEBUG
-			Msg("* now is Trade mode");
+			LogInfo("* now is Trade mode");
 #endif // #ifdef DEBUG
 			break;
 		case mmUpgrade:
 			InitUpgradeMode();
 #ifdef DEBUG
-			Msg("* now is Upgrade mode");
+			LogInfo("* now is Upgrade mode");
 #endif // #ifdef DEBUG
 			break;
 		case mmDeadBodySearch:
 			InitDeadBodySearchMode();
 #ifdef DEBUG
-			Msg("* now is DeadBodySearch mode");
+			LogInfo("* now is DeadBodySearch mode");
 #endif // #ifdef DEBUG
 			break;
 		default:

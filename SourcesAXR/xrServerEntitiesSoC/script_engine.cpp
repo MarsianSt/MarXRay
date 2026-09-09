@@ -1,4 +1,4 @@
-////////////////////////////////////////////////////////////////////////////
+﻿////////////////////////////////////////////////////////////////////////////
 //	Module 		: script_engine.cpp
 //	Created 	: 01.04.2004
 //  Modified 	: 01.04.2004
@@ -252,7 +252,7 @@ void CScriptEngine::process_file_if_exists	(LPCSTR file_name, bool warn_if_not_e
 #	endif
 			{
 				print_stack			();
-				Msg					("* trying to access variable %s, which doesn't exist, or to load script %s, which doesn't exist too",file_name,S1);
+				LogInfo("* trying to access variable %s, which doesn't exist, or to load script %s, which doesn't exist too",file_name,S1);
 				m_stack_is_ready	= true;
 			}
 #endif
@@ -260,7 +260,7 @@ void CScriptEngine::process_file_if_exists	(LPCSTR file_name, bool warn_if_not_e
 			return;
 		}
 #ifndef MASTER_GOLD
-		Msg					("* loading script %s",S1);
+		LogInfo("* loading script %s",S1);
 #endif // MASTER_GOLD
 		m_reload_modules	= false;
 		load_file_into_namespace(S,*file_name ? file_name : "_G");
@@ -334,10 +334,10 @@ void CScriptEngine::stopDebugger				()
 {
 	if (debugger()){
 		xr_delete	(m_scriptDebugger);
-		Msg			("Script debugger succesfully stoped.");
+		LogInfo("Script debugger succesfully stoped.");
 	}
 	else
-		Msg			("Script debugger not present.");
+		LogInfo("Script debugger not present.");
 }
 
 void CScriptEngine::restartDebugger				()
@@ -347,7 +347,7 @@ void CScriptEngine::restartDebugger				()
 
 	m_scriptDebugger = xr_new<CScriptDebugger>();
 	debugger()->PrepareLuaBind();
-	Msg				("Script debugger succesfully restarted.");
+	LogInfo("Script debugger succesfully restarted.");
 }
 #endif
 

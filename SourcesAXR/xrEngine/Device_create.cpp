@@ -1,4 +1,4 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 
 //#include "resourcemanager.h"
 #include "../Include/xrRender/DrawUtils.h"
@@ -81,7 +81,7 @@ cdb_bDebug		= &bDebug;
 	if (!m_pRender)
 		m_pRender			= RenderFactory->CreateRenderDeviceRender();
 	SetupGPU(m_pRender);
-	Log					("Starting RENDER device...");
+	LogInfo("%s", "Starting RENDER device...");
 
 	fFOV				= 90.f;
 	fASPECT				= 1.f;

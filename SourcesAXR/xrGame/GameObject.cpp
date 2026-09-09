@@ -1,4 +1,4 @@
-#include "pch_script.h"
+п»ї#include "pch_script.h"
 #include "GameObject.h"
 //#include "../Include/xrRender/RenderVisual.h"
 #include "../Include/xrRender/RenderVisual.h"
@@ -120,7 +120,7 @@ void CGameObject::net_Destroy	()
 {
 #ifdef DEBUG
 	if (psAI_Flags.test(aiDestroy))
-		Msg					("Destroying client object [%d][%s][%x]",ID(),*cName(),this);
+		LogInfo("Destroying client object [%d][%s][%x]",ID(),*cName(),this);
 #endif
 
 	VERIFY					(m_spawned);
@@ -138,7 +138,7 @@ void CGameObject::net_Destroy	()
 	
 	if (Level().IsDemoPlayStarted() && ID() == u16(-1))
 	{
-		Msg("Destroying demo_spectator object");
+		LogInfo("Destroying demo_spectator object");
 	} else
 	{
 		g_pGameLevel->Objects.net_Unregister		(this);
@@ -200,13 +200,13 @@ void CGameObject::OnEvent		(NET_Packet& P, u16 type)
 			SHit	HDS;
 			HDS.PACKET_TYPE = type;
 			HDS.Read_Packet_Cont(P);
-//			Msg("Hit received: %d[%d,%d]", HDS.whoID, HDS.weaponID, HDS.BulletID);
+//			LogInfo("Hit received: %d[%d,%d]", HDS.whoID, HDS.weaponID, HDS.BulletID);
 			CObject*	Hitter = Level().Objects.net_Find(HDS.whoID);
 			CObject*	Weapon = Level().Objects.net_Find(HDS.weaponID);
 			HDS.who		= Hitter;
 			if (!HDS.who)
 			{
-				Msg("! ERROR: hitter object [%d] is NULL on client.", HDS.whoID);
+				LogInfo("! ERROR: hitter object [%d] is NULL on client.", HDS.whoID);
 			}
 			//-------------------------------------------------------
 			switch (HDS.PACKET_TYPE)
@@ -237,7 +237,7 @@ void CGameObject::OnEvent		(NET_Packet& P, u16 type)
 		{
 			if ( H_Parent() )
 			{
-				Msg( "! ERROR (GameObject): GE_DESTROY arrived to object[%d][%s], that has parent[%d][%s], frame[%d]",
+				LogInfo( "! ERROR (GameObject): GE_DESTROY arrived to object[%d][%s], that has parent[%d][%s], frame[%d]",
 					ID(), cNameSect().c_str(),
 					H_Parent()->ID(), H_Parent()->cName().c_str(), Device.dwFrame );
 				
@@ -247,7 +247,7 @@ void CGameObject::OnEvent		(NET_Packet& P, u16 type)
 				break;
 			}
 #ifdef MP_LOGGING
-			Msg("--- Object: GE_DESTROY of [%d][%s]", ID(), cNameSect().c_str());
+			LogInfo("--- Object: GE_DESTROY of [%d][%s]", ID(), cNameSect().c_str());
 #endif // MP_LOGGING
 
 			setDestroy		(TRUE);
@@ -287,7 +287,7 @@ BOOL CGameObject::net_Spawn		(CSE_Abstract*	DC)
 	
 	if (Level().IsDemoPlayStarted() && E->ID == u16(-1))
 	{
-		Msg("* Spawning demo spectator ...");
+		LogInfo("* Spawning demo spectator ...");
 		demo_spectator = true;
 	} else {
 		R_ASSERT(Level().Objects.net_Find(E->ID) == NULL);
@@ -296,7 +296,7 @@ BOOL CGameObject::net_Spawn		(CSE_Abstract*	DC)
 
 	setID							(E->ID);
 //	if (GameID() != eGameIDSingle)
-//		Msg ("CGameObject::net_Spawn -- object %s[%x] setID [%d]", *(E->s_name), this, E->ID);
+//		LogInfo("CGameObject::net_Spawn -- object %s[%x] setID [%d]", *(E->s_name), this, E->ID);
 	
 	// XForm
 	XFORM().setXYZ					(E->o_Angle);
@@ -304,7 +304,7 @@ BOOL CGameObject::net_Spawn		(CSE_Abstract*	DC)
 #ifdef DEBUG
 	if(ph_dbg_draw_mask1.test(ph_m1_DbgTrackObject)&&stricmp(PH_DBG_ObjectTrackName(),*cName())==0)
 	{
-		Msg("CGameObject::net_Spawn obj %s Position set from CSE_Abstract %f,%f,%f",PH_DBG_ObjectTrackName(),Position().x,Position().y,Position().z);
+		LogInfo("CGameObject::net_Spawn obj %s Position set from CSE_Abstract %f,%f,%f",PH_DBG_ObjectTrackName(),Position().x,Position().y,Position().z);
 	}
 #endif
 	VERIFY							(_valid(renderable.xform));
@@ -361,18 +361,18 @@ BOOL CGameObject::net_Spawn		(CSE_Abstract*	DC)
 #ifdef DEBUG
 	if(ph_dbg_draw_mask1.test(ph_m1_DbgTrackObject)&&stricmp(PH_DBG_ObjectTrackName(),*cName())==0)
 	{
-		Msg("CGameObject::net_Spawn obj %s After Script Binder reinit %f,%f,%f",PH_DBG_ObjectTrackName(),Position().x,Position().y,Position().z);
+		LogInfo("CGameObject::net_Spawn obj %s After Script Binder reinit %f,%f,%f",PH_DBG_ObjectTrackName(),Position().x,Position().y,Position().z);
 	}
 #endif
 	//load custom user data from server
 	if(!E->client_data.empty())
 	{	
-//		Msg				("client data is present for object [%d][%s], load is processed",ID(),*cName());
+//		LogInfo("client data is present for object [%d][%s], load is processed",ID(),*cName());
 		IReader			ireader = IReader(&*E->client_data.begin(), E->client_data.size());
 		net_Load		(ireader);
 	}
 	else {
-//		Msg				("no client data for object [%d][%s], load is skipped",ID(),*cName());
+//		LogInfo("no client data for object [%d][%s], load is skipped",ID(),*cName());
 	}
 
 	// if we have a parent
@@ -394,7 +394,7 @@ BOOL CGameObject::net_Spawn		(CSE_Abstract*	DC)
 			{
 				Fvector vertex_pos = ai().level_graph().vertex_position(ai_location().level_vertex_id());
 
-				Msg("! [%s]: %s has invalid Position[%f,%f,%f] level_vertex_id[%u][%f,%f,%f]",
+				LogInfo("! [%s]: %s has invalid Position[%f,%f,%f] level_vertex_id[%u][%f,%f,%f]",
 					__FUNCTION__, cName().c_str(), Position().x, Position().y, Position().z,
 					ai_location().level_vertex_id(), vertex_pos.x, vertex_pos.y, vertex_pos.z);
 				Position().set(vertex_pos);
@@ -434,7 +434,7 @@ BOOL CGameObject::net_Spawn		(CSE_Abstract*	DC)
 #ifdef DEBUG
 	if(ph_dbg_draw_mask1.test(ph_m1_DbgTrackObject)&&stricmp(PH_DBG_ObjectTrackName(),*cName())==0)
 	{
-		Msg("CGameObject::net_Spawn obj %s Before CScriptBinder::net_Spawn %f,%f,%f",PH_DBG_ObjectTrackName(),Position().x,Position().y,Position().z);
+		LogInfo("CGameObject::net_Spawn obj %s Before CScriptBinder::net_Spawn %f,%f,%f",PH_DBG_ObjectTrackName(),Position().x,Position().y,Position().z);
 	}
 	BOOL ret =CScriptBinder::net_Spawn(DC);
 #else
@@ -444,7 +444,7 @@ BOOL CGameObject::net_Spawn		(CSE_Abstract*	DC)
 #ifdef DEBUG
 	if(ph_dbg_draw_mask1.test(ph_m1_DbgTrackObject)&&stricmp(PH_DBG_ObjectTrackName(),*cName())==0)
 	{
-		Msg("CGameObject::net_Spawn obj %s Before CScriptBinder::net_Spawn %f,%f,%f",PH_DBG_ObjectTrackName(),Position().x,Position().y,Position().z);
+		LogInfo("CGameObject::net_Spawn obj %s Before CScriptBinder::net_Spawn %f,%f,%f",PH_DBG_ObjectTrackName(),Position().x,Position().y,Position().z);
 	}
 	return ret;
 #endif
@@ -459,8 +459,8 @@ void CGameObject::net_Save		(NET_Packet &net_packet)
 	// Script Binder Save ---------------------------------------
 #ifdef DEBUG	
 	if (psAI_Flags.test(aiSerialize))	{
-		Msg(">> **** Save script object [%s] *****", *cName());
-		Msg(">> Before save :: packet position = [%u]", net_packet.w_tell());
+		LogInfo(">> **** Save script object [%s] *****", *cName());
+		LogInfo(">> Before save :: packet position = [%u]", net_packet.w_tell());
 	}
 
 #endif
@@ -470,7 +470,7 @@ void CGameObject::net_Save		(NET_Packet &net_packet)
 #ifdef DEBUG	
 
 	if (psAI_Flags.test(aiSerialize))	{
-		Msg(">> After save :: packet position = [%u]", net_packet.w_tell());
+		LogInfo(">> After save :: packet position = [%u]", net_packet.w_tell());
 	}
 #endif
 
@@ -486,8 +486,8 @@ void CGameObject::net_Load		(IReader &ireader)
 	// Script Binder Load ---------------------------------------
 #ifdef DEBUG	
 	if (psAI_Flags.test(aiSerialize))	{
-		Msg(">> **** Load script object [%s] *****", *cName());
-		Msg(">> Before load :: reader position = [%i]", ireader.tell());
+		LogInfo(">> **** Load script object [%s] *****", *cName());
+		LogInfo(">> Before load :: reader position = [%i]", ireader.tell());
 	}
 
 #endif
@@ -498,14 +498,14 @@ void CGameObject::net_Load		(IReader &ireader)
 #ifdef DEBUG	
 
 	if (psAI_Flags.test(aiSerialize))	{
-		Msg(">> After load :: reader position = [%i]", ireader.tell());
+		LogInfo(">> After load :: reader position = [%i]", ireader.tell());
 	}
 #endif
 	// ----------------------------------------------------------
 #ifdef DEBUG
 	if(ph_dbg_draw_mask1.test(ph_m1_DbgTrackObject)&&stricmp(PH_DBG_ObjectTrackName(),*cName())==0)
 	{
-		Msg("CGameObject::net_Load obj %s (loaded) %f,%f,%f",PH_DBG_ObjectTrackName(),Position().x,Position().y,Position().z);
+		LogInfo("CGameObject::net_Load obj %s (loaded) %f,%f,%f",PH_DBG_ObjectTrackName(),Position().x,Position().y,Position().z);
 	}
 
 #endif
@@ -830,7 +830,7 @@ CScriptGameObject *CGameObject::lua_game_object		() const
 {
 #ifdef DEBUG
 	if (!m_spawned)
-		Msg							("! you are trying to use a destroyed object [%x]",this);
+		LogInfo("! you are trying to use a destroyed object [%x]",this);
 #endif
 	THROW							(m_spawned);
 	if (!m_lua_game_object)
@@ -860,16 +860,16 @@ void CGameObject::DestroyObject()
 
 void CGameObject::shedule_Update	(u32 dt)
 {
-	//уничтожить
+	//пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 	if(NeedToDestroyObject())
 	{
 #ifndef MASTER_GOLD
-		Msg("--NeedToDestroyObject for [%d][%d]", ID(), Device.dwFrame);
+		LogInfo("--NeedToDestroyObject for [%d][%d]", ID(), Device.dwFrame);
 #endif // #ifndef MASTER_GOLD
 		DestroyObject			();
 	}
 
-	// Msg							("-SUB-:[%x][%s] CGameObject::shedule_Update",smart_cast<void*>(this),*cName());
+	// LogInfo("-SUB-:[%x][%s] CGameObject::shedule_Update",smart_cast<void*>(this),*cName());
 	inherited::shedule_Update	(dt);
 	
 	CScriptBinder::shedule_Update(dt);
@@ -880,7 +880,7 @@ BOOL CGameObject::net_SaveRelevant	()
 	return	(CScriptBinder::net_SaveRelevant());
 }
 
-//игровое имя объекта
+//пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 LPCSTR CGameObject::Name () const
 {
 	return	(*cName());

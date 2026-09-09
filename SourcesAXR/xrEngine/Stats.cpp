@@ -459,7 +459,9 @@ void CStats::Show()
 
 void	_LogCallback				(LPCSTR string)
 {
-	if (string && '!'==string[0] && ' '==string[1])
+	// Format: [HH:MM:SS.mmm][Level][Module] Message
+	// Capture errors: look for "[Error]" tag
+	if (string && strstr(string, "[Error]"))
 		Device.Statistic->errors.push_back	(shared_str(string));
 }
 
@@ -481,13 +483,13 @@ void CStats::OnDeviceCreate			()
 
 	// 
 #ifdef DEBUG
-	if (!g_bDisableRedText)			SetLogCB	(_LogCallback);
+	if (!g_bDisableRedText)			xrAsyncLogger::instance().set_log_callback(_LogCallback);
 #endif
 }
 
 void CStats::OnDeviceDestroy		()
 {
-	SetLogCB(0);
+	xrAsyncLogger::instance().set_log_callback(0);
 	xr_delete	(pFont);
 }
 

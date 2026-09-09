@@ -1,4 +1,4 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 #include "inventory.h"
 #include "weapon.h"
 #include "actor.h"
@@ -170,7 +170,7 @@ bool CInventory::ActivateNextItemInActiveSlot()
 	P.w_u16								(m_iActiveSlot);
 	new_item->object().u_EventSend		(P);
 
-//	Msg( "Weapon change" );
+//	LogInfo( "Weapon change" );
 	return true;
 }
 

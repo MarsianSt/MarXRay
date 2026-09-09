@@ -1,4 +1,4 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 #include "game_sv_teamdeathmatch.h"
 #include "xrserver_objects_alife_monsters.h"
 #include "xrserver.h"
@@ -402,7 +402,7 @@ void game_sv_TeamDeathmatch::OnPlayerKillPlayer(game_PlayerState* ps_killer, gam
 					if (tmp_client)
 					{
 #ifdef DEBUG
-						Msg("--- Kicking player %s", tmp_client->ps->getName());
+						LogInfo("--- Kicking player %s", tmp_client->ps->getName());
 #endif
 						LPSTR	reason;
 						STRCONCAT( reason, CStringTable().translate("st_kicked_by_server").c_str() );

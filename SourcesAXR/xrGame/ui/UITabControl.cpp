@@ -1,4 +1,4 @@
-#include "StdAfx.h"
+п»ї#include "StdAfx.h"
 #include "UITabControl.h"
 #include "UITabButton.h"
 
@@ -23,7 +23,7 @@ void CUITabControl::SetCurrentOptValue()
 	if(NULL==b)
 	{
 #ifndef MASTER_GOLD
-		Msg("! tab named [%s] doesnt exist", v.c_str());
+		LogInfo("! tab named [%s] doesnt exist", v.c_str());
 #endif // #ifndef MASTER_GOLD
 		v					= m_TabsArr[0]->m_btn_id;
 	}
@@ -53,7 +53,7 @@ bool CUITabControl::IsChangedOptValue() const
 	return GetActiveId() != m_opt_backup_value;
 }
 
-// добавление кнопки-закладки в список закладок контрола
+// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ-пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 bool CUITabControl::AddItem(LPCSTR pItemName, LPCSTR pTexName, Fvector2 pos, Fvector2 size)
 {
 	CUITabButton *pNewButton = xr_new<CUITabButton>();

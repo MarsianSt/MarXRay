@@ -1,4 +1,4 @@
-/*
+﻿/*
 GameSpy GT2 SDK
 GT2Action - sample app
 Dan "Mr. Pants" Schoenblum
@@ -32,9 +32,7 @@ const V3b Grey   = { 128, 128, 128 };
 static GT2Bool host = GT2True;
 static GT2Bool dedicated;
 
-void Log
-(
-	const char * format,
+void LogInfo("%s", const char * format,
 	...
 )
 {

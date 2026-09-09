@@ -1,4 +1,4 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 //#include "PHdynamicdata.h"
 //#include "Physics.h"
 #include "level.h"
@@ -67,7 +67,17 @@ bool	CLevel::net_start_client2				()
 		}
 	}
 
+	LogInfo("--- bgfxport client2: direct=%d, connecting...", (int)psNET_direct_connect);
 	connected_to_server = Connect2Server(*m_caClientOptions);
+
+	if (connected_to_server && psNET_direct_connect)
+		while (!game_configured)
+		{
+			ClientReceive();
+			Server->Update();
+		}
+
+	LogInfo("--- bgfxport client2: connected=%d, configured=%d, game=%p", (int)connected_to_server, (int)game_configured, (void*)game);
 
 	return true;
 }
@@ -110,7 +120,7 @@ bool	CLevel::net_start_client3				()
 			Disconnect			();
 
 			connected_to_server = FALSE;
-			Msg("! Level (name:%s), (version:%s), not found, try to download from:%s",
+			LogInfo("! Level (name:%s), (version:%s), not found, try to download from:%s",
 				level_name, level_ver, download_url);
 			map_data.m_name					= level_name;
 			map_data.m_map_version			= level_ver;
@@ -119,7 +129,7 @@ bool	CLevel::net_start_client3				()
 			return false;
 		}
 #ifdef DEBUG
-		Msg("--- net_start_client3: level_id [%d], level_name[%s], level_version[%s]", level_id, level_name, level_ver);
+		LogInfo("--- net_start_client3: level_id [%d], level_name[%s], level_version[%s]", level_id, level_name, level_ver);
 #endif // #ifdef DEBUG
 		map_data.m_name					= level_name;
 		map_data.m_map_version			= level_ver;
@@ -132,11 +142,21 @@ bool	CLevel::net_start_client3				()
 		snprintf(rpc_settings.LargeImageKey, 128, level_name);
 		g_discord.SetStatus();
 
+		LogInfo("--- bgfxport client3: loading level, connected=%d", (int)connected_to_server);
 		// Load level
 		R_ASSERT2				(Load(level_id),"Loading failed.");
+		LogInfo("--- bgfxport client3: level loaded, pLevel=%p, connected_now=%d", (void*)pLevel, (int)connected_to_server);
 		map_data.m_level_geom_crc32 = 0;
 		if (!IsGameTypeSingle())
 			CalculateLevelCrc32		();
+
+		if (m_bGameSpecificAfterPending)
+		{
+			LogInfo("--- bgfxport client3: running deferred Load_GameSpecific_After");
+			R_ASSERT				(Load_GameSpecific_After ());
+			m_bGameSpecificAfterPending	= FALSE;
+			LogInfo("--- bgfxport client3: deferred Load_GameSpecific_After done");
+		}
 	}
 	return true;
 }
@@ -180,7 +200,7 @@ bool	CLevel::net_start_client4				()
 			// Waiting for connection/configuration completition
 			CTimer	timer_sync	;	timer_sync.Start	();
 			while	(!net_isCompleted_Connect())	Sleep	(5);
-			Msg		("* connection sync: %d ms", timer_sync.GetElapsed_ms());
+			LogInfo("* connection sync: %d ms", timer_sync.GetElapsed_ms());
 			while	(!net_isCompleted_Sync())	{ ClientReceive(); Sleep(5); }
 		}
 /*
@@ -207,7 +227,7 @@ bool	CLevel::net_start_client4				()
 void CLevel::ClientSendProfileData	()
 {
 #ifdef DEBUG
-	Msg("* Sending profile data");
+	LogInfo("* Sending profile data");
 #endif
 	NET_Packet								NP;
 	NP.w_begin								(M_CREATE_PLAYER_STATE);
@@ -261,7 +281,7 @@ bool	CLevel::net_start_client6				()
 		}
 
 #ifdef DEBUG
-		Msg("--- net_start_client6");
+		LogInfo("--- net_start_client6");
 #endif // #ifdef DEBUG
 
 		if (game)

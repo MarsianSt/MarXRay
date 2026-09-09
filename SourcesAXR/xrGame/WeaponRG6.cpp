@@ -1,4 +1,4 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 #include "WeaponRG6.h"
 #include "entity.h"
 #include "explosiveRocket.h"
@@ -69,10 +69,10 @@ void CWeaponRG6::FireStart ()
 			CInventoryOwner* io		= smart_cast<CInventoryOwner*>(H_Parent());
 			if(NULL == io->inventory().ActiveItem())
 			{
-			Log("current_state", GetState() );
-			Log("next_state", GetNextState());
-			Log("item_sect", cNameSect().c_str());
-			Log("H_Parent", H_Parent()->cNameSect().c_str());
+			LogInfo("%s", "current_state", GetState() );
+			LogInfo("%s", "next_state", GetNextState());
+			LogInfo("%s", "item_sect", cNameSect().c_str());
+			LogInfo("%s", "H_Parent", H_Parent()->cNameSect().c_str());
 			}
 			E->g_fireParams (this, p1,d);
 		}
@@ -114,7 +114,7 @@ void CWeaponRG6::FireStart ()
 #endif*/
 				if (canfire0 != 0)
 				{
-//					Msg ("d[%f,%f,%f] - res [%f,%f,%f]", d.x, d.y, d.z, res[0].x, res[0].y, res[0].z);
+//					LogInfo("d[%f,%f,%f] - res [%f,%f,%f]", d.x, d.y, d.z, res[0].x, res[0].y, res[0].z);
 					d = res[0];
 				};
 			}

@@ -7,6 +7,8 @@
 
 #include "stdafx.h"
 #include "XR_IOConsole.h"
+#undef LOG_MODULE
+#define LOG_MODULE "Console"
 
 #include "line_editor.h"
 #include "xr_input.h"

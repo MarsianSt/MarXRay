@@ -1,4 +1,4 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 #include "spectator_camera_first_eye.h"
 #include "xr_level_controller.h"
 #include "../xrEngine/xr_object.h"
@@ -17,7 +17,7 @@ CSpectrCameraFirstEye::~CSpectrCameraFirstEye()
 
 void CSpectrCameraFirstEye::Move( int cmd, float val, float factor )
 {
-	//Msg("Current ftimedelta = %0.4f", m_fTimeDelta);
+	//LogInfo("Current ftimedelta = %0.4f", m_fTimeDelta);
 	if (bClampPitch)
 	{
 		while (pitch < lim_pitch[0])

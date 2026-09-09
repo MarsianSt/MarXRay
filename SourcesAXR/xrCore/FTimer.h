@@ -1,4 +1,4 @@
-#ifndef FTimerH
+﻿#ifndef FTimerH
 #define FTimerH
 #pragma once
 
@@ -32,7 +32,7 @@ public:
     inline float GetElapsed_sec	 () const { return float(double(GetElapsed_ticks()) / double(CPU::qpc_freq)); }
 	IC	void	 Dump			 () const
 	{
-		Msg("* Elapsed time (sec): %f",GetElapsed_sec());
+		LogInfo("* Elapsed time (sec): %f",GetElapsed_sec());
 	}
 };
 
@@ -103,7 +103,7 @@ public:
 
 	IC	void			Dump			() const
 	{
-		Msg				("* Elapsed time (sec): %f",GetElapsed_sec());
+		LogInfo("* Elapsed time (sec): %f",GetElapsed_sec());
 	}
 };
 

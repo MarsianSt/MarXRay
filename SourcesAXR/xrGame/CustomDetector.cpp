@@ -1,4 +1,4 @@
-#include "stdafx.h"
+п»ї#include "stdafx.h"
 #include "customdetector.h"
 #include "ui/ArtefactDetectorUI.h"
 #include "hudmanager.h"
@@ -691,7 +691,7 @@ void CCustomDetector::Recharge(float val)
 
 	SetChargeLevel(m_fCurrentChargeLevel);
 
-	//Msg("Переданый в детектор заряд: %f", val); //Для Тестов
+	//LogInfo("пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ: %f", val); //пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
 }
 
 bool CCustomDetector::ParentIsActor()
@@ -725,7 +725,7 @@ BOOL CAfList<CObject>::feel_touch_contact	(CObject* O)
 
 bool CCustomDetector::install_upgrade_impl(LPCSTR section, bool test)
 {
-	//Msg("Detector Upgrade");
+	//LogInfo("Detector Upgrade");
 	bool result = inherited::install_upgrade_impl(section, test);
 
 	result |= process_if_exists(section, "af_radius",			&CInifile::r_float, m_fAfDetectRadius,	test);

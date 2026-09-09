@@ -1,4 +1,4 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 
 void CRenderTarget::phase_nightvision()
 {
@@ -12,7 +12,7 @@ void CRenderTarget::phase_nightvision()
 	float h = float(Device.dwHeight);
 
 	int NightVisionType = g_pGamePersistent->GetNightvisionType();
-	//Msg("NV Type Is: %d", NightVisionType);
+	//LogInfo("NV Type Is: %d", NightVisionType);
 
 	Fvector2 p0, p1;
 #ifdef USE_DX11

@@ -1,4 +1,4 @@
-// Copyright (c) 2003 Daniel Wallin and Arvid Norberg
+﻿// Copyright (c) 2003 Daniel Wallin and Arvid Norberg
 
 // Permission is hereby granted, free of charge, to any person obtaining a
 // copy of this software and associated documentation files (the "Software"),
@@ -50,7 +50,7 @@ namespace luabind { namespace detail
 #ifdef TEST_GARBAGE_COLLECTOR
 		sprintf(debug_test_constructor,"%s %x %x",m_classrep->name(),m_object,this);
 		if (!sz_cmp(debug_class,m_classrep->name()))
-			Log(debug_test_constructor);
+			LogInfo("%s", debug_test_constructor);
 #endif
 	}
 
@@ -65,7 +65,7 @@ namespace luabind { namespace detail
 #ifdef TEST_GARBAGE_COLLECTOR
 		sprintf(debug_test_constructor,"%s %x %x",m_classrep->name(),m_object,this);
 		if (!sz_cmp(debug_class,m_classrep->name()))
-			Log(debug_test_constructor);
+			LogInfo("%s", debug_test_constructor);
 #endif
 	}
 
@@ -74,7 +74,7 @@ namespace luabind { namespace detail
 #ifdef TEST_GARBAGE_COLLECTOR
 		sprintf(debug_test_destructor,"%s %x %x",m_classrep->name(),m_object,this);
 		if (!sz_cmp(debug_class,m_classrep->name()))
-			Log(debug_test_destructor);
+			LogInfo("%s", debug_test_destructor);
 #endif
 		if (m_flags & owner && m_destructor) m_destructor(m_object);
 	}

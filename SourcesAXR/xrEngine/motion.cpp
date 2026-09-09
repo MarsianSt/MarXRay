@@ -1,4 +1,4 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 #pragma hdrstop
 
 #include "motion.h"
@@ -97,7 +97,7 @@ void COMotion::SaveMotion(const char* buf){
 	Save			(F);
 	F.close_chunk	();
 	if (!F.save_to(buf)) 
-        Log			("!Can't save object motion:",buf);
+        LogInfo("%s", "!Can't save object motion:",buf);
 }
 
 bool COMotion::LoadMotion(const char* buf)
@@ -354,7 +354,7 @@ void CSMotion::SaveMotion(const char* buf){
 	Save			(F);
 	F.close_chunk	();
 	if (!F.save_to(buf)) 
-        Log			("!Can't save skeleton motion:",buf);
+        LogInfo("%s", "!Can't save skeleton motion:",buf);
 }
 
 bool CSMotion::LoadMotion(const char* buf)

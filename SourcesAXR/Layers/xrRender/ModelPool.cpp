@@ -1,4 +1,4 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 #pragma hdrstop
 
 #include "ModelPool.h"
@@ -111,7 +111,7 @@ dxRender_Visual*	CModelPool::Instance_Load		(const char* N, BOOL allow_register)
 		if (!FS.exist(fn, "$level$", name))
 			if (!FS.exist(fn, "$game_meshes$", name)){
 #ifdef _EDITOR
-				Msg("!Can't find model file '%s'.",name);
+				LogInfo("!Can't find model file '%s'.",name);
                 return 0;
 #else            
 				Debug.fatal(DEBUG_INFO,"Can't find model file '%s'.",name);
@@ -123,7 +123,7 @@ dxRender_Visual*	CModelPool::Instance_Load		(const char* N, BOOL allow_register)
 	
 	// Actual loading
 #ifdef DEBUG
-	if (bLogging)		Msg		("- Uncached model loading: %s",fn);
+	if (bLogging)		LogInfo("- Uncached model loading: %s",fn);
 #endif // DEBUG
 
 	IReader*			data	= FS.r_open(fn);
@@ -174,7 +174,7 @@ void CModelPool::Destroy()
 		REGISTRY_IT it	= Registry.begin();
 		dxRender_Visual* V=(dxRender_Visual*)it->first;
 #ifdef _DEBUG
-		Msg				("ModelPool: Destroy object: '%s'",*V->dbg_name);
+		LogInfo("ModelPool: Destroy object: '%s'",*V->dbg_name);
 #endif
 		DeleteInternal	(V,TRUE);
 	}
@@ -230,7 +230,7 @@ dxRender_Visual* CModelPool::Create(const char* name, IReader* data)
 	string_path low_name;	VERIFY	(xr_strlen(name)<sizeof(low_name));
 	xr_strcpy(low_name,name);	strlwr	(low_name);
 	if (strext(low_name))	*strext	(low_name)=0;
-//	Msg						("-CREATE %s",low_name);
+//	LogInfo("-CREATE %s",low_name);
 
 	// 0. Search POOL
 	POOL_IT	it			=	Pool.find	(low_name);
@@ -412,7 +412,7 @@ dxRender_Visual* CModelPool::CreatePG	(PS::CPGDef* source)
 
 void CModelPool::dump()
 {
-	Log	("--- model pool --- begin:");
+	LogInfo("%s", "--- model pool --- begin:");
 	u32 sz					= 0;
 	u32 k					= 0;
 	for (xr_vector<ModelDef>::iterator I=Models.begin(); I!=Models.end(); I++) {
@@ -420,10 +420,10 @@ void CModelPool::dump()
 		if (K){
 			u32 cur			= K->mem_usage	(false);
 			sz				+= cur;
-			Msg("#%3d: [%3d/%5d Kb] - %s",k++,I->refs,cur/1024,I->name.c_str());
+			LogInfo("#%3d: [%3d/%5d Kb] - %s",k++,I->refs,cur/1024,I->name.c_str());
 		}
 	}
-	Msg ("--- models: %d, mem usage: %d Kb ",k,sz/1024);
+	LogInfo("--- models: %d, mem usage: %d Kb ",k,sz/1024);
 	sz						= 0;
 	k						= 0;
 	int free_cnt			= 0;
@@ -436,11 +436,11 @@ void CModelPool::dump()
 			sz				+= cur;
 			bool b_free		= (Pool.find(it->second)!=Pool.end() );
 			if(b_free)		++free_cnt;
-			Msg("#%3d: [%s] [%5d Kb] - %s",k++, (b_free)?"free":"used", cur/1024,it->second.c_str());
+			LogInfo("#%3d: [%s] [%5d Kb] - %s",k++, (b_free)?"free":"used", cur/1024,it->second.c_str());
 		}
 	}
-	Msg ("--- instances: %d, free %d, mem usage: %d Kb ",k, free_cnt, sz/1024);
-	Log	("--- model pool --- end.");
+	LogInfo("--- instances: %d, free %d, mem usage: %d Kb ",k, free_cnt, sz/1024);
+	LogInfo("--- model pool --- end.");
 }
 
 void CModelPool::memory_stats		( u32& vb_mem_video, u32& vb_mem_system, u32& ib_mem_video, u32& ib_mem_system )
@@ -529,7 +529,7 @@ void 	CModelPool::Render(dxRender_Visual* m_pVisual, const Fmatrix& mTransform, 
     switch (m_pVisual->Type){
     case MT_SKELETON_ANIM:
     case MT_SKELETON_RIGID:{
-        if (_IsBoxVisible(m_pVisual,mTransform)){
+        if (_IsBoxVisible(m_pVisual, mTransform)){
             CKinematics* pV		= dynamic_cast<CKinematics*>(m_pVisual); VERIFY(pV);
             if (fis_zero(m_fLOD,EPS)&&pV->m_lod){
 		        if (_IsValidShader(pV->m_lod,priority,strictB2F)){

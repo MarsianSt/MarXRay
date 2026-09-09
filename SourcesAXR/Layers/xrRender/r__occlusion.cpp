@@ -1,4 +1,4 @@
-#include "StdAfx.h"
+п»ї#include "StdAfx.h"
 #include "r__occlusion.h"
 
 #include "QueryHelper.h"
@@ -13,7 +13,7 @@ R_occlusion::~R_occlusion()
 void R_occlusion::occq_destroy()
 {
 #ifdef DEBUG
-	Msg("* [%s]: fids[%u] used[%u] pool[%u]", __FUNCTION__, fids.size(), used.size(), pool.size());
+	LogInfo("* [%s]: fids[%u] used[%u] pool[%u]", __FUNCTION__, fids.size(), used.size(), pool.size());
 #endif
 	size_t p_cnt = pool.size(), u_cnt = 0;
 
@@ -26,7 +26,7 @@ void R_occlusion::occq_destroy()
 	fids.clear();
 
 #ifdef DEBUG
-	Msg("* [%s]: released [%u] used and [%u] pool queries", __FUNCTION__, u_cnt, p_cnt);
+	LogInfo("* [%s]: released [%u] used and [%u] pool queries", __FUNCTION__, u_cnt, p_cnt);
 #endif
 }
 
@@ -45,7 +45,7 @@ void R_occlusion::cleanup_lost()
 
 #ifdef DEBUG
 	if (cnt > 0)
-		Msg("! [%s]: cleanup %u lost queries", __FUNCTION__, cnt);
+		LogInfo("! [%s]: cleanup %u lost queries", __FUNCTION__, cnt);
 #endif
 }
 
@@ -74,7 +74,7 @@ u32 R_occlusion::occq_begin(u32& ID)
 		{
 #ifdef DEBUG
 			if (Device.dwFrame % 100 == 0)
-				Msg("RENDER [Warning]: Too many occlusion queries were issued: %u !!!", used.size());
+				LogInfo("RENDER [Warning]: Too many occlusion queries were issued: %u !!!", used.size());
 #endif
 
 			ID = iInvalidHandle;
@@ -117,8 +117,8 @@ R_occlusion::occq_result R_occlusion::occq_get(u32& ID)
 	Device.Statistic->RenderDUMP_Wait.Begin();
 	VERIFY2(ID < used.size(), make_string("_Pos = %d, size() = %d", ID, used.size()));
 
-	// здесь нужно дождаться результата, т.к. отладка показывает, что
-	// очень редко когда он готов немедленно
+	// пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ, пїЅ.пїЅ. пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅ
+	// пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 	while ((hr = GetData(used[ID].Q.Get(), &fragments, sizeof(fragments))) == S_FALSE)
 	{
 		if (!SwitchToThread())

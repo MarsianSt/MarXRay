@@ -1,4 +1,4 @@
-////////////////////////////////////////////////////////////////////////////
+﻿////////////////////////////////////////////////////////////////////////////
 //	Module 		: script_engine_script.cpp
 //	Created 	: 25.12.2002
 //  Modified 	: 13.05.2004
@@ -25,7 +25,7 @@ void LuaLog(LPCSTR caMessage)
 
 	if (strstr(Core.Params, "-lua_dbg"))
 	{
-		Msg("LUALOG: %s", caMessage);
+		LogInfo("LUALOG: %s", caMessage);
 	}
 }
 
@@ -42,7 +42,7 @@ void ErrorLog(LPCSTR caMessage)
 void FlushLogs()
 {
 #ifdef DEBUG
-	FlushLog();
+	xrAsyncLogger::instance().flush();
 	ai().script_engine().flush_log();
 #endif // DEBUG
 }

@@ -1,4 +1,4 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 #include "xrserver.h"
 #include "xrserver_objects.h"
 
@@ -13,23 +13,23 @@ bool xrServer::Process_event_reject	(NET_Packet& P, const ClientID sender, const
 //	R_ASSERT2( e_parent, make_string( "parent not found. parent_id = [%d], entity_id = [%d], frame = [%d]", id_parent, id_entity, Device.dwFrame ).c_str() );
 	VERIFY2  ( e_parent, make_string( "parent not found. parent_id = [%d], entity_id = [%d], frame = [%d]", id_parent, id_entity, Device.dwFrame ).c_str() );
 	if ( !e_parent ) {
-		Msg                ( "! ERROR on rejecting: parent not found. parent_id = [%d], entity_id = [%d], frame = [%d]", id_parent, id_entity, Device.dwFrame );
+		LogInfo( "! ERROR on rejecting: parent not found. parent_id = [%d], entity_id = [%d], frame = [%d]", id_parent, id_entity, Device.dwFrame );
 		return false;
 	}
 	if ( !e_entity ) {
-		Msg                ( "! ERROR on rejecting: entity not found. parent_id = [%d], entity_id = [%d], frame = [%d]", id_parent, id_entity, Device.dwFrame );
+		LogInfo( "! ERROR on rejecting: entity not found. parent_id = [%d], entity_id = [%d], frame = [%d]", id_parent, id_entity, Device.dwFrame );
 		return false;
 	}
 	game->OnDetach(id_parent,id_entity);
 
 #ifdef MP_LOGGING
-	Msg ( "--- SV: Process reject: parent[%d][%s], item[%d][%s]", id_parent, e_parent->name_replace(), id_entity, e_entity->name());
+	LogInfo( "--- SV: Process reject: parent[%d][%s], item[%d][%s]", id_parent, e_parent->name_replace(), id_entity, e_entity->name());
 #endif // MP_LOGGING
 
 	if (0xffff == e_entity->ID_Parent) 
 	{
 #ifndef MASTER_GOLD
-		Msg	("! ERROR: can't detach independent object. entity[%s][%d], parent[%s][%d], section[%s]",
+		LogInfo("! ERROR: can't detach independent object. entity[%s][%d], parent[%s][%d], section[%s]",
 			e_entity->name_replace(), id_entity, e_parent->name_replace(), id_parent, e_entity->s_name.c_str() );
 #endif // #ifndef MASTER_GOLD
 		return			(false);
@@ -40,7 +40,7 @@ bool xrServer::Process_event_reject	(NET_Packet& P, const ClientID sender, const
 	{
 		//it can't be !!!
 
-		Msg("! ERROR: e_entity->ID_Parent = [%d]  parent = [%d][%s]  entity_id = [%d]  frame = [%d]",
+		LogInfo("! ERROR: e_entity->ID_Parent = [%d]  parent = [%d][%s]  entity_id = [%d]  frame = [%d]",
 			e_entity->ID_Parent, id_parent, e_parent->name_replace(), id_entity, Device.dwFrame);
 	}
 
@@ -50,7 +50,7 @@ bool xrServer::Process_event_reject	(NET_Packet& P, const ClientID sender, const
 	const auto child	= std::find	(children.begin(),children.end(),id_entity);
 	if (child == children.end())
 	{
-		Msg("! ERROR: SV: can't find children [%d] of parent [%d]", id_entity, e_parent);
+		LogInfo("! ERROR: SV: can't find children [%d] of parent [%d]", id_entity, e_parent);
 		return false;
 	}
 

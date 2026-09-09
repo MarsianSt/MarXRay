@@ -1,4 +1,4 @@
-////////////////////////////////////////////////////////////////////////////
+﻿////////////////////////////////////////////////////////////////////////////
 //	Module 		: object_item_script.cpp
 //	Created 	: 27.05.2004
 //  Modified 	: 30.06.2004
@@ -40,22 +40,22 @@ ObjectFactory::SERVER_BASE_CLASS *CObjectItemScript::server_object	(LPCSTR secti
 			instance	= xr_new<luabind::object>((luabind::object)(m_server_creator(section)));
 		}
 		catch(std::exception e) {
-			Msg			("Exception [%s] raised while creating server object from section [%s]", e.what(),section);
+			LogInfo("Exception [%s] raised while creating server object from section [%s]", e.what(),section);
 			return		(0);
 		}
 		catch(...) {
-			Msg			("Exception raised while creating server object from section [%s]",section);
+			LogInfo("Exception raised while creating server object from section [%s]",section);
 			return		(0);
 		}
 		object			= luabind::object_cast<ObjectFactory::SERVER_SCRIPT_BASE_CLASS*>(*instance,luabind::adopt<luabind::m_result>());
 		xr_delete		(instance);
 	}
 	catch(std::exception e) {
-		Msg				("Exception [%s] raised while casting and adopting script server object from section [%s]", e.what(),section);
+		LogInfo("Exception [%s] raised while casting and adopting script server object from section [%s]", e.what(),section);
 		return			(0);
 	}
 	catch(...) {
-		Msg				("Exception raised while creating script server object from section [%s]", section);
+		LogInfo("Exception raised while creating script server object from section [%s]", section);
 		return			(0);
 	}
 

@@ -1,4 +1,4 @@
-////////////////////////////////////////////////////////////////////////////
+﻿////////////////////////////////////////////////////////////////////////////
 //	Module 		: UIActorMenu_action.cpp
 //	Created 	: 14.10.2008
 //	Author		: Evgeniy Sokolov (sea)
@@ -116,7 +116,7 @@ bool CUIActorMenu::OnItemDrop(CUICellItem* itm)
 
 	if ( !AllowItemDrops(t_old, t_new) )
 	{
-		Msg("incorrect action [%d]->[%d]",t_old, t_new);
+		LogInfo("incorrect action [%d]->[%d]",t_old, t_new);
 		return true;
 	}
 	switch(t_new)

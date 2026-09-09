@@ -1,4 +1,4 @@
-#include "pch_script.h"
+п»ї#include "pch_script.h"
 #include "xrServer_Objects_ALife_All.h"
 #include "level.h"
 #include "game_cl_base.h"
@@ -7,6 +7,7 @@
 #include "game_level_cross_table.h"
 #include "level_graph.h"
 #include "client_spawn_manager.h"
+#include "Actor.h"
 #include "../xrEngine/xr_object.h"
 #include "../xrEngine/IGame_Persistent.h"
 
@@ -31,7 +32,7 @@ void CLevel::cl_Process_Spawn(NET_Packet& P)
 		return;
 	}
 //-------------------------------------------------
-//.	Msg ("M_SPAWN - %s[%d][%x] - %d %d", *s_name,  E->ID, E,E->ID_Parent, Device.dwFrame);
+//.	LogInfo("M_SPAWN - %s[%d][%x] - %d %d", *s_name,  E->ID, E,E->ID_Parent, Device.dwFrame);
 //-------------------------------------------------
 	//force object to be local for server client
 	if (OnServer())		{
@@ -40,7 +41,7 @@ void CLevel::cl_Process_Spawn(NET_Packet& P)
 
 	if (std::find(m_just_destroyed.begin(), m_just_destroyed.end(), E->ID) !=
 		m_just_destroyed.end()) {
-		Msg("* [%s]: skip just destroyed [%s] ID: [%u] ID_Parent: [%u]", __FUNCTION__,
+		LogInfo("* [%s]: skip just destroyed [%s] ID: [%u] ID_Parent: [%u]", __FUNCTION__,
 			E->name_replace(), E->ID, E->ID_Parent);
 		m_just_destroyed.erase(std::remove(m_just_destroyed.begin(), m_just_destroyed.end(), E->ID),
 			m_just_destroyed.end());
@@ -110,7 +111,7 @@ void CLevel::g_sv_Spawn		(CSE_Abstract* E)
 //	CTimer		T(false);
 
 #ifdef DEBUG
-//	Msg					("* CLIENT: Spawn: %s, ID=%d", *E->s_name, E->ID);
+//	LogInfo("* CLIENT: Spawn: %s, ID=%d", *E->s_name, E->ID);
 #endif
 
 	// Optimization for single-player only	- minimize traffic between client and server
@@ -121,7 +122,7 @@ void CLevel::g_sv_Spawn		(CSE_Abstract* E)
 
 	auto obj = Objects.net_Find(E->ID);
 	if (obj && obj->getDestroy()) {
-		Msg("[%s]: %s[%u] already net_Spawn'ed, ProcessDestroyQueue()", __FUNCTION__,
+		LogInfo("[%s]: %s[%u] already net_Spawn'ed, ProcessDestroyQueue()", __FUNCTION__,
 			obj->cName().c_str(), obj->ID());
 		Objects.ProcessDestroyQueue();
 	}
@@ -130,7 +131,7 @@ void CLevel::g_sv_Spawn		(CSE_Abstract* E)
 //	T.Start		();
 
 	CObject*	O		= Objects.Create	(*E->s_name);
-	// Msg				("--spawn--CREATE: %f ms",1000.f*T.GetAsync());
+	// LogInfo("--spawn--CREATE: %f ms",1000.f*T.GetAsync());
 
 //	T.Start		();
 #ifdef DEBUG_MEMORY_MANAGER
@@ -143,7 +144,7 @@ void CLevel::g_sv_Spawn		(CSE_Abstract* E)
 		O->net_Destroy			( );
 		client_spawn_manager().clear(O->ID());
 		Objects.Destroy			(O);
-		Msg						("! Failed to spawn entity '%s'",*E->s_name);
+		LogInfo("! Failed to spawn entity '%s'",*E->s_name);
 #ifdef DEBUG_MEMORY_MANAGER
 		mem_alloc_gather_stats	(!!psAI_Flags.test(aiDebugOnFrameAllocs));
 #endif // DEBUG_MEMORY_MANAGER
@@ -156,10 +157,11 @@ void CLevel::g_sv_Spawn		(CSE_Abstract* E)
 			ZoneScopedN("client_spawn_manager");
 
 			client_spawn_manager().callback(O);
-			//Msg			("--spawn--SPAWN: %f ms",1000.f*T.GetAsync());
+			//LogInfo("--spawn--SPAWN: %f ms",1000.f*T.GetAsync());
 
-			if ((E->s_flags.is(M_SPAWN_OBJECT_LOCAL)) &&
-				(E->s_flags.is(M_SPAWN_OBJECT_ASPLAYER)))
+			if ((smart_cast<CActor*>(O) && IsGameTypeSingle()) ||
+				((E->s_flags.is(M_SPAWN_OBJECT_LOCAL)) &&
+				(E->s_flags.is(M_SPAWN_OBJECT_ASPLAYER))))
 			{
 				if (IsDemoPlayStarted())
 				{
@@ -225,7 +227,7 @@ void CLevel::g_sv_Spawn		(CSE_Abstract* E)
 	if (g_bMEMO) {
 		lua_gc					(ai().script_engine().lua(),LUA_GCCOLLECT,0);
 		lua_gc					(ai().script_engine().lua(),LUA_GCCOLLECT,0);
-		Msg						("* %20s : %d bytes, %d ops", *E->s_name,Memory.mem_usage()-E_mem, Memory.stat_calls );
+		LogInfo("* %20s : %d bytes, %d ops", *E->s_name,Memory.mem_usage()-E_mem, Memory.stat_calls );
 	}
 #endif // DEBUG_MEMORY_MANAGER
 }
@@ -243,7 +245,7 @@ CSE_Abstract* CLevel::spawn_item(LPCSTR section, const Fvector& position, std::u
 			dynamic_object->m_tGraphID	= ai().cross_table().vertex(level_vertex_id).game_vertex_id();
 	}
 
-	//оружие спавним с полным магазинои
+	//пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 	CSE_ALifeItemWeapon* weapon = smart_cast<CSE_ALifeItemWeapon*>(abstract);
 	if(weapon)
 		weapon->a_elapsed	= weapon->get_ammo_magsize();

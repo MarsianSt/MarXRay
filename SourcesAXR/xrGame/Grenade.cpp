@@ -1,4 +1,4 @@
-#include "stdafx.h"
+п»ї#include "stdafx.h"
 #include "grenade.h"
 #include "../xrphysics/PhysicsShell.h"
 //.#include "WeaponHUD.h"
@@ -34,7 +34,7 @@ void CGrenade::Load(LPCSTR section)
 	m_sounds.LoadSound(section, "snd_throw_quick", "sndThrowQuick", false, m_eSoundCheckout);
 
 	//////////////////////////////////////
-	//время убирания оружия с уровня
+	//пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
 	if(pSettings->line_exist(section,"grenade_remove_time"))
 		m_dwGrenadeRemoveTime = pSettings->r_u32(section,"grenade_remove_time");
 	else
@@ -117,7 +117,7 @@ void CGrenade::State(u32 state)
 				if (Local())
 				{
 #ifndef MASTER_GOLD
-					Msg( "Destroying local grenade[%d][%d]", ID(), Device.dwFrame );
+					LogInfo( "Destroying local grenade[%d][%d]", ID(), Device.dwFrame );
 #endif // #ifndef MASTER_GOLD
 					DestroyObject();
 				}
@@ -162,7 +162,7 @@ void CGrenade::SendHiddenItem						()
 {
 	if (GetState()==eThrow)
 	{
-//		Msg("MotionMarks !!![%d][%d]", ID(), Device.dwFrame);
+//		LogInfo("MotionMarks !!![%d][%d]", ID(), Device.dwFrame);
 		Throw				();
 	}
 	CActor* pActor = smart_cast<CActor*>( m_pInventory->GetOwner());
@@ -188,7 +188,7 @@ void CGrenade::Throw()
 	if (pGrenade) 
 	{
 		pGrenade->set_destroy_time(m_dwDestroyTimeMax);
-//установить ID того кто кинул гранату
+//пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ ID пїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 		pGrenade->SetInitiator( H_Parent()->ID() );
 	}
 	inherited::Throw			();
@@ -235,7 +235,7 @@ void CGrenade::PutNextToSlot()
 	if (OnClient()) return;
 
 	VERIFY									(!getDestroy());
-	//выкинуть гранату из инвентаря
+	//пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 	NET_Packet						P;
 	if (m_pInventory)
 	{
@@ -246,7 +246,7 @@ void CGrenade::PutNextToSlot()
 		this->u_EventSend				(P);
 	}
 	else
-		Msg ("! PutNextToSlot : m_pInventory = NULL [%d][%d]", ID(), Device.dwFrame);	
+		LogInfo("! PutNextToSlot : m_pInventory = NULL [%d][%d]", ID(), Device.dwFrame);	
 
 	if (smart_cast<CInventoryOwner*>(H_Parent()) && m_pInventory)
 	{
@@ -299,7 +299,7 @@ bool CGrenade::Action(u16 cmd, u32 flags)
 
 	switch(cmd) 
 	{
-	//переключение типа гранаты
+	//пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 	case kWPN_NEXT:
 		{
             if(flags&CMD_START) 

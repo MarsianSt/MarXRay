@@ -1,4 +1,4 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 #pragma hdrstop
 
 #include	"xrsharedmem.h"
@@ -227,8 +227,8 @@ void	xrMemory::mem_statistic	(LPCSTR fn)
 	LPCSTR					fn	= "$memstat$.tmp";
 	xr_map<u32,u32>			stats;
 
-	if (g_pStringContainer)			Msg	("memstat: shared_str: economy: %d bytes",g_pStringContainer->stat_economy());
-	if (g_pSharedMemoryContainer)	Msg	("memstat: shared_mem: economy: %d bytes",g_pSharedMemoryContainer->stat_economy());
+	if (g_pStringContainer)			LogInfo("memstat: shared_str: economy: %d bytes",g_pStringContainer->stat_economy());
+	if (g_pSharedMemoryContainer)	LogInfo("memstat: shared_mem: economy: %d bytes",g_pSharedMemoryContainer->stat_economy());
 
 	// Dump memory stats into file to avoid reallocation while traversing
 	{
@@ -261,7 +261,7 @@ void	xrMemory::mem_statistic	(LPCSTR fn)
 	{
 		xr_map<u32,u32>::iterator I		= stats.begin();
 		xr_map<u32,u32>::iterator E		= stats.end();
-		for (; I!=E; I++)	Msg			("%8d : %-4d [%d]",I->first,I->second,I->first*I->second);
+		for (; I!=E; I++)	LogInfo("%8d : %-4d [%d]",I->first,I->second,I->first*I->second);
 	}
 	*/
 }

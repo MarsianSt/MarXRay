@@ -1,4 +1,4 @@
-////////////////////////////////////////////////////////////////////////////
+﻿////////////////////////////////////////////////////////////////////////////
 //	Module 		: stalker_movement_manager_base.cpp
 //	Created 	: 27.12.2003
 //  Modified 	: 13.02.2008
@@ -195,7 +195,7 @@ void stalker_movement_manager_base::initialize()
 
 	restrictions().remove_all_restrictions();
 	set_nearest_accessible_position();
-//	Msg						("[%6d] m_failed_to_build_path = %s (stalker_movement_manager_base::initialize)",Device.dwTimeGlobal,m_failed_to_build_path ? "true" : "false");
+//	LogInfo("[%6d] m_failed_to_build_path = %s (stalker_movement_manager_base::initialize)",Device.dwTimeGlobal,m_failed_to_build_path ? "true" : "false");
 }
 
 void stalker_movement_manager_base::set_desired_position(const Fvector *position)
@@ -404,7 +404,7 @@ void stalker_movement_manager_base::parse_velocity_mask	(stalker_movement_params
 		if (movement_params.m_mental_state == eMentalStateFree) {
 			setup_body_orientation	();
 			guard.enable			(false);
-//			Msg						("%d FALSE",Device.dwTimeGlobal);
+//			LogInfo("%d FALSE",Device.dwTimeGlobal);
 		}
 		if	(
 				(movement_params.m_mental_state != eMentalStateFree) ||
@@ -415,7 +415,7 @@ void stalker_movement_manager_base::parse_velocity_mask	(stalker_movement_params
 		{
 			m_last_turn_index			= detail().curr_travel_point_index();
 			guard.enable			(true);
-//			Msg						("%d TRUE",Device.dwTimeGlobal);
+//			LogInfo("%d TRUE",Device.dwTimeGlobal);
 			if (detail().curr_travel_point_index() + 1 < path().size()) {
 				point				= path()[detail().curr_travel_point_index() + 1];
 				current_velocity	= detail().velocity(point.velocity);
@@ -472,7 +472,7 @@ void stalker_movement_manager_base::parse_velocity_mask	(stalker_movement_params
 			if (m_object->get_brain().current_action_id() == StalkerDecisionSpace::eWorldOperatorCombatPlanner) {
 				CStalkerCombatPlanner	&planner = smart_cast<CStalkerCombatPlanner&>(m_object->get_brain().current_action());
 				if (planner.current_action_id() != StalkerDecisionSpace::eWorldOperatorKillWoundedEnemy)
-					Msg					("~ stalker %s is doing bad thing (action %s)",*m_object->cName(),planner.current_action().m_action_name);
+					LogInfo("~ stalker %s is doing bad thing (action %s)",*m_object->cName(),planner.current_action().m_action_name);
 			}
 #endif // DEBUG
 			movement_params.m_mental_state	= eMentalStateFree;
@@ -755,7 +755,7 @@ void stalker_movement_manager_base::check_for_bad_path	(stalker_movement_params&
 		float							angle = acosf(cos_angle);
 		if (angle > BAD_PATH_ANGLE) {
 #ifdef DEBUG
-			Msg							("bad path check changed movement type from RUN to WALK");
+			LogInfo("bad path check changed movement type from RUN to WALK");
 #endif // DEBUG
 			movement_params.m_movement_type	= eMovementTypeWalk;
 			return;

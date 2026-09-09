@@ -1,4 +1,4 @@
-////////////////////////////////////////////////////////////////////////////
+﻿////////////////////////////////////////////////////////////////////////////
 //	Module 		: stalker_torso_animation.cpp
 //	Created 	: 19.11.2004
 //  Modified 	: 19.11.2004
@@ -31,7 +31,7 @@ MotionID CStalkerAnimationManager::aim_animation	(const u32 &slot, const xr_vect
 
 #if 1//def DEBUG
 	if (animation[6].A.size() < 7) {
-		Msg							(
+		LogInfo(
 			"! cannot find special danger animations for object with visual %s",
 			object().cNameVisual().c_str()
 		);
@@ -191,7 +191,7 @@ MotionID CStalkerAnimationManager::weapon_animation	(u32 slot, const EBodyState 
 					if (animation[4].A.size() == 1)
 					{
 #ifdef DEBUG
-						Msg("! [CStalkerAnimationManager::weapon_animation]: Error in stalker with visual: [%s], weapon: [%s]! Index is out of range: index requested [1] > size of container [%d]. Force return [0] index.", m_visual->getDebugName().c_str(), m_weapon->cNameSect().c_str(), animation[4].A.size());
+						LogInfo("! [CStalkerAnimationManager::weapon_animation]: Error in stalker with visual: [%s], weapon: [%s]! Index is out of range: index requested [1] > size of container [%d]. Force return [0] index.", m_visual->getDebugName().c_str(), m_weapon->cNameSect().c_str(), animation[4].A.size());
 #endif
 						return animation[4].A[0];
 					}
@@ -203,7 +203,7 @@ MotionID CStalkerAnimationManager::weapon_animation	(u32 slot, const EBodyState 
 					if (animation[4].A.size() < 3)
 					{
 #ifdef DEBUG
-						Msg("! [CStalkerAnimationManager::weapon_animation]: Error in stalker with visual: [%s], weapon: [%s]! Index is out of range: index requested [2] > size of container [%d]. Force return [0] index.", m_visual->getDebugName().c_str(), m_weapon->cNameSect().c_str(), animation[4].A.size());
+						LogInfo("! [CStalkerAnimationManager::weapon_animation]: Error in stalker with visual: [%s], weapon: [%s]! Index is out of range: index requested [2] > size of container [%d]. Force return [0] index.", m_visual->getDebugName().c_str(), m_weapon->cNameSect().c_str(), animation[4].A.size());
 #endif			
 						return animation[4].A[0];
 					}
@@ -263,7 +263,7 @@ MotionID CStalkerAnimationManager::missile_animation	(u32 slot, const EBodyState
 		case CMissile::eShowing	 : {
 #ifdef DEBUG
 			if (animation[0].A.empty()) {
-				Msg					("! visual %s", object().cNameVisual().c_str());
+				LogInfo("! visual %s", object().cNameVisual().c_str());
 			}
 #endif // #ifdef DEBUG
 			return					(torso().select(animation[0].A));
@@ -271,34 +271,34 @@ MotionID CStalkerAnimationManager::missile_animation	(u32 slot, const EBodyState
 		case CMissile::eHiding	 : {
 #ifdef DEBUG
 			if (animation[3].A.empty()) {
-				Msg					("! visual %s", object().cNameVisual().c_str());
+				LogInfo("! visual %s", object().cNameVisual().c_str());
 			}
 #endif // #ifdef DEBUG
 			return					(torso().select(animation[3].A));
 		}
 		case CMissile::eThrowStart : {
-//			Msg						("CMissile::eThrowStart");
+//			LogInfo("CMissile::eThrowStart");
 #ifdef DEBUG
 			if (animation[1].A.empty()) {
-				Msg					("! visual %s", object().cNameVisual().c_str());
+				LogInfo("! visual %s", object().cNameVisual().c_str());
 			}
 #endif // #ifdef DEBUG
 			return					(animation[1].A[0]);
 		}
 		case CMissile::eReady	 : {
-//			Msg						("CMissile::eReady");
+//			LogInfo("CMissile::eReady");
 #ifdef DEBUG
 			if (animation[1].A.size() < 2) {
-				Msg					("! visual %s", object().cNameVisual().c_str());
+				LogInfo("! visual %s", object().cNameVisual().c_str());
 			}
 #endif // #ifdef DEBUG
 			return					(animation[1].A[1]);
 		}
 		case CMissile::eThrow	 : {
-//			Msg						("CMissile::eThrow");
+//			LogInfo("CMissile::eThrow");
 #ifdef DEBUG
 			if (animation[1].A.size() < 3) {
-				Msg					("! visual %s", object().cNameVisual().c_str());
+				LogInfo("! visual %s", object().cNameVisual().c_str());
 			}
 #endif // #ifdef DEBUG
 			return					(animation[1].A[2]);
@@ -306,16 +306,16 @@ MotionID CStalkerAnimationManager::missile_animation	(u32 slot, const EBodyState
 		case CMissile::eThrowEnd	 : {
 #ifdef DEBUG
 			if (animation[6].A.empty()) {
-				Msg					("! visual %s", object().cNameVisual().c_str());
+				LogInfo("! visual %s", object().cNameVisual().c_str());
 			}
 #endif // #ifdef DEBUG
-//			Msg						("CMissile::eThrowEnd");
+//			LogInfo("CMissile::eThrowEnd");
 			return					(animation[6].A[0]);
 		}
 		case CMissile::eBore	 : {
 #ifdef DEBUG
 			if (animation[1].A.size() < 2) {
-				Msg					("! visual %s", object().cNameVisual().c_str());
+				LogInfo("! visual %s", object().cNameVisual().c_str());
 			}
 #endif // #ifdef DEBUG
 			return					(animation[1].A[1]);
@@ -323,7 +323,7 @@ MotionID CStalkerAnimationManager::missile_animation	(u32 slot, const EBodyState
 		case CMissile::eHidden	 : {
 #ifdef DEBUG
 			if (animation[6].A.empty()) {
-				Msg					("! visual %s", object().cNameVisual().c_str());
+				LogInfo("! visual %s", object().cNameVisual().c_str());
 			}
 #endif // #ifdef DEBUG
 			return					(animation[6].A[0]);
@@ -335,7 +335,7 @@ MotionID CStalkerAnimationManager::missile_animation	(u32 slot, const EBodyState
 			if (standing()) {
 #ifdef DEBUG
 				if (animation[6].A.empty()) {
-					Msg				("! visual %s", object().cNameVisual().c_str());
+					LogInfo("! visual %s", object().cNameVisual().c_str());
 				}
 #endif // #ifdef DEBUG
 				return				(animation[6].A[0]);
@@ -344,7 +344,7 @@ MotionID CStalkerAnimationManager::missile_animation	(u32 slot, const EBodyState
 			if (eMovementTypeWalk == movement.movement_type()) {
 #ifdef DEBUG
 				if (animation[6].A.size() < 3) {
-					Msg				("! visual %s", object().cNameVisual().c_str());
+					LogInfo("! visual %s", object().cNameVisual().c_str());
 				}
 #endif // #ifdef DEBUG
 				return				(animation[6].A[2]);
@@ -352,7 +352,7 @@ MotionID CStalkerAnimationManager::missile_animation	(u32 slot, const EBodyState
 
 #ifdef DEBUG
 			if (animation[6].A.size() < 4) {
-				Msg					("! visual %s", object().cNameVisual().c_str());
+				LogInfo("! visual %s", object().cNameVisual().c_str());
 			}
 #endif // #ifdef DEBUG
 			return					(animation[6].A[3]);

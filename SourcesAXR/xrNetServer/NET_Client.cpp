@@ -1,4 +1,4 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 #include "NET_Common.h"
 #include "net_client.h"
 #include "net_server.h"
@@ -116,7 +116,7 @@ void	dump_URL	(LPCSTR p, IDirectPlay8Address* A)
 	string256	aaaa;
 	DWORD		aaaa_s			= sizeof(aaaa);
 	R_CHK		(A->GetURLA(aaaa,&aaaa_s));
-	Log			(p,aaaa);
+	LogInfo("%s", p,aaaa);
 }
 
 // 
@@ -145,7 +145,7 @@ NET_Packet*		INetQueue::Create	()
 	NET_Packet*	P			= 0;
 	//cs.Enter		();
 //#ifdef _DEBUG
-//		Msg ("- INetQueue::Create - ready %d, unused %d", ready.size(), unused.size());
+//		LogInfo("- INetQueue::Create - ready %d, unused %d", ready.size(), unused.size());
 //#endif
 	if (unused.empty())	
 	{
@@ -167,7 +167,7 @@ NET_Packet*		INetQueue::Create	(const NET_Packet& _other)
 	NET_Packet*	P			= 0;
 	cs.Enter		();
 //#ifdef _DEBUG
-//		Msg ("- INetQueue::Create - ready %d, unused %d", ready.size(), unused.size());
+//		LogInfo("- INetQueue::Create - ready %d, unused %d", ready.size(), unused.size());
 //#endif
 	if (unused.empty())	
 	{
@@ -190,7 +190,7 @@ NET_Packet*		INetQueue::Retreive	()
 	NET_Packet*	P			= 0;
 	//cs.Enter		();
 //#ifdef _DEBUG
-//			Msg ("INetQueue::Retreive - ready %d, unused %d", ready.size(), unused.size());
+//			LogInfo("INetQueue::Retreive - ready %d, unused %d", ready.size(), unused.size());
 //#endif
 	if (!ready.empty())		P = ready.front();
 	//---------------------------------------------	
@@ -212,7 +212,7 @@ void			INetQueue::Release	()
 {
 	//cs.Enter		();
 //#ifdef _DEBUG
-//		Msg ("INetQueue::Release - ready %d, unused %d", ready.size(), unused.size());
+//		LogInfo("INetQueue::Release - ready %d, unused %d", ready.size(), unused.size());
 //#endif
 	VERIFY			(!ready.empty());
 	//---------------------------------------------
@@ -318,7 +318,7 @@ IPureClient::_Recieve( const void* data, u32 data_size, u32 /*param*/ )
 			net_Connected = EnmConnectionCompleted;
 			return;
 		}
-		Msg( "! Unknown system message" );
+		LogInfo( "! Unknown system message" );
 		return;
 	} 
 	else if( net_Connected == EnmConnectionCompleted )
@@ -429,7 +429,7 @@ if(!psNET_direct_connect)
 		clamp(psCL_Port, int(START_PORT), int(END_PORT));
 		bPortWasSet = TRUE;
 	};
-//	Msg("* Client connect on port %d\n",psNET_Port);
+//	LogInfo("* Client connect on port %d\n",psNET_Port);
 
 	//
 	net_Connected	= EnmConnectionWait;
@@ -547,12 +547,12 @@ if(!psNET_direct_connect)
 
 				if (bPortWasSet) 
 				{
-					Msg("! IPureClient : port %d is BUSY!", c_port);
+					LogInfo("! IPureClient : port %d is BUSY!", c_port);
 					return FALSE;
 				}				
 				else
 				{
-					Msg("! IPureClient : port %d is BUSY!", c_port);
+					LogInfo("! IPureClient : port %d is BUSY!", c_port);
 				}
 
 				c_port++;
@@ -563,7 +563,7 @@ if(!psNET_direct_connect)
 			}
 			else
 			{
-				Msg("- IPureClient : created on port %d!", c_port);
+				LogInfo("- IPureClient : created on port %d!", c_port);
 			}
 		};
 
@@ -640,12 +640,12 @@ if(!psNET_direct_connect)
 
 				if (bPortWasSet) 
 				{
-					Msg("! IPureClient : port %d is BUSY!", c_port);
+					LogInfo("! IPureClient : port %d is BUSY!", c_port);
 					return FALSE;
 				}				
 #ifdef DEBUG
 				else
-					Msg("! IPureClient : port %d is BUSY!", c_port);
+					LogInfo("! IPureClient : port %d is BUSY!", c_port);
 
 //				const char* x = DXGetErrorString9(res);
 				string1024 tmp1 = "";
@@ -655,7 +655,7 @@ if(!psNET_direct_connect)
 			}
 			else
 			{
-				Msg("- IPureClient : created on port %d!", c_port);
+				LogInfo("- IPureClient : created on port %d!", c_port);
 			}
 		};
 
@@ -679,7 +679,7 @@ if(!psNET_direct_connect)
 		net_csEnumeration.Enter		();
 		// real connect
 		for (u32 I=0; I<net_Hosts.size(); I++) 
-			Msg("* HOST #%d: %s\n",I+1,*net_Hosts[I].dpSessionName);
+			LogInfo("* HOST #%d: %s\n",I+1,*net_Hosts[I].dpSessionName);
 		
 		R_CHK(net_Hosts.front().pHostAddress->Duplicate(&pHostAddress ) );
 		// dump_URL		("! c2s ",	pHostAddress);
@@ -713,7 +713,7 @@ if(!psNET_direct_connect)
 			}break;
 			case DPNERR_CANTCREATEPLAYER:
 				{
-					Msg("! Error: Can\'t create player");
+					LogInfo("! Error: Can\'t create player");
 				}break;
 		}
 		if (res != S_OK) return FALSE;
@@ -853,14 +853,14 @@ HRESULT	IPureClient::net_Handler(u32 dwMessageType, PVOID pMessage)
 			{
 				OnSessionTerminate(m_data);
 #ifdef DEBUG				
-				Msg("- Session terminated : %s", m_data);
+				LogInfo("- Session terminated : %s", m_data);
 #endif
 			}
 			else
 			{
 #ifdef DEBUG
 				OnSessionTerminate( (::Debug.error2string(m_hResultCode)));
-				Msg("- Session terminated : %s", (::Debug.error2string(m_hResultCode)));
+				LogInfo("- Session terminated : %s", (::Debug.error2string(m_hResultCode)));
 #endif
 			}
 		};
@@ -889,7 +889,7 @@ HRESULT	IPureClient::net_Handler(u32 dwMessageType, PVOID pMessage)
 					{
 						string256 ResStr = "";
 						strncpy_s(ResStr, (char*)(pMsg->pvApplicationReplyData), pMsg->dwApplicationReplyDataSize);
-						Msg("Connection result : %s", ResStr);
+						LogInfo("Connection result : %s", ResStr);
 					}
 					else
 						msg	= "DPN_MSGID_CONNECT_COMPLETE"; 
@@ -911,7 +911,7 @@ HRESULT	IPureClient::net_Handler(u32 dwMessageType, PVOID pMessage)
 			case DPN_MSGID_TERMINATE_SESSION:			msg = "DPN_MSGID_TERMINATE_SESSION"; break;
 			default:									msg = "???"; break;
 			}
-			//Msg("! ************************************ : %s",msg);
+			//LogInfo("! ************************************ : %s",msg);
 #endif
 		}
 		break;
@@ -970,10 +970,10 @@ void	IPureClient::SendTo_LL(void* data, u32 size, u32 dwFlags, u32 dwTimeout)
     DPNHANDLE	hAsync  = 0;
 	HRESULT		hr      = NET->Send( &desc, 1, dwTimeout, 0, &hAsync, dwFlags | DPNSEND_COALESCE );
 		
-//	Msg("- Client::SendTo_LL [%d]", size);
+//	LogInfo("- Client::SendTo_LL [%d]", size);
 	if( FAILED(hr) )	
 	{
-		Msg	("! ERROR: Failed to send net-packet, reason: %s",::Debug.error2string(hr));
+		LogInfo("! ERROR: Failed to send net-packet, reason: %s",::Debug.error2string(hr));
 //		const char* x = DXGetErrorString9(hr);
 		string1024 tmp="";
 		DXTRACE_ERR(tmp, hr);
@@ -1080,13 +1080,13 @@ void	IPureClient::Sync_Thread	()
 			if (0==NET || net_Disconnected)	break;
 
 			if (FAILED(NET->Send(&desc,1,0,0,&hAsync,net_flags(FALSE,FALSE,TRUE))))	{
-				Msg("* CLIENT: SyncThread: EXIT. (failed to send - disconnected?)");
+				LogInfo("* CLIENT: SyncThread: EXIT. (failed to send - disconnected?)");
 				break;
 			}
 		} 
 		__except (EXCEPTION_EXECUTE_HANDLER)
 		{
-			Msg("* CLIENT: SyncThread: EXIT. (failed to send - disconnected?)");
+			LogInfo("* CLIENT: SyncThread: EXIT. (failed to send - disconnected?)");
 			break;
 		}
 		
@@ -1099,7 +1099,7 @@ void	IPureClient::Sync_Thread	()
 			if (net_DeltaArray.size()>=syncSamples)	{
 				net_Syncronised	= TRUE;
 				net_TimeDelta	= net_TimeDelta_Calculated;
-				// Msg			("* CL_TimeSync: DELTA: %d",net_TimeDelta);
+				// LogInfo("* CL_TimeSync: DELTA: %d",net_TimeDelta);
 			}
 		}
 	}
@@ -1120,7 +1120,7 @@ void	IPureClient::Sync_Average	()
 	if (frac>s64(size/2))	summary_delta += (summary_delta<0)?-1:1;
 	net_TimeDelta_Calculated=	s32(summary_delta);
 	net_TimeDelta			=	(net_TimeDelta*5+net_TimeDelta_Calculated)/6;
-//	Msg("* CLIENT: d(%d), dc(%d), s(%d)",net_TimeDelta,net_TimeDelta_Calculated,size);
+//	LogInfo("* CLIENT: d(%d), dc(%d), s(%d)",net_TimeDelta,net_TimeDelta_Calculated,size);
 }
 
 void sync_thread(void* P)

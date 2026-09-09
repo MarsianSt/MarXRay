@@ -1,4 +1,4 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 #pragma hdrstop
 
 #include "../../xrScripts/xrScripts.h"
@@ -110,7 +110,7 @@ void	CResourceManager::LS_Load			()
 {
 	LSVM			= lua_newstate(lua_alloc, NULL);
 	if (!LSVM)		{
-		Msg			("! ERROR : Cannot initialize LUA VM!");
+		LogInfo("! ERROR : Cannot initialize LUA VM!");
 		return;
 	}
 
@@ -201,7 +201,7 @@ void	CResourceManager::LS_Load			()
 			Script::bfLoadFileIntoNamespace	(LSVM,fn,namesp,true);
 		} catch (...)
 		{
-			Log(lua_tostring(LSVM,-1));
+			LogInfo(lua_tostring(LSVM, -1));
 		}
 	}
 	FS.file_list_close			(folder);

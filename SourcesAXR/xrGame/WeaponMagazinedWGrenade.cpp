@@ -1,4 +1,4 @@
-#include "stdafx.h"
+п»ї#include "stdafx.h"
 #include "weaponmagazinedwgrenade.h"
 #include "entity.h"
 #include "ParticlesObject.h"
@@ -306,7 +306,7 @@ void CWeaponMagazinedWGrenade::state_Fire(float dt)
 {
 	VERIFY(fOneShotTime>0.f);
 
-	//режим стрельбы подствольника
+	//пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 	if(m_bGrenadeMode)
 	{
 		/*
@@ -331,7 +331,7 @@ void CWeaponMagazinedWGrenade::state_Fire(float dt)
 			FireEnd();
 		*/
 	} 
-	//режим стрельбы очередями
+	//пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 	else 
 		inherited::state_Fire(dt);
 }
@@ -403,10 +403,10 @@ void  CWeaponMagazinedWGrenade::LaunchGrenade()
 			CInventoryOwner* io		= smart_cast<CInventoryOwner*>(H_Parent());
 			if(NULL == io->inventory().ActiveItem())
 			{
-				Log("current_state", GetState() );
-				Log("next_state", GetNextState());
-				Log("item_sect", cNameSect().c_str());
-				Log("H_Parent", H_Parent()->cNameSect().c_str());
+				LogInfo("%s", "current_state", GetState() );
+				LogInfo("%s", "next_state", GetNextState());
+				LogInfo("%s", "item_sect", cNameSect().c_str());
+				LogInfo("%s", "H_Parent", H_Parent()->cNameSect().c_str());
 			}
 			E->g_fireParams		(this, p1,d);
 		}
@@ -505,7 +505,7 @@ void CWeaponMagazinedWGrenade::ReloadMagazine()
 {
 	inherited::ReloadMagazine();
 
-	//перезарядка подствольного гранатомета
+	//пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 	if(iAmmoElapsed && !getRocketCount() && m_bGrenadeMode) 
 	{
 		shared_str fake_grenade_name = pSettings->r_string(m_ammoTypes[m_ammoType].c_str(), "fake_grenade_name");
@@ -601,7 +601,7 @@ bool CWeaponMagazinedWGrenade::Attach(PIItem pIItem, bool b_send_event)
 
 		CRocketLauncher::m_fLaunchSpeed = pGrenadeLauncher->GetGrenadeVel();
 
- 		//уничтожить подствольник из инвентаря
+ 		//пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 		if(b_send_event)
 		{
 			if (OnServer()) 
@@ -672,7 +672,7 @@ float	CWeaponMagazinedWGrenade::CurrentZoomFactor	()
 	return inherited::CurrentZoomFactor();
 }
 
-//виртуальные функции для проигрывания анимации HUD
+//пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ HUD
 void CWeaponMagazinedWGrenade::PlayAnimShow()
 {
 	VERIFY(GetState()==eShowing);
@@ -960,12 +960,12 @@ void CWeaponMagazinedWGrenade::PlayAnimIdle()
 				{
 					if (!(State & mcCrouch)) 
 					{
-						if (State & mcAccel) //Ходьба медленная (SHIFT)
+						if (State & mcAccel) //пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ (SHIFT)
 							act_state = 5;
 						else
 							act_state = 2;
 					}
-					else if (State & mcAccel) //Ходьба в присяде (CTRL+SHIFT)
+					else if (State & mcAccel) //пїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ (CTRL+SHIFT)
 						act_state = 4;
 					else
 						act_state = 3;

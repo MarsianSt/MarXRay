@@ -1,4 +1,4 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 #pragma hdrstop
 
 #include "Environment.h"
@@ -245,7 +245,7 @@ void CEnvAmbient::load_shoc(const shared_str& sect)
 
 	// sounds
 	if (!pSettings->line_exist(sect, "sounds"))
-		Msg("CEnvAmbient::load_shoc: section '%s' not found", m_section.c_str());
+		LogInfo("CEnvAmbient::load_shoc: section '%s' not found", m_section.c_str());
 
 	if (pSettings->line_exist(sect, "sounds"))
 	{
@@ -370,7 +370,7 @@ CEnvDescriptor::CEnvDescriptor	(shared_str const& identifier) : m_identifier(ide
 	sun_lumscale_hemi	= 0.0f;
 }
 
-#define	C_CHECK(C)	if (C.x<0 || C.x>2 || C.y<0 || C.y>2 || C.z<0 || C.z>2)	{ Msg("! Invalid '%s' in env-section '%s'",#C,m_identifier.c_str());}
+#define	C_CHECK(C)	if (C.x<0 || C.x>2 || C.y<0 || C.y>2 || C.z<0 || C.z>2)	{ LogInfo("! Invalid '%s' in env-section '%s'",#C,m_identifier.c_str());}
 void CEnvDescriptor::load	(CEnvironment& environment, CInifile& config, bool isWFX)
 {
 	ZoneScoped;
@@ -712,7 +712,7 @@ void CEnvDescriptor::on_device_destroy	()
 
 void CEnvDescriptor::on_prepare()
 {
-	Msg("CEnvDescriptor::on_prepare call");
+	LogInfo("CEnvDescriptor::on_prepare call");
 	m_pDescriptor->OnPrepare(*this);
 }
 

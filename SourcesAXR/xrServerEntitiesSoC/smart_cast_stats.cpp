@@ -1,4 +1,4 @@
-////////////////////////////////////////////////////////////////////////////
+﻿////////////////////////////////////////////////////////////////////////////
 //	Module 		: smart_cast_stats.cpp
 //	Created 	: 17.09.2004
 //  Modified 	: 17.09.2004
@@ -106,7 +106,7 @@ IC	void CSmartCastStats::clear					()
 IC	void CSmartCastStats::show					()
 {
 	if (m_stats.empty()) {
-		Msg								("CONGRATULATIONS : SmartCast stats is empty!!!");
+		LogInfo("CONGRATULATIONS : SmartCast stats is empty!!!");
 		return;
 	}
 
@@ -120,11 +120,11 @@ IC	void CSmartCastStats::show					()
 	for ( ; I != E; ++I)
 		total							+= (*I).m_count;
 
-	Msg									("SmartCast stats (different %d, total %d) : ",(u32)m_stats.size(),total);
+	LogInfo("SmartCast stats (different %d, total %d) : ",(u32)m_stats.size(),total);
 
 	I									= m_temp.begin();
 	for ( ; I != E; ++I)
-		Msg								("%8d %6.2f% : smart_cast<%s>(%s)",(*I).m_count,float((*I).m_count)*100.f/float(total),(*I).m_to,(*I).m_from);
+		LogInfo("%8d %6.2f% : smart_cast<%s>(%s)",(*I).m_count,float((*I).m_count)*100.f/float(total),(*I).m_to,(*I).m_from);
 }
 
 void add_smart_cast_stats		(LPCSTR from, LPCSTR to)
@@ -151,7 +151,7 @@ void show_smart_cast_stats		()
 	stats_all().show			();
 #	endif
 #else
-	Msg							("! SMART_CAST_STATS macros is not defined, stats is disabled");
+	LogInfo("! SMART_CAST_STATS macros is not defined, stats is disabled");
 #endif
 }
 
@@ -163,7 +163,7 @@ void clear_smart_cast_stats		()
 	stats_all().clear			();
 #	endif
 #else
-	Msg							("! SMART_CAST_STATS macros is not defined, stats is disabled");
+	LogInfo("! SMART_CAST_STATS macros is not defined, stats is disabled");
 #endif
 }
 

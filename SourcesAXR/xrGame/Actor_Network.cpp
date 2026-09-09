@@ -527,8 +527,8 @@ BOOL CActor::net_Spawn		(CSE_Abstract* DC)
 		E->s_flags.set(M_SPAWN_OBJECT_LOCAL, TRUE);
 	}
 	
-	if(	TRUE == E->s_flags.test(M_SPAWN_OBJECT_LOCAL) && TRUE == E->s_flags.is(M_SPAWN_OBJECT_ASPLAYER))
-		g_actor = this;
+if( IsGameTypeSingle() || (TRUE == E->s_flags.test(M_SPAWN_OBJECT_LOCAL) && TRUE == E->s_flags.is(M_SPAWN_OBJECT_ASPLAYER)))
+	g_actor = this;
 
 	VERIFY(m_pActorEffector == NULL);
 
@@ -1082,7 +1082,7 @@ void	CActor::CalculateInterpolationParams()
 	pIEnd->o_torso.pitch	= pIRec->o_torso.pitch	;	
 	pIEnd->o_torso.roll		= pIRec->o_torso.roll	;	
 	/////////////////////////////////////////////////////////////////////
-//	Msg("from %f, to %f", IStart.o_torso.yaw/PI*180.0f, IEnd.o_torso.yaw/PI*180.0f);
+//	LogInfo("from %f, to %f", IStart.o_torso.yaw/PI*180.0f, IEnd.o_torso.yaw/PI*180.0f);
 	/////////////////////////////////////////////////////////////////////
 	Fvector SP0, SP1, SP2, SP3;
 	Fvector HP0, HP1, HP2, HP3;
@@ -1135,10 +1135,10 @@ void	CActor::CalculateInterpolationParams()
 	float res = d0.dotproduct(d1);
 	if (res < 0)
 	{
-	Msg ("! %f", res);
+	LogInfo("! %f", res);
 	}
 	else
-	Msg ("%f", res);
+	LogInfo("%f", res);
 	}
 	*/
 	/////////////////////////////////////////////////////////////////////////////
@@ -1782,16 +1782,16 @@ void CActor::net_Save(NET_Packet& P)
 {
 #ifdef DEBUG
 	u32					pos;
-	Msg					("Actor net_Save");
+	LogInfo("Actor net_Save");
 	
 	pos					= P.w_tell();
 	inherited::net_Save	(P);
-	Msg					("inherited::net_Save() : %d",P.w_tell() - pos);
+	LogInfo("inherited::net_Save() : %d",P.w_tell() - pos);
 
 	pos					= P.w_tell();
 	m_pPhysics_support->in_NetSave(P);
 	P.w_u16(m_holderID);
-	Msg					("m_pPhysics_support->in_NetSave() : %d",P.w_tell() - pos);
+	LogInfo("m_pPhysics_support->in_NetSave() : %d",P.w_tell() - pos);
 #else
 	inherited::net_Save	(P);
 	m_pPhysics_support->in_NetSave(P);
@@ -1826,7 +1826,7 @@ void				CActor::OnHitHealthLoss					(float NewHealth)
 	if (m_iLastHitterID != u16(-1))
 	{
 #ifndef MASTER_GOLD
-		Msg("On hit health loss of actor[%d], last hitter[%d]", ID(), m_iLastHitterID);
+		LogInfo("On hit health loss of actor[%d], last hitter[%d]", ID(), m_iLastHitterID);
 #endif // #ifndef MASTER_GOLD
 		NET_Packet P;
 		u_EventGen		(P,GE_GAME_EVENT,ID());
@@ -1847,7 +1847,7 @@ void				CActor::OnCriticalHitHealthLoss			()
 	CObject* pLastHittingWeapon = Level().Objects.net_Find(m_iLastHittingWeaponID);
 
 #ifdef DEBUG
-	Msg("%s killed by hit from %s %s", 
+	LogInfo("%s killed by hit from %s %s", 
 		*cName(),
 		(pLastHitter ? *(pLastHitter->cName()) : ""), 
 		((pLastHittingWeapon && pLastHittingWeapon != pLastHitter) ? *(pLastHittingWeapon->cName()) : ""));
@@ -1856,7 +1856,7 @@ void				CActor::OnCriticalHitHealthLoss			()
 	if (m_iLastHitterID != u16(-1))
 	{
 #ifndef MASTER_GOLD
-		Msg("On hit of actor[%d], last hitter[%d]", ID(), m_iLastHitterID);
+		LogInfo("On hit of actor[%d], last hitter[%d]", ID(), m_iLastHitterID);
 #endif // #ifndef MASTER_GOLD
 		NET_Packet P;
 		u_EventGen		(P,GE_GAME_EVENT,ID());
@@ -1950,7 +1950,7 @@ void				CActor::OnCriticalWoundHealthLoss		()
 {
 	if (GameID() == eGameIDSingle || !OnServer()) return;
 #ifdef DEBUG
-	Msg("--- %s is bleed out", *cName());
+	LogInfo("--- %s is bleed out", *cName());
 #endif // #ifdef DEBUG
 	//-------------------------------
 	NET_Packet P;
@@ -1968,7 +1968,7 @@ void				CActor::OnCriticalRadiationHealthLoss	()
 {
 	if (GameID() == eGameIDSingle || !OnServer()) return;
 	//-------------------------------
-	Msg("%s killed by radiation", *cName());
+	LogInfo("%s killed by radiation", *cName());
 	NET_Packet P;
 	u_EventGen		(P,GE_GAME_EVENT,ID());
 	P.w_u16(GAME_EVENT_PLAYER_KILLED);
@@ -2037,7 +2037,7 @@ BOOL CActor::BonePassBullet(int boneID)
 void CActor::On_B_NotCurrentEntity()
 {
 #ifndef MASTER_GOLD
-	Msg("CActor::On_B_NotCurrentEntity");
+	LogInfo("CActor::On_B_NotCurrentEntity");
 #endif // #ifndef MASTER_GOLD
 	inventory().Items_SetCurrentEntityHud(false);
 };

@@ -1,4 +1,4 @@
-////////////////////////////////////////////////////////////////////////////
+﻿////////////////////////////////////////////////////////////////////////////
 //	Module 		: inventory_upgrade_root.cpp
 //	Created 	: 19.10.2007
 //  Modified 	: 27.11.2007
@@ -81,7 +81,7 @@ void Root::log_hierarchy( LPCSTR nest )
 	u32 sz =  (xr_strlen(nest) + 4) * sizeof(char);
 	PSTR	nest2 = (PSTR)_alloca( sz );
 	xr_strcpy( nest2, sz, nest );
-	Msg( "%s[r] %s", nest2, id_str() );
+	LogInfo( "%s[r] %s", nest2, id_str() );
 
 	inherited::log_hierarchy( nest2 );
 }
@@ -96,7 +96,7 @@ void Root::test_all_upgrades( CInventoryItem& item )
 
 		if ( g_upgrades_log == 1 )
 		{
-			Msg( "# Checking upgrade <%s> (id = %d) is successful: %s ", (*ib)->section(), item.object_id(), res ? "OK" : "FAILED" );
+			LogInfo( "# Checking upgrade <%s> (id = %d) is successful: %s ", (*ib)->section(), item.object_id(), res ? "OK" : "FAILED" );
 		}
 	}
 }

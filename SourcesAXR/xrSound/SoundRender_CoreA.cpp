@@ -1,4 +1,4 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 #pragma hdrstop
 
 #include "SoundRender_CoreA.h"
@@ -90,7 +90,7 @@ void CSoundRender_CoreA::_initialize(int stage)
 	{
 		InitAlEFXAPI();
 		bEFX = EFXTestSupport();
-		Msg("[OpenAL] EFX: %s", bEFX ? "present" : "absent");
+		LogInfo("[OpenAL] EFX: %s", bEFX ? "present" : "absent");
     }
 
 	// Init listener struct.
@@ -117,7 +117,7 @@ void CSoundRender_CoreA::_initialize(int stage)
 			}
 			else
 			{
-        		Log					("[OpenAL] ! SOUND: OpenAL: Max targets - ",tit);
+        		LogInfo("[OpenAL] ! SOUND: OpenAL: Max targets - ",tit);
 				T->_destroy			();
         		xr_delete			(T);
         		break;
@@ -129,7 +129,7 @@ void CSoundRender_CoreA::_initialize(int stage)
 void CSoundRender_CoreA::set_master_volume(float f )
 {
 	if (bPresent)				{
-		A_CHK				    (alListenerf	(AL_GAIN,f));
+		A_CHK				    (alListenerf	(AL_GAIN, f));
 	}
 }
 

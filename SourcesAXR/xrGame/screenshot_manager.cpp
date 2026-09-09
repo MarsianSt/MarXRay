@@ -1,4 +1,4 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 #include "screenshot_manager.h"
 #include "level.h"
 #include "game_cl_mp.h"
@@ -38,7 +38,7 @@ void*	cxrealloc(void* ptr, size_t size)
 void jpeg_encode_callback(long progress)
 {
 #ifdef DEBUG
-	Msg("* JPEG encoding progress : %d%%", progress);
+	LogInfo("* JPEG encoding progress : %d%%", progress);
 #endif
 	if (progress % 5 == 0)
 	{
@@ -151,7 +151,7 @@ void screenshot_manager::make_jpeg_file()
 	m_jpeg_buffer_size			= static_cast<u32>(tmp_mem_file.Tell());
 
 #ifdef DEBUG
-	Msg("* JPEG encoded to %d bytes", m_jpeg_buffer_size);
+	LogInfo("* JPEG encoded to %d bytes", m_jpeg_buffer_size);
 #endif
 }
 
@@ -234,7 +234,7 @@ void screenshot_manager::make_screenshot(complete_callback_t cb)
 	if (is_making_screenshot())
 	{
 #ifdef DEBUG
-		Msg("! ERROR: CL: screenshot making in progress...");
+		LogInfo("! ERROR: CL: screenshot making in progress...");
 #endif
 		return;
 	}
@@ -296,7 +296,7 @@ void screenshot_manager::process_screenshot(bool singlecore)
 void	__stdcall	screenshot_manager::jpeg_compress_cb(long progress)
 {
 /*#ifdef DEBUG
-	Msg("* JPEG encoding progress : %d%%", progress);
+	LogInfo("* JPEG encoding progress : %d%%", progress);
 #endif*/
 	if (progress % 5 == 0)
 	{
@@ -337,7 +337,7 @@ void screenshot_manager::realloc_compress_buffer(u32 need_size)
 	if (m_buffer_for_compress && (need_size <= m_buffer_for_compress_capacity))
 		return;
 #ifdef DEBUG	
-	Msg("* reallocing compression buffer.");
+	LogInfo("* reallocing compression buffer.");
 #endif
 	m_buffer_for_compress_capacity = need_size * 2;
 	void* new_buffer = xr_realloc(m_buffer_for_compress, m_buffer_for_compress_capacity);
@@ -366,7 +366,7 @@ void screenshot_manager::timer_begin(LPCSTR comment)
 
 void screenshot_manager::timer_end()
 {
-	Msg("* %s : %u ms", m_timer_comment.c_str(), m_debug_timer.GetElapsed_ms());
+	LogInfo("* %s : %u ms", m_timer_comment.c_str(), m_debug_timer.GetElapsed_ms());
 }
 
 #endif

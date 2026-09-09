@@ -1,4 +1,4 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 
 #include "dTriCollideK.h"
 #include "dxTriList.h"
@@ -102,8 +102,8 @@ int dCollideCTL(dxGeom* TriList, dxGeom* Cyl, int Flags, dContactGeom* Contact, 
 
 dColliderFn* dTriListColliderFn(int num)
 {
-	//	Log("in dTriListColliderFn ");
-	//	Msg("num=%d",num);
+	//	LogInfo("%s", "in dTriListColliderFn ");
+	//	LogInfo("num=%d",num);
 	if (num ==dBoxClass){ 
 		return 	(dColliderFn*)&dCollideBTL;
 	}

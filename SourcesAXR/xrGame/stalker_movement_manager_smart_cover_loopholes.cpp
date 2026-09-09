@@ -1,4 +1,4 @@
-////////////////////////////////////////////////////////////////////////////
+﻿////////////////////////////////////////////////////////////////////////////
 //	Module 		: stalker_movement_manager_smart_cover_loopholes.cpp
 //	Created 	: 14.02.2008
 //	Modified	: 14.02.2008
@@ -539,7 +539,7 @@ void stalker_movement_manager_smart_cover::go_next_loophole				()
 		VERIFY					(m_target.cover());
 		VERIFY					(!m_current.cover());
 #ifdef DEBUG
-		Msg						("setting up cover (direct from target): %s (%s)", m_target.cover_id().c_str(), m_enter_cover_id.c_str());
+		LogInfo("setting up cover (direct from target): %s (%s)", m_target.cover_id().c_str(), m_enter_cover_id.c_str());
 #endif // #ifdef DEBUG
 		m_current.cover_id		(m_target.cover_id());
 		m_current.cover_loophole_id	(m_path[1]);
@@ -551,7 +551,7 @@ void stalker_movement_manager_smart_cover::go_next_loophole				()
 	if (m_path[1]._get() == smart_cover::transform_vertex("", false)._get()) {
 		VERIFY					(m_path.size() == 2);
 #ifdef DEBUG
-		Msg						("exiting from cover: %s", m_current.cover_id().c_str());
+		LogInfo("exiting from cover: %s", m_current.cover_id().c_str());
 #endif // #ifdef DEBUG
 		m_current.cover_id		("");
 		on_smart_cover_exit		();

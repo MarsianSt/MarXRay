@@ -13,6 +13,10 @@
 #ifndef DISCORD_DISABLE_IO_THREAD
 #include <condition_variable>
 #include <thread>
+
+#ifdef _WIN32
+#include <Windows.h>
+#endif
 #endif
 
 #include "../../xrEngine/xrDiscordManager.h"
@@ -80,6 +84,62 @@ static int Nonce{1};
 static void Discord_UpdateConnection(void);
 class IoThreadHolder {
 private:
+#ifdef _WIN32
+    std::atomic_bool keepRunning{true};
+    HANDLE waitEvent{nullptr};
+    std::thread ioThread;
+
+    void Create()
+    {
+        if (!waitEvent) {
+            waitEvent = CreateEventW(nullptr, TRUE, FALSE, nullptr);
+        }
+    }
+
+    void Destroy()
+    {
+        if (waitEvent) {
+            CloseHandle(waitEvent);
+            waitEvent = nullptr;
+        }
+    }
+
+public:
+    ~IoThreadHolder() { Stop(); }
+
+    void Start()
+    {
+        Create();
+        keepRunning.store(true);
+        ioThread = std::thread([this]() {
+            const DWORD maxWait = 500;
+            Discord_UpdateConnection();
+            while (keepRunning.load()) {
+                WaitForSingleObject(waitEvent, maxWait);
+                ResetEvent(waitEvent);
+                Discord_UpdateConnection();
+            }
+        });
+    }
+
+    void Notify()
+    {
+        if (waitEvent) {
+            SetEvent(waitEvent);
+        }
+    }
+
+    void Stop()
+    {
+        keepRunning.exchange(false);
+        Notify();
+        if (ioThread.joinable()) {
+            ioThread.join();
+        }
+        Destroy();
+    }
+#else
+private:
     std::atomic_bool keepRunning{true};
     std::mutex waitForIOMutex;
     std::condition_variable waitForIOActivity;
@@ -112,6 +172,7 @@ public:
     }
 
     ~IoThreadHolder() { Stop(); }
+#endif
 };
 #else
 class IoThreadHolder {

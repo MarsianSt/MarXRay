@@ -1,4 +1,4 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 
 
 #include "PHDynamicData.h"
@@ -89,8 +89,8 @@ bool CPHAICharacter::TryPosition(Fvector pos,bool exact_state){
 	float	dif_m = dif.magnitude();
 	if(ret&&dif_m>EPS_L)
 	{
-		Msg("dif vec %f,%f,%f \n",dif.x,dif.y,dif.z);
-		Msg("dif mag %f \n",dif_m);
+		LogInfo("dif vec %f,%f,%f \n",dif.x,dif.y,dif.z);
+		LogInfo("dif mag %f \n",dif_m);
 	}
 #endif
 

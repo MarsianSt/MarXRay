@@ -1,4 +1,4 @@
-////////////////////////////////////////////////////////////////////////////
+﻿////////////////////////////////////////////////////////////////////////////
 //	Module 		: level_graph_inline.h
 //	Created 	: 02.10.2001
 //  Modified 	: 11.11.2003
@@ -521,13 +521,13 @@ IC	bool	CLevelGraph::create_straight_path	(u32 start_vertex_id, const Fvector2 &
 				cur_vertex_id	= next_vertex_id;
 #ifdef DEBUG
 				if (tpaOutputPoints.size() > 100000) {
-					Msg			(
+					LogInfo(
 						"CLevelGraph::create_straight_path : Loop became infinite (%d,[%f][%f][%f],[%f][%f][%f])",
 						start_vertex_id,
 						VPUSH(v3d(start_point)),
 						VPUSH(v3d(finish_point))
 					);
-					FlushLog	();
+					xrAsyncLogger::instance().flush();
 					R_ASSERT2	(false,"Loop became infinite :-( call Dima and SAVE YOUR LOG!");
 				}
 #endif

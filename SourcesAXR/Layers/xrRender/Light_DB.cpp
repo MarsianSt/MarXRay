@@ -1,4 +1,4 @@
-#include "StdAfx.h"
+﻿#include "StdAfx.h"
 #include "../../xrEngine/_d3d_extensions.h"
 #include "../../xrEngine/xrLevel.h"
 #include "../../xrEngine/igame_persistent.h"
@@ -239,19 +239,19 @@ void			CLight_DB::Update			()
 #ifdef DEBUG
 		if(E.sun_dir.y>=0)
 		{
-//			Log("sect_name", E.sect_name.c_str());
-			Log("E.sun_dir", E.sun_dir);
-			Log("E.wind_direction",E.wind_direction);
-			Log("E.wind_velocity",E.wind_velocity);
-			Log("E.sun_color",E.sun_color);
-			Log("E.rain_color",E.rain_color);
-			Log("E.rain_density",E.rain_density);
-			Log("E.fog_distance",E.fog_distance);
-			Log("E.fog_density",E.fog_density);
-			Log("E.fog_color",E.fog_color);
-			Log("E.far_plane",E.far_plane);
-			Log("E.sky_rotation",E.sky_rotation);
-			Log("E.sky_color",E.sky_color);
+//			LogInfo("%s", "sect_name", E.sect_name.c_str());
+			LogInfo("%s", "E.sun_dir", E.sun_dir);
+			LogInfo("%s", "E.wind_direction",E.wind_direction);
+			LogInfo("E.wind_velocity(%f,%f,%f)", VPUSH(E.wind_velocity));
+			LogInfo("E.sun_color(%f,%f,%f)", VPUSH(E.sun_color));
+			LogInfo("E.rain_color(%f,%f,%f)", VPUSH(E.rain_color));
+			LogInfo("E.rain_density(%f,%f,%f)", VPUSH(E.rain_density));
+			LogInfo("E.fog_distance(%f,%f,%f)", VPUSH(E.fog_distance));
+			LogInfo("E.fog_density(%f,%f,%f)", VPUSH(E.fog_density));
+			LogInfo("E.fog_color(%f,%f,%f)", VPUSH(E.fog_color));
+			LogInfo("E.far_plane(%f,%f,%f)", VPUSH(E.far_plane));
+			LogInfo("E.sky_rotation(%f,%f,%f)", VPUSH(E.sky_rotation));
+			LogInfo("E.sky_color(%f,%f,%f)", VPUSH(E.sky_color));
 		}
 #endif
 

@@ -1,4 +1,4 @@
-//---------------------------------------------------------------------------
+п»ї//---------------------------------------------------------------------------
 #include 	"stdafx.h"
 #pragma hdrstop
 
@@ -92,27 +92,27 @@ static LPCSTR name_blend_type( CBlend::ECurvature blend )
 static void dump_blend( CKinematicsAnimated* K, CBlend &B, u32 index )
 {
 	VERIFY( K );
-	Msg( "----------------------------------------------------------" );
-	Msg( "blend index: %d, poiter: %p ", index, &B );
-	Msg( "time total: %f, speed: %f , power: %f ", B.timeTotal, B.speed, B.blendPower   );
-	Msg( "ammount: %f, time current: %f, frame %d ", B.blendAmount, B.timeCurrent,B.dwFrame );
-	Msg( "accrue: %f, fallof: %f ", B.blendAccrue, B.blendFalloff ); 
+	LogInfo( "----------------------------------------------------------" );
+	LogInfo( "blend index: %d, poiter: %p ", index, &B );
+	LogInfo( "time total: %f, speed: %f , power: %f ", B.timeTotal, B.speed, B.blendPower   );
+	LogInfo( "ammount: %f, time current: %f, frame %d ", B.blendAmount, B.timeCurrent,B.dwFrame );
+	LogInfo( "accrue: %f, fallof: %f ", B.blendAccrue, B.blendFalloff ); 
 
-	Msg( "bonepart: %d, channel: %d, stop_at_end: %s, fall_at_end: %s "
+	LogInfo( "bonepart: %d, channel: %d, stop_at_end: %s, fall_at_end: %s "
 		, B.bone_or_part, B.channel, name_bool( B.stop_at_end ), name_bool( B.fall_at_end ) );
-	Msg( "state: %s, playing: %s, stop_at_end_callback: %s ", name_blend_type( B.blend_state() ), name_bool( B.playing ), name_bool( B.stop_at_end_callback ));
-	Msg( "callback: %p callback param: %p", B.Callback, B.CallbackParam );
+	LogInfo( "state: %s, playing: %s, stop_at_end_callback: %s ", name_blend_type( B.blend_state() ), name_bool( B.playing ), name_bool( B.stop_at_end_callback ));
+	LogInfo( "callback: %p callback param: %p", B.Callback, B.CallbackParam );
 	
 	if( B.blend_state() != CBlend::eFREE_SLOT )
 	{
-		Msg( "motion : name %s, set: %s ", K->LL_MotionDefName_dbg( B.motionID ).first, K->LL_MotionDefName_dbg( B.motionID ).second );
+		LogInfo( "motion : name %s, set: %s ", K->LL_MotionDefName_dbg( B.motionID ).first, K->LL_MotionDefName_dbg( B.motionID ).second );
 	}
-	Msg( "----------------------------------------------------------" );
+	LogInfo( "----------------------------------------------------------" );
 }
 
 void	CKinematicsAnimated::LL_DumpBlends_dbg	( )
 {
-	Msg( "==================dump blends=================================================" );
+	LogInfo( "==================dump blends=================================================" );
 	CBlend *I=blend_pool.begin(), *E=blend_pool.end();
 	for (; I!=E; I++)
 		dump_blend( this, *I, u32(I - blend_pool.begin()) );
@@ -223,7 +223,7 @@ void	CKinematicsAnimated::LL_FadeCycle(u16 part, float falloff, u8 mask_channel 
 		B.set_falloff_state();
 		B.blendFalloff		= falloff;
 		//B.blendAccrue		= B.timeCurrent;
-		if (B.stop_at_end)  B.stop_at_end_callback = FALSE;		// callback не должен приходить!
+		if (B.stop_at_end)  B.stop_at_end_callback = FALSE;		// callback пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ!
 	}
 }
 void	CKinematicsAnimated::LL_CloseCycle(u16 part, u8 mask_channel /*= (1<<0)*/)
@@ -704,7 +704,7 @@ void CKinematicsAnimated::Load(const char* N, IReader *data, u32 dwFlags)
 				}
 
 	#ifdef _EDITOR
-				Msg("!Can't find motion file '%s'.", _path);
+				LogInfo("!Can't find motion file '%s'.", _path);
 				return;
 	#else
 				Debug.fatal(DEBUG_INFO, "Can't find motion file '%s'.", _path);
@@ -727,7 +727,7 @@ void CKinematicsAnimated::Load(const char* N, IReader *data, u32 dwFlags)
 		else
 		{
 			m_Motions.pop_back();
-			Msg("! error in model [%s]. Unable to load motion file '%s'.", N, _path);
+			LogInfo("! error in model [%s]. Unable to load motion file '%s'.", N, _path);
 		}
 	};
 
@@ -816,7 +816,7 @@ void CKinematicsAnimated::Load(const char* N, IReader *data, u32 dwFlags)
 	IBlend_Startup	();
 
 //.	if (motions.cycle()->size()<2)			
-//.		Msg("* WARNING: model '%s' has only one motion. Candidate for SkeletonRigid???",N);
+//.		LogInfo("* WARNING: model '%s' has only one motion. Candidate for SkeletonRigid???",N);
 }
 
 
@@ -907,7 +907,7 @@ void	CKinematicsAnimated::LL_BoneMatrixBuild	( CBoneInstance &bi, const Fmatrix 
 
 		//if(!is_similar(PrevTransform,RES,0.3f))
 		//{
-		//	Msg("bone %s",*bd->name)	;
+		//	LogInfo("bone %s",*bd->name)	;
 		//}
 		//BONE_INST.mPrevTransform.set(RES);
 #endif
@@ -928,14 +928,14 @@ void	CKinematicsAnimated::BuildBoneMatrix			( const CBoneData* bd, CBoneInstance
 			/*
 			if(bi.mTransform.c.y>10000)
 			{
-			Log("BLEND_INST",BLEND_INST.Blend.size());
-			Log("Bone",LL_BoneName_dbg(SelfID));
-			Msg("Result.Q %f,%f,%f,%f",Result.Q.x,Result.Q.y,Result.Q.z,Result.Q.w);
-			Log("Result.T",Result.T);
-			Log("lp parent",(u32)parent);
-			Log("parent",*parent);
-			Log("RES",RES);
-			Log("mT",bi.mTransform);
+			LogInfo("%s", "BLEND_INST",BLEND_INST.Blend.size());
+			LogInfo("%s", "Bone",LL_BoneName_dbg(SelfID));
+			LogInfo("Result.Q %f,%f,%f,%f",Result.Q.x,Result.Q.y,Result.Q.z,Result.Q.w);
+			LogInfo("%s", "Result.T",Result.T);
+			LogInfo("%s", "lp parent",(u32)parent);
+			LogInfo("%s", "parent",*parent);
+			LogInfo("%s", "RES",RES);
+			LogInfo("mT:\n%f,%f,%f,%f\n%f,%f,%f,%f\n%f,%f,%f,%f\n%f,%f,%f,%f",bi.mTransform.i.x,bi.mTransform.i.y,bi.mTransform.i.z,bi.mTransform._14_,bi.mTransform.j.x,bi.mTransform.j.y,bi.mTransform.j.z,bi.mTransform._24_,bi.mTransform.k.x,bi.mTransform.k.y,bi.mTransform.k.z,bi.mTransform._34_,bi.mTransform.c.x,bi.mTransform.c.y,bi.mTransform.c.z,bi.mTransform._44_);
 
 			CBlend*			B		=	*BI;
 			CMotion&		M		=	*LL_GetMotion(B->motionID,SelfID);
@@ -944,9 +944,9 @@ void	CKinematicsAnimated::BuildBoneMatrix			( const CBoneData* bd, CBoneInstance
 			u32				count	=	M.get_count();
 			float			delta	=	time-float(frame);
 
-			Log("flTKeyPresent",M.test_flag(flTKeyPresent));
-			Log("M._initT",M._initT);
-			Log("M._sizeT",M._sizeT);
+			LogInfo("flTKeyPresent%s", M.test_flag(flTKeyPresent));
+			LogInfo("%s", "M._initT",M._initT);
+			LogInfo("%s", "M._sizeT",M._sizeT);
 
 			// translate
 			if (M.test_flag(flTKeyPresent))
@@ -964,15 +964,15 @@ void	CKinematicsAnimated::BuildBoneMatrix			( const CBoneData* bd, CBoneInstance
 
 			Dt.lerp	(T1,T2,delta);
 
-			Msg("K1t %d,%d,%d",K1t->x,K1t->y,K1t->z);
-			Msg("K2t %d,%d,%d",K2t->x,K2t->y,K2t->z);
+			LogInfo("K1t %d,%d,%d",K1t->x,K1t->y,K1t->z);
+			LogInfo("K2t %d,%d,%d",K2t->x,K2t->y,K2t->z);
 
-			Log("count",count);
-			Log("frame",frame);
-			Log("T1",T1);
-			Log("T2",T2);
-			Log("delta",delta);
-			Log("Dt",Dt);
+			LogInfo("%s", "count",count);
+			LogInfo("%s", "frame",frame);
+			LogInfo("T1%s", T1);
+			LogInfo("T2%s", T2);
+			LogInfo("delta%f", delta);
+			LogInfo("Dt%f", Dt);
 
 			}else
 			{

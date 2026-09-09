@@ -1,4 +1,4 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 
 #include "xrdebug.h"
 #include "os_clipboard.h"
@@ -25,6 +25,7 @@ static BOOL bException = FALSE;
 #include <new.h>							// for _set_new_mode
 #include <signal.h>							// for signals
 #include <Shellapi.h>
+#include <psapi.h>							// EnumProcessModules, GetModuleInformation
 
 #define USE_OWN_ERROR_MESSAGE_WINDOW
 #define USE_OWN_MINI_DUMP
@@ -45,20 +46,20 @@ void LogStackTrace	(LPCSTR header)
 
 	BuildStackTrace	();		
 
-	Msg				("%s",header);
+	LogInfo("%s",header);
 
 	for (int i=1; i<g_stackTraceCount; ++i)
-		Msg			("%s",g_stackTrace[i]);
+		LogInfo("%s",g_stackTrace[i]);
 }
 
 void xrDebug::LogStackTrace(LPCSTR header)
 {
 	BuildStackTrace();
 
-	Msg("%s", header);
+	LogInfo("%s", header);
 
 	for (int i = 1; i < g_stackTraceCount; ++i)
-		Msg("%s", g_stackTrace[i]);
+		LogInfo("%s", g_stackTrace[i]);
 }
 
 void xrDebug::gather_info		(const char *expression, const char *description, const char *argument0, const char *argument1, const char *file, int line, const char *function, LPSTR assertion_info, u32 const assertion_info_size)
@@ -103,8 +104,8 @@ void xrDebug::gather_info		(const char *expression, const char *description, con
 		buffer			+= xr_sprintf(buffer,assertion_size - u32(buffer - buffer_base),"%s",endline);
 		if (!i) {
 			if (shared_str_initialized) {
-				Msg		("%s",assertion_info);
-				FlushLog();
+				LogInfo("%s",assertion_info);
+				xrAsyncLogger::instance().flush();
 			}
 			buffer		= assertion_info;
 			endline		= "\r\n";
@@ -119,7 +120,7 @@ void xrDebug::gather_info		(const char *expression, const char *description, con
 
 	if (!IsDebuggerPresent() && !strstr(GetCommandLine(),"-no_call_stack_assert")) {
 		if (shared_str_initialized)
-			Msg			("stack trace:\n");
+			LogInfo("stack trace:\n");
 
 #ifdef USE_OWN_ERROR_MESSAGE_WINDOW
 		buffer			+= xr_sprintf(buffer,assertion_size - u32(buffer - buffer_base),"stack trace:%s%s",endline,endline);
@@ -129,7 +130,7 @@ void xrDebug::gather_info		(const char *expression, const char *description, con
 
 		for (int i=2; i<g_stackTraceCount; ++i) {
 			if (shared_str_initialized)
-				Msg		("%s",g_stackTrace[i]);
+				LogInfo("%s",g_stackTrace[i]);
 
 #ifdef USE_OWN_ERROR_MESSAGE_WINDOW
 			buffer		+= xr_sprintf(buffer,assertion_size - u32(buffer - buffer_base),"%s%s",g_stackTrace[i],endline);
@@ -137,7 +138,7 @@ void xrDebug::gather_info		(const char *expression, const char *description, con
 		}
 
 		if (shared_str_initialized)
-			FlushLog	();
+			xrAsyncLogger::instance().flush();
 
 		os_clipboard::copy_to_clipboard	(assertion_info);
 	}
@@ -145,11 +146,11 @@ void xrDebug::gather_info		(const char *expression, const char *description, con
 
 void xrDebug::do_exit	(const std::string &message)
 {
-	FlushLog			();
+	xrAsyncLogger::instance().flush();
 	MessageBox			(NULL,message.c_str(),"Error",MB_OK|MB_ICONERROR|MB_SYSTEMMODAL);
 
 	if (strstr(GetCommandLine(), "-show_log"))
-		ShellExecute(nullptr, "open", logFullName(), nullptr, nullptr, SW_SHOWNORMAL);
+		ShellExecute(nullptr, "open", xrAsyncLogger::instance().get_engine_log_path(), nullptr, nullptr, SW_SHOWNORMAL);
 
 	TerminateProcess	(GetCurrentProcess(),1);
 }
@@ -181,7 +182,7 @@ void xrDebug::backend	(const char *expression, const char *description, const ch
 	if (get_on_dialog())
 		get_on_dialog()	(true);
 
-	FlushLog			();
+	xrAsyncLogger::instance().flush();
 
 #ifdef XRCORE_STATIC
 	MessageBox			(NULL,assertion_info,"X-Ray error",MB_OK|MB_ICONERROR|MB_SYSTEMMODAL);
@@ -200,7 +201,7 @@ void xrDebug::backend	(const char *expression, const char *description, const ch
 			case IDCANCEL :
 			{
 				if (strstr(GetCommandLine(), "-show_log"))
-					ShellExecute(nullptr, "open", logFullName(), nullptr, nullptr, SW_SHOWNORMAL);
+					ShellExecute(nullptr, "open", xrAsyncLogger::instance().get_engine_log_path(), nullptr, nullptr, SW_SHOWNORMAL);
 
 				DEBUG_INVOKE;
 				break;
@@ -220,7 +221,7 @@ void xrDebug::backend	(const char *expression, const char *description, const ch
 		}
 #	else // USE_OWN_ERROR_MESSAGE_WINDOW
 			if (strstr(GetCommandLine(), "-show_log"))
-				ShellExecute(nullptr, "open", logFullName(), nullptr, nullptr, SW_SHOWNORMAL);
+				ShellExecute(nullptr, "open", xrAsyncLogger::instance().get_engine_log_path(), nullptr, nullptr, SW_SHOWNORMAL);
 
 		DEBUG_INVOKE;
 #	endif // USE_OWN_ERROR_MESSAGE_WINDOW
@@ -313,8 +314,8 @@ int out_of_memory_handler	(size_t size)
 		u32					process_heap	= mem_usage_impl(GetProcessHeap(),0,0);
 		int					eco_strings		= (int)g_pStringContainer->stat_economy			();
 		int					eco_smem		= (int)g_pSharedMemoryContainer->stat_economy	();
-		Msg					("* [x-ray]: crt heap[%d K], process heap[%d K]",crt_heap/1024,process_heap/1024);
-		Msg					("* [x-ray]: economy: strings[%d K], smem[%d K]",eco_strings/1024,eco_smem);
+		LogInfo("* [x-ray]: crt heap[%d K], process heap[%d K]",crt_heap/1024,process_heap/1024);
+		LogInfo("* [x-ray]: economy: strings[%d K], smem[%d K]",eco_strings/1024,eco_smem);
 	}
 
 	Debug.fatal				(DEBUG_INFO,"Out of memory. Memory request: %d K",size/1024);
@@ -482,11 +483,155 @@ void format_message	(LPSTR buffer, const u32 &buffer_size)
     #include <errorrep.h>
     #pragma comment( lib, "faultrep.lib" )
 #endif
+#pragma comment( lib, "psapi.lib" )
+
+static const char* GetExceptionDescription(DWORD code)
+{
+	switch (code)
+	{
+		case EXCEPTION_ACCESS_VIOLATION:         return "ACCESS_VIOLATION";
+		case EXCEPTION_ARRAY_BOUNDS_EXCEEDED:    return "ARRAY_BOUNDS_EXCEEDED";
+		case EXCEPTION_BREAKPOINT:               return "BREAKPOINT";
+		case EXCEPTION_DATATYPE_MISALIGNMENT:    return "DATATYPE_MISALIGNMENT";
+		case EXCEPTION_FLT_DIVIDE_BY_ZERO:       return "FLT_DIVIDE_BY_ZERO";
+		case EXCEPTION_FLT_OVERFLOW:             return "FLT_OVERFLOW";
+		case EXCEPTION_FLT_STACK_CHECK:          return "FLT_STACK_CHECK";
+		case EXCEPTION_FLT_UNDERFLOW:            return "FLT_UNDERFLOW";
+		case EXCEPTION_ILLEGAL_INSTRUCTION:      return "ILLEGAL_INSTRUCTION";
+		case EXCEPTION_IN_PAGE_ERROR:            return "IN_PAGE_ERROR";
+		case EXCEPTION_INT_DIVIDE_BY_ZERO:       return "INT_DIVIDE_BY_ZERO";
+		case EXCEPTION_INT_OVERFLOW:             return "INT_OVERFLOW";
+		case EXCEPTION_INVALID_DISPOSITION:      return "INVALID_DISPOSITION";
+		case EXCEPTION_NONCONTINUABLE_EXCEPTION: return "NONCONTINUABLE_EXCEPTION";
+		case EXCEPTION_PRIV_INSTRUCTION:         return "PRIV_INSTRUCTION";
+		case EXCEPTION_SINGLE_STEP:              return "SINGLE_STEP";
+		case EXCEPTION_STACK_OVERFLOW:           return "STACK_OVERFLOW";
+		case 0xE06D7363:                         return "CPP_EXCEPTION";
+		case 0xC0000135:                         return "DLL_NOT_FOUND";
+		case 0xC0000138:                         return "ORDINAL_NOT_FOUND";
+		case 0xC0000139:                         return "ENTRY_POINT_NOT_FOUND";
+		case 0xC0000142:                         return "DLL_INIT_FAILED";
+		default:                                 return "UNKNOWN";
+	}
+}
+
+static void LogCrashInfo(_EXCEPTION_POINTERS *pExceptionInfo)
+{
+	LogInfo("[CRASH] LogCrashInfo called, shared_str_initialized=%d", shared_str_initialized);
+	if (!shared_str_initialized)
+		return;
+
+	DWORD code = pExceptionInfo->ExceptionRecord->ExceptionCode;
+	void* addr = pExceptionInfo->ExceptionRecord->ExceptionAddress;
+
+	LogInfo("==========================================");
+	LogInfo("CRASH REPORT");
+	LogInfo("==========================================");
+	LogInfo("Exception : 0x%08X (%s)", code, GetExceptionDescription(code));
+	LogInfo("Address   : 0x%p", addr);
+	LogInfo("Process ID: %lu", GetCurrentProcessId());
+	LogInfo("Thread ID : %lu", GetCurrentThreadId());
+
+#ifdef _M_X64
+	PCONTEXT ctx = pExceptionInfo->ContextRecord;
+	if (ctx)
+	{
+		LogInfo("Registers (x64):");
+		LogInfo("  RIP=0x%016llX RSP=0x%016llX RBP=0x%016llX", ctx->Rip, ctx->Rsp, ctx->Rbp);
+		LogInfo("  RAX=0x%016llX RBX=0x%016llX RCX=0x%016llX RDX=0x%016llX", ctx->Rax, ctx->Rbx, ctx->Rcx, ctx->Rdx);
+		LogInfo("  RSI=0x%016llX RDI=0x%016llX R8=0x%016llX  R9=0x%016llX", ctx->Rsi, ctx->Rdi, ctx->R8, ctx->R9);
+		LogInfo("  R10=0x%016llX R11=0x%016llX R12=0x%016llX R13=0x%016llX", ctx->R10, ctx->R11, ctx->R12, ctx->R13);
+		LogInfo("  R14=0x%016llX R15=0x%016llX", ctx->R14, ctx->R15);
+	}
+#else
+	PCONTEXT ctx = pExceptionInfo->ContextRecord;
+	if (ctx)
+	{
+		LogInfo("Registers (x86):");
+		LogInfo("  EIP=0x%08X ESP=0x%08X EBP=0x%08X", ctx->Eip, ctx->Esp, ctx->Ebp);
+		LogInfo("  EAX=0x%08X EBX=0x%08X ECX=0x%08X EDX=0x%08X", ctx->Eax, ctx->Ebx, ctx->Ecx, ctx->Edx);
+		LogInfo("  ESI=0x%08X EDI=0x%08X", ctx->Esi, ctx->Edi);
+	}
+#endif
+
+	if (code == EXCEPTION_ACCESS_VIOLATION && pExceptionInfo->ExceptionRecord->NumberParameters >= 2)
+	{
+		ULONG_PTR readWrite = pExceptionInfo->ExceptionRecord->ExceptionInformation[0];
+		ULONG_PTR faultAddr = pExceptionInfo->ExceptionRecord->ExceptionInformation[1];
+		LogInfo("Access Violation Details:");
+		LogInfo("  Operation: %s", readWrite == 0 ? "READ" : (readWrite == 1 ? "WRITE" : "DEP"));
+		LogInfo("  Fault Address: 0x%p", (void*)faultAddr);
+	}
+
+	MEMORYSTATUSEX memInfo;
+	memInfo.dwLength = sizeof(memInfo);
+	if (GlobalMemoryStatusEx(&memInfo))
+	{
+		LogInfo("Memory:");
+		LogInfo("  Physical: %llu MB total, %llu MB available", memInfo.ullTotalPhys / (1024 * 1024), memInfo.ullAvailPhys / (1024 * 1024));
+		LogInfo("  Virtual:  %llu MB total, %llu MB available", memInfo.ullTotalVirtual / (1024 * 1024), memInfo.ullAvailVirtual / (1024 * 1024));
+		LogInfo("  Usage:    %lu%%", memInfo.dwMemoryLoad);
+	}
+
+	PROCESS_MEMORY_COUNTERS_EX pmc;
+	if (GetProcessMemoryInfo(GetCurrentProcess(), (PROCESS_MEMORY_COUNTERS*)&pmc, sizeof(pmc)))
+	{
+		LogInfo("Process Memory:");
+		LogInfo("  Working Set: %llu MB", pmc.WorkingSetSize / (1024 * 1024));
+		LogInfo("  Private:     %llu MB", pmc.PrivateUsage / (1024 * 1024));
+	}
+
+	LogInfo("Loaded Modules:");
+	HMODULE hMods[512];
+	DWORD cbNeeded;
+	if (EnumProcessModules(GetCurrentProcess(), hMods, sizeof(hMods), &cbNeeded))
+	{
+		int count = (int)(cbNeeded / sizeof(HMODULE));
+		if (count > 512) count = 512;
+		for (int i = 0; i < count && i < 64; i++)
+		{
+			char szModName[MAX_PATH];
+			MODULEINFO modInfo;
+			if (GetModuleFileNameA(hMods[i], szModName, sizeof(szModName)))
+			{
+				GetModuleInformation(GetCurrentProcess(), hMods[i], &modInfo, sizeof(modInfo));
+				char* fname = strrchr(szModName, '\\');
+				fname = fname ? fname + 1 : szModName;
+				if (_stricmp(fname, "kernel32.dll") != 0 && _stricmp(fname, "ntdll.dll") != 0 &&
+					_stricmp(fname, "kernelbase.dll") != 0 && _stricmp(fname, "user32.dll") != 0 &&
+					_stricmp(fname, "gdi32.dll") != 0 && _stricmp(fname, "advapi32.dll") != 0 &&
+					_stricmp(fname, "rpcrt4.dll") != 0 && _stricmp(fname, "sechost.dll") != 0 &&
+					_stricmp(fname, "ucrtbase.dll") != 0 && _stricmp(fname, "vcruntime140.dll") != 0 &&
+					_stricmp(fname, "msvcrt.dll") != 0 && _stricmp(fname, "ws2_32.dll") != 0 &&
+					_stricmp(fname, "imm32.dll") != 0 && _stricmp(fname, "opengl32.dll") != 0 &&
+					_stricmp(fname, "setupapi.dll") != 0 && _stricmp(fname, "comdlg32.dll") != 0 &&
+					_stricmp(fname, "combase.dll") != 0 && _stricmp(fname, "win32u.dll") != 0 &&
+					_stricmp(fname, "winmm.dll") != 0 && _stricmp(fname, "shcore.dll") != 0 &&
+					_stricmp(fname, "msvcp140.dll") != 0 && _stricmp(fname, "version.dll") != 0 &&
+					_stricmp(fname, "cryptbase.dll") != 0 && _stricmp(fname, "bcrypt.dll") != 0 &&
+					_stricmp(fname, "bcryptprimitives.dll") != 0 && _stricmp(fname, "msctf.dll") != 0)
+				LogInfo("  [%2d] 0x%p %-32s base=0x%p size=%lu", i, hMods[i], fname, modInfo.lpBaseOfDll, modInfo.SizeOfImage);
+			}
+		}
+	}
+	LogInfo("==========================================");
+}
 
 LONG WINAPI UnhandledFilter	(_EXCEPTION_POINTERS *pExceptionInfo)
 {
+	HANDLE hFile = CreateFileA("E:\\XRay-engine\\game\\crash_debug.txt", GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+	if (hFile != INVALID_HANDLE_VALUE) {
+		char buf[512];
+		wsprintf(buf, "UnhandledFilter called! code=0x%08X addr=0x%p\n", pExceptionInfo->ExceptionRecord->ExceptionCode, pExceptionInfo->ExceptionRecord->ExceptionAddress);
+		DWORD written;
+		WriteFile(hFile, buf, strlen(buf), &written, NULL);
+		CloseHandle(hFile);
+	}
+	LogInfo("[CRASH] UnhandledFilter called!");
 	string256				error_message;
 	format_message			(error_message,sizeof(error_message));
+
+	LogCrashInfo			(pExceptionInfo);
 
 	if (!error_after_dialog && !strstr(GetCommandLine(),"-no_call_stack_assert")) {
 		CONTEXT				save = *pExceptionInfo->ContextRecord;
@@ -494,7 +639,7 @@ LONG WINAPI UnhandledFilter	(_EXCEPTION_POINTERS *pExceptionInfo)
 		*pExceptionInfo->ContextRecord = save;
 
 		if (shared_str_initialized)
-			Msg				("stack trace:\n");
+			LogInfo("stack trace:\n");
 
 		if (!IsDebuggerPresent())
 		{
@@ -504,7 +649,7 @@ LONG WINAPI UnhandledFilter	(_EXCEPTION_POINTERS *pExceptionInfo)
 		string4096			buffer;
 		for (int i=0; i<g_stackTraceCount; ++i) {
 			if (shared_str_initialized)
-				Msg			("%s",g_stackTrace[i]);
+				LogInfo("%s",g_stackTrace[i]);
 			xr_sprintf			(buffer, sizeof(buffer), "%s\r\n",g_stackTrace[i]);
 #ifdef DEBUG
 			if (!IsDebuggerPresent())
@@ -514,7 +659,7 @@ LONG WINAPI UnhandledFilter	(_EXCEPTION_POINTERS *pExceptionInfo)
 
 		if (*error_message) {
 			if (shared_str_initialized)
-				Msg			("\n%s",error_message);
+				LogInfo("\n%s",error_message);
 
 			xr_strcat			(error_message,sizeof(error_message),"\r\n");
 #ifdef DEBUG
@@ -525,7 +670,7 @@ LONG WINAPI UnhandledFilter	(_EXCEPTION_POINTERS *pExceptionInfo)
 	}
 
 	if (shared_str_initialized)
-		FlushLog			();
+		xrAsyncLogger::instance().flush();
 
 #ifndef USE_OWN_ERROR_MESSAGE_WINDOW
 #	ifdef USE_OWN_MINI_DUMP
@@ -543,7 +688,7 @@ LONG WINAPI UnhandledFilter	(_EXCEPTION_POINTERS *pExceptionInfo)
 		MessageBox			(NULL,"Fatal error occured\n\nPress OK to abort program execution","Fatal error",MB_OK|MB_ICONERROR|MB_SYSTEMMODAL);
 
 		if (strstr(GetCommandLine(), "-show_log"))
-			ShellExecute(nullptr, "open", logFullName(), nullptr, nullptr, SW_SHOWNORMAL);
+			ShellExecute(nullptr, "open", xrAsyncLogger::instance().get_engine_log_path(), nullptr, nullptr, SW_SHOWNORMAL);
 	}
 #endif // USE_OWN_ERROR_MESSAGE_WINDOW
 
@@ -631,7 +776,7 @@ LONG WINAPI UnhandledFilter	(_EXCEPTION_POINTERS *pExceptionInfo)
 		);
 
 		if (strstr(GetCommandLine(), "-show_log"))
-			ShellExecute(nullptr, "open", logFullName(), nullptr, nullptr, SW_SHOWNORMAL);
+			ShellExecute(nullptr, "open", xrAsyncLogger::instance().get_engine_log_path(), nullptr, nullptr, SW_SHOWNORMAL);
 		
 		std::exit(0);
 	//	FATAL					("Unexpected application termination");

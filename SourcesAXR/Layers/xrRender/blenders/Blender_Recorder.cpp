@@ -1,4 +1,4 @@
-// Blender_Recorder.cpp: implementation of the CBlender_Compile class.
+﻿// Blender_Recorder.cpp: implementation of the CBlender_Compile class.
 //
 //////////////////////////////////////////////////////////////////////
 
@@ -58,7 +58,7 @@ void	CBlender_Compile::_cpp_Compile	(ShaderElement* _SH)
 		{
 			if (id>=int(lst.size()))
 			{
-				Msg("! xrRender_R1: WARNING! Not enought textures for shader, base tex: %s", *lst[0]);
+				LogInfo("! xrRender_R1: WARNING! Not enought textures for shader, base tex: %s", *lst[0]);
 				//Debrovski: using VERY noticeable placeholder-texture
 				lst.emplace_back("$shadertest");
 				lst.emplace_back("$shadertest");
@@ -83,7 +83,7 @@ void	CBlender_Compile::_cpp_Compile	(ShaderElement* _SH)
 			{
 				if (id>=int(lst.size()))
 				{
-					Msg("! xrRender_R1: WARNING! Not enought textures for shader, base tex: %s", *lst[0]);
+					LogInfo("! xrRender_R1: WARNING! Not enought textures for shader, base tex: %s", *lst[0]);
 					//Debrovski: using VERY noticeable placeholder-texture
 					lst.emplace_back("$shadertest");
 					lst.emplace_back("$shadertest");
@@ -151,7 +151,7 @@ void	CBlender_Compile::SetParams		(int iPriority, bool bStrictB2F)
 	if (bStrictB2F){			
 #ifdef _EDITOR    
 		if (1!=(SH->flags.iPriority/2)){
-        	Log("!If StrictB2F true then Priority must div 2.");
+        	LogInfo("%s", "!If StrictB2F true then Priority must div 2.");
             SH->flags.bStrictB2F	= FALSE;
         }
 #else
@@ -328,7 +328,7 @@ void	CBlender_Compile::Stage_Texture	(LPCSTR name, u32 ,	u32	 fmin, u32 fmip, u3
 	{
 		if (id>=int(lst.size()))
 		{
-			Msg("! xrRender_R1: WARNING! Not enought textures for shader, base tex: %s", *lst[0]);
+			LogInfo("! xrRender_R1: WARNING! Not enought textures for shader, base tex: %s", *lst[0]);
 			//Debrovski: using VERY noticeable placeholder-texture
 			lst.emplace_back("$shadertest");
 			lst.emplace_back("$shadertest");

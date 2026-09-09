@@ -1,4 +1,4 @@
-////////////////////////////////////////////////////////////////////////////
+﻿////////////////////////////////////////////////////////////////////////////
 //	Module 		: level_script.cpp
 //	Created 	: 28.06.2004
 //  Modified 	: 28.06.2004
@@ -66,7 +66,7 @@ bool IsImportantSave()
 void check_object(CScriptGameObject *object)
 {
 	try {
-		Msg	("check_object %s",object->Name());
+		LogInfo("check_object %s",object->Name());
 	}
 	catch(...) {
 		object = object;
@@ -511,7 +511,7 @@ void add_call(const luabind::object &lua_object, LPCSTR condition,LPCSTR action)
 //	}
 //	catch(...)
 //	{
-//		Msg("add_call excepted!!");
+//		LogInfo("add_call excepted!!");
 //	}
 }
 
@@ -570,14 +570,14 @@ void disable_input()
 {
 	g_bDisableAllInput = true;
 #ifdef DEBUG
-	Msg("input disabled");
+	LogInfo("input disabled");
 #endif // #ifdef DEBUG
 }
 void enable_input()
 {
 	g_bDisableAllInput = false;
 #ifdef DEBUG
-	Msg("input enabled");
+	LogInfo("input enabled");
 #endif // #ifdef DEBUG
 }
 
@@ -1121,7 +1121,7 @@ float get_devices_psy_factor()
 	if (Actor())
 		return Actor()->GetDevicesPsyFactor();
 
-	Msg("![get_devices_psy_factor]: Actor not found!");
+	LogInfo("![get_devices_psy_factor]: Actor not found!");
 	return 0;
 }
 
@@ -1135,7 +1135,7 @@ void set_devices_psy_factor(float psy_factor)
 		return;
 	}
 
-	Msg("![set_devices_psy_factor]: Actor not found!");
+	LogInfo("![set_devices_psy_factor]: Actor not found!");
 }
 
 //can spawn entities like bolts, phantoms, ammo, etc. which normally crash when using alife():create()
@@ -1241,7 +1241,7 @@ float get_air_temperature_f()
 {
 	if (!g_pGamePersistent || !g_pGamePersistent->Environment().CurrentEnv)
 	{
-		Msg("![level_script::get_air_temperature_f]: g_pGamePersistent or CurrentEnv is nullptr!");
+		LogInfo("![level_script::get_air_temperature_f]: g_pGamePersistent or CurrentEnv is nullptr!");
 		return 0.0f;
 	}
 
@@ -1252,7 +1252,7 @@ luabind::internal_string get_air_temperature_fs()
 {
 	if (!g_pGamePersistent || !g_pGamePersistent->Environment().CurrentEnv)
 	{
-		Msg("![level_script::get_air_temperature_fs]: g_pGamePersistent or CurrentEnv is nullptr!");
+		LogInfo("![level_script::get_air_temperature_fs]: g_pGamePersistent or CurrentEnv is nullptr!");
 		return "";
 	}
 
@@ -1271,7 +1271,7 @@ LPCSTR get_weather_type()
 {
 	if (!g_pGamePersistent || !g_pGamePersistent->Environment().Current[0])
 	{
-		Msg("![level_script::get_weather_type]: g_pGamePersistent or CurrentEnv is nullptr!");
+		LogInfo("![level_script::get_weather_type]: g_pGamePersistent or CurrentEnv is nullptr!");
 		return "";
 	}
 
@@ -1282,7 +1282,7 @@ luabind::internal_string get_weather_type_icon()
 {
 	if (!g_pGamePersistent || !g_pGamePersistent->Environment().Current[0])
 	{
-		Msg("![level_script::get_weather_type_icon]: g_pGamePersistent or CurrentEnv is nullptr!");
+		LogInfo("![level_script::get_weather_type_icon]: g_pGamePersistent or CurrentEnv is nullptr!");
 		return "";
 	}
 
@@ -1290,7 +1290,7 @@ luabind::internal_string get_weather_type_icon()
 
 	if (!cur_weather_type)
 	{
-		Msg("![level_script::get_weather_type_icon]: cur_weather_type is nullptr!");
+		LogInfo("![level_script::get_weather_type_icon]: cur_weather_type is nullptr!");
 		return "";
 	}
 

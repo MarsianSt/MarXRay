@@ -1,4 +1,4 @@
-#include "stdafx.h"
+п»ї#include "stdafx.h"
 #include "torch.h"
 #include "entity.h"
 #include "actor.h"
@@ -133,7 +133,7 @@ void CTorch::Load(LPCSTR section)
 		}
 	}
 
-	//Случайный начальный заряд батареек в фонарике, если включена опция ограниченного заряда батареек у фонарика
+	//пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 	if (GameConstants::GetTorchHasBattery())
 	{
 		float rnd_charge = ::Random.randF(0.0f, m_fMaxChargeLevel);
@@ -374,7 +374,7 @@ BOOL CTorch::net_Spawn(CSE_Abstract* DC)
 
 	Fcolor clr = pUserData->r_fcolor(m_light_section, (b_r2) ? "color_r2" : "color");
 
-	if (!!psDeviceFlags.test(rsR4) && ps_enchanted_shaders)	//Костыль для нормализации яркости с Enchanted Shaders
+	if (!!psDeviceFlags.test(rsR4) && ps_enchanted_shaders)	//пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ Enchanted Shaders
 	{
 		clr.r *= 2.5f;
 		clr.g *= 2.5f;
@@ -415,7 +415,7 @@ BOOL CTorch::net_Spawn(CSE_Abstract* DC)
 	light_render->set_type((IRender_Light::LT)(READ_IF_EXISTS(pUserData, r_u8, m_light_section, "type", 2)));
 	light_omni->set_type((IRender_Light::LT)(READ_IF_EXISTS(pUserData, r_u8, m_light_section, "omni_type", 1)));
 
-	//включить/выключить фонарик
+	//пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ/пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 	Switch					(torch->m_active);
 	VERIFY					(!torch->m_active || (torch->ID_Parent != 0xffff));
 
@@ -468,7 +468,7 @@ void CTorch::UpdateCL()
 {
 	inherited::UpdateCL			();
 
-	if (Actor()->m_bActionAnimInProcess && m_bActivated)
+	if (Actor() && Actor()->m_bActionAnimInProcess && m_bActivated)
 		UpdateUseAnim();
 
 	if (!m_switched_on)			return;
@@ -582,7 +582,7 @@ void CTorch::UpdateCL()
 	if (!lanim)							return;
 
 	int						frame;
-	// возвращает в формате BGR
+	// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ BGR
 	u32 clr					= lanim->CalculateBGR(Device.fTimeGlobal,frame); 
 
 	Fcolor					fclr;
@@ -627,7 +627,7 @@ void CTorch::net_Export			(NET_Packet& P)
 			F |= eAttached;
 	}
 	P.w_u8(F);
-//	Msg("CTorch::net_export - NV[%d]", m_bNightVisionOn);
+//	LogInfo("CTorch::net_export - NV[%d]", m_bNightVisionOn);
 }
 
 void CTorch::net_Import			(NET_Packet& P)
@@ -754,7 +754,7 @@ void CTorch::ReloadLights()
 
 	Fcolor clr = pUserData->r_fcolor(m_light_section, (b_r2) ? "color_r2" : "color");
 
-	if (!!psDeviceFlags.test(rsR4) && ps_enchanted_shaders)	//Костыль для нормализации яркости с Enchanted Shaders
+	if (!!psDeviceFlags.test(rsR4) && ps_enchanted_shaders)	//пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ Enchanted Shaders
 	{
 		clr.r *= 2.5f;
 		clr.g *= 2.5f;

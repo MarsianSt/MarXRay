@@ -1,4 +1,4 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 
 #include "phvalide.h"
 #include "mathutils.h"
@@ -17,11 +17,11 @@ const Fbox	&ph_boundaries()
 	return phBoundaries;
 }
 /*
-	Msg(" %s	\n", msg);\
-	Msg(" pos: %e,%e,%e, seems to be invalid", pos.x,pos.y,pos.z);\
-	Msg("Level box: %e,%e,%e-%e,%e,%e,",bounds.x1,bounds.y1,bounds.z1,bounds.x2,bounds.y2,bounds.z2);\
-	Msg("Object: %s",(obj->cName().c_str()));\
-	Msg("Visual: %s",(obj->cNameVisual().c_str()));\
+	LogInfo(" %s	\n", msg);\
+	LogInfo(" pos: %e,%e,%e, seems to be invalid", pos.x,pos.y,pos.z);\
+	LogInfo("Level box: %e,%e,%e-%e,%e,%e,",bounds.x1,bounds.y1,bounds.z1,bounds.x2,bounds.y2,bounds.z2);\
+	LogInfo("Object: %s",(obj->cName().c_str()));\
+	LogInfo("Visual: %s",(obj->cNameVisual().c_str()));\
 */
 
 

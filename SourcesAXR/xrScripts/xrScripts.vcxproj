@@ -82,7 +82,7 @@
     <NMakeBuildCommandLine>
     </NMakeBuildCommandLine>
     <IntDir>..\..\OutputDirectory\Intermediate\$(Configuration)\$(ProjectName)\</IntDir>
-    <OutDir>..\..\OutputDirectory\Binaries\$(Configuration)\</OutDir>
+    <OutDir>$(SolutionDir)\..\..\game\bin\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Gaming.Xbox.Scarlett.x64'">
     <IncludePath>$(ProjectDir)\luajit;$(IncludePath)</IncludePath>

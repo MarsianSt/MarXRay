@@ -1,4 +1,4 @@
-#include "stdafx.h"
+п»ї#include "stdafx.h"
 #pragma hdrstop
 
 #include "IGame_Persistent.h"
@@ -28,6 +28,7 @@ bool IGame_Persistent::IsMainMenuActive()
 
 IGame_Persistent::IGame_Persistent	()
 {
+	LogInfo("[GP] IGame_Persistent() constructor start");
     ZoneScoped;
 
 	RDEVICE.seqAppStart.Add			(this);
@@ -38,15 +39,19 @@ IGame_Persistent::IGame_Persistent	()
 
 	m_pMainMenu						= NULL;
 
+	LogInfo("[GP] Creating PerlinNoise1D");
 	PerlinNoise1D = xr_new<CPerlinNoise1D>(Random.randI(0, 0xFFFF));
 	PerlinNoise1D->SetOctaves(2);
 	PerlinNoise1D->SetAmplitude(0.66666f);
 
+	LogInfo("[GP] Creating ShadersExternalData");
 	m_pGShaderConstants = new ShadersExternalData(); //--#SM+#--
 
 #ifndef INGAME_EDITOR
 	#ifndef _EDITOR
+	LogInfo("[GP] Creating CEnvironment");
 	pEnvironment					= xr_new<CEnvironment>();
+	LogInfo("[GP] CEnvironment created");
 	#endif
 #else // #ifdef INGAME_EDITOR
 	if (RDEVICE.editor())
@@ -56,6 +61,7 @@ IGame_Persistent::IGame_Persistent	()
 #endif // #ifdef INGAME_EDITOR
 
 	render_scene = true;
+	LogInfo("[GP] IGame_Persistent() constructor end");
 }
 
 IGame_Persistent::~IGame_Persistent	()
@@ -189,9 +195,9 @@ void IGame_Persistent::Prefetch()
 	float	p_time		=			1000.f*Device.GetTimerGlobal()->GetElapsed_sec();
 	u32	mem_0			=			Memory.mem_usage()	;
 
-	Log				("Loading objects...");
+	LogInfo("%s", "Loading objects...");
 	ObjectPool.prefetch					();
-	Log				("Loading models...");
+	LogInfo("%s", "Loading models...");
 	Render->models_Prefetch				();
 	//Device.Resources->DeferredUpload	();
 	Device.m_pRender->ResourcesDeferredUpload();
@@ -199,8 +205,8 @@ void IGame_Persistent::Prefetch()
 	p_time				=			1000.f*Device.GetTimerGlobal()->GetElapsed_sec() - p_time;
 	u32		p_mem		=			Memory.mem_usage() - mem_0	;
 
-	Msg					("* [prefetch] time:    %d ms",	iFloor(p_time));
-	Msg					("* [prefetch] memory:  %dKb",	p_mem/1024);
+	LogInfo("* [prefetch] time:    %d ms",	iFloor(p_time));
+	LogInfo("* [prefetch] memory:  %dKb",	p_mem/1024);
 
 	prefetching_in_progress = false;
 }
@@ -250,7 +256,7 @@ void IGame_Persistent::OnFrame		()
 		VERIFY					(psi);
 		if (psi->Locked())
 		{
-			Log("--locked");
+			LogInfo("%s", "--locked");
 			break;
 		}
 		ps_destroy.pop_back		();
@@ -615,7 +621,7 @@ bool IGame_Persistent::IsActorInHideout() const
     static u32 last_ray_pick_time = Device.dwTimeGlobal;
 
     if (Device.dwTimeGlobal > (last_ray_pick_time + 1000))
-    { // Апдейт рейтрейса - раз в секунду. Чаще апдейтить нет смысла.
+    { // пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ - пїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ. пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ.
         last_ray_pick_time = Device.dwTimeGlobal;
         collide::rq_result RQ;
         actor_in_hideout = !!g_pGameLevel->ObjectSpace.RayPick(Device.vCameraPosition, Fvector{ 0.f, 1.f, 0.f }, 50.f, collide::rqtBoth, RQ, g_pGameLevel->CurrentViewEntity());
@@ -627,7 +633,7 @@ void IGame_Persistent::UpdateHudRaindrops() const
 {
     ZoneScoped;
 
-    const struct // Настройки
+    const struct // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
     {
         float density = ps_ssfx_hud_drops_1_cfg.x; // Quantity of drops
         float reflection_str = ps_ssfx_hud_drops_1_cfg.y; // Refrelction intensity
@@ -684,7 +690,7 @@ void IGame_Persistent::UpdateRainGloss() const
 {
     ZoneScoped;
 
-    const struct // Настройки
+    const struct // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
     {
         bool auto_gloss{ !fis_zero(ps_ssfx_lightsetup_1.z) }; // Automatic adjustment of gloss based on wetness.
         float auto_gloss_max{ ps_ssfx_lightsetup_1.w }; // Value to control the maximum value of gloss when full wetness is reached. ( 0 = 0% | 1 = 100% )

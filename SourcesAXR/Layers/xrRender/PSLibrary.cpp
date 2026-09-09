@@ -1,4 +1,4 @@
-//----------------------------------------------------
+﻿//----------------------------------------------------
 // file: PSLibrary.cpp
 //----------------------------------------------------
 #include "stdafx.h"
@@ -193,7 +193,7 @@ bool CPSLibrary::Load2()
 #ifdef _EDITOR
     if(pb) UI->ProgressEnd		(pb);
 #endif
-	Msg				("Loaded particles :%d", files.size());
+	LogInfo("Loaded particles :%d", files.size());
 	return true;
 }
 
@@ -202,7 +202,7 @@ bool CPSLibrary::Load(const char* nm)
 {
     if (!FS.exist(nm))
     {
-        Msg("Can't find file: '%s'",nm);
+        LogInfo("Can't find file: '%s'",nm);
         return 				false;
     }
     
@@ -257,7 +257,7 @@ void CPSLibrary::Reload()
 {
 	OnDestroy();
     OnCreate();
-	Msg( "PS Library was succesfully reloaded." );
+	LogInfo( "PS Library was succesfully reloaded." );
 }
 //----------------------------------------------------
 

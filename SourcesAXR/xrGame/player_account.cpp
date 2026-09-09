@@ -1,4 +1,4 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 #include "player_account.h"
 #include "MainMenu.h"
 #include "login_manager.h"
@@ -29,7 +29,7 @@ void player_account::load_account()
 
 	if (!tmp_curr_prof)
 	{
-		Msg("* WARNING: player not logged in");
+		LogInfo("* WARNING: player not logged in");
 	}
 
 	if (tmp_curr_prof)

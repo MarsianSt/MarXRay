@@ -1,4 +1,4 @@
-// SkeletonX.cpp: implementation of the CSkeletonX class.
+﻿// SkeletonX.cpp: implementation of the CSkeletonX class.
 //
 //////////////////////////////////////////////////////////////////////
 
@@ -700,12 +700,12 @@ static void verify_vertex( const vertex_type& v, const Fvisual* V, const CKinema
 	for( u8 i =0; i<vertex_type::bones_count; ++i )
 		if( v.get_bone_id(i) >= Parent->LL_BoneCount() )
 		{
-			Msg( "v.get_bone_id(i): %d, Parent->LL_BoneCount() %d ", v.get_bone_id(i), Parent->LL_BoneCount() );
-			Msg( "&v: %p, &V: %p, indices: %p", &v, V, indices );
-			Msg( " iBase: %d, iCount: %d, V->iBase %d, V->iCount %d, V->vBase: %d,  V->vCount  %d, vertex_idx: %d, idx: %d", iBase, iCount, V->iBase, V->iCount, V->vBase, V->vCount, vertex_idx, idx  );
-			Msg( " v.P: %s , v.N: %s, v.T: %s, v.B: %s", get_string( v.P ).c_str(),get_string(  v.N ).c_str(),get_string(  v.T ).c_str(),get_string(  v.B  ).c_str());
-			Msg( "Parent->dbg_name: %s ", Parent->dbg_name.c_str() );
-			FlushLog();
+			LogInfo( "v.get_bone_id(i): %d, Parent->LL_BoneCount() %d ", v.get_bone_id(i), Parent->LL_BoneCount() );
+			LogInfo( "&v: %p, &V: %p, indices: %p", &v, V, indices );
+			LogInfo( " iBase: %d, iCount: %d, V->iBase %d, V->iCount %d, V->vBase: %d,  V->vCount  %d, vertex_idx: %d, idx: %d", iBase, iCount, V->iBase, V->iCount, V->vBase, V->vCount, vertex_idx, idx  );
+			LogInfo( " v.P: %s , v.N: %s, v.T: %s, v.B: %s", get_string( v.P ).c_str(),get_string(  v.N ).c_str(),get_string(  v.T ).c_str(),get_string(  v.B  ).c_str());
+			LogInfo( "Parent->dbg_name: %s ", Parent->dbg_name.c_str() );
+			xrAsyncLogger::instance().flush();
 			FATAL( "v.get_bone_id(i) >= Parent->LL_BoneCount()" );
 		}
 #endif        

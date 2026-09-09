@@ -1,4 +1,4 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 #pragma hdrstop
 
 #ifndef _EDITOR
@@ -51,6 +51,7 @@ CEnvironment::CEnvironment	() :
 	CurrentEnv				(0),
 	m_ambients_config		(0)
 {
+	LogInfo("[GP] CEnvironment() constructor start");
 	used_soc_weather		= !FS.path_exist("$game_weathers$");
 
 	bNeed_re_create_env		= FALSE;
@@ -62,7 +63,9 @@ CEnvironment::CEnvironment	() :
 	eff_Rain				= 0;
     eff_LensFlare 			= 0;
     eff_Thunderbolt			= 0;
+	LogInfo("[GP] Calling OnDeviceCreate");
 	OnDeviceCreate			();
+	LogInfo("[GP] OnDeviceCreate done");
 #ifdef _EDITOR
 	ed_from_time			= 0.f;
 	ed_to_time				= DAY_LENGTH;
@@ -143,6 +146,7 @@ CEnvironment::CEnvironment	() :
         p_sun_color		= pSettings->r_float						("thunderbolt_common", "sun_color");
         p_fog_color		= pSettings->r_float						("thunderbolt_common", "fog_color");
 	}
+	LogInfo("[GP] CEnvironment() constructor end");
 }
 
 CEnvironment::~CEnvironment	()
@@ -237,7 +241,7 @@ void CEnvironment::SetWeather(shared_str name, bool forced)
         EnvsMapIt it		= WeatherCycles.find(name);
 		if (it == WeatherCycles.end())
 		{
-			Msg("! Invalid weather name: %s", name.c_str());
+			LogInfo("! Invalid weather name: %s", name.c_str());
 			return;
 		}
         R_ASSERT3			(it!=WeatherCycles.end(),"Invalid weather name.",*name);
@@ -249,7 +253,7 @@ void CEnvironment::SetWeather(shared_str name, bool forced)
 		}
 		if (forced)			{SelectEnvs(fGameTime);	}
 #ifdef WEATHER_LOGGING
-		Msg					("Starting Cycle: %s [%s]",*name,forced?"forced":"deferred");
+		LogInfo("Starting Cycle: %s [%s]",*name,forced?"forced":"deferred");
 #endif
     }else{
 #ifndef _EDITOR
@@ -303,9 +307,9 @@ bool CEnvironment::SetWeatherFX(shared_str name)
 		Current[0]			= C0;
 		Current[1]			= C1;
 #ifdef WEATHER_LOGGING
-		Msg					("Starting WFX: '%s' - %3.2f sec",*name,wfx_time);
+		LogInfo("Starting WFX: '%s' - %3.2f sec",*name,wfx_time);
 //		for (EnvIt l_it=CurrentWeather->begin(); l_it!=CurrentWeather->end(); l_it++)
-//			Msg				(". Env: '%s' Tm: %3.2f",*(*l_it)->m_identifier.c_str(),(*l_it)->exec_time);
+//			LogInfo(". Env: '%s' Tm: %3.2f",*(*l_it)->m_identifier.c_str(),(*l_it)->exec_time);
 #endif
 	}else{
 #ifndef _EDITOR
@@ -335,7 +339,7 @@ void CEnvironment::StopWFX	()
 	Current[0]				= WFX_end_desc[0];
 	Current[1]				= WFX_end_desc[1];
 #ifdef WEATHER_LOGGING
-	Msg						("WFX - end. Weather: '%s' Desc: '%s'/'%s' GameTime: %3.2f",CurrentWeatherName.c_str(),Current[0]->m_identifier.c_str(),Current[1]->m_identifier.c_str(),fGameTime);
+	LogInfo("WFX - end. Weather: '%s' Desc: '%s'/'%s' GameTime: %3.2f",CurrentWeatherName.c_str(),Current[0]->m_identifier.c_str(),Current[1]->m_identifier.c_str(),fGameTime);
 #endif
 }
 
@@ -358,7 +362,7 @@ void CEnvironment::SetEnvDesc(LPCSTR weather_section, CEnvDescriptor*& e)
 		}
 	}
 
-	Msg("!Could not set env descriptor from section %s", weather_section);
+	LogInfo("!Could not set env descriptor from section %s", weather_section);
 }
 
 IC bool lb_env_pred(const CEnvDescriptor* x, float val)
@@ -435,7 +439,7 @@ void CEnvironment::SelectEnvs(float gt)
 			Current[0]	= Current[1];
 			SelectEnv	(CurrentWeather,Current[1],gt);
 #ifdef WEATHER_LOGGING
-			Msg			("Weather: '%s' Desc: '%s' Time: %3.2f/%3.2f",CurrentWeatherName.c_str(),Current[1]->m_identifier.c_str(),Current[1]->exec_time,fGameTime);
+			LogInfo("Weather: '%s' Desc: '%s' Time: %3.2f/%3.2f",CurrentWeatherName.c_str(),Current[1]->m_identifier.c_str(),Current[1]->exec_time,fGameTime);
 #endif
 		}
     }
@@ -527,12 +531,12 @@ void CEnvironment::OnFrame()
 #ifndef MASTER_GOLD
 	if(CurrentEnv->sun_dir.y>0)
 	{
-		Log("CurrentEnv->sun_dir", CurrentEnv->sun_dir);
-//		Log("current_weight", current_weight);
+		LogInfo("%s", "CurrentEnv->sun_dir", CurrentEnv->sun_dir);
+//		LogInfo("%s", "current_weight", current_weight);
 //		Log("mpower", mpower);
 
-		Log("Current[0]->sun_dir", Current[0]->sun_dir);
-		Log("Current[1]->sun_dir", Current[1]->sun_dir);
+		LogInfo("Current[0]->sun_dir(%f,%f,%f)", VPUSH(Current[0]->sun_dir));
+		LogInfo("Current[1]->sun_dir(%f,%f,%f)", VPUSH(Current[1]->sun_dir));
 
 	}
 	VERIFY2						(CurrentEnv->sun_dir.y<0,"Invalid sun direction settings in lerp");

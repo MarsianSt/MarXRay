@@ -1,4 +1,4 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 #include "UIXmlInit.h"
 #include "../UIFontDefines.h"
 #include "../level.h"
@@ -136,7 +136,7 @@ bool CUIXmlInit::InitOptionsItem(CUIXml& xml_doc, LPCSTR path, int index, CUIOpt
 			if(0==stricmp(depends,"runtime"))
 				d = CUIOptionsItem::sdApplyOnChange;
 			else
-				Msg("! unknown param [%s] in optionsItem [%s]", depends, entry.c_str());
+				LogInfo("! unknown param [%s] in optionsItem [%s]", depends, entry.c_str());
 
 			pWnd->SetSystemDepends		(d);
 		}

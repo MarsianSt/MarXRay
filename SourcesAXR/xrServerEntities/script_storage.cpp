@@ -1,4 +1,4 @@
-////////////////////////////////////////////////////////////////////////////
+﻿////////////////////////////////////////////////////////////////////////////
 //	Module 		: script_storage.cpp
 //	Created 	: 01.04.2004
 //  Modified 	: 01.04.2004
@@ -166,7 +166,7 @@ void setup_luabind_allocator		()
 
 /* ---- start of LuaJIT extensions */
 static void l_message (lua_State* state, const char *msg) {
-	Msg	("! [LUA_JIT] %s", msg);
+	LogInfo("! [LUA_JIT] %s", msg);
 }
 
 static int report (lua_State *L, int status) {
@@ -280,7 +280,7 @@ void CScriptStorage::reinit	()
 	m_virtual_machine		= luaL_newstate();
 
 	if (!m_virtual_machine) {
-		Msg					("! ERROR : Cannot initialize script virtual machine!");
+		LogInfo("! ERROR : Cannot initialize script virtual machine!");
 		return;
 	}
 
@@ -388,7 +388,7 @@ int CScriptStorage::vscript_log		(ScriptStorage::ELuaMessageType tLuaMessageType
 	xr_strcpy	(S2,S);
 	S1		= S2 + xr_strlen(S);
 	int		l_iResult = vsprintf(S1,caFormat,marker);
-	Msg		("%s",S2);
+	LogInfo("%s",S2);
 	
 	xr_strcpy	(S2,SS);
 	S1		= S2 + xr_strlen(SS);
@@ -583,7 +583,7 @@ bool CScriptStorage::do_file	(LPCSTR caScriptName, LPCSTR caNameSpaceName)
 	if (0)	//.
 	{
 	    for (int i=0; lua_type(lua(), -i-1); i++)
-            Msg	("%2d : %s",-i-1,lua_typename(lua(), lua_type(lua(), -i-1)));
+            LogInfo("%2d : %s",-i-1,lua_typename(lua(), lua_type(lua(), -i-1)));
 	}
 
 	// because that's the first and the only call of the main chunk - there is no point to compile it
@@ -747,7 +747,7 @@ struct raii_guard : private boost::noncopyable {
 			if ( break_on_assert )
 				R_ASSERT2		( !m_error_code, m_error_description );
 			else
-				Msg				( "! SCRIPT ERROR: %s", m_error_description );
+				LogInfo( "! SCRIPT ERROR: %s", m_error_description );
 		}
 	}
 }; // struct raii_guard
@@ -847,7 +847,7 @@ int CScriptStorage::error_log	(LPCSTR	format, ...)
 	int				result = vsprintf(S1,format,marker);
 	va_end			(marker);
 
-	Msg				("%s",S2);
+	LogInfo("%s",S2);
 
 	return			(result);
 }

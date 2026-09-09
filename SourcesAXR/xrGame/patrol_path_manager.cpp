@@ -1,4 +1,4 @@
-////////////////////////////////////////////////////////////////////////////
+п»ї////////////////////////////////////////////////////////////////////////////
 //	Module 		: patrol_path_manager.cpp
 //	Created 	: 03.12.2003
 //  Modified 	: 03.12.2003
@@ -26,21 +26,21 @@ static void show_restrictions	(LPCSTR restrictions)
 {
 	string256			temp;
 	for (int i=0, n=_GetItemCount(restrictions); i<n; ++i)
-		Msg				("     %s",_GetItem(restrictions,i,temp));
+		LogInfo("     %s",_GetItem(restrictions,i,temp));
 }
 
 bool show_restrictions			(CRestrictedObject *object)
 {
-	Msg					("DEFAULT OUT RESTRICTIONS :");
+	LogInfo("DEFAULT OUT RESTRICTIONS :");
 	show_restrictions	(*Level().space_restriction_manager().default_out_restrictions() ? *Level().space_restriction_manager().default_out_restrictions() : "");
 
-	Msg					("DEFAULT IN RESTRICTIONS  :");
+	LogInfo("DEFAULT IN RESTRICTIONS  :");
 	show_restrictions	(*Level().space_restriction_manager().default_in_restrictions()  ? *Level().space_restriction_manager().default_in_restrictions()  : "");
 
-	Msg					("OUT RESTRICTIONS         :");
+	LogInfo("OUT RESTRICTIONS         :");
 	show_restrictions	(*object->out_restrictions() ? *object->out_restrictions() : "");
 
-	Msg					("IN RESTRICTIONS          :");
+	LogInfo("IN RESTRICTIONS          :");
 	show_restrictions	(*object->in_restrictions()  ? *object->in_restrictions()  : "");
 
 	return				(false);
@@ -178,8 +178,8 @@ void CPatrolPathManager::select_point(const Fvector &position, u32 &dest_vertex_
 		m_curr_point_index	= vertex->vertex_id();
 
 #if 0
-		// если выбранная нода не соответствует текущей ноде - все ок
-		// иначе выбрать следующую вершину патрульного пути
+		// пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ - пїЅпїЅпїЅ пїЅпїЅ
+		// пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ
 		if (vertex->data().level_vertex_id() != m_game_object->ai_location().level_vertex_id()) {
 			dest_vertex_id		= vertex->data().level_vertex_id();
 			m_dest_position		= vertex->data().position();
@@ -203,13 +203,13 @@ void CPatrolPathManager::select_point(const Fvector &position, u32 &dest_vertex_
 
 	m_game_object->callback	(GameObject::ePatrolPathInPoint)(m_game_object->lua_game_object(),u32(ScriptEntity::eActionTypeMovement),m_curr_point_index);
 
-	u32							count = 0;		// количество разветвлений
-	float						sum = 0.f;		// сумма весов разветвления
+	u32							count = 0;		// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
+	float						sum = 0.f;		// пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 	vertex						= m_path->vertex(m_curr_point_index);
 	CPatrolPath::const_iterator	I = vertex->edges().begin(), E = vertex->edges().end();
 	u32							target = u32(-1);
 	
-	// вычислить количество разветвлений
+	// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 	for ( ; I != E; ++I) {
 		if ((*I).vertex_id() == m_prev_point_index)
 			continue;
@@ -284,14 +284,14 @@ void CPatrolPathManager::select_point(const Fvector &position, u32 &dest_vertex_
 
 u32 CPatrolPathManager::get_next_point(u32 prev_point_index)
 {
-	u32							count	= 0;		// количество разветвлений
-	float						sum		= 0.f;		// сумма весов разветвления
+	u32							count	= 0;		// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
+	float						sum		= 0.f;		// пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 	const CPatrolPath::CVertex *vertex	= m_path->vertex(prev_point_index);
 	
 	CPatrolPath::const_iterator	I		= vertex->edges().begin(), E = vertex->edges().end();
 	u32							target	= u32(-1);
 
-	// вычислить количество разветвлений
+	// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 	for ( ; I != E; ++I) {
 		if (!accessible(m_path->vertex((*I).vertex_id())))
 			continue;
@@ -300,7 +300,7 @@ u32 CPatrolPathManager::get_next_point(u32 prev_point_index)
 		++count;
 	}
 
-	// проверить количество
+	// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 	if (count != 0) {
 
 		float fChoosed = 0.f;

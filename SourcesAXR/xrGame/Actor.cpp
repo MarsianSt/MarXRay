@@ -359,7 +359,7 @@ void set_box(LPCSTR section, CPHMovementControl &mc, u32 box_num )
 }
 void CActor::Load	(LPCSTR section )
 {
-	// Msg						("Loading actor: %s",section);
+	// LogInfo("Loading actor: %s",section);
 	inherited::Load				(section);
 	material().Load				(section);
 	CInventoryOwner::Load		(section);
@@ -866,7 +866,7 @@ void start_tutorial(LPCSTR name);
 void CActor::Die	(CObject* who)
 {
 #ifdef DEBUG
-	Msg("--- Actor [%s] dies !", this->Name());
+	LogInfo("--- Actor [%s] dies !", this->Name());
 #endif // #ifdef DEBUG
 	inherited::Die		(who);
 
@@ -976,7 +976,7 @@ void	CActor::SwitchOutBorder(bool new_border_state)
 	}
 	else 
 	{
-//.		Msg("enter level border");
+//.		LogInfo("enter level border");
 		callback(GameObject::eEnterLevelBorder)(lua_game_object());
 	}
 	m_bOutBorder=new_border_state;
@@ -1329,13 +1329,13 @@ void CActor::shedule_Update	(u32 DT)
 			}else
 			{
 					g_player_hud->detach_item_idx	( 0 );
-					//Msg("---No active item in inventory(), item 0 detached.");
+					//LogInfo("---No active item in inventory(), item 0 detached.");
 			}
 		}
 		else
 		{
 			g_player_hud->detach_all_items();
-			//Msg("---No hud view found, all items detached.");
+			//LogInfo("---No hud view found, all items detached.");
 		}
 			
 	}
@@ -1496,7 +1496,7 @@ void CActor::shedule_Update	(u32 DT)
 				m_DangerSnd.set_position(snd_pos);
 
 			float v = bs+0.25f;
-//			Msg( "bs            = %.2f", bs );
+//			LogInfo( "bs            = %.2f", bs );
 
 			m_DangerSnd.set_volume	(v);
 		}
@@ -3493,7 +3493,7 @@ void CActor::SwitchNightVision(bool vision_on, bool use_sounds, bool send_event)
 		object->u_EventGen(packet, GE_TRADER_FLAGS, object->ID());
 		packet.w_u32(m_trader_flags.get());
 		object->u_EventSend(packet);
-		//Msg("GE_TRADER_FLAGS event sent %d", m_trader_flags.get());
+		//LogInfo("GE_TRADER_FLAGS event sent %d", m_trader_flags.get());
 	}
 }
 

@@ -1,4 +1,4 @@
-//---------------------------------------------------------------------------
+﻿//---------------------------------------------------------------------------
 #include "stdafx.h"
 #pragma hdrstop
 
@@ -43,7 +43,7 @@ void CGameMtlLibrary::Load()
 {
 	string_path			name;
 	if (!FS.exist(name,	_game_data_,GAMEMTL_FILENAME)){
-    	Log				("! Can't find game material file: ",name);
+    	LogInfo("%s", "! Can't find game material file: ",name);
     	return;
     }
 
@@ -56,7 +56,7 @@ void CGameMtlLibrary::Load()
     R_ASSERT(fs.find_chunk(GAMEMTLS_CHUNK_VERSION));
     u16 version			= fs.r_u16();
     if (GAMEMTL_CURRENT_VERSION!=version){
-        Log				("CGameMtlLibrary: invalid version. Library can't load.");
+        LogInfo("%s", "CGameMtlLibrary: invalid version. Library can't load.");
 		FS.r_close		(F);
     	return;
     }
@@ -106,7 +106,7 @@ void CGameMtlLibrary::Load()
 	for (GameMtlPairIt p_it=material_pairs.begin(); material_pairs.end() != p_it; ++p_it){
 		SGameMtlPair* S	= *p_it;
 		for (int k=0; k<S->StepSounds.size(); k++){
-			Msg("%40s - 0x%x", S->StepSounds[k].handle->file_name(), S->StepSounds[k].g_type);
+			LogInfo("%40s - 0x%x", S->StepSounds[k].handle->file_name(), S->StepSounds[k].g_type);
 		}
 	}
 */

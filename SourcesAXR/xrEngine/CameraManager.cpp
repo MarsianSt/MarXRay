@@ -564,8 +564,8 @@ void CCameraManager::Dump()
 	_U.set( mInvCamera._21, mInvCamera._22, mInvCamera._23 );
 	_T.set( mInvCamera._31, mInvCamera._32, mInvCamera._33 );
 	_P.set( mInvCamera._41, mInvCamera._42, mInvCamera._43 );
-	Log("CCameraManager::Dump::vPosition  = ",_P);
-	Log("CCameraManager::Dump::vDirection = ",_T);
-	Log("CCameraManager::Dump::vNormal    = ",_U);
-	Log("CCameraManager::Dump::vRight     = ",_R);
+	LogInfo("CCameraManager::Dump::vPosition  = (%f,%f,%f)", VPUSH(_P));
+	LogInfo("CCameraManager::Dump::vDirection = (%f,%f,%f)", VPUSH(_T));
+	LogInfo("CCameraManager::Dump::vNormal    = (%f,%f,%f)", VPUSH(_U));
+	LogInfo("CCameraManager::Dump::vRight     = (%f,%f,%f)", VPUSH(_R));
 }

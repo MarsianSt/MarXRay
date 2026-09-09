@@ -1,4 +1,4 @@
-#include "stdafx.h"
+п»ї#include "stdafx.h"
 #include "game_sv_mp.h"
 #include "xrServer.h"
 #include "xrMessages.h"
@@ -80,12 +80,12 @@ void	game_sv_mp::Update	()
 		if (!pCorpseObj)
 		{
 			m_CorpseList.erase(m_CorpseList.begin() + i);
-			Msg("corpse [%d] not found [%d]",CorpseID, Device.dwFrame);
+			LogInfo("corpse [%d] not found [%d]",CorpseID, Device.dwFrame);
 			continue;
 		}
 		if (!pCorpseObj->children.empty())
 		{
-			Msg("corpse [%d] childern not empty [%d]",CorpseID, Device.dwFrame);
+			LogInfo("corpse [%d] childern not empty [%d]",CorpseID, Device.dwFrame);
 			i++;
 			continue;
 		}
@@ -95,7 +95,7 @@ void	game_sv_mp::Update	()
 		u_EventGen			(P,GE_DESTROY,CorpseID);
 		Level().Send(P,net_flags(TRUE,TRUE));
 		m_CorpseList.erase(m_CorpseList.begin() + i);
-		Msg("corpse [%d] send destroy [%d]",CorpseID, Device.dwFrame);
+		LogInfo("corpse [%d] send destroy [%d]",CorpseID, Device.dwFrame);
 	}
 
 	if (IsVotingEnabled() && IsVotingActive()) UpdateVote();
@@ -243,13 +243,13 @@ void	game_sv_mp::KillPlayer				(ClientID id_who, u16 GameID)
 	xrClientData* xrCData	=	m_server->ID_to_client(id_who);
 #ifdef DEBUG
 	if (xrCData && xrCData->ps && xrCData->ps->getName())
-		Msg("--- Killing player [%s]", xrCData->ps->getName());
+		LogInfo("--- Killing player [%s]", xrCData->ps->getName());
 #endif // #ifdef DEBUG
 	
 	if (xrCData && xrCData->ps && xrCData->ps->testFlag(GAME_PLAYER_FLAG_VERY_VERY_DEAD))
 	{
 #ifdef DEBUG
-		Msg("--- Killing dead player [%s]", xrCData->ps->getName());
+		LogInfo("--- Killing dead player [%s]", xrCData->ps->getName());
 #endif // #ifdef DEBUG
 		return;
 	}
@@ -266,7 +266,7 @@ void	game_sv_mp::KillPlayer				(ClientID id_who, u16 GameID)
 	{
 		if (!pActor->g_Alive())
 		{
-			Msg("! WARNING: Actor already died");
+			LogInfo("! WARNING: Actor already died");
 			return;
 		}
 		pActor->set_death_time		();
@@ -302,7 +302,7 @@ void	game_sv_mp::OnEvent (NET_Packet &P, u16 type, u32 time, ClientID sender )
 #ifdef DEBUG
 			xrClientData *l_pC	= m_server->ID_to_client(sender);
 			if (l_pC && l_pC->ps)
-				Msg("--- GAME_EVENT_PLAYER_KILLED: sender [%d][0x%08x]", l_pC->ps->GameID, sender);
+				LogInfo("--- GAME_EVENT_PLAYER_KILLED: sender [%d][0x%08x]", l_pC->ps->GameID, sender);
 #endif // #ifdef DEBUG
 			OnPlayerKilled(P);
 		}break;
@@ -311,7 +311,7 @@ void	game_sv_mp::OnEvent (NET_Packet &P, u16 type, u32 time, ClientID sender )
 #ifdef DEBUG
 			xrClientData *l_pC	= m_server->ID_to_client(sender);
 			if (l_pC && l_pC->ps)
-				Msg("--- GAME_EVENT_PLAYER_HITTED: sender [%d][0x%08x]", l_pC->ps->GameID, sender);
+				LogInfo("--- GAME_EVENT_PLAYER_HITTED: sender [%d][0x%08x]", l_pC->ps->GameID, sender);
 #endif // #ifdef DEBUG
 			OnPlayerHitted(P);			
 		}break;
@@ -367,7 +367,7 @@ void	game_sv_mp::OnEvent (NET_Packet &P, u16 type, u32 time, ClientID sender )
 	case GAME_EVENT_PLAYER_STARTED:
 		{
 #ifdef DEBUG
-			Msg("--- Player 0x%08x started.", sender);
+			LogInfo("--- Player 0x%08x started.", sender);
 #endif // #ifdef DEBUG
 			if (CheckPlayerMapName(sender, P))
 			{
@@ -386,7 +386,7 @@ void	game_sv_mp::OnEvent (NET_Packet &P, u16 type, u32 time, ClientID sender )
 					"unknown client [0x%08x] sended GAME_EVENT_PLAYER_BUYMENU_OPEN message",
 					sender.value()).c_str());
 #ifndef MASTER_GOLD
-				Msg("! ERROR: unknown client [0x%08x] opens buy menu",
+				LogInfo("! ERROR: unknown client [0x%08x] opens buy menu",
 					sender.value());
 #endif // #ifndef MASTER_GOLD
 			}
@@ -402,7 +402,7 @@ void	game_sv_mp::OnEvent (NET_Packet &P, u16 type, u32 time, ClientID sender )
 					"unknown client [0x%08x] sended GAME_EVENT_PLAYER_BUYMENU_OPEN message",
 					sender.value()).c_str());
 #ifndef MASTER_GOLD
-				Msg("! ERROR: unknown client [0x%08x] opens buy menu",
+				LogInfo("! ERROR: unknown client [0x%08x] opens buy menu",
 					sender.value());
 #endif // #ifndef MASTER_GOLD
 			}
@@ -421,7 +421,7 @@ bool game_sv_mp::CheckPlayerMapName(ClientID const & clientID, NET_Packet & P)
 
 	if (xr_strcmp(Level().name().c_str(), temp_map_name))
 	{
-		Msg("! Player 0x%08x has incorrect map name", clientID, temp_map_name);
+		LogInfo("! Player 0x%08x has incorrect map name", clientID, temp_map_name);
 		//ReconnectPlayer(clientID);
 		return false;
 	}
@@ -433,7 +433,7 @@ LPCSTR GameTypeToString(EGameIDs gt, bool bShort);
 void game_sv_mp::ReconnectPlayer(ClientID const & clientID)
 {
 #ifdef DEBUG
-	Msg("--- Reconnecting player 0x%08x", clientID);
+	LogInfo("--- Reconnecting player 0x%08x", clientID);
 #endif // #ifdef DEBUG
 	NET_Packet			P;
 	P.w_begin			(M_CHANGE_LEVEL_GAME);
@@ -595,7 +595,7 @@ void	game_sv_mp::SpawnPlayer(ClientID id, LPCSTR N)
 			}
 		};
 	
-	Msg		("* %s [%d] respawned as %s", get_name_id(id), E->ID, (0 == pA) ? "spectator" : "actor");
+	LogInfo("* %s [%d] respawned as %s", get_name_id(id), E->ID, (0 == pA) ? "spectator" : "actor");
 	spawn_end				(E,id);
 
 	ps_who->SetGameID(CL->owner->ID);
@@ -658,13 +658,13 @@ void	game_sv_mp::SetSkin					(CSE_Abstract* E, u16 Team, u16 ID)
 	//-------------------------------------------
 	string256 SkinName;
 	xr_strcpy(SkinName, pSettings->r_string("mp_skins_path", "skin_path"));
-	//загружены ли скины для этой комманды
+	//пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 
 	if (!TeamList.empty()	&&
 		TeamList.size() > Team	&&
 		!TeamList[Team].aSkins.empty())
 	{
-		//загружено ли достаточно скинов для этой комманды
+		//пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 		if (TeamList[Team].aSkins.size() > ID)
 		{
 			xr_strcat(SkinName, TeamList[Team].aSkins[ID].c_str());
@@ -677,7 +677,7 @@ void	game_sv_mp::SetSkin					(CSE_Abstract* E, u16 Team, u16 ID)
 		R_ASSERT2(0,"Skin not loaded");
 	};
 	xr_strcat(SkinName, ".ogf");
-	Msg("* Skin - %s", SkinName);
+	LogInfo("* Skin - %s", SkinName);
 	int len = xr_strlen(SkinName);
 	R_ASSERT2(len < 64, "Skin Name is too LONG!!!");
 	pV->set_visual(SkinName);
@@ -829,7 +829,7 @@ void	game_sv_mp::SetAmmoForWeapon(CSE_ALifeItemWeapon* weapon,
 	if (!ammo_classes.size())
 	{
 #ifdef DEBUG
-		Msg("! WARNING: not found ammo_class for [%s]", weapon->s_name.c_str());
+		LogInfo("! WARNING: not found ammo_class for [%s]", weapon->s_name.c_str());
 #endif
 		weapon->a_elapsed	= 0;
 	} else
@@ -848,7 +848,7 @@ void	game_sv_mp::SetAmmoForWeapon(CSE_ALifeItemWeapon* weapon,
 		if (!grenade_classes.size())
 		{
 #ifdef DEBUG
-		Msg("! WARNING: not found grenade_class for [%s]", weapon->s_name.c_str());
+		LogInfo("! WARNING: not found grenade_class for [%s]", weapon->s_name.c_str());
 #endif
 			weapon->a_elapsed_grenades.unpack_from_byte(0);
 			return;
@@ -916,7 +916,7 @@ void game_sv_mp::OnDestroyObject			(u16 eid_who)
 bool game_sv_mp::OnNextMap				()
 {
 	if (!m_bMapRotation) return false;
-	Msg("m_bMapSwitched - %s", m_bMapSwitched ? "true" : "false");
+	LogInfo("m_bMapSwitched - %s", m_bMapSwitched ? "true" : "false");
 	if (m_bMapSwitched) return false;
 	if (!m_pMapRotation_List.size()) return false;
 
@@ -926,7 +926,7 @@ bool game_sv_mp::OnNextMap				()
 
 	R					= m_pMapRotation_List.front();
 
-	Msg("Going to level %s", R.map_name.c_str());
+	LogInfo("Going to level %s", R.map_name.c_str());
 	m_bMapSwitched			= true;
 
 	string1024				Command;
@@ -938,7 +938,7 @@ bool game_sv_mp::OnNextMap				()
 void game_sv_mp::OnPrevMap				()
 {
 	if (!m_bMapRotation) return;
-	Msg("m_bMapSwitched - %s", m_bMapSwitched ? "true" : "false");
+	LogInfo("m_bMapSwitched - %s", m_bMapSwitched ? "true" : "false");
 	if (m_bMapSwitched) return;
 	if (!m_pMapRotation_List.size()) return;
 	
@@ -946,7 +946,7 @@ void game_sv_mp::OnPrevMap				()
 	m_pMapRotation_List.pop_back();
 	m_pMapRotation_List.push_front(R);
 
-	Msg("Goint to level %s", R.map_name.c_str());
+	LogInfo("Goint to level %s", R.map_name.c_str());
 	m_bMapSwitched = true;
 
 	string1024	Command;
@@ -1039,7 +1039,7 @@ void game_sv_mp::OnVoteStart				(LPCSTR VoteCommand, ClientID sender)
 	};
 	if (!m_bVotingReal && CommandName[0] != '$') 
 	{
-		Msg("Unknown Vote Command - %s", CommandName);
+		LogInfo("Unknown Vote Command - %s", CommandName);
 		return;
 	};
 
@@ -1065,7 +1065,7 @@ void game_sv_mp::OnVoteStart				(LPCSTR VoteCommand, ClientID sender)
 				LevelVersion, sizeof(LevelVersion)
 			);
 #ifdef DEBUG
-			Msg("--- Starting vote for changing level to: %s[%s]", LevelName, LevelVersion);
+			LogInfo("--- Starting vote for changing level to: %s[%s]", LevelName, LevelVersion);
 #endif // #ifdef DEBUG
 			LevelName[255] = 0;
 			LevelVersion[255] = 0;
@@ -1104,11 +1104,11 @@ void game_sv_mp::OnVoteStart				(LPCSTR VoteCommand, ClientID sender)
 				m_pVoteCommand.printf("sv_banplayer %u %d", tmp_client->ID.value(), ban_time);
 			} else
 			{
-				Msg("! ERROR: can't find player with name %s", tmp_victim_name);
+				LogInfo("! ERROR: can't find player with name %s", tmp_victim_name);
 			}
 			//} else
 			//{
-			//	Msg("! ERROR: failed to extract ban time from vote string.");
+			//	LogInfo("! ERROR: failed to extract ban time from vote string.");
 			//}
 			xr_strcpy(resVoteCommand, VoteCommand);
 		} else
@@ -1413,7 +1413,7 @@ void game_sv_mp::OnPlayerKilled(NET_Packet P)
 		CEntity *entity = smart_cast<CEntity*>(Level().Objects.net_Find(KilledID));
 
 #ifndef MASTER_GOLD
-		Msg("! ERROR:  killed entity is null ! (entitty [%d][%s]), killer id [%d][%s], Frame [%d]",
+		LogInfo("! ERROR:  killed entity is null ! (entitty [%d][%s]), killer id [%d][%s], Frame [%d]",
 			KilledID, entity ? entity->cName().c_str() : "unknown",
 			KillerID, ps_killer ? ps_killer->getName() : "unknown",
 			Device.dwFrame);
@@ -1421,7 +1421,7 @@ void game_sv_mp::OnPlayerKilled(NET_Packet P)
 		return;
 	}
 #ifdef MP_LOGGING
-	Msg("--- Player [%d] killed player [%d], Frame [%d]", KillerID, KilledID, Device.dwFrame);
+	LogInfo("--- Player [%d] killed player [%d], Frame [%d]", KillerID, KilledID, Device.dwFrame);
 #endif
 	
 
@@ -1456,7 +1456,7 @@ void game_sv_mp::OnPlayerHitted(NET_Packet P)
 void	game_sv_mp::SendPlayerKilledMessage	(u16 KilledID, KILL_TYPE KillType, u16 KillerID, u16 WeaponID, SPECIAL_KILL_TYPE SpecialKill)
 {
 #ifndef MASTER_GOLD
-	Msg("---Server: sending player [%d] killed message...", KillerID);
+	LogInfo("---Server: sending player [%d] killed message...", KillerID);
 #endif // #ifndef MASTER_GOLD
 	NET_Packet			P;
 	GenerateGameMessage (P);
@@ -1780,7 +1780,7 @@ void game_sv_mp::RenewAllActorsHealth	()
 			if (l_pC->ps->testFlag(GAME_PLAYER_FLAG_VERY_VERY_DEAD))
 			{
 #ifdef DEBUG
-				Msg("--- Actor has dead flag in player state");
+				LogInfo("--- Actor has dead flag in player state");
 #endif // #ifdef DEBUG
 				return;
 			}
@@ -1792,7 +1792,7 @@ void game_sv_mp::RenewAllActorsHealth	()
 			if (!pActor->g_Alive())
 			{
 #ifndef MASTER_GOLD
-				Msg("! ERROR: dead actor !!!");
+				LogInfo("! ERROR: dead actor !!!");
 #endif // #ifndef MASTER_GOLD
 				return;
 			}
@@ -1814,7 +1814,7 @@ void game_sv_mp::DestroyGameItem(CSE_Abstract* entity)
 //	R_ASSERT2( entity, "entity not found for destroying" );
 	VERIFY2  ( entity, "entity not found for destroying" );
 	if ( !entity ) {
-		Msg ( "! ERROR: entity not found for destroying" );
+		LogInfo( "! ERROR: entity not found for destroying" );
 		return;
 	}
 
@@ -1832,7 +1832,7 @@ void game_sv_mp::RejectGameItem(CSE_Abstract* entity)
 //	R_ASSERT2( entity, "entity not found for rejecting" );
 	VERIFY2  ( entity, "entity not found for rejecting" );
 	if ( !entity ) {
-		Msg ( "! ERROR: entity not found for rejecting" );
+		LogInfo( "! ERROR: entity not found for rejecting" );
 		return;
 	}
 
@@ -1848,7 +1848,7 @@ void game_sv_mp::RejectGameItem(CSE_Abstract* entity)
 //	R_ASSERT2( e_parent, make_string( "RejectGameItem: parent not found. entity_id = [%d], parent_id = [%d]", entity->ID, entity->ID_Parent ).c_str() );
 	VERIFY2  ( e_parent, make_string( "RejectGameItem: parent not found. entity_id = [%d], parent_id = [%d]", entity->ID, entity->ID_Parent ).c_str() );
 	if ( !e_parent ) {
-		Msg( "! ERROR (RejectGameItem): parent not found. entity_id = [%d], parent_id = [%d]", entity->ID, entity->ID_Parent );
+		LogInfo( "! ERROR (RejectGameItem): parent not found. entity_id = [%d], parent_id = [%d]", entity->ID, entity->ID_Parent );
 		return;
 	}
 
@@ -2136,7 +2136,7 @@ void game_sv_mp::DestroyAllPlayerItems(ClientID id_who)	//except rukzak
 	VERIFY(xrCData->ps);
 	game_PlayerState*	ps	=	xrCData->ps;
 #ifndef MASTER_GOLD
-	Msg("---Destroying player [%s] items before spawning new bought items.", ps->getName());
+	LogInfo("---Destroying player [%s] items before spawning new bought items.", ps->getName());
 #endif // #ifndef MASTER_GOLD
 	
 	CActor* pActor = smart_cast<CActor*>(Level().Objects.net_Find(ps->GameID));
@@ -2156,7 +2156,7 @@ void game_sv_mp::DestroyAllPlayerItems(ClientID id_who)	//except rukzak
 //		R_ASSERT2( tempEntity, make_string("entity not found [%d]. Destroy all items of actor[%d]", object_id, ps->GameID).c_str() );
 		VERIFY2  ( tempEntity, make_string("entity not found [%d]. Destroy all items of actor[%d]", object_id, ps->GameID).c_str() );
 		if (!tempEntity) {
-			Msg                 ( "! ERROR: entity not found [%d]. Destroy all items of actor[%d]", object_id, ps->GameID );
+			LogInfo( "! ERROR: entity not found [%d]. Destroy all items of actor[%d]", object_id, ps->GameID );
 			continue;
 		}
 		
@@ -2195,7 +2195,7 @@ IClient* game_sv_mp::BanPlayer(ClientID const & client_id, s32 ban_time_sec, xrC
 {
 	if (client_id == m_server->GetServerClient()->ID)
 	{
-		Msg("! ERROR: can't ban server client.");
+		LogInfo("! ERROR: can't ban server client.");
 		return NULL;
 	}
 	xrClientData* client_to_ban = static_cast<xrClientData*>(
@@ -2207,7 +2207,7 @@ IClient* game_sv_mp::BanPlayer(ClientID const & client_id, s32 ban_time_sec, xrC
 	
 	if (client_to_ban->m_admin_rights.m_has_admin_rights)
 	{
-		Msg("! ERROR: Can't ban player with admin rights");
+		LogInfo("! ERROR: Can't ban player with admin rights");
 		return NULL;
 	}
 	m_cdkey_ban_list.ban_player(client_to_ban, ban_time_sec, initiator);
@@ -2253,7 +2253,7 @@ void	game_sv_mp::OnPlayerChangeName		(NET_Packet& P, ClientID sender)
 	xrGameSpyServer* sv = smart_cast<xrGameSpyServer*>( m_server );
 	if( sv && sv->IsPublicServer() )
 	{
-		Msg( "Player \"%s\" try to change name on \"%s\" at public server.", ps->getName(), NewName );
+		LogInfo( "Player \"%s\" try to change name on \"%s\" at public server.", ps->getName(), NewName );
 
 		NET_Packet			P;
 		GenerateGameMessage (P);

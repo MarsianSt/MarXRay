@@ -1,4 +1,4 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 #include "game_cl_capture_the_artefact.h"
 
 #include "level.h"
@@ -14,7 +14,7 @@
 void game_cl_CaptureTheArtefact::OnBuyMenu_Ok()
 {
 #ifdef DEBUG
-	Msg("--- CTA: Buy menu OK...");
+	LogInfo("--- CTA: Buy menu OK...");
 #endif // #ifdef DEBUG
 	typedef CUIGameCTA::BuyMenuItemsCollection TBuyCol;
 

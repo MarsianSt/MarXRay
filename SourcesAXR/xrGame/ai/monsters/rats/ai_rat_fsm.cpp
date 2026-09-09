@@ -1,4 +1,4 @@
-////////////////////////////////////////////////////////////////////////////
+﻿////////////////////////////////////////////////////////////////////////////
 //	Module 		: ai_rat_fsm.cpp
 //	Created 	: 25.04.2002
 //  Modified 	: 07.11.2002
@@ -29,15 +29,15 @@ using namespace RatSpace;
 #undef	WRITE_TO_LOG
 #define WRITE_TO_LOG(s) m_bStopThinking = true;
 /*	if (!visible_objects().size())\
-Msg("* No objects in frustum",visible_objects().size());\
+LogInfo("* No objects in frustum",visible_objects().size());\
 else {\
-Msg("* Objects in frustum (%d) :",visible_objects().size());\
+LogInfo("* Objects in frustum (%d) :",visible_objects().size());\
 for (int i=0; i<(int)visible_objects().size(); ++i)\
-Msg("*   %s",*visible_objects()[i]->cName());\
+LogInfo("*   %s",*visible_objects()[i]->cName());\
 }\
 /**
 #define WRITE_TO_LOG(s) {\
-	Msg("Monster %s : \n* State : %s\n* Time delta : %7.3f\n* Global time : %7.3f",*cName(),s,m_fTimeUpdateDelta,float(Device.dwTimeGlobal)/1000.f);\
+	LogInfo("Monster %s : \n* State : %s\n* Time delta : %7.3f\n* Global time : %7.3f",*cName(),s,m_fTimeUpdateDelta,float(Device.dwTimeGlobal)/1000.f);\
 	m_bStopThinking = true;\
 }
 /**/
@@ -238,7 +238,7 @@ void CAI_Rat::UnderFire()
 		return;
 	}
 
-	//	Msg					("%6d : Rat %s, %f -> %f [%f]",Device.dwTimeGlobal,*cName(),get_movement().m_body.current.pitch,get_movement().m_body.target.pitch,get_custom_pitch_speed(0.f));
+	//	LogInfo("%6d : Rat %s, %f -> %f [%f]",Device.dwTimeGlobal,*cName(),get_movement().m_body.current.pitch,get_movement().m_body.target.pitch,get_custom_pitch_speed(0.f));
 
 	vfSetFire(false);
 
@@ -283,7 +283,7 @@ void CAI_Rat::AttackFire()
 		return;
 	}
 
-	//	Msg			("%6d : Rat %s, %f -> %f [%f]",Device.dwTimeGlobal,*cName(),get_movement().m_body.current.pitch,get_movement().m_body.target.pitch,get_custom_pitch_speed(0.f));
+	//	LogInfo("%6d : Rat %s, %f -> %f [%f]",Device.dwTimeGlobal,*cName(),get_movement().m_body.current.pitch,get_movement().m_body.target.pitch,get_custom_pitch_speed(0.f));
 
 	//ERatStates eState = ERatStates(dwfChooseAction(m_dwActionRefreshRate,m_fAttackSuccessProbability,g_Team(),g_Squad(),g_Group(),m_eCurrentState,m_eCurrentState,aiRatRetreat,this,30.f));
 	//if (eState != m_eCurrentState)
@@ -320,7 +320,7 @@ void CAI_Rat::AttackRun()
 		return;
 	}
 
-	//	Msg			("%6d : Rat %s, %f -> %f [%f]",Device.dwTimeGlobal,*cName(),get_movement().m_body.current.pitch,get_movement().m_body.target.pitch,get_custom_pitch_speed(0.f));
+	//	LogInfo("%6d : Rat %s, %f -> %f [%f]",Device.dwTimeGlobal,*cName(),get_movement().m_body.current.pitch,get_movement().m_body.target.pitch,get_custom_pitch_speed(0.f));
 	vfSetFire(false);
 
 	ERatStates eState = ERatStates(dwfChooseAction(m_dwActionRefreshRate,m_fAttackSuccessProbability,m_fAttackSuccessProbability,m_fAttackSuccessProbability,m_fAttackSuccessProbability,g_Team(),g_Squad(),g_Group(),m_eCurrentState,m_eCurrentState,m_eCurrentState,aiRatRetreat,aiRatRetreat,this,30.f));

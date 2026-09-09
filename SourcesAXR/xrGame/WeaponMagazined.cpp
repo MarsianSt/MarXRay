@@ -1,4 +1,4 @@
-#include "pch_script.h"
+п»ї#include "pch_script.h"
 
 #include "WeaponMagazined.h"
 #include "actor.h"
@@ -94,7 +94,7 @@ void CWeaponMagazined::Load	(LPCSTR section)
 {
 	inherited::Load		(section);
 
-	// Проверяем наличие анимаций
+	// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 	SetAnimFlag(ANM_SHOW_EMPTY,		"anm_show_empty");
 	SetAnimFlag(ANM_HIDE_EMPTY,		"anm_hide_empty");
 	SetAnimFlag(ANM_IDLE_EMPTY,		"anm_idle_empty");
@@ -164,7 +164,7 @@ void CWeaponMagazined::Load	(LPCSTR section)
 	if (WeaponSoundExist(section, "snd_change_zoom", true))
 		m_sounds.LoadSound(section, "snd_change_zoom", "sndChangeZoom", m_eSoundEmptyClick);
 
-	// Звуки из класса пистолета
+	// пїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 	if (WeaponSoundExist(section, "snd_close", true))
 		m_sounds.LoadSound(section, "snd_close", "sndClose", false, m_eSoundClose);
 
@@ -202,7 +202,7 @@ void CWeaponMagazined::Load	(LPCSTR section)
 
 	m_bIsBoltRiffle = READ_IF_EXISTS(pSettings, r_bool, section, "is_bolt_rifle", false);
 		
-	//звуки и партиклы глушителя, еслит такой есть
+	//пїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ
 	if ( m_eSilencerStatus == ALife::eAddonAttachable || m_eSilencerStatus == ALife::eAddonPermanent )
 	{
 		if(pSettings->line_exist(section, "silencer_flame_particles"))
@@ -470,13 +470,13 @@ void CWeaponMagazined::OnMotionMark(u32 state, const motion_marks& M)
 
 			if (ammo_type == m_ammoType)
 			{
-				Msg("Ammo elapsed: %d", iAmmoElapsed);
+				LogInfo("Ammo elapsed: %d", iAmmoElapsed);
 				ae += iAmmoElapsed;
 			}
 
 			last_hide_bullet = ae >= bullet_cnt ? bullet_cnt : bullet_cnt - ae - 1;
 
-			Msg("Next reload: count %d with type %d", ae, ammo_type);
+			LogInfo("Next reload: count %d with type %d", ae, ammo_type);
 
 			HUD_VisualBulletUpdate();
 			update_visual_bullet_textures();
@@ -664,11 +664,11 @@ int CWeaponMagazined::CheckAmmoBeforeReload(u8& v_ammoType)
 	if (m_set_next_ammoType_on_reload != undefined_ammo_type)
 		v_ammoType = m_set_next_ammoType_on_reload;
 
-	Msg("Ammo type in next reload : %d", m_set_next_ammoType_on_reload);
+	LogInfo("Ammo type in next reload : %d", m_set_next_ammoType_on_reload);
 
 	if (m_ammoTypes.size() <= v_ammoType)
 	{
-		Msg("Ammo type is wrong : %d", v_ammoType);
+		LogInfo("Ammo type is wrong : %d", v_ammoType);
 		return 0;
 	}
 
@@ -676,7 +676,7 @@ int CWeaponMagazined::CheckAmmoBeforeReload(u8& v_ammoType)
 
 	if (!tmp_sect_name)
 	{
-		Msg("Sect name is wrong");
+		LogInfo("Sect name is wrong");
 		return 0;
 	}
 
@@ -686,7 +686,7 @@ int CWeaponMagazined::CheckAmmoBeforeReload(u8& v_ammoType)
 	{
 		for (u8 i = 0; i < u8(m_ammoTypes.size()); ++i)
 		{
-			//проверить патроны всех подходящих типов
+			//пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ
 			ammo = smart_cast<CWeaponAmmo*>(m_pInventory->GetAny(m_ammoTypes[i].c_str()));
 			if (ammo)
 			{
@@ -696,7 +696,7 @@ int CWeaponMagazined::CheckAmmoBeforeReload(u8& v_ammoType)
 		}
 	}
 
-	Msg("Ammo type %d", v_ammoType);
+	LogInfo("Ammo type %d", v_ammoType);
 
 	return GetAmmoCount(v_ammoType);
 
@@ -706,7 +706,7 @@ void CWeaponMagazined::ReloadMagazine()
 {
 	m_BriefInfo_CalcFrame = 0;	
 
-	//устранить осечку при перезарядке
+	//пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 	if(IsMisfire() && !IsGrenadeMode())
 		bMisfire = false;
 	
@@ -733,14 +733,14 @@ void CWeaponMagazined::ReloadMagazine()
 		if (!tmp_sect_name)
 			return;
 
-		//попытаться найти в инвентаре патроны текущего типа 
+		//пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ 
 		m_pCurrentAmmo = smart_cast<CWeaponAmmo*>(m_pInventory->GetAny(tmp_sect_name));
 		
 		if(!m_pCurrentAmmo && !m_bLockType) 
 		{
 			for(u8 i = 0; i < u8(m_ammoTypes.size()); ++i) 
 			{
-				//проверить патроны всех подходящих типов
+				//пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ
 				m_pCurrentAmmo = smart_cast<CWeaponAmmo*>(m_pInventory->GetAny( m_ammoTypes[i].c_str() ));
 				if(m_pCurrentAmmo) 
 				{ 
@@ -753,11 +753,11 @@ void CWeaponMagazined::ReloadMagazine()
 
 
 
-	//нет патронов для перезарядки
+	//пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 	if(!m_pCurrentAmmo && !unlimited_ammo() ) return;
 
-	//Модернизируем проверку на соотвествие патронов, будем проверять так же последний патрон
-	//разрядить магазин, если загружаем патронами другого типа
+	//пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
+	//пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ
 	if (!m_bLockType && !m_magazine.empty() && (!m_pCurrentAmmo || xr_strcmp(m_pCurrentAmmo->cNameSect(), *m_magazine.front().m_ammoSect)))
 	{
 		UnloadMagazine();
@@ -781,7 +781,7 @@ void CWeaponMagazined::ReloadMagazine()
 
 	VERIFY((u32)iAmmoElapsed == m_magazine.size());
 
-	//выкинуть коробку патронов, если она пустая
+	//пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
 	if(m_pCurrentAmmo && !m_pCurrentAmmo->m_boxCurr && OnServer()) 
 		m_pCurrentAmmo->SetDropManual(TRUE);
 
@@ -945,8 +945,8 @@ void CWeaponMagazined::UpdateCL()
 	inherited::UpdateCL	();
 	float dt = Device.fTimeDelta;
 
-	//когда происходит апдейт состояния оружия
-	//ничего другого не делать
+	//пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
+	//пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
 	if(GetNextState() == GetState())
 	{
 		switch (GetState())
@@ -1034,17 +1034,17 @@ void CWeaponMagazined::state_Fire(float dt)
 		{
 			if (smart_cast<CMPPlayersBag*>(H_Parent()) != NULL)
 			{
-				Msg("! WARNING: state_Fire of object [%d][%s] while parent is CMPPlayerBag...", ID(), cNameSect().c_str());
+				LogInfo("! WARNING: state_Fire of object [%d][%s] while parent is CMPPlayerBag...", ID(), cNameSect().c_str());
 				return;
 			}
 
 			CInventoryOwner* io = smart_cast<CInventoryOwner*>(H_Parent());
 			if (NULL == io->inventory().ActiveItem())
 			{
-				Log("current_state", GetState());
-				Log("next_state", GetNextState());
-				Log("item_sect", cNameSect().c_str());
-				Log("H_Parent", H_Parent()->cNameSect().c_str());
+				LogInfo("%s", "current_state", GetState());
+				LogInfo("%s", "next_state", GetNextState());
+				LogInfo("%s", "item_sect", cNameSect().c_str());
+				LogInfo("%s", "H_Parent", H_Parent()->cNameSect().c_str());
 				StopShooting();
 				return;
 				//Alundaio: This is not supposed to happen but it does. GSC was aware but why no return here? Known to cause crash on game load if npc immediatly enters combat.
@@ -1102,7 +1102,7 @@ void CWeaponMagazined::state_Fire(float dt)
 /*
 		if(bDebug && H_Parent() && (H_Parent()->ID() != Actor()->ID()))
 		{
-			Msg("stop shooting w=[%s] magsize=[%d] sshot=[%s] qsize=[%d] shotnum=[%d]",
+			LogInfo("stop shooting w=[%s] magsize=[%d] sshot=[%s] qsize=[%d] shotnum=[%d]",
 					IsWorking()?"true":"false", 
 					m_magazine.size(),
 					m_bFireSingleShot?"true":"false",
@@ -1149,7 +1149,7 @@ void CWeaponMagazined::SetDefaults	()
 
 void CWeaponMagazined::OnShot()
 {
-	// Если актор бежит - останавливаем его
+	// пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ - пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ
 	if (ParentIsActor() && GameConstants::GetStopActorIfShoot())
 		Actor()->set_state_wishful(Actor()->get_state_wishful() & (~mcSprint));
 
@@ -1180,14 +1180,14 @@ void CWeaponMagazined::OnShot()
 	PHGetLinearVell				(vel);
 	OnShellDrop					(get_LastSP(), vel, local_ammo_type);
 
-	// Огонь из ствола
+	// пїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
 	StartFlameParticles			();
 
-	//дым из ствола
+	//пїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
 	ForceUpdateFireParticles	();
 	StartSmokeParticles			(get_LastFP(), vel);
 
-	// Проиграем звук помпы отдельно, если не будет работать то будем думать что делать и как быть
+	// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅ
 	if (m_sounds.FindSoundItem("sndPumpGun", false))
 		PlaySound("sndPumpGun", get_LastFP());
 
@@ -1195,11 +1195,11 @@ void CWeaponMagazined::OnShot()
 	if (object)
 		object->callback(GameObject::eOnWeaponFired)(object->lua_game_object(), this->lua_game_object(), iAmmoElapsed);
 
-	// Эффект сдвига (отдача)
+	// пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ (пїЅпїЅпїЅпїЅпїЅпїЅ)
 	{
 		AddHUDShootingEffect();
 
-		// Dance Maniac: Дополнительный эффектор стрельбы
+		// Dance Maniac: пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 		if (m_b_advanced_shoot_effectors && !m_bDisableAdvancedSE && IsGameTypeSingle() && ParentIsActor())
 		{
 			CEffectorCam* effector = Actor()->Cameras().GetCamEffector((ECamEffectorType)eCEWeaponAction2);
@@ -1336,7 +1336,7 @@ void CWeaponMagazined::OnShot()
 
 	m_sounds.PlaySound(m_sSndShotCurrent.c_str(), get_LastFP(), H_Root(), !!GetHUDmode(), false, (u8)-1);
 
-	// Эхо выстрела
+	// пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 	if (IsSilencerAttached() == false)
 	{
 		if (bIndoor && m_sounds.FindSoundItem("sndReflect", false))
@@ -1377,8 +1377,8 @@ void CWeaponMagazined::OnAnimationEnd(u32 state)
 	{
 	case eReload:
 	{
-		CheckMagazine(); // Основано на механизме из Lost Alpha: New Project
-						 // Авторы: rafa & Kondr48
+		CheckMagazine(); // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ Lost Alpha: New Project
+						 // пїЅпїЅпїЅпїЅпїЅпїЅ: rafa & Kondr48
 
 		CCartridge FirstBulletInGun;
 
@@ -1659,7 +1659,7 @@ void CWeaponMagazined::switch2_Fire	()
 		//VERIFY2					(io,make_string("no inventory owner, item %s",*cName()));
 
 		if (ii != io->inventory().ActiveItem())
-			Msg("! not an active item, item %s, owner %s, active item %s", *cName(), *H_Parent()->cName(), io->inventory().ActiveItem() ? *io->inventory().ActiveItem()->object().cName() : "no_active_item");
+			LogInfo("! not an active item, item %s, owner %s, active item %s", *cName(), *H_Parent()->cName(), io->inventory().ActiveItem() ? *io->inventory().ActiveItem()->object().cName() : "no_active_item");
 
 		if (!(io && (ii == io->inventory().ActiveItem())))
 		{
@@ -1818,7 +1818,7 @@ bool CWeaponMagazined::Action(u16 cmd, u32 flags)
 {
 	if(inherited::Action(cmd, flags)) return true;
 	
-	//если оружие чем-то занято, то ничего не делать
+	//пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ-пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
 	if(IsPending()) return false;
 	
 	switch(cmd) 
@@ -1830,12 +1830,12 @@ bool CWeaponMagazined::Action(u16 cmd, u32 flags)
 			else if(flags&CMD_START) 
 				if (iAmmoElapsed < iMagazineSize || IsMisfire())
 				{
-					if (GetState() == eUnMisfire) // Rietmon: Запрещаем перезарядку, если играет анима передергивания затвора
+					if (GetState() == eUnMisfire) // Rietmon: пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 						return false;
 
 					PIItem Det = Actor()->inventory().ItemFromSlot(DETECTOR_SLOT);
 					if (!Det)
-						Reload(); // Rietmon: Если в слоте нету детектора, то он не может быть активен
+						Reload(); // Rietmon: пїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅ пїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 
 					if (Det)
 					{
@@ -2120,7 +2120,7 @@ bool CWeaponMagazined::Attach(PIItem pIItem, bool b_send_event)
 
 		if (b_send_event && OnServer())
 		{
-			//уничтожить подсоединенную вещь из инвентаря
+			//пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 //.			pIItem->Drop					();
 			pIItem->object().DestroyObject	();
 		};
@@ -2169,7 +2169,7 @@ bool CWeaponMagazined::Detach(const char* item_section_name, bool b_spawn_item)
 	{
 		if ((m_flagsAddOnState & CSE_ALifeItemWeapon::eWeaponAddonScope) == 0)
 		{
-			Msg("ERROR: scope addon already detached.");
+			LogInfo("ERROR: scope addon already detached.");
 			return true;
 		}
 		m_flagsAddOnState &= ~CSE_ALifeItemWeapon::eWeaponAddonScope;
@@ -2185,7 +2185,7 @@ bool CWeaponMagazined::Detach(const char* item_section_name, bool b_spawn_item)
 	{
 		if ((m_flagsAddOnState & CSE_ALifeItemWeapon::eWeaponAddonSilencer) == 0)
 		{
-			Msg("ERROR: silencer addon already detached.");
+			LogInfo("ERROR: silencer addon already detached.");
 			return true;
 		}
 		m_flagsAddOnState &= ~CSE_ALifeItemWeapon::eWeaponAddonSilencer;
@@ -2199,7 +2199,7 @@ bool CWeaponMagazined::Detach(const char* item_section_name, bool b_spawn_item)
 	{
 		if ((m_flagsAddOnState & CSE_ALifeItemWeapon::eWeaponAddonGrenadeLauncher) == 0)
 		{
-			Msg("ERROR: grenade launcher addon already detached.");
+			LogInfo("ERROR: grenade launcher addon already detached.");
 			return true;
 		}
 		m_flagsAddOnState &= ~CSE_ALifeItemWeapon::eWeaponAddonGrenadeLauncher;
@@ -2213,7 +2213,7 @@ bool CWeaponMagazined::Detach(const char* item_section_name, bool b_spawn_item)
 	{
 		if ((m_flagsAddOnState & CSE_ALifeItemWeapon::eWeaponAddonLaserDesignator) == 0)
 		{
-			Msg("ERROR: laser designator addon already detached.");
+			LogInfo("ERROR: laser designator addon already detached.");
 			return true;
 		}
 		m_flagsAddOnState &= ~CSE_ALifeItemWeapon::eWeaponAddonLaserDesignator;
@@ -2227,7 +2227,7 @@ bool CWeaponMagazined::Detach(const char* item_section_name, bool b_spawn_item)
 	{
 		if ((m_flagsAddOnState & CSE_ALifeItemWeapon::eWeaponAddonTacticalTorch) == 0)
 		{
-			Msg("ERROR: tactical torch addon already detached.");
+			LogInfo("ERROR: tactical torch addon already detached.");
 			return true;
 		}
 		m_flagsAddOnState &= ~CSE_ALifeItemWeapon::eWeaponAddonTacticalTorch;
@@ -2337,7 +2337,7 @@ void CWeaponMagazined::InitAddons()
 		m_sSmokeParticlesCurrent	= m_sSilencerSmokeParticles;
 		m_sSndShotCurrent			= "sndSilencerShot";
 
-		//подсветка от выстрела
+		//пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 		LoadLights					(*cNameSect(), "silencer_");
 		ApplySilencerKoeffs			();
 
@@ -2353,7 +2353,7 @@ void CWeaponMagazined::InitAddons()
 		m_sSmokeParticlesCurrent	= m_sSmokeParticles;
 		m_sSndShotCurrent			= "sndShot";
 
-		//подсветка от выстрела
+		//пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 		LoadLights		(*cNameSect(), "");
 		ResetSilencerKoeffs();
 	}
@@ -2967,7 +2967,7 @@ void CWeaponMagazined::OnZoomOut		()
 
 }
 
-//переключение режимов стрельбы одиночными и очередями
+//пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 bool CWeaponMagazined::SwitchMode			()
 {
 	if(eIdle != GetState() || IsPending()) return false;
@@ -3269,7 +3269,7 @@ bool CWeaponMagazined::install_upgrade_impl( LPCSTR section, bool test )
 
 	return result;
 }
-//текущая дисперсия (в радианах) оружия с учетом используемого патрона и недисперсионных пуль
+//пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ (пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ) пїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ
 float CWeaponMagazined::GetFireDispersion(float cartridge_k, bool for_crosshair) 
 {
 	float fire_disp = GetBaseDispersion(cartridge_k);

@@ -1,4 +1,4 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 #include "../xrEngine/xr_ioconsole.h"
 #include "../xrEngine/xr_ioc_cmd.h"
 #include "level.h"
@@ -227,8 +227,8 @@ public:
 		};
 		std::sort(CObjID.begin(), CObjID.end());
 
-		Msg("Client Objects : %d", CLObjNum);
-		Msg("Server Objects : %d", SVObjNum);
+		LogInfo("Client Objects : %d", CLObjNum);
+		LogInfo("Server Objects : %d", SVObjNum);
 
 		for (u32 CO= 0; CO<_max(CLObjNum, SVObjNum); CO++)
 		{
@@ -238,7 +238,7 @@ public:
 				CObject* pObj = Level().Objects.net_Find(CObjID[CO]);
 				char color = (pObj->ID() == pEntity->ID) ? '-' : '!';
 
-				Msg("%c%4d: Client - %20s[%5d] <===> Server - %s [%d]", color, CO+1, 
+				LogInfo("%c%4d: Client - %20s[%5d] <===> Server - %s [%d]", color, CO+1, 
 					*(pObj->cNameSect()), pObj->ID(),
 					pEntity->s_name.c_str(), pEntity->ID);
 			}
@@ -247,20 +247,20 @@ public:
 				if (CO<CLObjNum)
 				{
 					CObject* pObj = Level().Objects.net_Find(CObjID[CO]);
-					Msg("! %2d: Client - %s [%d] <===> Server - -----------------", CO+1, 
+					LogInfo("! %2d: Client - %s [%d] <===> Server - -----------------", CO+1, 
 						*(pObj->cNameSect()), pObj->ID());
 				}
 				else
 				{
 					CSE_Abstract* pEntity = Level().Server->ID_to_entity(SObjID[CO]);
-					Msg("! %2d: Client - ----- <===> Server - %s [%d]", CO+1, 
+					LogInfo("! %2d: Client - ----- <===> Server - %s [%d]", CO+1, 
 						pEntity->s_name.c_str(), pEntity->ID);
 				}
 			}
 		};
 
-		Msg("Client Objects : %d", CLObjNum);
-		Msg("Server Objects : %d", SVObjNum);
+		LogInfo("Client Objects : %d", CLObjNum);
+		LogInfo("Server Objects : %d", SVObjNum);
 	}
 	virtual void	Info	(TInfo& I){xr_strcpy(I,"dbg Num Objects"); }
 };
@@ -299,7 +299,7 @@ public:
 			if ( !MainMenu()->ValidateCDKey() )
 			{
 #ifdef DEBUG
-				Msg( "! Invalid CD-Key" );
+				LogInfo( "! Invalid CD-Key" );
 #endif // DEBUG
 			}
 		}
@@ -352,7 +352,7 @@ public:
 		if (!xr_strlen(args))	return;
 		if (strchr(args, '/'))
 		{
-			Msg("!  '/' is not allowed in names!");
+			LogInfo("!  '/' is not allowed in names!");
 			return;
 		}
 		string4096 PlayerName	= "";
@@ -368,18 +368,18 @@ public:
 		IClient*	tmp_client = Level().Server->FindClient(SearcherClientByName(PlayerName));
 		if (tmp_client && (tmp_client != Level().Server->GetServerClient()))
 		{
-			Msg("Disconnecting : %s", PlayerName);
+			LogInfo("Disconnecting : %s", PlayerName);
 			xrClientData* tmpxrclient = static_cast<xrClientData*>(tmp_client);
 			if (!tmpxrclient->m_admin_rights.m_has_admin_rights)
 			{
 				Level().Server->DisconnectClient( tmp_client, STRING_KICKED_BY_SERVER );
 			} else
 			{
-				Msg("! Can't disconnect client with admin rights");
+				LogInfo("! Can't disconnect client with admin rights");
 			}
 		} else
 		{
-			Msg("! Can't disconnect player [%s]", PlayerName);
+			LogInfo("! Can't disconnect player [%s]", PlayerName);
 		}
 	};
 
@@ -411,8 +411,8 @@ public:
 			u32 tmp_client_id;
 			if (sscanf_s(args, "%u", &tmp_client_id) != 1)
 			{
-				Msg("! ERROR: bad command parameters.");
-				Msg("Kick player. Format: \"sv_kick_id <player session id | \'%s\'>\". To receive list of players ids see sv_listplayers",
+				LogInfo("! ERROR: bad command parameters.");
+				LogInfo("Kick player. Format: \"sv_kick_id <player session id | \'%s\'>\". To receive list of players ids see sv_listplayers",
 					LAST_PRINTED_PLAYER_STR
 				);
 				return;
@@ -424,18 +424,18 @@ public:
 
 		if (tmp_client && (tmp_client != Level().Server->GetServerClient()))
 		{
-			Msg("Disconnecting : client %u", client_id.value());
+			LogInfo("Disconnecting : client %u", client_id.value());
 			xrClientData* tmpxrclient = static_cast<xrClientData*>(tmp_client);
 			if (!tmpxrclient->m_admin_rights.m_has_admin_rights)
 			{
 				Level().Server->DisconnectClient( tmp_client, STRING_KICKED_BY_SERVER );
 			} else
 			{
-				Msg("! Can't disconnect client with admin rights %u", client_id.value());
+				LogInfo("! Can't disconnect client with admin rights %u", client_id.value());
 			}
 		} else
 		{
-			Msg("! Can't disconnect client %u", client_id.value());
+			LogInfo("! Can't disconnect client %u", client_id.value());
 		}
 	};
 
@@ -498,8 +498,8 @@ public:
 			u32 tmp_client_id;
 			if (sscanf_s(args_, "%u", &tmp_client_id) != 1)
 			{
-				Msg("! ERROR: bad command parameters.");
-				Msg("Make screenshot. Format: \"make_screenshot <player session id | \'%s\'> <ban_time_in_sec>\". To receive list of players ids see sv_listplayers",
+				LogInfo("! ERROR: bad command parameters.");
+				LogInfo("Make screenshot. Format: \"make_screenshot <player session id | \'%s\'> <ban_time_in_sec>\". To receive list of players ids see sv_listplayers",
 					LAST_PRINTED_PLAYER_STR
 				);
 				return;
@@ -509,7 +509,7 @@ public:
 		xrClientData* admin_client = exclude_command_initiator(args_);
 		if (!admin_client)
 		{
-			Msg("! ERROR: only radmin can make screenshots ...");
+			LogInfo("! ERROR: only radmin can make screenshots ...");
 			return;
 		}
 		Level().Server->MakeScreenshot(admin_client->ID, client_id);
@@ -545,8 +545,8 @@ public:
 			u32 tmp_client_id;
 			if (sscanf_s(args_, "%u", &tmp_client_id) != 1)
 			{
-				Msg("! ERROR: bad command parameters.");
-				Msg("Make screenshot. Format: \"make_config_dump <player session id | \'%s\'> <ban_time_in_sec>\". To receive list of players ids see sv_listplayers",
+				LogInfo("! ERROR: bad command parameters.");
+				LogInfo("Make screenshot. Format: \"make_config_dump <player session id | \'%s\'> <ban_time_in_sec>\". To receive list of players ids see sv_listplayers",
 					LAST_PRINTED_PLAYER_STR
 				);
 				return;
@@ -556,7 +556,7 @@ public:
 		xrClientData* admin_client = exclude_command_initiator(args_);
 		if (!admin_client)
 		{
-			Msg("! ERROR: only radmin can make config dumps ...");
+			LogInfo("! ERROR: only radmin can make config dumps ...");
 			return;
 		}
 		Level().Server->MakeConfigDump(admin_client->ID, client_id);
@@ -582,7 +582,7 @@ public:
 	{
 		if (!Level().IsDemoPlayStarted())
 		{
-			Msg("! Demo play not started.");
+			LogInfo("! Demo play not started.");
 			return;
 		}
 		float new_speed;
@@ -650,14 +650,14 @@ public:
 	{
 		if (!Level().IsDemoPlayStarted())
 		{
-			Msg("! Demo play not started.");
+			LogInfo("! Demo play not started.");
 			return;
 		}
 		if (!ParseControlString(args))
 		{
 			TInfo tmp_info;
 			Info(tmp_info);
-			Msg(tmp_info);
+			LogInfo(tmp_info);
 			return;
 		}
 		demoplay_control* dp_control = Level().GetDemoPlayControl();
@@ -682,7 +682,7 @@ public:
 	{
 		if (!Level().IsDemoPlayStarted())
 		{
-			Msg("! Demo play not started.");
+			LogInfo("! Demo play not started.");
 			return;
 		}
 		demoplay_control* dp_control = Level().GetDemoPlayControl();
@@ -703,14 +703,14 @@ public:
 	{
 		if (!Level().IsDemoPlayStarted())
 		{
-			Msg("! Demo play not started.");
+			LogInfo("! Demo play not started.");
 			return;
 		}
 		if (!ParseControlString(args))
 		{
 			TInfo tmp_info;
 			Info(tmp_info);
-			Msg(tmp_info);
+			LogInfo(tmp_info);
 			return;
 		}
 		demoplay_control* dp_control = Level().GetDemoPlayControl();
@@ -735,7 +735,7 @@ public:
 	{
 		if (!Level().IsDemoPlayStarted())
 		{
-			Msg("! Demo play not started.");
+			LogInfo("! Demo play not started.");
 			return;
 		}
 		demoplay_control* dp_control = Level().GetDemoPlayControl();
@@ -753,7 +753,7 @@ public:
 	{
 		if (!Level().IsDemoPlay())
 		{
-			Msg("! No demo play started.");
+			LogInfo("! No demo play started.");
 			return;
 		}
 		Level().RestartPlayDemo();
@@ -771,7 +771,7 @@ public:
 	{
 		if (!Level().IsDemoPlayStarted())
 		{
-			Msg("! Demo play not started.");
+			LogInfo("! Demo play not started.");
 			return;
 		}
 		Level().SetDemoPlaySpeed(Level().GetDemoPlaySpeed() * 2);
@@ -787,13 +787,13 @@ public:
 	{
 		if (!Level().IsDemoPlayStarted())
 		{
-			Msg("! Demo play not started.");
+			LogInfo("! Demo play not started.");
 			return;
 		}
 		float curr_demo_speed = Level().GetDemoPlaySpeed();
 		if (curr_demo_speed <= 0.2f)
 		{
-			Msg("! Can't decrease demo speed");
+			LogInfo("! Can't decrease demo speed");
 			return;
 		}
 		Level().SetDemoPlaySpeed(curr_demo_speed / 2);
@@ -820,7 +820,7 @@ public:
 		tmp_functor.admin_client = exclude_command_initiator(args_);
 		if (!tmp_functor.admin_client)
 		{
-			Msg("! ERROR: only radmin can make screenshots (use \"ra login\")");
+			LogInfo("! ERROR: only radmin can make screenshots (use \"ra login\")");
 			return;
 		}
 		Level().Server->ForEachClientDo(tmp_functor);
@@ -851,7 +851,7 @@ public:
 		tmp_functor.admin_client = exclude_command_initiator(args_);
 		if (!tmp_functor.admin_client)
 		{
-			Msg("! ERROR: only radmin can make config dumps (use \"ra login\")");
+			LogInfo("! ERROR: only radmin can make config dumps (use \"ra login\")");
 			return;
 		}
 		Level().Server->ForEachClientDo(tmp_functor);
@@ -900,8 +900,8 @@ public:
 			client_id = last_printed_player;
 			if (sscanf_s(args_ + sizeof(LAST_PRINTED_PLAYER_STR), "%d", &ban_time) != 1)
 			{
-				Msg("! ERROR: bad command parameters.");
-				Msg("Ban player. Format: \"sv_banplayer <player session id | \'%s\'> <ban_time_in_sec>\". To receive list of players ids see sv_listplayers",
+				LogInfo("! ERROR: bad command parameters.");
+				LogInfo("Ban player. Format: \"sv_banplayer <player session id | \'%s\'> <ban_time_in_sec>\". To receive list of players ids see sv_listplayers",
 					LAST_PRINTED_PLAYER_STR
 				);
 				return;
@@ -911,8 +911,8 @@ public:
 			u32 tmp_client_id;
 			if (sscanf_s(args_, "%u %d", &tmp_client_id, &ban_time) != 2)
 			{
-				Msg("! ERROR: bad command parameters.");
-				Msg("Ban player. Format: \"sv_banplayer <player session id | \'%s\'> <ban_time_in_sec>\". To receive list of players ids see sv_listplayers",
+				LogInfo("! ERROR: bad command parameters.");
+				LogInfo("Ban player. Format: \"sv_banplayer <player session id | \'%s\'> <ban_time_in_sec>\". To receive list of players ids see sv_listplayers",
 					LAST_PRINTED_PLAYER_STR
 				);
 				return;
@@ -931,7 +931,7 @@ public:
 			Level().Server->DisconnectClient(to_disconnect, STRING_KICKED_BY_SERVER);
 		} else
 		{
-			Msg("! ERROR: bad client id [%u]", client_id.value());
+			LogInfo("! ERROR: bad client id [%u]", client_id.value());
 		}
 	}
 	virtual void	Info		(TInfo& I)
@@ -962,8 +962,8 @@ public:
 		s32 ban_time = 0;
 		if (sscanf_s(args_, "%s %i", &hex_digest, sizeof(hex_digest), &ban_time) != 2)
 		{
-			Msg("! ERROR: bad command parameters.");
-			Msg("Ban player. Format: \"sv_banplayer_by_digest <hex digest> <ban_time_in_sec>\". To get player hex digest you can enter: sv_listplayers_banned");
+			LogInfo("! ERROR: bad command parameters.");
+			LogInfo("Ban player. Format: \"sv_banplayer_by_digest <hex digest> <ban_time_in_sec>\". To get player hex digest you can enter: sv_listplayers_banned");
 			return;
 		}
 			
@@ -1001,8 +1001,8 @@ public:
 			size_t player_index = 0;
 			if (sscanf_s(args_, "%u", &player_index) != 1)
 			{
-				Msg("! ERROR: bad command parameters.");
-				Msg(" Unban player. Format: \"sv_unbanplayer <banned player index | \'%s\'>. To receive list of banned players se sv_listplayers_banned",
+				LogInfo("! ERROR: bad command parameters.");
+				LogInfo(" Unban player. Format: \"sv_unbanplayer <banned player index | \'%s\'>. To receive list of banned players se sv_listplayers_banned",
 					LAST_PRINTED_PLAYER_BANNED_STR
 				);
 				return;
@@ -1047,14 +1047,14 @@ public:
 		*p						= 0;
 		if (!xr_strlen(buff))
 		{
-			Msg("incorrect parameter passed. bad name.");
+			LogInfo("incorrect parameter passed. bad name.");
 			return;
 		}
 		
 		u32 ban_time			= atol(digits);
 		if(ban_time==0)
 		{
-			Msg("incorrect parameters passed.  name and time required");
+			LogInfo("incorrect parameters passed.  name and time required");
 			return;
 		}
 		string4096 PlayerName		= "";
@@ -1072,12 +1072,12 @@ public:
 		IClient*	tmp_client = Level().Server->FindClient(SearcherClientByName(PlayerName));
 		if (tmp_client && (tmp_client != Level().Server->GetServerClient()))
 		{
-			Msg("Disconnecting and Banning: %s", PlayerName);
+			LogInfo("Disconnecting and Banning: %s", PlayerName);
 			Level().Server->BanClient(tmp_client, ban_time);
 			Level().Server->DisconnectClient(tmp_client, STRING_KICKED_BY_SERVER );
 		} else
 		{
-			Msg("! Can't disconnect player [%s]", PlayerName);
+			LogInfo("! Can't disconnect player [%s]", PlayerName);
 		}
 	};
 
@@ -1111,13 +1111,13 @@ public:
 		*p						= 0;
 		if (!xr_strlen(buff))
 		{
-			Msg("incorrect parameter passed. bad IP address.");
+			LogInfo("incorrect parameter passed. bad IP address.");
 			return;
 		}
 		u32 ban_time			= atol(digits);
 		if(ban_time==0)
 		{
-			Msg("incorrect parameters passed.  IP and time required");
+			LogInfo("incorrect parameters passed.  IP and time required");
 			return;
 		}
 
@@ -1127,7 +1127,7 @@ public:
 
 		ip_address							Address;
 		Address.set							(s_ip_addr);
-		Msg									("Disconnecting and Banning: %s",Address.to_string().c_str() ); 
+		LogInfo("Disconnecting and Banning: %s",Address.to_string().c_str() ); 
 		Level().Server->BanAddress			(Address, ban_time);
 		Level().Server->DisconnectAddress	(Address, STRING_KICKED_BY_SERVER);
 	};
@@ -1166,8 +1166,8 @@ public:
 		if (!g_pGameLevel || !Level().Server || !Level().Server->game) return;
 
 		u32	cnt = Level().Server->game->get_players_count();
-		Msg("- Total Players : %d", cnt);
-		Msg("- ----player list begin-----");
+		LogInfo("- Total Players : %d", cnt);
+		LogInfo("- ----player list begin-----");
 		struct PlayersEnumerator
 		{
 			LPCSTR filter_string;
@@ -1193,12 +1193,12 @@ public:
 				{
 					if (strstr(tmp_string, filter_string))
 					{
-						Msg(tmp_string);
+						LogInfo(tmp_string);
 						last_printed_player = client->ID;
 					}
 				} else
 				{
-					Msg(tmp_string);
+					LogInfo(tmp_string);
 					last_printed_player = client->ID;
 				}
 			}
@@ -1216,7 +1216,7 @@ public:
 			}
 		}
 		Level().Server->ForEachClientDo(tmp_functor);
-		Msg("- ----player list end-------");
+		LogInfo("- ----player list end-------");
 	};
 
 	virtual void	Info	(TInfo& I){xr_strcpy(I,"List Players. Format: \"sv_listplayers [ filter string ]\""); }
@@ -1250,14 +1250,14 @@ public:
 
 		if (tmp_player->m_account.is_online())
 		{
-			Msg("! Can't change name in online mode.");
+			LogInfo("! Can't change name in online mode.");
 			return;
 		}
 
 		if (!xr_strlen(args)) return;
 		if (strchr(args, '/'))
 		{
-			Msg("!  '/' is not allowed in names!");
+			LogInfo("!  '/' is not allowed in names!");
 			return;
 		}
 		string4096 NewName = "";
@@ -1311,7 +1311,7 @@ public:
 		if (!OnServer())	return;
 		if (!xr_strlen(args))
 		{
-			Msg("Changing level, version and game type. Arguments: <level name> <level version> <game type>");
+			LogInfo("Changing level, version and game type. Arguments: <level name> <level version> <game type>");
 			return;
 		}
 
@@ -1331,7 +1331,7 @@ public:
 		EGameIDs GameTypeID = ParseStringToGameType(GameType);
 		if(GameTypeID==eGameIDNoGame)
 		{
-			Msg ("! Unknown gametype - %s", GameType);
+			LogInfo("! Unknown gametype - %s", GameType);
 			return;
 		};
 		//-----------------------------------------
@@ -1351,7 +1351,7 @@ public:
 		}
 		if (!bMapFound)
 		{
-			Msg("! Level [%s][%s] not found for [%s]!", LevelName, LevelVersion, GameType);
+			LogInfo("! Level [%s][%s] not found for [%s]!", LevelName, LevelVersion, GameType);
 			return;
 		}
 
@@ -1414,7 +1414,7 @@ public:
 		if (!OnServer())	return;
 		if (!xr_strlen(args))
 		{
-			Msg("Changing Game Type. Arguments: <level name> <level version>");
+			LogInfo("Changing Game Type. Arguments: <level name> <level version>");
 			return;
 		}
 
@@ -1523,25 +1523,25 @@ public:
 	{
 		if (IsGameTypeSingle())
 		{
-			Msg("! Only for multiplayer games!");
+			LogInfo("! Only for multiplayer games!");
 			return;
 		}
 
 		if (!Game().IsVotingEnabled())
 		{
-			Msg("! Voting is disabled by server!");
+			LogInfo("! Voting is disabled by server!");
 			return;
 		}
 		if (Game().IsVotingActive())
 		{
-			Msg("! There is voting already!");
+			LogInfo("! There is voting already!");
 			return;
 		}
 
 		u16 game_phase = Game().Phase();
 		if ((game_phase != GAME_PHASE_INPROGRESS) && (game_phase != GAME_PHASE_PENDING))
 		{
-			Msg("! Voting is allowed only when game is in progress!");
+			LogInfo("! Voting is allowed only when game is in progress!");
 			return;
 		};
 
@@ -1560,25 +1560,25 @@ public:
 
 		if (IsGameTypeSingle())
 		{
-			Msg("! Only for multiplayer games!");
+			LogInfo("! Only for multiplayer games!");
 			return;
 		}
 
 		if (!Level().Server->game->IsVotingEnabled())
 		{
-			Msg("! Voting is disabled by server!");
+			LogInfo("! Voting is disabled by server!");
 			return;
 		}
 
 		if (!Level().Server->game->IsVotingActive())
 		{
-			Msg("! Currently there is no active voting!");
+			LogInfo("! Currently there is no active voting!");
 			return;
 		}
 
 		if (Level().Server->game->Phase() != GAME_PHASE_INPROGRESS)
 		{
-			Msg("! Voting is allowed only when game is in progress!");
+			LogInfo("! Voting is allowed only when game is in progress!");
 			return;
 		};
 
@@ -1595,25 +1595,25 @@ public:
 	{
 		if (IsGameTypeSingle())
 		{
-			Msg("! Only for multiplayer games!");
+			LogInfo("! Only for multiplayer games!");
 			return;
 		}
 
 		if (!Game().IsVotingEnabled())
 		{
-			Msg("! Voting is disabled by server!");
+			LogInfo("! Voting is disabled by server!");
 			return;
 		}
 
 		if (!Game().IsVotingActive())
 		{
-			Msg("! Currently there is no active voting!");
+			LogInfo("! Currently there is no active voting!");
 			return;
 		}
 
 		if (Game().Phase() != GAME_PHASE_INPROGRESS)
 		{
-			Msg("! Voting is allowed only when game is in progress!");
+			LogInfo("! Voting is allowed only when game is in progress!");
 			return;
 		};
 
@@ -1630,25 +1630,25 @@ public:
 	{
 		if (IsGameTypeSingle())
 		{
-			Msg("! Only for multiplayer games!");
+			LogInfo("! Only for multiplayer games!");
 			return;
 		}
 
 		if (!Game().IsVotingEnabled())
 		{
-			Msg("! Voting is disabled by server!");
+			LogInfo("! Voting is disabled by server!");
 			return;
 		}
 
 		if (!Game().IsVotingActive())
 		{
-			Msg("! Currently there is no active voting!");
+			LogInfo("! Currently there is no active voting!");
 			return;
 		}
 
 		if (Game().Phase() != GAME_PHASE_INPROGRESS)
 		{
-			Msg("! Voting is allowed only when game is in progress!");
+			LogInfo("! Voting is allowed only when game is in progress!");
 			return;
 		};
 
@@ -1708,7 +1708,7 @@ public:
 		game_sv_mp* sv_game = smart_cast<game_sv_mp*>(Level().Server->game);
 		if (!sv_game)
 		{
-			Msg("! Server multiplayer game instance not present");
+			LogInfo("! Server multiplayer game instance not present");
 			return;
 		}
 		sv_game->DumpRoundStatistics();
@@ -1746,7 +1746,7 @@ public:
 		
 		Level().GetServerAddress(Address, &dwPort);
 
-		Msg("Server Address - %s:%i",Address.to_string().c_str(), dwPort);
+		LogInfo("Server Address - %s:%i",Address.to_string().c_str(), dwPort);
 	};
 
 	virtual void	Info	(TInfo& I){xr_strcpy(I,"List Players"); }
@@ -1768,16 +1768,16 @@ public:
 
 		if (!Team[0])
 		{
-			Msg("- --------------------");
-			Msg("Teams start money:");
+			LogInfo("- --------------------");
+			LogInfo("Teams start money:");
 			u32 TeamCount = pGameMP->GetTeamCount();
 			for (u32 i=0; i<TeamCount; i++)
 			{
 				TeamStruct* pTS = pGameMP->GetTeamData(i);
 				if (!pTS) continue;
-				Msg ("Team %d: %d", i, pTS->m_iM_Start);
+				LogInfo("Team %d: %d", i, pTS->m_iM_Start);
 			}
-			Msg("- --------------------");
+			LogInfo("- --------------------");
 			return;
 		}else
 		{
@@ -1841,7 +1841,7 @@ public:
 
 				Level().Send(P,net_flags(TRUE,TRUE));
 			}else
-				Msg("2 args(user pass) needed");
+				LogInfo("2 args(user pass) needed");
 		}
 		else
 		if(strstr(arguments,"logout")==arguments)
@@ -1884,7 +1884,7 @@ public:
 				ctaGame->SwapTeams();
 			} else
 			{
-				Msg("! Current game type not support team swapping");
+				LogInfo("! Current game type not support team swapping");
 				return;
 			}
 			Level().Server->game->round_end_reason = eRoundEnd_GameRestartedFast;

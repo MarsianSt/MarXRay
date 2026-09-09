@@ -1,4 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////
+﻿////////////////////////////////////////////////////////////////////////////////
 //	Module		:	cta_game_artefact.cpp
 //	Created		:	19.12.2007
 //	Modified	:	19.12.2007
@@ -77,7 +77,7 @@ void CtaGameArtefact::OnAnimationEnd(u32 state)
 	if (!H_Parent())
 	{
 #ifndef MASTER_GOLD
-		Msg("! ERROR: enemy artefact activation, H_Parent is NULL.");
+		LogInfo("! ERROR: enemy artefact activation, H_Parent is NULL.");
 #endif // #ifndef MASTER_GOLD
 		return;
 	}
@@ -96,7 +96,7 @@ void CtaGameArtefact::UpdateCLChild()
 	if (!m_artefact_rpoint)
 	{
 #ifdef DEBUG
-		Msg("--- Waiting for sync packet, for artefact rpoint.");
+		LogInfo("--- Waiting for sync packet, for artefact rpoint.");
 #endif // #ifdef DEBUG
 		return;
 	}

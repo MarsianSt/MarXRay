@@ -1,4 +1,4 @@
-////////////////////////////////////////////////////////////////////////////
+﻿////////////////////////////////////////////////////////////////////////////
 //	Module 		: ef_base.h
 //	Created 	: 13.06.2003
 //  Modified 	: 13.06.2003
@@ -8,7 +8,7 @@
 
 #pragma once
 
-#define OUT_MESSAGE(s1,s2)					//Msg(s1,s2);
+#define OUT_MESSAGE(s1,s2)					//LogInfo(s1,s2);
 
 class CEntityAlive;
 class CSE_ALifeObject;

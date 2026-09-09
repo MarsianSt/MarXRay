@@ -1,4 +1,4 @@
-#include "stdafx.h"
+п»ї#include "stdafx.h"
 
 #include "CharacterPhysicsSupport.h"
 #include "alife_space.h"
@@ -221,9 +221,9 @@ void CCharacterPhysicsSupport::in_NetSpawn( CSE_Abstract* e )
 			ka->PlayCycle( "death_init" );
 
 	}else if( !m_EntityAlife.animation_movement_controlled( ) )
-		ka->PlayCycle( "death_init" );///непонятно зачем это вообще надо запускать
-									  ///этот хак нужен, потому что некоторым монстрам 
-									  ///анимация после спона, может быть вообще не назначена
+		ka->PlayCycle( "death_init" );///пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
+									  ///пїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ 
+									  ///пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 	pK->CalculateBones_Invalidate( );
 	pK->CalculateBones( TRUE );
 	
@@ -286,7 +286,7 @@ void CCharacterPhysicsSupport::SpawnInitPhysics( CSE_Abstract* e )
 #ifdef DEBUG
 		if( ph_dbg_draw_mask1.test(ph_m1_DbgTrackObject)&&stricmp( PH_DBG_ObjectTrackName( ), *m_EntityAlife.cName( ) )==0 )
 		{
-			Msg("CCharacterPhysicsSupport::SpawnInitPhysics obj %s before collision correction %f,%f,%f", PH_DBG_ObjectTrackName(), m_EntityAlife.Position().x, m_EntityAlife.Position().y, m_EntityAlife.Position( ).z );
+			LogInfo("CCharacterPhysicsSupport::SpawnInitPhysics obj %s before collision correction %f,%f,%f", PH_DBG_ObjectTrackName(), m_EntityAlife.Position().x, m_EntityAlife.Position().y, m_EntityAlife.Position( ).z );
 		}
 #endif
 #ifdef	USE_IK
@@ -301,7 +301,7 @@ void CCharacterPhysicsSupport::SpawnInitPhysics( CSE_Abstract* e )
 #ifdef DEBUG  
 		if( ph_dbg_draw_mask1.test( ph_m1_DbgTrackObject ) && stricmp( PH_DBG_ObjectTrackName( ), *m_EntityAlife.cName()) == 0 )
 		{
-			Msg( "CCharacterPhysicsSupport::SpawnInitPhysics obj %s after collision correction %f,%f,%f", PH_DBG_ObjectTrackName(),m_EntityAlife.Position( ).x, m_EntityAlife.Position().y, m_EntityAlife.Position().z );
+			LogInfo( "CCharacterPhysicsSupport::SpawnInitPhysics obj %s after collision correction %f,%f,%f", PH_DBG_ObjectTrackName(),m_EntityAlife.Position( ).x, m_EntityAlife.Position().y, m_EntityAlife.Position().z );
 		}
 #endif
 	}
@@ -319,7 +319,7 @@ void CCharacterPhysicsSupport::SpawnInitPhysics( CSE_Abstract* e )
 		)
 	{
 #ifdef DEBUG
-		Msg("! saved bones %d , current bones %d, object :%s", saved_bones.size(), m_EntityAlife.PHGetSyncItemsNumber(), m_EntityAlife.cName().c_str() );
+		LogInfo("! saved bones %d , current bones %d, object :%s", saved_bones.size(), m_EntityAlife.PHGetSyncItemsNumber(), m_EntityAlife.cName().c_str() );
 #endif
 		po->_flags.set(CSE_PHSkeleton::flSavedData, FALSE );
 		saved_bones.clear();
@@ -459,7 +459,7 @@ void CCharacterPhysicsSupport::KillHit( SHit &H )
 {
 #ifdef	DEBUG
 	if( death_anim_debug )
-			Msg( "death anim: kill hit  " );
+			LogInfo( "death anim: kill hit  " );
 #endif
 	VERIFY( m_EntityAlife.Visual( ) );
 	VERIFY( m_EntityAlife.Visual( )->dcast_PKinematics( ) );
@@ -512,8 +512,8 @@ void CCharacterPhysicsSupport::KillHit( SHit &H )
 #ifdef	DEBUG
 		if( death_anim_debug )
 		{
-			Msg( "death anim: kill hit use free ragdoll " );
-			Msg( "death anim: fatal impulse: %f, ", H.impulse );
+			LogInfo( "death anim: kill hit use free ragdoll " );
+			LogInfo( "death anim: fatal impulse: %f, ", H.impulse );
 		}
 #endif
 		
@@ -569,7 +569,7 @@ void CCharacterPhysicsSupport::in_Hit( SHit &H, bool is_killing )
 #ifdef	DEBUG
 		if( is_killing && death_anim_debug &&  !is_imotion( m_interactive_motion ) )
 		{
-				Msg( "death anim: applied fatal impulse dir: (%f,%f,%f), value: (%f) ", H.dir.x,H.dir.y,H.dir.z, H.impulse );
+				LogInfo( "death anim: applied fatal impulse dir: (%f,%f,%f), value: (%f) ", H.dir.x,H.dir.y,H.dir.z, H.impulse );
 		}
 #endif
 		m_pPhysicsShell->applyHit( H.bone_space_position( ), H.direction( ), H.phys_impulse( ), H.bone(), H.type( ) );
@@ -638,7 +638,7 @@ void CCharacterPhysicsSupport::in_UpdateCL( )
 	if( m_pPhysicsShell )
 	{
 		VERIFY( m_pPhysicsShell->isFullActive( ) );
-		m_pPhysicsShell->SetRagDoll( );//Теперь шела относиться к классу объектов cbClassRagDoll
+		m_pPhysicsShell->SetRagDoll( );//пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ cbClassRagDoll
 		
 		if( !is_imotion(m_interactive_motion ) )//!m_flags.test(fl_use_death_motion)
 			m_pPhysicsShell->InterpolateGlobalTransform( &mXFORM );
@@ -669,11 +669,11 @@ void CCharacterPhysicsSupport::in_UpdateCL( )
 
 		auto isVisible = [&p, distance]() -> bool {
 
-			// Дальше IK_CALC_DIST не играем
+			// пїЅпїЅпїЅпїЅпїЅпїЅ IK_CALC_DIST пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
 			if (distance > IK_CALC_DIST)
 				return false;
 
-			// За спиной не играем
+			// пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
 			Fvector toObject;
 			toObject.sub(p, Device.vCameraPosition);
 			toObject.normalize();
@@ -753,7 +753,7 @@ void CCharacterPhysicsSupport::CreateSkeleton(CPhysicsShell* &pShell)
 
 	
 #ifdef DEBUG	
-	Msg("shell for %s[%d] created in %f ms",*m_EntityAlife.cName(),m_EntityAlife.ID(),t.GetElapsed_sec()*1000.f);
+	LogInfo("shell for %s[%d] created in %f ms",*m_EntityAlife.cName(),m_EntityAlife.ID(),t.GetElapsed_sec()*1000.f);
 #endif
 }
 
@@ -1264,7 +1264,7 @@ if( dbg_draw_ragdoll_spawn )
 #ifdef	DEBUG
 		if( death_anim_debug )
 		{
-			Msg( "death anim: ragdoll velocity picked from char controller =(%f,%f,%f), velocity applied to ragdoll =(%f,%f,%f)  ", velocity.x, velocity.y, velocity.z, v.x, v.y, v.z );
+			LogInfo( "death anim: ragdoll velocity picked from char controller =(%f,%f,%f), velocity applied to ragdoll =(%f,%f,%f)  ", velocity.x, velocity.y, velocity.z, v.x, v.y, v.z );
 		}
 #endif
 

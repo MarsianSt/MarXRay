@@ -1,4 +1,4 @@
-////////////////////////////////////////////////////////////////////////////
+﻿////////////////////////////////////////////////////////////////////////////
 //	Module 		: ai_script_lua_debug.cpp
 //	Created 	: 19.09.2003
 //  Modified 	: 19.09.2003
@@ -50,30 +50,30 @@ void Script::vfPrintError(CLuaVirtualMachine *tpLuaVirtualMachine, int iErrorCod
 {
 	switch (iErrorCode) {
 		case LUA_ERRRUN : {
-			Msg ("! SCRIPT RUNTIME ERROR");
+			LogInfo("! SCRIPT RUNTIME ERROR");
 			break;
 		}
 		case LUA_ERRMEM : {
-			Msg ("! SCRIPT ERROR (memory allocation)");
+			LogInfo("! SCRIPT ERROR (memory allocation)");
 			break;
 		}
 		case LUA_ERRERR : {
-			Msg ("! SCRIPT ERROR (while running the error handler function)");
+			LogInfo("! SCRIPT ERROR (while running the error handler function)");
 			break;
 		}
 		case LUA_ERRFILE : {
-			Msg ("! SCRIPT ERROR (while running file)");
+			LogInfo("! SCRIPT ERROR (while running file)");
 			break;
 		}
 		case LUA_ERRSYNTAX : {
-			Msg ("! SCRIPT SYNTAX ERROR");
+			LogInfo("! SCRIPT SYNTAX ERROR");
 			break;
 		}
 		default : NODEFAULT;
 	}
 	
 	for (int i=0; ; ++i) {
-		Msg		("! Stack level %d",i);
+		LogInfo("! Stack level %d",i);
 		if (!bfListLevelVars(tpLuaVirtualMachine,i))
 			return;
 	}
@@ -102,25 +102,25 @@ bool Script::bfListLevelVars(CLuaVirtualMachine *tpLuaVirtualMachine, int iStack
 //
 //	if (lua_getstack(tpLuaVirtualMachine, iStackLevel, &l_tDebugInfo) == 0)
 //		return	(false);  /* failure: no such level in the stack */
-//	Msg			("  Event			: %d",cafEventToString(l_tDebugInfo.event));
-//	Msg			("  Name			: %s",l_tDebugInfo.name);
-//	Msg			("  Name what		: %s",l_tDebugInfo.namewhat);
-//	Msg			("  What			: %s",l_tDebugInfo.what);
-//	Msg			("  Source			: %s",l_tDebugInfo.source);
-//	Msg			("  Source (short)	: %s",l_tDebugInfo.short_src);
-//	Msg			("  Current line	: %d",l_tDebugInfo.currentline);
-//	Msg			("  Nups			: %d",l_tDebugInfo.nups);
-//	Msg			("  Line defined	: %d",l_tDebugInfo.linedefined);
+//	LogInfo("  Event			: %d",cafEventToString(l_tDebugInfo.event));
+//	LogInfo("  Name			: %s",l_tDebugInfo.name);
+//	LogInfo("  Name what		: %s",l_tDebugInfo.namewhat);
+//	LogInfo("  What			: %s",l_tDebugInfo.what);
+//	LogInfo("  Source			: %s",l_tDebugInfo.source);
+//	LogInfo("  Source (short)	: %s",l_tDebugInfo.short_src);
+//	LogInfo("  Current line	: %d",l_tDebugInfo.currentline);
+//	LogInfo("  Nups			: %d",l_tDebugInfo.nups);
+//	LogInfo("  Line defined	: %d",l_tDebugInfo.linedefined);
 //	i			= 1;
 //	while (NULL != (name = lua_getlocal(tpLuaVirtualMachine, &l_tDebugInfo, i++))) {
-//		Msg		("    local   %d %s", i-1, name);
+//		LogInfo("    local   %d %s", i-1, name);
 //		lua_pop	(tpLuaVirtualMachine, 1);  /* remove variable value */
 //	}
 //
 //	lua_getinfo	(tpLuaVirtualMachine, "f", &l_tDebugInfo);  /* retrieves function */
 //	i = 1;
 //	while (NULL != (name = lua_getupvalue(tpLuaVirtualMachine, -1, i++))) {
-//		Msg		("    upvalue %d %s", i-1, name);
+//		LogInfo("    upvalue %d %s", i-1, name);
 //		lua_pop	(tpLuaVirtualMachine, 1);  /* remove upvalue value */
 //	}
 //	return		(true);

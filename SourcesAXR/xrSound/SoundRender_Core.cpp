@@ -167,7 +167,7 @@ bool CSoundRender_Core::EFXTestSupport()
 	/* Check if an error occurred, and clean up if so. */
 	ALenum err = alGetError();
 	if (err != AL_NO_ERROR) {
-		Msg("OpenAL error: %s", alGetString(err));
+		LogInfo("OpenAL error: %s", alGetString(err));
 		if (alIsEffect(effect))
 			alDeleteEffects(1, &effect);
 		return false;
@@ -177,7 +177,7 @@ bool CSoundRender_Core::EFXTestSupport()
 	err = alGetError();
 	if (err != AL_NO_ERROR)
 	{
-		Msg("[OpenAL] EFX error: %s", alGetString(err));
+		LogInfo("[OpenAL] EFX error: %s", alGetString(err));
 		FATAL("Error during EFX initialization");
 	}
 
@@ -287,7 +287,7 @@ void CSoundRender_Core::set_geometry_env(IReader* I)
 		s_environment_ids.push_back(u16(id));
 
 #ifdef DEBUG
-		Msg("~ set_geometry_env name[%s]=id[%d]", n, id);
+		LogInfo("~ set_geometry_env name[%s]=id[%d]", n, id);
 #endif
 	}
 	names->close		();
@@ -530,7 +530,7 @@ bool CSoundRender_Core::i_efx_commit_setting()
 	ALenum err = alGetError();
 	if (err != AL_NO_ERROR)
 	{
-		Msg("[OpenAL] EFX error: %s", alGetString(err));
+		LogInfo("[OpenAL] EFX error: %s", alGetString(err));
 		return false;
 	}
 	return true;

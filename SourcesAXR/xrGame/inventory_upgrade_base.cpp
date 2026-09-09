@@ -1,4 +1,4 @@
-////////////////////////////////////////////////////////////////////////////
+﻿////////////////////////////////////////////////////////////////////////////
 //	Module 		: inventory_upgrade_base.cpp
 //	Created 	: 19.10.2007
 //  Modified 	: 27.11.2007
@@ -34,7 +34,7 @@ void UpgradeBase::construct( const shared_str& upgrade_id, Manager& manager_r )
 	m_known = false;
 
 	if (!pSettings->section_exist(m_id))
-		Msg("! Upgrades: Section of upgrade [%s] not exist!", m_id.c_str());
+		LogInfo("! Upgrades: Section of upgrade [%s] not exist!", m_id.c_str());
 }
 
 void UpgradeBase::add_dependent_groups( LPCSTR groups_str, Manager& manager_r )
@@ -110,7 +110,7 @@ UpgradeStateResult UpgradeBase::can_install( CInventoryItem& item, bool loading 
 	{
 		if ( g_upgrades_log == 1 )
 		{
-			Msg( "- Upgrade <%s> (id = %d) is in mode <unknown>.", id_str(), item.object_id() );
+			LogInfo( "- Upgrade <%s> (id = %d) is in mode <unknown>.", id_str(), item.object_id() );
 		}
 		return result_e_unknown;
 	}
@@ -119,7 +119,7 @@ UpgradeStateResult UpgradeBase::can_install( CInventoryItem& item, bool loading 
 	{
 		if ( g_upgrades_log == 1 )
 		{
-			Msg( "- Upgrade <%s> (id = %d) is installed already.", id_str(), item.object_id() );
+			LogInfo( "- Upgrade <%s> (id = %d) is installed already.", id_str(), item.object_id() );
 		}
 		/*if ( loading )
 		{

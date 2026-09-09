@@ -1,4 +1,4 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 #include "xrGameSpyServer.h"
 #include "xrMessages.h"
 /////////////////////// QR2 ///////////////////////////////////////
@@ -54,13 +54,13 @@ void			xrGameSpyServer::OnCDKey_Validation				(int LocalID, int res, char* error
 	{
 		CL->m_bCDKeyAuth = true;
 #ifndef MASTER_GOLD
-		Msg("xrGS::CDKey: Validation successful - <%s>", errormsg);
+		LogInfo("xrGS::CDKey: Validation successful - <%s>", errormsg);
 #endif // #ifndef MASTER_GOLD
 		Check_GameSpy_CDKey_Success(CL);
 	}
 	else
 	{
-		Msg						("CDKey: Validation failed - <%s>", errormsg);
+		LogInfo("CDKey: Validation failed - <%s>", errormsg);
 		SendConnectResult		(CL, u8(res), ecr_cdkey_validation_failed, errormsg);
 	}
 };

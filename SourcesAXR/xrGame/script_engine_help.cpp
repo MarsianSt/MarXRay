@@ -1,4 +1,4 @@
-////////////////////////////////////////////////////////////////////////////
+﻿////////////////////////////////////////////////////////////////////////////
 //	Module 		: script_engine_help.cpp
 //	Created 	: 01.04.2004
 //  Modified 	: 01.04.2004
@@ -129,7 +129,7 @@ void print_class						(lua_State *L, luabind::detail::class_rep *crep)
 				S.append(",");
 			S.append	((*I).base->name());
 		}
-		Msg				("%s {",S.c_str());
+		LogInfo("%s {",S.c_str());
 	}
 	// print class constants
 	{
@@ -138,12 +138,12 @@ void print_class						(lua_State *L, luabind::detail::class_rep *crep)
 		luabind::detail::class_rep::STATIC_CONSTANTS::const_iterator	E = constants.end();
 		for ( ; I != E; ++I)
 #ifndef USE_NATIVE_LUA_STRINGS
-			Msg		("    const %s = %d;",(*I).first,(*I).second);
+			LogInfo("    const %s = %d;",(*I).first,(*I).second);
 #else
-			Msg		("    const %s = %d;",getstr((*I).first.m_object),(*I).second);
+			LogInfo("    const %s = %d;",getstr((*I).first.m_object),(*I).second);
 #endif
 		if (!constants.empty())
-			Msg		("    ");
+			LogInfo("    ");
 	}
 	// print class properties
 	{
@@ -157,12 +157,12 @@ void print_class						(lua_State *L, luabind::detail::class_rep *crep)
 		PROPERTIES::const_iterator	E = properties.end();
 		for ( ; I != E; ++I)
 #ifndef USE_NATIVE_LUA_STRINGS
-			Msg	("    property %s;",(*I).first);
+			LogInfo("    property %s;",(*I).first);
 #else
-			Msg	("    property %s;",getstr((*I).first.m_object));
+			LogInfo("    property %s;",getstr((*I).first.m_object));
 #endif
 		if (!properties.empty())
-			Msg		("    ");
+			LogInfo("    ");
 	}
 	// print class constructors
 	{
@@ -179,10 +179,10 @@ void print_class						(lua_State *L, luabind::detail::class_rep *crep)
 			strreplaceall	(S,"float","number");
 			strreplaceall	(S,"lua_State*, ","");
 			strreplaceall	(S," ,lua_State*","");
-			Msg		("    %s %s;",crep->name(),S.c_str());
+			LogInfo("    %s %s;",crep->name(),S.c_str());
 		}
 		if (!constructors.empty())
-			Msg		("    ");
+			LogInfo("    ");
 	}
 	// print class methods
 	{
@@ -205,10 +205,10 @@ void print_class						(lua_State *L, luabind::detail::class_rep *crep)
 			strreplaceall	(S,"function __gt","operator >");
 			strreplaceall	(S,"function __ge","operator >=");
 			strreplaceall	(S,"function __eq","operator ==");
-			Msg			("%s",member_to_string(object,S.c_str()).c_str());
+			LogInfo("%s",member_to_string(object,S.c_str()).c_str());
 		}
 	}
-	Msg			("};\n");
+	LogInfo("};\n");
 	*/
 }
 
@@ -233,7 +233,7 @@ void print_free_functions				(lua_State *L, const luabind::object &object, LPCST
 					if (lua_getupvalue(L, -2, 1) != 0)
 					{
 						if (!count)
-							Msg("\n%snamespace %s {",indent.c_str(),header);
+							LogInfo("\n%snamespace %s {",indent.c_str(),header);
 						++count;
 						rep = static_cast<luabind::detail::free_functions::function_rep*>(lua_touserdata(L, -1));
 						std::vector<luabind::detail::free_functions::overload_rep>::const_iterator	i = rep->overloads().begin();
@@ -242,7 +242,7 @@ void print_free_functions				(lua_State *L, const luabind::object &object, LPCST
 							luabind::internal_string luaS;
 							(*i).get_signature(L,luaS);
 							xr_string	S(luaS.c_str());
-							Msg("    %sfunction %s%s;",indent.c_str(),rep->name(),process_signature(S).c_str());
+							LogInfo("    %sfunction %s%s;",indent.c_str(),rep->name(),process_signature(S).c_str());
 						}
 						lua_pop(L, 1);
 					}
@@ -279,24 +279,24 @@ void print_free_functions				(lua_State *L, const luabind::object &object, LPCST
 		}
 	}
 	if (count)
-		Msg("%s};",indent.c_str());
+		LogInfo("%s};",indent.c_str());
 
 #endif
 }
 
 void print_help							(lua_State *L)
 {
-	Msg					("\nList of the classes exported to LUA\n");
+	LogInfo("\nList of the classes exported to LUA\n");
 	luabind::detail::class_registry::get_registry(L)->iterate_classes(L,&print_class);
-	Msg					("End of list of the classes exported to LUA\n");
-	Msg					("\nList of the namespaces exported to LUA\n");
+	LogInfo("End of list of the classes exported to LUA\n");
+	LogInfo("\nList of the namespaces exported to LUA\n");
 	print_free_functions(L,luabind::get_globals(L),"","");
-	Msg					("End of list of the namespaces exported to LUA\n");
+	LogInfo("End of list of the namespaces exported to LUA\n");
 }
 #else
 void print_help							(lua_State *L)
 {
-	Msg					("! Release build doesn't support lua-help :(");
+	LogInfo("! Release build doesn't support lua-help :(");
 }
 #endif
 

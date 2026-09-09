@@ -1,4 +1,4 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 
 #include "IKLimbsController.h"
 
@@ -363,7 +363,7 @@ void CIKLimbsController::PlayLegs( CBlend *b )
 
 	CMotionDef	&MD = *skeleton_animated->LL_GetMotionDef( b->motionID );
 	if( MD.marks.empty() && ( MD.flags & esmUseFootSteps ) )
-		Msg( "! No foot stseps for animation: animation name: %s, animation set: %s ", anim_name, anim_set_name );
+		LogInfo( "! No foot stseps for animation: animation name: %s, animation set: %s ", anim_name, anim_set_name );
 #endif
 }
 void	CIKLimbsController:: Update						( )

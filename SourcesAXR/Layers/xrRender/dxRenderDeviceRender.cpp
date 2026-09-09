@@ -1,4 +1,4 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 #include "dxRenderDeviceRender.h"
 
 #include "ResourceManager.h"
@@ -191,7 +191,7 @@ void dxRenderDeviceRender::Create( HWND hWnd, u32 &dwWidth, u32 &dwHeight, float
 				FS.update_path(FolderName, "$app_data_root$", "renderdoc_captures\\");
 				VerifyPath(FolderName);
 				g_renderdoc_api->SetCaptureFilePathTemplate(FolderName);
-				Msg("~~[%s] RenderDoc folder: [%s]", __FUNCTION__, FolderName);
+				LogInfo("~~[%s] RenderDoc folder: [%s]", __FUNCTION__, FolderName);
 
 				RENDERDOC_InputButton CaptureButton[] = { eRENDERDOC_Key_Home };
 				g_renderdoc_api->SetCaptureKeys(CaptureButton, std::size(CaptureButton));

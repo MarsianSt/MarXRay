@@ -1,4 +1,4 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 #ifdef DEBUG
 #include "PHDebug.h"
 #endif
@@ -59,7 +59,7 @@ void CCar::SCarSound::Init()
 	}
 	else
 	{
-		Msg					("! Car doesn't contain sound params");
+		LogInfo("! Car doesn't contain sound params");
 	}
 	eCarSound=sndOff;
 }

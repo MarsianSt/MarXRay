@@ -1,4 +1,4 @@
-// Actor_Weapon.cpp:	 для работы с оружием
+п»ї// Actor_Weapon.cpp:	 пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 //////////////////////////////////////////////////////////////////////
 
 #include "stdafx.h"
@@ -25,7 +25,7 @@ constexpr float VEL_A_MAX = 10.f;
 
 extern int g_advanced_crosshair;
 
-//возвращает текуший разброс стрельбы (в радианах)с учетом движения
+//пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ (пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ)пїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 float CActor::GetWeaponAccuracy() const
 {
 	CWeapon* W	= smart_cast<CWeapon*>(inventory().ActiveItem());
@@ -73,7 +73,7 @@ void CActor::g_fireParams(CHudItem* pHudItem, Fvector &fire_pos, Fvector &fire_d
 	{
 		Fvector offset;
 		XFORM().transform_dir(offset, pMissile->throw_point_offset());
-		//KRodin: TODO: В ЗП здесь код отличается. В ТЧ юзается m_vMissileOffset, в ЗП - pMissile->throw_point_offset().
+		//KRodin: TODO: пїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ. пїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ m_vMissileOffset, пїЅ пїЅпїЅ - pMissile->throw_point_offset().
 		//XFORM().transform_dir(offset, pMissile->throw_point_offset());
 		fire_pos.add(offset);
 	}
@@ -177,13 +177,13 @@ void CActor::SelectBestWeapon	(CObject* O)
 				if (best_item && best_item->can_kill())
 				{
 #ifdef DEBUG
-					Msg("--- Selecting best weapon [%d], Frame[%d]", BestWeaponSlots[i], Device.dwFrame);
+					LogInfo("--- Selecting best weapon [%d], Frame[%d]", BestWeaponSlots[i], Device.dwFrame);
 #endif // #ifdef DEBUG
 					inventory().Activate(BestWeaponSlots[i]);
 				} else
 				{
 #ifdef DEBUG
-					Msg("--- Weapon is not best...");
+					LogInfo("--- Weapon is not best...");
 #endif // #ifdef DEBUG
 				}
 			}
@@ -325,9 +325,9 @@ void	CActor::RemoveAmmoForWeapon	(CInventoryItem *pIItem)
 
 	CWeaponAmmo* pAmmo = smart_cast<CWeaponAmmo*>(inventory().GetAny( pWM->m_ammoTypes[0].c_str() ));
 	if (!pAmmo) return;
-	//--- мы нашли патроны к текущему оружию	
+	//--- пїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ	
 	/*
-	//--- проверяем не подходят ли они к чему-то еще
+	//--- пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅ-пїЅпїЅ пїЅпїЅпїЅ
 	bool CanRemove = true;
 	TIItemContainer::const_iterator I = inventory().m_all.begin();//, B = I;
 	TIItemContainer::const_iterator E = inventory().m_all.end();

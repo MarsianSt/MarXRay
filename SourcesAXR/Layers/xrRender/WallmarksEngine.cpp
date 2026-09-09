@@ -1,4 +1,4 @@
-// WallmarksEngine.cpp: implementation of the CWallmarksEngine class.
+﻿// WallmarksEngine.cpp: implementation of the CWallmarksEngine class.
 //
 //////////////////////////////////////////////////////////////////////
 
@@ -409,8 +409,8 @@ void CWallmarksEngine::Render()
 #ifdef DEBUG
 			if(W->used_in_render != Device.dwFrame)			
 			{
-				Log("W->used_in_render",W->used_in_render);
-				Log("Device.dwFrame",Device.dwFrame);
+				LogInfo("%s", "W->used_in_render",W->used_in_render);
+				LogInfo("%s", "Device.dwFrame",Device.dwFrame);
 				VERIFY(W->used_in_render == Device.dwFrame);
 			}
 #endif
@@ -430,7 +430,7 @@ void CWallmarksEngine::Render()
 					W->Parent()->RenderWallmark	(W,w_verts);
 				} catch (...)
 				{
-					Msg		("! Failed to render dynamic wallmark");
+					LogInfo("! Failed to render dynamic wallmark");
 					w_verts = w_save;
 				}
 			}

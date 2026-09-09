@@ -1,4 +1,4 @@
-////////////////////////////////////////////////////////////////////////////
+﻿////////////////////////////////////////////////////////////////////////////
 //	Module 		: object_handler_planner.cpp
 //	Created 	: 11.03.2004
 //  Modified 	: 01.12.2004
@@ -64,8 +64,8 @@ void CObjectHandlerPlanner::set_goal	(MonsterSpace::EObjectAction object_action,
 
 #ifdef DEBUG
 	if (m_use_log) {
-		Msg					("%6d : Active item %s",Device.dwTimeGlobal,object().inventory().ActiveItem() ? *object().inventory().ActiveItem()->object().cName() : "no active items");
-		Msg					("%6d : Goal %s",Device.dwTimeGlobal,property2string(condition_id));
+		LogInfo("%6d : Active item %s",Device.dwTimeGlobal,object().inventory().ActiveItem() ? *object().inventory().ActiveItem()->object().cName() : "no active items");
+		LogInfo("%6d : Goal %s",Device.dwTimeGlobal,property2string(condition_id));
 	}
 #endif
 	CState					condition;
@@ -322,7 +322,7 @@ void CObjectHandlerPlanner::remove_item		(CInventoryItem *inventory_item)
 			if (it == m_current_state.conditions().end())
 				break;
 #ifdef DEBUG
-			Msg("! [%s]: %s found in m_current_state", __FUNCTION__,
+			LogInfo("! [%s]: %s found in m_current_state", __FUNCTION__,
 				inventory_item->object().cName().c_str());
 #endif
 

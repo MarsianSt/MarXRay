@@ -260,6 +260,15 @@ void			ISpatial_DB::_insert	(ISpatial_NODE* N, Fvector& n_C, float n_R)
 void			ISpatial_DB::insert		(ISpatial* S)
 {
 	cs.Enter			();
+	// BGFX port: InitializeClientGame can run before CObjectSpace::load() had a
+	// chance to initialize() this DB. Apply the same generic defaults initialize()
+	// would (idempotent — guarded by m_root).
+	if (0 == m_root)
+	{
+		Fbox	generic;
+		generic.set				(0,0,0,1024,1024,1024);
+		initialize				(generic);
+	}
 #ifdef DEBUG
 	stat_insert.Begin	();
 

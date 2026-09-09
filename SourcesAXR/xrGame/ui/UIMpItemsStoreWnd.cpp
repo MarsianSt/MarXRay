@@ -1,4 +1,4 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 #include "UIMpItemsStoreWnd.h"
 #include "UIXmlInit.h"
 #include "UITabButtonMP.h"
@@ -50,7 +50,7 @@ void CStoreHierarchy::LoadLevel(CUIXml& xml, int index, item* _item, int depth_l
 	buff[0] = 0;
 	for(int c = 0; c<depth_level; ++c) xr_strcat(buff,"-");
 #ifndef MASTER_GOLD
-	Msg("%s%s",buff,_item->m_name.c_str());
+	LogInfo("%s%s",buff,_item->m_name.c_str());
 #endif // #ifndef MASTER_GOLD
 
 	int cnt				= xml.GetNodesNum("level", index, "level");
@@ -100,9 +100,9 @@ void CStoreHierarchy::InitItemsInGroup(const shared_str& sect, item* _itm)
 			VERIFY3(g_mp_restrictions.GetItemGroup(buff).size(),"item has no group in restrictions", buff);
 		}
 #ifndef MASTER_GOLD
-		Msg("group[%s]", _itm->m_name.c_str());
-		Msg("items[%s]", v.c_str());
-		Msg("");
+		LogInfo("group[%s]", _itm->m_name.c_str());
+		LogInfo("items[%s]", v.c_str());
+		LogInfo("");
 #endif // #ifndef MASTER_GOLD
 	}else
 		for(u32 i=0; i<cnt;++i)

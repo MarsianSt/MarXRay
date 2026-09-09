@@ -1,4 +1,4 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 #include "Geometry.h"
 #include "PHDynamicData.h"
 #include "ExtendedGeom.h"
@@ -198,7 +198,7 @@ void CODEGeom::	clear_motion_history( bool set_unspecified )
 	Fmatrix m;
 	get_xform( m );
 	if( Fvector().sub( m.c, cast_fv ( dGeomGetUserData( geom() )->last_pos ) ).magnitude() > EPS )
-		Msg("! WRONG THING" );
+		LogInfo("! WRONG THING" );
 #endif
 }
 

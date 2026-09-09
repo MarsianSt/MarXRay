@@ -1,4 +1,4 @@
-#include "stdafx.h"
+п»ї#include "stdafx.h"
 #include "ui_base.h"
 #include "GamePersistent.h"
 #include "UICursor.h"
@@ -156,8 +156,8 @@ void ui_core::PushScissor(const Frect& r_tgt, bool overlapped)
 
 	if (!(result.x1>=0&&result.y1>=0&&result.x2<=UI_BASE_WIDTH&&result.y2<=UI_BASE_HEIGHT) )
 	{
-		Msg("! r_tgt [%.3f][%.3f][%.3f][%.3f]", r_tgt.x1, r_tgt.y1, r_tgt.x2, r_tgt.y2);
-		Msg("! result [%.3f][%.3f][%.3f][%.3f]", result.x1, result.y1, result.x2, result.y2);
+		LogInfo("! r_tgt [%.3f][%.3f][%.3f][%.3f]", r_tgt.x1, r_tgt.y1, r_tgt.x2, r_tgt.y2);
+		LogInfo("! result [%.3f][%.3f][%.3f][%.3f]", result.x1, result.y1, result.x2, result.y2);
 		VERIFY(result.x1>=0&&result.y1>=0&&result.x2<=UI_BASE_WIDTH&&result.y2<=UI_BASE_HEIGHT);
 	}
 	m_Scissors.push		(result);
@@ -269,7 +269,7 @@ shared_str	ui_core::get_xml_name(LPCSTR fn)
 {
 	string_path				str;
 	
-	// cari0us - ну надо мне вот такое на время
+	// cari0us - пїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅ
 	const bool b_disable_16_xml = READ_IF_EXISTS(pAdvancedSettings, r_bool, "ui_settings", "disable_16_xml", false);
 
 	if(!is_widescreen() || b_disable_16_xml){
@@ -292,7 +292,7 @@ shared_str	ui_core::get_xml_name(LPCSTR fn)
 			if ( NULL==strext(fn) ) xr_strcat(str, ".xml");
 		}
 #ifdef DEBUG
-		Msg("[16-9] get_xml_name for[%s] returns [%s]", fn, str);
+		LogInfo("[16-9] get_xml_name for[%s] returns [%s]", fn, str);
 #endif // #ifdef DEBUG
 	}
 	return str;

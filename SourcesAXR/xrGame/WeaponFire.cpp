@@ -1,4 +1,4 @@
-// WeaponFire.cpp: implementation of the CWeapon class.
+п»ї// WeaponFire.cpp: implementation of the CWeapon class.
 // function responsible for firing with CWeapon
 //////////////////////////////////////////////////////////////////////
 
@@ -62,7 +62,7 @@ void CWeapon::FireTrace		(const Fvector& P, const Fvector& D)
 	VERIFY		(m_magazine.size());
 
 	CCartridge &l_cartridge = m_magazine.back();
-//	Msg("ammo - %s", l_cartridge.m_ammoSect.c_str());
+//	LogInfo("ammo - %s", l_cartridge.m_ammoSect.c_str());
 	VERIFY		(u16(-1) != l_cartridge.bullet_material_idx);
 	//-------------------------------------------------------------	
 	bool is_tracer	= m_bHasTracers && !!l_cartridge.m_flags.test(CCartridge::cfTracer);
@@ -73,9 +73,9 @@ void CWeapon::FireTrace		(const Fvector& P, const Fvector& D)
 	if (m_u8TracerColorID != u8(-1))
 		l_cartridge.param_s.u8ColorID	= m_u8TracerColorID;
 	//-------------------------------------------------------------
-	//повысить изношенность оружия с учетом влияния конкретного патрона
+	//пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 //	float Deterioration = GetWeaponDeterioration();
-//	Msg("Deterioration = %f", Deterioration);
+//	LogInfo("Deterioration = %f", Deterioration);
 
 	float final_cond = (GetWeaponDeterioration() * l_cartridge.param_s.impair) + (m_fOverheatingCond * m_fWeaponOverheating);
 	ChangeCondition(-final_cond);
@@ -114,7 +114,7 @@ void CWeapon::FireTrace		(const Fvector& P, const Fvector& D)
 	
 
 	bool SendHit = SendHitAllowed(H_Parent() ? H_Parent() : this);
-	//выстерлить пулю (с учетом возможной стрельбы дробью)
+	//пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ (пїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ)
 	for(int i = 0; i < l_cartridge.param_s.buckShot; ++i) 
 	{
 		FireBullet(P, D, fire_disp, l_cartridge, H_Parent() ? H_Parent()->ID() : ID(), ID(), SendHit);
@@ -140,7 +140,7 @@ void CWeapon::StopShooting()
 {
 //	SetPending			(TRUE);
 
-	//принудительно останавливать зацикленные партиклы
+	//пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 	if(m_pFlameParticles && m_pFlameParticles->IsLooped())
 		StopFlameParticles	();	
 

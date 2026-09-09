@@ -1,4 +1,4 @@
-void CPHSimpleCharacter::UpdateStaticDamage(dContact* c,SGameMtl* tri_material,bool bo1)
+﻿void CPHSimpleCharacter::UpdateStaticDamage(dContact* c,SGameMtl* tri_material,bool bo1)
 {
 	const	dReal	*v			=	dBodyGetLinearVel(m_body);
 			dReal	norm_prg	=	dFabs(dDOT(v,c->geom.normal));
@@ -77,18 +77,18 @@ void CPHSimpleCharacter::UpdateDynamicDamage(dContact* c,u16 obj_material_idx,dB
 		float dbg_free_energy=KK;
 		LPCSTR name= PhysicsRefObject()->ObjectName();
 		
-		Msg("-----------------------------------------------------------------------------------------");
-		Msg("cd %s -effective vell %f",		name,				c_vel);
-		Msg("cd %s -my_norm_vell %f",		name,				dbg_my_norm_vell);
-		Msg("cd %s -obj_norm_vell %f",		name,				dbg_obj_norm_vell);
-		Msg("cd %s -my_kinetic_e %f",		name,				dbg_my_kinetic_e);
-		Msg("cd %s -obj_kinetic_e %f",		name,				dbg_obj_kinetic_e);
-		Msg("cd %s -my_effective_e %f",		name,				dbg_my_effective_e);
-		Msg("cd %s -obj_effective_e %f",	name,				dbg_obj_effective_e);
-		Msg("cd %s -effective_acceted_e %f",name,				accepted_energy);
-		Msg("cd %s -real_acceted_e %f",		name,				Kself+Kobj-KK);
-		Msg("cd %s -free_energy %f",		name,				dbg_free_energy);
-		Msg("-----------------------------------------------------------------------------------------");
+		LogInfo("-----------------------------------------------------------------------------------------");
+		LogInfo("cd %s -effective vell %f",		name,				c_vel);
+		LogInfo("cd %s -my_norm_vell %f",		name,				dbg_my_norm_vell);
+		LogInfo("cd %s -obj_norm_vell %f",		name,				dbg_obj_norm_vell);
+		LogInfo("cd %s -my_kinetic_e %f",		name,				dbg_my_kinetic_e);
+		LogInfo("cd %s -obj_kinetic_e %f",		name,				dbg_obj_kinetic_e);
+		LogInfo("cd %s -my_effective_e %f",		name,				dbg_my_effective_e);
+		LogInfo("cd %s -obj_effective_e %f",	name,				dbg_obj_effective_e);
+		LogInfo("cd %s -effective_acceted_e %f",name,				accepted_energy);
+		LogInfo("cd %s -real_acceted_e %f",		name,				Kself+Kobj-KK);
+		LogInfo("cd %s -free_energy %f",		name,				dbg_free_energy);
+		LogInfo("-----------------------------------------------------------------------------------------");
 		/*
 		static float dbg_my_norm_vell=0.f;
 		static float dbg_obj_norm_vell=0.f;

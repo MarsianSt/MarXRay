@@ -1,5 +1,5 @@
-////////////////////////////////////////////////////////////////////////////
-// script_game_object_inventory_owner.сpp :	функции для inventory owner
+п»ї////////////////////////////////////////////////////////////////////////////
+// script_game_object_inventory_owner.пїЅpp :	пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ inventory owner
 //////////////////////////////////////////////////////////////////////////
 
 #include "pch_script.h"
@@ -363,7 +363,7 @@ void CScriptGameObject::MakeItemActive(CScriptGameObject* pItem)
 
 }
 
-//передаче вещи из своего инвентаря в инвентарь партнера
+//пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 void CScriptGameObject::TransferItem(CScriptGameObject* pItem, CScriptGameObject* pForWho)
 {
 	if (!pItem || !pForWho) {
@@ -378,13 +378,13 @@ void CScriptGameObject::TransferItem(CScriptGameObject* pItem, CScriptGameObject
 		return ;
 	}
 
-	// выбросить у себя 
+	// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅ 
 	NET_Packet						P;
 	CGameObject::u_EventGen			(P,GE_TRADE_SELL, object().ID());
 	P.w_u16							(pIItem->object().ID());
 	CGameObject::u_EventSend		(P);
 
-	// отдать партнеру
+	// пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 	CGameObject::u_EventGen			(P,GE_TRADE_BUY, pForWho->object().ID());
 	P.w_u16							(pIItem->object().ID());
 	CGameObject::u_EventSend		(P);
@@ -731,7 +731,7 @@ void  CScriptGameObject::SwitchToTrade		()
 {
 	CActor* pActor = smart_cast<CActor*>(&object());	if(!pActor) return;
 
-	//только если находимся в режиме single
+	//пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅ single
 	CUIGameSP* pGameSP = smart_cast<CUIGameSP*>(CurrentGameUI());
 	if(!pGameSP) return;
 
@@ -745,7 +745,7 @@ void  CScriptGameObject::SwitchToUpgrade		()
 {
 	CActor* pActor = smart_cast<CActor*>(&object());	if(!pActor) return;
 
-	//только если находимся в режиме single
+	//пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅ single
 	CUIGameSP* pGameSP = smart_cast<CUIGameSP*>(CurrentGameUI());
 	if(!pGameSP) return;
 
@@ -1014,7 +1014,7 @@ void CScriptGameObject::add_restrictions		(LPCSTR out, LPCSTR in)
 		return;
 	}
 
-//	Msg	( "object[%s] add_restrictions( \"%s\", \"%s\" )", monster->cName().c_str(), out, in );
+//	LogInfo( "object[%s] add_restrictions( \"%s\", \"%s\" )", monster->cName().c_str(), out, in );
 	monster->get_movement().restrictions().add_restrictions(out,in);
 }
 
@@ -1026,7 +1026,7 @@ void CScriptGameObject::remove_restrictions		(LPCSTR out, LPCSTR in)
 		return;
 	}
 
-//	Msg	( "object[%s] remove_restrictions( \"%s\", \"%s\" )", monster->cName().c_str(), out, in );
+//	LogInfo( "object[%s] remove_restrictions( \"%s\", \"%s\" )", monster->cName().c_str(), out, in );
 	monster->get_movement().restrictions().remove_restrictions(out,in);
 }
 
@@ -1038,7 +1038,7 @@ void CScriptGameObject::remove_all_restrictions	()
 		return;
 	}
 
-//	Msg	( "object[%s] remove_all_restrictions( )", monster->cName().c_str() );
+//	LogInfo( "object[%s] remove_all_restrictions( )", monster->cName().c_str() );
 	monster->get_movement().restrictions().remove_all_restrictions	();
 }
 
@@ -1785,13 +1785,13 @@ void CScriptGameObject::register_door							()
 {
 	VERIFY2								( !m_door, make_string("object %s has been registered as a door already", m_game_object->cName().c_str()) );
 	m_door								= ai().doors().register_door( *smart_cast<CPhysicObject*>(m_game_object) );
-//	Msg									( "registering door 0x%-08x", m_door );
+//	LogInfo( "registering door 0x%-08x", m_door );
 }
 
 void CScriptGameObject::unregister_door							()
 {
 	VERIFY2								( m_door, make_string("object %s is not a door", m_game_object->cName().c_str()) );
-//	Msg									( "UNregistering door 0x%-08x", m_door );
+//	LogInfo( "UNregistering door 0x%-08x", m_door );
 	ai().doors().unregister_door		( m_door );
 	m_door								= 0;
 }

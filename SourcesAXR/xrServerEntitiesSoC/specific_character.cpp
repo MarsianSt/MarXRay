@@ -1,4 +1,4 @@
-#include "stdafx.h"
+п»ї#include "stdafx.h"
 #include "specific_character.h"
 
 #ifdef  XRGAME_EXPORTS
@@ -123,7 +123,7 @@ void CSpecificCharacter::load_shared	(LPCSTR)
 		data()->m_ActorDialogs.push_back(dialog_name);
 	}	
 
-	//игровое имя персонажа
+	//пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 	data()->m_sGameName		= pXML->Read("name", 0, "");
 	data()->m_sBioText		= CStringTable().translate(pXML->Read("bio", 0, ""));
 
@@ -214,7 +214,7 @@ void CSpecificCharacter::load_shared	(LPCSTR)
 #endif
 
 #if 0
-	Msg			("CSpecificCharacter::load_shared() takes %f milliseconds",timer.GetElapsed_sec()*1000.f);
+	LogInfo("CSpecificCharacter::load_shared() takes %f milliseconds",timer.GetElapsed_sec()*1000.f);
 #endif
 }
 
@@ -333,7 +333,7 @@ LPCSTR CSpecificCharacter::Visual()
 
 		if (fset.empty())
 		{
-			Msg("[CSpecificCharacter::Visual]: File list is empty! Check visuals folder!");
+			LogInfo("[CSpecificCharacter::Visual]: File list is empty! Check visuals folder!");
 			return data()->m_sVisual.c_str();
 		}
 
@@ -403,7 +403,7 @@ void CSpecificCharacter::SetRandomRange()
 			catch (const std::exception&)
 			{
 #ifdef DEBUG
-				Msg("[CSpecificCharacter::SetRandomRange]: Skip model with invalid numeric suffix: %s", name.c_str());
+				LogInfo("[CSpecificCharacter::SetRandomRange]: Skip model with invalid numeric suffix: %s", name.c_str());
 #endif
 				continue;
 			}
@@ -412,7 +412,7 @@ void CSpecificCharacter::SetRandomRange()
 
 #ifdef DEBUG
 	if (!filesFound)
-		Msg("[CSpecificCharacter::SetRandomRange]: No valid numbered models found for visual name: %s, using default range [1,1]", visual_name.c_str());
+		LogInfo("[CSpecificCharacter::SetRandomRange]: No valid numbered models found for visual name: %s, using default range [1,1]", visual_name.c_str());
 #endif
 
 	data()->first_visual = min_num;

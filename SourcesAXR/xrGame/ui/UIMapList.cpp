@@ -1,4 +1,4 @@
-#include "StdAfx.h"
+﻿#include "StdAfx.h"
 #include "UIMapList.h"
 #include "UIListBox.h"
 #include "UIFrameWindow.h"
@@ -82,9 +82,9 @@ void CUIMapList::StartDedicatedServer(){
 	xr_strcpy			(g_sLaunchOnExit_params, g_sLaunchOnExit_app);
 	xr_strcat			(g_sLaunchOnExit_params, " -i -fsltx ..\\fsgame.ltx -nosound -");
 	xr_strcat			(g_sLaunchOnExit_params, GetCommandLine(""));
-	Msg					("Going to quit before starting dedicated server");
-	Msg					("Working folder is:%s", g_sLaunchWorkingFolder);
-	Msg					("%s %s",g_sLaunchOnExit_app, g_sLaunchOnExit_params);
+	LogInfo("Going to quit before starting dedicated server");
+	LogInfo("Working folder is:%s", g_sLaunchWorkingFolder);
+	LogInfo("%s %s",g_sLaunchOnExit_app, g_sLaunchOnExit_params);
 	Console->Execute	("quit");
 }
 
@@ -272,7 +272,7 @@ void	CUIMapList::SaveMapList()
 
 	IWriter*	pW = FS.w_open	(temp);
 	if (!pW){
-		Msg("! Cant create map rotation file [%s]", temp);
+		LogInfo("! Cant create map rotation file [%s]", temp);
 		return;
 	}
 	

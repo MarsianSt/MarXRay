@@ -1,4 +1,4 @@
-////////////////////////////////////////////////////////////////////////////
+﻿////////////////////////////////////////////////////////////////////////////
 //	Created		: 24.06.2009
 //	Author		: Dmitriy Iassenev
 //	Copyright (C) GSC Game World - 2009
@@ -169,7 +169,7 @@ bool actor::add_new_door			(
 	if ( door->is_locked(state) ) {
 #ifdef DEBUG
 		if ( g_debug_doors)
-			Msg					( "actor[%s] is waiting for the locked door[%s]", get_name(), door->get_name() );
+			LogInfo( "actor[%s] is waiting for the locked door[%s]", get_name(), door->get_name() );
 #endif // #ifdef DEBUG
 		return					false;
 	}
@@ -179,7 +179,7 @@ bool actor::add_new_door			(
 		if ( i == locked_doors.end() ) {
 #ifdef DEBUG
 			if ( g_debug_doors)
-				Msg				( "actor[%s] is waiting for the door[%s] blocked by %s", get_name(), door->get_name(), door->get_initiators_ids().c_str() );
+				LogInfo( "actor[%s] is waiting for the door[%s] blocked by %s", get_name(), door->get_name(), door->get_initiators_ids().c_str() );
 #endif // #ifdef DEBUG
 			return				false;
 		}
@@ -190,7 +190,7 @@ bool actor::add_new_door			(
 		if ( door->is_blocked(state) ) {
 #ifdef DEBUG
 			if ( g_debug_doors)
-				Msg				( "actor[%s] is waiting for the door[%s] blocked by %s", get_name(), door->get_name(), door->get_initiators_ids().c_str() );
+				LogInfo( "actor[%s] is waiting for the door[%s] blocked by %s", get_name(), door->get_name(), door->get_initiators_ids().c_str() );
 #endif // #ifdef DEBUG
 			return				false;
 		}

@@ -1,4 +1,4 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 #include "mathutils.h"
 #include "../3rd party/ode/include/ode/common.h"
 
@@ -472,7 +472,7 @@ void capped_cylinder_ray_collision_test()
 		dir1.random_dir();pos1.random_point(Fvector().set(2,2,2));
 		RAYvsCYLINDER(c1,pos1,dir1,R1,TRUE);
 	}
-	Msg("my RAYvsCYLINDE time %f ms",t.GetElapsed_sec()*1000.f);
+	LogInfo("my RAYvsCYLINDE time %f ms",t.GetElapsed_sec()*1000.f);
 	t.Start();
 	for(int i=0;i<1000000;i++)
 	{
@@ -486,6 +486,6 @@ void capped_cylinder_ray_collision_test()
 		dir2.random_dir();pos2.random_point(Fvector().set(2,2,2));
 		c2.intersect(pos2,dir2,ir,code);
 	}
-		Msg("current intersect time %f ms",t.GetElapsed_sec()*1000.f);
+		LogInfo("current intersect time %f ms",t.GetElapsed_sec()*1000.f);
 
 }

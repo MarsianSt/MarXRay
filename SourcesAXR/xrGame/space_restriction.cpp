@@ -1,4 +1,4 @@
-////////////////////////////////////////////////////////////////////////////
+﻿////////////////////////////////////////////////////////////////////////////
 //	Module 		: space_restriction.cpp
 //	Created 	: 17.08.2004
 //  Modified 	: 27.08.2004
@@ -257,8 +257,8 @@ void CSpaceRestriction::initialize					()
 #ifdef DEBUG
 	if (m_out_space_restriction) {
 		if (!m_out_space_restriction->object().correct()) {
-			Msg						("~ BAD out restrictions combination :");
-			Msg						("~ %s",*m_out_space_restriction->name());
+			LogInfo("~ BAD out restrictions combination :");
+			LogInfo("~ %s",*m_out_space_restriction->name());
 		}
 	}
 #endif

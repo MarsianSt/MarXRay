@@ -1,4 +1,4 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 #include "HudItem.h"
 #include "physic_item.h"
 #include "actor.h"
@@ -447,7 +447,7 @@ void CHudItem::OnH_B_Independent	(bool just_before_destroy)
 	if (HudItemData())
 	{
 		g_player_hud->detach_item(this);
-		Msg("---Detaching hud item [%s][%d]", this->HudSection().c_str(), this->object().ID());
+		LogInfo("---Detaching hud item [%s][%d]", this->HudSection().c_str(), this->object().ID());
 	}*/
 	//SetHudItemData			(NULL);
 }
@@ -470,7 +470,7 @@ void CHudItem::on_a_hud_attach()
 	{
 		PlayHUDMotion_noCB(m_current_motion, false);
 #ifdef DEBUG
-//		Msg("continue playing [%s][%d]",m_current_motion.c_str(), Device.dwFrame);
+//		LogInfo("continue playing [%s][%d]",m_current_motion.c_str(), Device.dwFrame);
 #endif // #ifdef DEBUG
 	}
 }
@@ -494,7 +494,7 @@ u32 CHudItem::PlayHUDMotion(const shared_str& M, BOOL bMixIn, CHudItem*  W, u32 
 
 u32 CHudItem::PlayHUDMotionNew(const shared_str& M, const bool bMixIn, const u32 state, const bool randomAnim, float speed)
 {
-	//Msg("~~[%s] Playing motion [%s] for [%s]", __FUNCTION__, M.c_str(), HudSection().c_str());
+	//LogInfo("~~[%s] Playing motion [%s] for [%s]", __FUNCTION__, M.c_str(), HudSection().c_str());
 	u32 anim_time					= PlayHUDMotion_noCB(M, bMixIn, speed);
 	if (anim_time>0)
 	{
@@ -533,7 +533,7 @@ bool CHudItem::isHUDAnimationExist(LPCSTR anim_name, bool withSuffix)
 	}
 
 #ifdef DEBUG
-	Msg("~ [WARNING] [%s]: Animation [%s] does not exist in [%s]", __FUNCTION__, anim_name, HudSection().c_str());
+	LogInfo("~ [WARNING] [%s]: Animation [%s] does not exist in [%s]", __FUNCTION__, anim_name, HudSection().c_str());
 #endif
 
 	return false;
@@ -553,7 +553,7 @@ u32 CHudItem::PlayHUDMotionIfExists(std::initializer_list<const char*> Ms, const
 	}
 
 #ifdef DEBUG
-	Msg("~ [WARNING] [%s]: Motions [%s] not found for [%s]", __FUNCTION__, dbg_anim_name.c_str(), HudSection().c_str());
+	LogInfo("~ [WARNING] [%s]: Motions [%s] not found for [%s]", __FUNCTION__, dbg_anim_name.c_str(), HudSection().c_str());
 #endif
 
 	return 0;
@@ -565,7 +565,7 @@ u32 CHudItem::PlayHUDMotion_noCB(const shared_str& motion_name, const bool bMixI
 
 	if(bDebug && item().m_pInventory)
 	{
-		Msg("-[%s] as[%d] [%d]anim_play [%s][%d]",
+		LogInfo("-[%s] as[%d] [%d]anim_play [%s][%d]",
 			HudItemData()?"HUD":"Simulating", 
 			item().m_pInventory->GetActiveSlot(), 
 			item().object_id(),
@@ -1515,7 +1515,7 @@ void CHudItem::UpdateHudAdditional(Fmatrix& trans)
         trans.getHPB(_angle);
         _angle.add(-summary_rotate);
 
-        // Msg("##[%s] summary_rotate: [%f,%f,%f]", __FUNCTION__, summary_rotate.x, summary_rotate.y, summary_rotate.z);
+        // LogInfo("##[%s] summary_rotate: [%f,%f,%f]", __FUNCTION__, summary_rotate.x, summary_rotate.y, summary_rotate.z);
         trans.setHPB(_angle.x, _angle.y, _angle.z);
         trans.c = _pos;
 
@@ -1534,7 +1534,7 @@ void CHudItem::UpdateHudAdditional(Fmatrix& trans)
         hud_rotation_part.rotateZ(current_difference[1].z);
         hud_rotation.mulA_43(hud_rotation_part);
 
-        //Msg("--[%s] summary_offset: [%f,%f,%f]", __FUNCTION__, summary_offset.x, summary_offset.y, summary_offset.z);
+        //LogInfo("--[%s] summary_offset: [%f,%f,%f]", __FUNCTION__, summary_offset.x, summary_offset.y, summary_offset.z);
 
         hud_rotation.translate_over(summary_offset);
         trans.mulB_43(hud_rotation);

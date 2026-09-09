@@ -1,8 +1,10 @@
-// Texture.cpp: implementation of the CTexture class.
+﻿// Texture.cpp: implementation of the CTexture class.
 //
 //////////////////////////////////////////////////////////////////////
 
 #include "stdafx.h"
+#undef LOG_MODULE
+#define LOG_MODULE "Renderer"
 #pragma hdrstop
 
 #pragma warning(disable:4995)
@@ -121,8 +123,8 @@ void				TW_Save	(ID3DTexture2D* T, LPCSTR name, LPCSTR prefix, LPCSTR postfix)
 	for (int it=0; it<int(xr_strlen(fn)); it++)	
 		if ('\\'==fn[it])	fn[it]	= '_';
 	string256		fn2;	strconcat	(sizeof(fn2),fn2,"debug\\",fn,".dds");
-	Log						("* debug texture save: ",fn2);
-	R_CHK					(D3DXSaveTextureToFile	(fn2,D3DXIFF_DDS,T,0));
+	LogInfo("* debug texture save: ",fn2);
+	R_CHK					(D3DXSaveTextureToFile	(fn2, D3DXIFF_DDS, T, 0));
 }
 
 ID3DTexture2D*	TW_LoadTextureFromTexture
@@ -312,11 +314,11 @@ ID3DBaseTexture*	CRender::texture_load(LPCSTR fRName, u32& ret_msize)
 
 
 #ifdef _EDITOR
-	ELog.Msg(mtError,"Can't find texture '%s'",fname);
+	ELog.LogInfo(mtError,"Can't find texture '%s'",fname);
 	return 0;
 #else
 
-	Msg("! Can't find texture '%s'", fname);
+	LogWarning("! Can't find texture '%s'", fname);
 	R_ASSERT(FS.exist(fn, "$game_textures$", "ed\\ed_not_existing_texture", ".dds"));
 	goto _DDS;
 
@@ -330,13 +332,13 @@ _DDS:
 		D3DXIMAGE_INFO			IMG;
 		S						= FS.r_open	(fn);
 #ifdef DEBUG
-		Msg						("* Loaded: %s[%d]b",fn,S->length());
+		LogInfo("* Loaded: %s[%d]b",fn,S->length());
 #endif // DEBUG
 		img_size				= S->length	();
 		R_ASSERT				(S);
 		HRESULT const result	= D3DXGetImageInfoFromFileInMemory	(S->pointer(),S->length(),&IMG);
 		if ( FAILED(result) ) {
-			Msg					("! Can't get image info for texture '%s'",fn);
+			LogInfo("! Can't get image info for texture '%s'",fn);
 			FS.r_close			(S);
 			string_path			temp;
 			R_ASSERT			( FS.exist( temp, "$game_textures$", "ed\\ed_not_existing_texture", ".dds" ) );
@@ -366,7 +368,7 @@ _DDS_CUBE:
 			FS.r_close				(S);
 
 			if ( FAILED(result) ) {
-				Msg					("! Can't load texture '%s'",fn);
+				LogInfo("! Can't load texture '%s'",fn);
 				string_path			temp;
 				R_ASSERT			( FS.exist( temp, "$game_textures$", "ed\\ed_not_existing_texture", ".dds" ) );
 				R_ASSERT			( xr_strcmp(temp,fn) );
@@ -402,7 +404,7 @@ _DDS_2D:
 			FS.r_close				(S);
 
 			if ( FAILED(result) ) {
-				Msg					("! Can't load texture '%s'",fn);
+				LogInfo("! Can't load texture '%s'",fn);
 				string_path			temp;
 				R_ASSERT			( FS.exist( temp, "$game_textures$", "ed\\ed_not_existing_texture", ".dds" ) );
 				strlwr				(temp);
@@ -494,7 +496,7 @@ _BUMP:
 	*/
 _BUMP_from_base:
 	{
-		Msg			("! auto-generated bump map: %s",fname);
+		LogInfo("! auto-generated bump map: %s",fname);
 //////////////////
 #ifndef _EDITOR
 		if (strstr(fname,"_bump#"))

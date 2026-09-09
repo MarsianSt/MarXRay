@@ -1,4 +1,4 @@
-#include "pch_script.h"
+﻿#include "pch_script.h"
 #include "Helicopter.h"
 #include "level.h"
 #include "patrol_path.h"
@@ -159,7 +159,7 @@ bool SHeliMovementState::AlreadyOnPoint()
 		res = new_dist>dist;
 	}
 //	if(res)
-//		Msg("--------OnPoint id=[%d] dist=[%f]", currPatrolVertex->vertex_id(), dist);
+//		LogInfo("--------OnPoint id=[%d] dist=[%f]", currPatrolVertex->vertex_id(), dist);
 
 	return res;
 }
@@ -339,7 +339,7 @@ void SHeliMovementState::goByRoundPath(Fvector center_, float radius_, bool cloc
 	float r_verify = maxLinearSpeed*GetAngSpeedHeading(maxLinearSpeed);
 	if(r_verify>radius_){
 #ifndef MASTER_GOLD
-		Msg("! Helicopter: cannot build round path R=%f. Min R=%f",radius_,r_verify);
+		LogInfo("! Helicopter: cannot build round path R=%f. Min R=%f",radius_,r_verify);
 #endif // #ifndef MASTER_GOLD
 		return;
 	} 

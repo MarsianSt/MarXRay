@@ -1,4 +1,4 @@
-#ifndef FS_IMPL_H_INCLUDED
+﻿#ifndef FS_IMPL_H_INCLUDED
 #define FS_IMPL_H_INCLUDED
 
 // 1: default
@@ -32,7 +32,7 @@ struct find_chunk_counter
 	void flush ()
 	{
 		float secs = (float)ticks / CPU::qpc_freq;
-		Msg("find_chunk sec: %f", secs);
+		LogInfo("find_chunk sec: %f", secs);
 	}
 };
 

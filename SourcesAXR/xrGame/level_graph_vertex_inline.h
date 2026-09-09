@@ -1,4 +1,4 @@
-////////////////////////////////////////////////////////////////////////////
+ï»¿////////////////////////////////////////////////////////////////////////////
 //	Module 		: level_graph_vertex_inline.h
 //	Created 	: 02.10.2001
 //  Modified 	: 11.11.2003
@@ -320,15 +320,15 @@ IC void CLevelGraph::intersect(SSegment &tSegment, const SContour &tContour0, co
 
 	if (bFound) {
 		tSegment.v2 = tSegment.v1;
-		Log("! AI_PathNodes: segment has null length");
+		LogInfo("%s", "! AI_PathNodes: segment has null length");
 	}
 	else
-		Log("! AI_PathNodes: Can't find intersection segment");
+		LogInfo("%s", "! AI_PathNodes: Can't find intersection segment");
 }
 
 IC float CLevelGraph::nearest(Fvector& Dest, const Fvector& P, const Fvector& A, const Fvector& B) const
 {
-	// Determine t (the length of the xr_vector from ‘a’ to ‘p’)
+	// Determine t (the length of the xr_vector from ï¿½aï¿½ to ï¿½pï¿½)
 	Fvector c; c.sub(P,A);
 	Fvector V; V.sub(B,A); 
 	
@@ -337,11 +337,11 @@ IC float CLevelGraph::nearest(Fvector& Dest, const Fvector& P, const Fvector& A,
 	V.div	(d); 
 	float t = V.dotproduct(c);
 	
-	// Check to see if ‘t’ is beyond the extents of the line segment
+	// Check to see if ï¿½tï¿½ is beyond the extents of the line segment
 	if (t <= 0.0f)	{ Dest.set(A); return P.distance_to_sqr(Dest); }
 	if (t >= d)		{ Dest.set(B); return P.distance_to_sqr(Dest); }
 	
-	// Return the point between ‘a’ and ‘b’
+	// Return the point between ï¿½aï¿½ and ï¿½bï¿½
 	// set length of V to t. V is normalized so this is easy
 	Dest.mad(A,V,t);
 	return P.distance_to_sqr(Dest);

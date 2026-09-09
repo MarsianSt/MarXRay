@@ -1,4 +1,4 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 #include "missile.h"
 //.#include "WeaponHUD.h"
 #include "../xrphysics/PhysicsShell.h"
@@ -124,7 +124,7 @@ void CMissile::PH_A_CrPr		()
 		VERIFY( K );
 		if (!obj.PPhysicsShell())
 		{
-			Msg("! ERROR: PhysicsShell is NULL, object [%s][%d]", obj.cName().c_str(), obj.ID());
+			LogInfo("! ERROR: PhysicsShell is NULL, object [%s][%d]", obj.cName().c_str(), obj.ID());
 			return;
 		}
 		if(!obj.PPhysicsShell()->isFullActive())
@@ -210,7 +210,7 @@ void CMissile::OnH_B_Independent(bool just_before_destroy)
 
 		if(GetState() == eThrow)
 		{
-			Msg("Throw on reject");
+			LogInfo("Throw on reject");
 			Throw				();
 		}
 	}
@@ -555,11 +555,11 @@ void CMissile::setup_throw_params()
 		CInventoryOwner* io		= smart_cast<CInventoryOwner*>(H_Parent());
 		if(NULL == io->inventory().ActiveItem())
 		{
-				Log("current_state", GetState() );
-				Log("next_state", GetNextState());
-				Log("state_time", m_dwStateTime);
-				Log("item_sect", cNameSect().c_str());
-				Log("H_Parent", H_Parent()->cNameSect().c_str());
+				LogInfo("%s", "current_state", GetState() );
+				LogInfo("%s", "next_state", GetNextState());
+				LogInfo("%s", "state_time", m_dwStateTime);
+				LogInfo("%s", "item_sect", cNameSect().c_str());
+				LogInfo("%s", "H_Parent", H_Parent()->cNameSect().c_str());
 		}
 
 		entity->g_fireParams(this, FirePos, FireDir);
@@ -588,7 +588,7 @@ void CMissile::OnMotionMark(u32 state, const motion_marks& M)
 void CMissile::Throw() 
 {
 #ifndef MASTER_GOLD
-	Msg("throw [%d]", Device.dwFrame);
+	LogInfo("throw [%d]", Device.dwFrame);
 #endif // #ifndef MASTER_GOLD
 	VERIFY								(smart_cast<CEntity*>(H_Parent()));
 	setup_throw_params					();

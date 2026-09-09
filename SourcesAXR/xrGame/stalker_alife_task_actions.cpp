@@ -1,4 +1,4 @@
-////////////////////////////////////////////////////////////////////////////
+﻿////////////////////////////////////////////////////////////////////////////
 //	Module 		: stalker_alife_task_actions.cpp
 //	Created 	: 25.10.2004
 //  Modified 	: 25.10.2004
@@ -144,7 +144,7 @@ void CStalkerActionSolveZonePuzzle::execute		()
 #		else
 			const CWeapon							*weapon = smart_cast<const CWeapon*>(object().best_weapon());
 			VERIFY									(weapon);
-//			Msg										("weapon %s is strapped : %c",*weapon->cName(),weapon->strapped_mode() ? '+' : '-');
+//			LogInfo("weapon %s is strapped : %c",*weapon->cName(),weapon->strapped_mode() ? '+' : '-');
 
 			static u32 m_time_to_strap = 0;
 			static u32 m_time_to_idle = 0;

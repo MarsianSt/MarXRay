@@ -1,4 +1,4 @@
-// Entity.cpp: implementation of the CEntity class.
+п»ї// Entity.cpp: implementation of the CEntity class.
 
 //////////////////////////////////////////////////////////////////////
 
@@ -61,8 +61,8 @@ void CEntity::OnEvent		(NET_Packet& P, u16 type)
 			CObject			*who = Level().Objects.net_Find	(id);
 			if (who && !IsGameTypeSingle())
 			{
-				if (this!=who)	/*if(bDebug) */ Msg( "%s killed by %s ...", cName().c_str(), who->cName().c_str() );
-				else			/*if(bDebug) */ Msg( "%s dies himself ...", cName().c_str() );
+				if (this!=who)	/*if(bDebug) */ LogInfo( "%s killed by %s ...", cName().c_str(), who->cName().c_str() );
+				else			/*if(bDebug) */ LogInfo( "%s dies himself ...", cName().c_str() );
 			}
 			Die				(who);
 		}
@@ -85,7 +85,7 @@ void CEntity::Die(CObject* who)
 		Level().seniority_holder().team(g_Team()).squad(g_Squad()).group(g_Group()).unregister_member(this);
 }
 
-//обновление состояния
+//пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 float CEntity::CalcCondition(float hit)
 {
 
@@ -104,7 +104,7 @@ float CEntity::CalcCondition(float hit)
 void	CEntity::Hit		(SHit* pHDS)
 {
 
-//	if (bDebug)				Log("Process HIT: ", *cName());
+//	if (bDebug)				LogInfo("%s", "Process HIT: ", *cName());
 
 	// *** process hit calculations
 	// Calc impulse
@@ -149,7 +149,7 @@ void CEntity::Load		(LPCSTR section)
 #pragma todo("Jim to Dima: no specific figures or comments needed")	
 	m_fMorale			= 66.f;
 
-	//время убирания тела с уровня
+	//пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
 	m_dwBodyRemoveTime	= READ_IF_EXISTS(pSettings,r_u32,section,"body_remove_time",BODY_REMOVE_TIME);
 	//////////////////////////////////////
 }
@@ -251,13 +251,13 @@ void CEntity::KillEntity(u16 whoID)
 	if (whoID != ID()) {
 #ifdef DEBUG
 		if (m_killer_id != ALife::_OBJECT_ID(-1)) {
-			Msg			("! Entity [%s][%s] already has killer with id %d, but new killer id arrived - %d",*cNameSect(),*cName(),m_killer_id,whoID);
+			LogInfo("! Entity [%s][%s] already has killer with id %d, but new killer id arrived - %d",*cNameSect(),*cName(),m_killer_id,whoID);
 
 			CObject		*old_killer = Level().Objects.net_Find(m_killer_id);
-			Msg			("! Old killer is %s",old_killer ? *old_killer->cName() : "unknown");
+			LogInfo("! Old killer is %s",old_killer ? *old_killer->cName() : "unknown");
 
 			CObject		*new_killer = Level().Objects.net_Find(whoID);
-			Msg			("! New killer is %s",new_killer ? *new_killer->cName() : "unknown");
+			LogInfo("! New killer is %s",new_killer ? *new_killer->cName() : "unknown");
 
 			VERIFY		(m_killer_id == ALife::_OBJECT_ID(-1));
 		}

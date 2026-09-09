@@ -1,4 +1,4 @@
-////////////////////////////////////////////////////////////////////////////
+﻿////////////////////////////////////////////////////////////////////////////
 //	Module 		: ai_stalker_script.cpp
 //	Created 	: 29.09.2003
 //  Modified 	: 29.09.2003
@@ -297,7 +297,7 @@ bool CAI_Stalker::bfAssignAnimation(CScriptEntityAction *tpEntityAction)
 
 	if (xr_strlen(tpEntityAction->m_tAnimationAction.m_caAnimationToPlay)) {
 #ifdef _DEBUG
-//		Msg				("%6d Assigning animation : %s",Device.dwTimeGlobal,*tpEntityAction->m_tAnimationAction.m_caAnimationToPlay);
+//		LogInfo("%6d Assigning animation : %s",Device.dwTimeGlobal,*tpEntityAction->m_tAnimationAction.m_caAnimationToPlay);
 #endif
 		get_animation().torso().reset();
 		get_animation().legs().reset();

@@ -1,4 +1,4 @@
-////////////////////////////////////////////////////////////////////////////
+п»ї////////////////////////////////////////////////////////////////////////////
 //	Module 		: xrServer_Object_Base.cpp
 //	Created 	: 19.09.2002
 //  Modified 	: 16.07.2004
@@ -148,7 +148,7 @@ CSE_Abstract::CSE_Abstract					(LPCSTR caSection)
 
 		}
 		else
-			Msg( "ERROR! cannot open config file %s", raw_file_name );
+			LogInfo( "ERROR! cannot open config file %s", raw_file_name );
 	}
 
 #ifndef AI_COMPILER
@@ -215,9 +215,9 @@ void CSE_Abstract::Spawn_Write				(NET_Packet	&tNetPacket, BOOL bLocal)
 
 
 	//client object custom data serialization SAVE
-	u16 client_data_size		= (u16)client_data.size(); //не может быть больше 256 байт
+	u16 client_data_size		= (u16)client_data.size(); //пїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ 256 пїЅпїЅпїЅпїЅ
 	tNetPacket.w_u16			(client_data_size);
-//	Msg							("SERVER:saving:save:%d bytes:%d:%s",client_data_size,ID,s_name_replace ? s_name_replace : "");
+//	LogInfo("SERVER:saving:save:%d bytes:%d:%s",client_data_size,ID,s_name_replace ? s_name_replace : "");
 	if (client_data_size > 0) {
 		tNetPacket.w			(&*client_data.begin(),client_data_size);
 	}
@@ -309,9 +309,9 @@ BOOL CSE_Abstract::Spawn_Read				(NET_Packet	&tNetPacket)
 
 	//client object custom data serialization LOAD
 	if (m_wVersion > 70) {
-		u16 client_data_size	= (m_wVersion > 93) ? tNetPacket.r_u16() : tNetPacket.r_u8(); //не может быть больше 256 байт
+		u16 client_data_size	= (m_wVersion > 93) ? tNetPacket.r_u16() : tNetPacket.r_u8(); //пїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ 256 пїЅпїЅпїЅпїЅ
 		if (client_data_size > 0) {
-//			Msg					("SERVER:loading:load:%d bytes:%d:%s",client_data_size,ID,s_name_replace ? s_name_replace : "");
+//			LogInfo("SERVER:loading:load:%d bytes:%d:%s",client_data_size,ID,s_name_replace ? s_name_replace : "");
 			client_data.resize	(client_data_size);
 			tNetPacket.r		(&*client_data.begin(),client_data_size);
 		}
@@ -356,10 +356,10 @@ BOOL CSE_Abstract::Spawn_Read				(NET_Packet	&tNetPacket)
 void	CSE_Abstract::load			(NET_Packet	&tNetPacket)
 {
 	CPureServerObject::load		(tNetPacket);
-	u16 client_data_size		= (m_wVersion > 93) ? tNetPacket.r_u16() : tNetPacket.r_u8(); //не может быть больше 256 байт
+	u16 client_data_size		= (m_wVersion > 93) ? tNetPacket.r_u16() : tNetPacket.r_u8(); //пїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ 256 пїЅпїЅпїЅпїЅ
 	if (client_data_size > 0) {
 #ifdef DEBUG
-//		Msg						("SERVER:loading:load:%d bytes:%d:%s",client_data_size,ID,s_name_replace ? s_name_replace : "");
+//		LogInfo("SERVER:loading:load:%d bytes:%d:%s",client_data_size,ID,s_name_replace ? s_name_replace : "");
 #endif // DEBUG
 		client_data.resize		(client_data_size);
 		tNetPacket.r			(&*client_data.begin(),client_data_size);
@@ -367,7 +367,7 @@ void	CSE_Abstract::load			(NET_Packet	&tNetPacket)
 	else {
 #ifdef DEBUG
 		if (!client_data.empty())
-			Msg					("CSE_Abstract::load: client_data is cleared for [%d][%s]",ID,name_replace());
+			LogInfo("CSE_Abstract::load: client_data is cleared for [%d][%s]",ID,name_replace());
 #endif // DEBUG
         client_data.clear		();
 	}

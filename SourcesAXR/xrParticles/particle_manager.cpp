@@ -1,4 +1,4 @@
-//---------------------------------------------------------------------------
+﻿//---------------------------------------------------------------------------
 #include "stdafx.h"
 #pragma hdrstop
 
@@ -166,7 +166,7 @@ void CParticleManager::Update(int effect_id, int alist_id, float dt)
 
 	if (!pa || !pe)
 	{
-		Msg("! CParticleManager::Update - invalid effect_id [%d] or alist_id [%d]", effect_id, alist_id);
+		LogInfo("! CParticleManager::Update - invalid effect_id [%d] or alist_id [%d]", effect_id, alist_id);
 		return;
 	}
 
@@ -179,7 +179,7 @@ void CParticleManager::Update(int effect_id, int alist_id, float dt)
 
 		if (!action || (uintptr_t)action < 0x10000 || (uintptr_t)action == 0xFFFFFFFFFFFFFFFF)
 		{
-			Msg("! CParticleManager::Update - skipping invalid action: 0x%p", action);
+			LogInfo("! CParticleManager::Update - skipping invalid action: 0x%p", action);
 			continue;
 		}
 
@@ -219,7 +219,7 @@ void CParticleManager::Transform(int alist_id, const Fmatrix& full, const Fvecto
 		}
 		catch (...)
 		{
-			Msg("[CParticleManager::Transform]: Particle action transform failed!");
+			LogInfo("[CParticleManager::Transform]: Particle action transform failed!");
 			continue;
 		}
 

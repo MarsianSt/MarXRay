@@ -1,4 +1,4 @@
-////////////////////////////////////////////////////////////////////////////
+﻿////////////////////////////////////////////////////////////////////////////
 //	Module 		: line_edit_control.cpp
 //	Created 	: 21.02.2008
 //	Author		: Evgeniy Sokolov
@@ -6,6 +6,8 @@
 ////////////////////////////////////////////////////////////////////////////
 
 #include "stdafx.h"
+#undef LOG_MODULE
+#define LOG_MODULE "Console"
 #include "line_edit_control.h"
 
 #include "../xrCore/os_clipboard.h"
@@ -513,7 +515,7 @@ void line_edit_control::on_frame()
 	
 	/*if ( Device.dwFrame % 100 == 0 )
 	{
-	Msg( " cur_time=%.2f  re=%d  acc=%.2f   rep_time=%.2f", cur_time, bRepeat, fAccel, rep_time );
+	LogInfo( " cur_time=%.2f  re=%d  acc=%.2f   rep_time=%.2f", cur_time, bRepeat, fAccel, rep_time );
 	}*/
 }
 
@@ -535,7 +537,7 @@ void line_edit_control::update_bufs()
 	m_need_update = true;
 	m_last_changed_frame = Device.dwFrame;
 //	if ( m_cursor_view )	{
-//		Msg( " m_p1=%d  m_p2=%d  cur=%d  sstart=%d", m_p1, m_p2, m_cur_pos, m_select_start );	}
+//		LogInfo( " m_p1=%d  m_p2=%d  cur=%d  sstart=%d", m_p1, m_p2, m_cur_pos, m_select_start );	}
 }
 
 void line_edit_control::add_inserted_text()

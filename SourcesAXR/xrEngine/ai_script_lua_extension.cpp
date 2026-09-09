@@ -1,4 +1,4 @@
-////////////////////////////////////////////////////////////////////////////
+﻿////////////////////////////////////////////////////////////////////////////
 //	Module 		: ai_script_lua_extension.cpp
 //	Created 	: 19.09.2003
 //  Modified 	: 19.09.2003
@@ -90,14 +90,14 @@ int __cdecl Lua::LuaOut(Lua::ELuaMessageType tLuaMessageType, LPCSTR caFormat, .
 	xr_strcpy	(S2,S);
 	S1		= S2 + xr_strlen(S);
 	int		l_iResult = vsprintf(S1,caFormat,l_tMarker);
-	Msg		("%s",S2);
+	LogInfo("%s",S2);
 	
 	xr_strcpy	(S2,SS);
 	S1		= S2 + xr_strlen(SS);
 	vsprintf(S1,caFormat,l_tMarker);
 
 #ifdef ENGINE_BUILD
-	// Msg("[LUA Output] : %s",S2);
+	// LogInfo("[LUA Output] : %s",S2);
 #else
 	ai().lua_output().w_string(S2);
 #endif

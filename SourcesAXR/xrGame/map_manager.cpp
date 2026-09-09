@@ -1,4 +1,4 @@
-#include "pch_script.h"
+﻿#include "pch_script.h"
 #include "map_manager.h"
 #include "alife_registry_wrappers.h"
 #include "inventoryowner.h"
@@ -268,7 +268,7 @@ Locations&	CMapManager::Locations	()
 	{
 		m_locations = &m_locations_wrapper->registry().objects();
 #ifdef DEBUG
-		Msg("m_locations size=%d",m_locations->size());
+		LogInfo("m_locations size=%d",m_locations->size());
 #endif // #ifdef DEBUG
 	}
 	return *m_locations;
@@ -282,15 +282,15 @@ void CMapManager::OnObjectDestroyNotify(u16 id)
 #ifdef DEBUG
 void CMapManager::Dump						()
 {
-	Msg("begin of map_locations dump");
+	LogInfo("begin of map_locations dump");
 	Locations_it it = Locations().begin();
 	Locations_it it_e = Locations().end();
 	for(; it!=it_e;++it)
 	{
-		Msg("spot_type=[%s] object_id=[%d]",*((*it).spot_type), (*it).object_id);
+		LogInfo("spot_type=[%s] object_id=[%d]",*((*it).spot_type), (*it).object_id);
 		(*it).location->Dump();
 	}
 
-	Msg("end of map_locations dump");
+	LogInfo("end of map_locations dump");
 }
 #endif

@@ -1,4 +1,4 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 #include "MainMenu.h"
 #include "UI/UIDialogWnd.h"
 #include "ui/UIMessageBoxEx.h"
@@ -133,7 +133,7 @@ CMainMenu::CMainMenu	()
 	
 	Device.seqFrame.Add		(this,REG_PRIORITY_LOW-1000);
 
-	Msg("*Start prefetching UI textures");
+	LogInfo("*Start prefetching UI textures");
 	Device.m_pRender->RenderPrefetchUITextures();
 }
 
@@ -187,6 +187,7 @@ extern bool				IsGameTypeSingle();
 
 void CMainMenu::Activate	(bool bActivate)
 {
+	LogInfo("[MM] Activate: bActivate=%d, active=%d", bActivate ? 1 : 0, m_Flags.test(flActive) ? 1 : 0);
 	if (	!!m_Flags.test(flActive) == bActivate)		return;
 	if (	m_Flags.test(flGameSaveScreenshot)	)		return;
 	if (	(m_screenshotFrame == Device.dwFrame)	||
@@ -294,14 +295,17 @@ void CMainMenu::Activate	(bool bActivate)
 
 bool CMainMenu::ReloadUI()
 {
+	LogInfo("[MM] ReloadUI: startDialog=%p", (void*)m_startDialog);
 	if(m_startDialog)
 	{
 		if(m_startDialog->IsShown())
 			m_startDialog->HideDialog		();
 		CleanInternals						();
 	}
+	LogInfo("[MM] ReloadUI: creating MAIN_MNU instance");
 	DLL_Pure* dlg = NEW_INSTANCE(TEXT2CLSID("MAIN_MNU"));
-	if(!dlg) 
+	LogInfo("[MM] ReloadUI: dlg=%p", (void*)dlg);
+	if(!dlg)
 	{
 		m_Flags.set				(flActive|flNeedChangeCapture,FALSE);
 		return false;
@@ -313,6 +317,7 @@ bool CMainMenu::ReloadUI()
 	m_startDialog->ShowDialog	(true);
 
 	m_activatedScreenRatio		= (float)Device.dwWidth/(float)Device.dwHeight > (UI_BASE_WIDTH/UI_BASE_HEIGHT+0.01f);
+	LogInfo("[MM] ReloadUI: done, startDialog=%p", (void*)m_startDialog);
 	return true;
 }
 
@@ -422,7 +427,11 @@ void CMainMenu::OnRender	()
 		Render->Calculate			();
 
 	Render->Render				();
-	if(!OnRenderPPUI_query())
+	// NOTE: the original DX renderer used to trigger the post-process UI pass
+	// internally; with the bgfx renderer we drive it from here.
+	if(OnRenderPPUI_query())
+		OnRenderPPUI_main			();
+	else
 	{
 		DoRenderDialogs();
 		UI().RenderFont();
@@ -432,6 +441,11 @@ void CMainMenu::OnRender	()
 
 void CMainMenu::OnRenderPPUI_main	()
 {
+	static u32 s_calls = 0;
+	if (s_calls < 5)
+		LogInfo("[MM] OnRenderPPUI_main: active=%d", IsActive() ? 1 : 0);
+	s_calls++;
+
 	if(!IsActive()) return;
 
 	if(m_Flags.test(flGameSaveScreenshot))
@@ -622,7 +636,7 @@ void CMainMenu::OnDownloadPatch(CUIWindow*, void*)
 	shared_str result_string;
 	if (!GSA.CheckAvailableServices(result_string))
 	{
-		Msg(*result_string);
+		LogInfo(*result_string);
 		return;
 	};
 	
@@ -944,9 +958,9 @@ void CMainMenu::ReportTxrsForPrefetching()
 {
 	if (SuggestedForPrefetching.size() > 0)
 	{
-		Msg("---These UI textures are suggested to be prefetched since they caused stutterings when some UI window was loading");
-		Msg("---Add this list to prefetch_ui_textures.ltx (wisely)");
+		LogInfo("---These UI textures are suggested to be prefetched since they caused stutterings when some UI window was loading");
+		LogInfo("---Add this list to prefetch_ui_textures.ltx (wisely)");
 		for (u32 i = 0; i < SuggestedForPrefetching.size(); i++)
-			Msg("%s", SuggestedForPrefetching[i].c_str());
+			LogInfo("%s", SuggestedForPrefetching[i].c_str());
 	}
 }

@@ -1,6 +1,6 @@
-//////////////////////////////////////////////////////////////////////
-// CustomRocket.cpp:	ракета, которой стреляет RocketLauncher 
-//						(умеет лететь, светиться и отыгрывать партиклы)
+п»ї//////////////////////////////////////////////////////////////////////
+// CustomRocket.cpp:	пїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ RocketLauncher 
+//						(пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ)
 //////////////////////////////////////////////////////////////////////
 
 #include "stdafx.h"
@@ -80,7 +80,7 @@ BOOL CCustomRocket::net_Spawn(CSE_Abstract* DC)
 
 void CCustomRocket::net_Destroy() 
 {
-//	Msg("---------net_Destroy [%d] frame[%d]",ID(), Device.dwFrame);
+//	LogInfo("---------net_Destroy [%d] frame[%d]",ID(), Device.dwFrame);
 	CPHUpdateObject::Deactivate();
 	inherited::net_Destroy();
 	
@@ -99,7 +99,7 @@ void CCustomRocket::SetLaunchParams (const Fmatrix& xform,
 	m_vLaunchVelocity			= vel;
 //	if(m_pOwner->ID()==Actor()->ID())
 //	{
-//		Msg("set p start v:	%f,%f,%f	\n",m_vLaunchVelocity.x,m_vLaunchVelocity.y,m_vLaunchVelocity.z);
+//		LogInfo("set p start v:	%f,%f,%f	\n",m_vLaunchVelocity.x,m_vLaunchVelocity.y,m_vLaunchVelocity.z);
 //	}
 	m_vLaunchAngularVelocity	= angular_vel;
 	m_time_to_explode			= Device.fTimeGlobal + pSettings->r_float(cNameSect(), "force_explode_time")/1000.0f;
@@ -123,7 +123,7 @@ void CCustomRocket::activate_physic_shell	()
 
 //	if(m_pOwner->ID()==Actor()->ID())
 //	{
-//		Msg("start v:	%f,%f,%f	\n",m_vLaunchVelocity.x,m_vLaunchVelocity.y,m_vLaunchVelocity.z);
+//		LogInfo("start v:	%f,%f,%f	\n",m_vLaunchVelocity.x,m_vLaunchVelocity.y,m_vLaunchVelocity.z);
 //	}
 	m_pPhysicsShell->Activate(m_LaunchXForm, m_vLaunchVelocity, m_vLaunchAngularVelocity);
 	m_pPhysicsShell->Update	();
@@ -342,7 +342,7 @@ void CCustomRocket::PlayContact()
 
 	m_eState = eCollide;
 
-	//дективировать физическую оболочку,чтоб ракета не летела дальше
+	//пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ,пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
 	if(m_pPhysicsShell)
 	{
 		m_pPhysicsShell->set_LinearVel(m_zero_vel);
@@ -361,13 +361,13 @@ void CCustomRocket::OnH_B_Chield		()
 {
 	VERIFY(m_eState == eInactive);
 	inherited::OnH_B_Chield		();
-//	Msg("! CCustomRocket::OnH_B_Chield called, id[%d] frame[%d]",ID(),Device.dwFrame);
+//	LogInfo("! CCustomRocket::OnH_B_Chield called, id[%d] frame[%d]",ID(),Device.dwFrame);
 }
 void CCustomRocket::OnH_A_Chield		()
 {
 	VERIFY(m_eState == eInactive);
 	inherited::OnH_A_Chield		();
-//	Msg("! CCustomRocket::OnH_A_Chield called, id[%d] frame[%d]",ID(),Device.dwFrame);
+//	LogInfo("! CCustomRocket::OnH_A_Chield called, id[%d] frame[%d]",ID(),Device.dwFrame);
 }
 
 
@@ -388,7 +388,7 @@ void CCustomRocket::OnH_A_Independent()
 	setVisible					(true);
 	StartFlying					();
 	StartEngine					();
-//	Msg("! CCustomRocket::OnH_A_Independent called, id[%d] frame[%d]",ID(),Device.dwFrame);
+//	LogInfo("! CCustomRocket::OnH_A_Independent called, id[%d] frame[%d]",ID(),Device.dwFrame);
 
 }
 
@@ -402,9 +402,9 @@ void CCustomRocket::UpdateCL()
 	{
 	case eInactive:
 		break;
-	//состояния eEngine и eFlying отличаются, тем
-	//что вызывается UpdateEngine у eEngine, остальные
-	//функции общие
+	//пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ eEngine пїЅ eFlying пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅ
+	//пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ UpdateEngine пїЅ eEngine, пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
+	//пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ
 	case eEngine:
 		UpdateEngine();
 	case eFlying:
@@ -417,7 +417,7 @@ void CCustomRocket::UpdateCL()
 		if(m_time_to_explode<Device.fTimeGlobal)
 		{
 			Contact(Position(), Direction());
-//			Msg("--contact");
+//			LogInfo("--contact");
 		}
 	}
 }
@@ -486,10 +486,10 @@ void CCustomRocket::UpdateEngine				()
 	//	VERIFY( getVisible() );
 	//	VERIFY( m_pPhysicsShell);
 	if( !m_pPhysicsShell )
-		Msg("! CCustomRocket::UpdateEngine called, but m_pPhysicsShell is NULL");
+		LogInfo("! CCustomRocket::UpdateEngine called, but m_pPhysicsShell is NULL");
 
 	if( !getVisible() ){
-		Msg("! CCustomRocket::UpdateEngine called, but false==getVisible() id[%d] frame[%d]",ID(),Device.dwFrame);
+		LogInfo("! CCustomRocket::UpdateEngine called, but false==getVisible() id[%d] frame[%d]",ID(),Device.dwFrame);
 	}
 
 	if (m_dwEngineTime <= 0) 
@@ -511,7 +511,7 @@ void CCustomRocket::StartLights()
 {
 	if(!m_bLightsEnabled) return;
 
-	//включить световую подсветку от двигателя
+	//пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 	m_pTrailLight->set_color(m_TrailLightColor.r, 
 							 m_TrailLightColor.g, 
 							 m_TrailLightColor.b);

@@ -1,5 +1,7 @@
-#include "pch_script.h"
+п»ї#include "pch_script.h"
 #include "../xrEngine/xr_ioconsole.h"
+#undef LOG_MODULE
+#define LOG_MODULE "Console"
 #include "../xrEngine/x_ray.h"
 #include "../xrEngine/xr_ioc_cmd.h"
 #include "../xrEngine/customhud.h"
@@ -245,18 +247,18 @@ static void full_memory_stats	( )
 
 	log_vminfo	();
 
-	Msg		("* [ D3D ]: textures[%d K]", (m_base+m_lmaps)/1024);
+	LogInfo("* [ D3D ]: textures[%d K]", (m_base+m_lmaps)/1024);
 
 #ifndef SEVERAL_ALLOCATORS
-	Msg		("* [x-ray]: crt heap[%d K], process heap[%d K]",_crt_heap/1024,_process_heap/1024);
+	LogInfo("* [x-ray]: crt heap[%d K], process heap[%d K]",_crt_heap/1024,_process_heap/1024);
 #else // SEVERAL_ALLOCATORS
-	Msg		("* [x-ray]: crt heap[%d K], process heap[%d K], game lua[%d K], render[%d K]",_crt_heap/1024,_process_heap/1024,_game_lua/1024,_render/1024);
+	LogInfo("* [x-ray]: crt heap[%d K], process heap[%d K], game lua[%d K], render[%d K]",_crt_heap/1024,_process_heap/1024,_game_lua/1024,_render/1024);
 #endif // SEVERAL_ALLOCATORS
 
-	Msg		("* [x-ray]: economy: strings[%d K], smem[%d K]",_eco_strings/1024,_eco_smem);
+	LogInfo("* [x-ray]: economy: strings[%d K], smem[%d K]",_eco_strings/1024,_eco_smem);
 
 #ifdef FS_DEBUG
-	Msg		("* [x-ray]: file mapping: memory[%d K], count[%d]",g_file_mapped_memory/1024,g_file_mapped_count);
+	LogInfo("* [x-ray]: file mapping: memory[%d K], count[%d]",g_file_mapped_memory/1024,g_file_mapped_count);
 	dump_file_mappings	();
 #endif // DEBUG
 }
@@ -300,19 +302,19 @@ public:
 
 		if (GameID() != eGameIDSingle)
 		{
-			Msg("For this game type entity-spawning is disabled.");
+			LogInfo("For this game type entity-spawning is disabled.");
 			return;
 		};
 
 		if (count > 50)
 		{
-			Msg("! [g_spawn]: Cancel the command. Maximum value of the second argument: 50. Count is: %d", count);
+			LogInfo("! [g_spawn]: Cancel the command. Maximum value of the second argument: 50. Count is: %d", count);
 			return;
 		}
 
 		if (!pSettings->section_exist(Name))
 		{
-			Msg("! Section [%s] isn`t exist...", Name);
+			LogInfo("! Section [%s] isn`t exist...", Name);
 			return;
 		}
 
@@ -372,14 +374,14 @@ public:
 		if (actor)
 			actor->OnReceiveInfo(info_id);
 		else
-			Msg("! [g_info] : Actor not found!");
+			LogInfo("! [g_info] : Actor not found!");
 	}
 
 	virtual void fill_tips(vecTips& tips, u32 mode)
 	{
 		if (!ai().get_alife())
 		{
-			Msg("! ALife simulator is needed to perform specified command!");
+			LogInfo("! ALife simulator is needed to perform specified command!");
 			return;
 		}
 		for (const auto& it : *CInfoPortion::Items())
@@ -404,14 +406,14 @@ public:
 		if (actor)
 			actor->OnDisableInfo(info_id);
 		else
-			Msg("! [g_info] : Actor not found!");
+			LogInfo("! [g_info] : Actor not found!");
 	}
 
 	virtual void fill_tips(vecTips& tips, u32 mode)
 	{
 		if (!ai().get_alife())
 		{
-			Msg("! ALife simulator is needed to perform specified command!");
+			LogInfo("! ALife simulator is needed to perform specified command!");
 			return;
 		}
 
@@ -431,7 +433,7 @@ public:
 	virtual void Execute(LPCSTR args) {
 		if (!g_pGameLevel)
 		{
-			Log("Error: No game level!");
+			LogInfo("%s", "Error: No game level!");
 			return;
 		}
 
@@ -441,19 +443,19 @@ public:
 
 		if (count > 250)
 		{
-			Msg("! [g_spawn_to_inventory]: Cancel the command. Maximum value of the second argument: 250. Cound is: %d", count);
+			LogInfo("! [g_spawn_to_inventory]: Cancel the command. Maximum value of the second argument: 250. Cound is: %d", count);
 			return;
 		}
 
 		if (!pSettings->section_exist(Name))
 		{
-			Msg("! Section [%s] isn`t exist...", Name);
+			LogInfo("! Section [%s] isn`t exist...", Name);
 			return;
 		}
 
 		if (!pSettings->line_exist(Name, "class") || !pSettings->line_exist(Name, "inv_weight") || !pSettings->line_exist(Name, "visual"))
 		{
-			Msg("!Failed to load section!");
+			LogInfo("!Failed to load section!");
 			return;
 		}
 
@@ -470,7 +472,7 @@ public:
 	{
 		if (!ai().get_alife())
 		{
-			Msg("! ALife simulator is needed to perform specified command!");
+			LogInfo("! ALife simulator is needed to perform specified command!");
 			return;
 		}
 		
@@ -495,7 +497,7 @@ public:
 	{
 		if (!g_pGameLevel)
 		{
-			Log("Error: No game level!");
+			LogInfo("%s", "Error: No game level!");
 			return;
 		}
 
@@ -503,13 +505,13 @@ public:
 		if (actor)
 			Level().GameTaskManager().GiveTaskScript(task);
 		else
-			Msg("! [g_task] : Actor not found!");
+			LogInfo("! [g_task] : Actor not found!");
 	}
 
 	virtual void fill_tips(vecTips& tips, u32 mode)
 	{
 		string_path fname;
-		FS.update_path(fname, "$game_config$", "misc\\task_manager.ltx"); // Читаем так, потому что в pSettings этого файла нет. В ресурсах его скрипты читают.
+		FS.update_path(fname, "$game_config$", "misc\\task_manager.ltx"); // пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ, пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅ pSettings пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ. пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ.
 
 		CInifile task_manager_ini(fname, true, true, true, 0, nullptr);
 
@@ -528,7 +530,7 @@ public:
 	{
 		if (!g_pGameLevel)
 		{
-			Log("Error: No game level!");
+			LogInfo("%s", "Error: No game level!");
 			return;
 		}
 
@@ -539,7 +541,7 @@ public:
 			Actor()->set_money(Actor()->get_money() + m_iMoney, false);
 		}
 		else
-			Msg("! [g_money] : Actor not found!");
+			LogInfo("! [g_money] : Actor not found!");
 	}
 };
 
@@ -568,7 +570,7 @@ public:
 
 			if (!id_to_kill)
 			{
-				Msg("! [kill] : Invalid story_id or NPC offline! story_id: %s", story_id_to_kill);
+				LogInfo("! [kill] : Invalid story_id or NPC offline! story_id: %s", story_id_to_kill);
 				return;
 			}
 
@@ -578,14 +580,14 @@ public:
 			{
 				if (!entity_to_kill->g_Alive())
 				{
-					Msg("! [kill] : This entity is already dead!");
+					LogInfo("! [kill] : This entity is already dead!");
 					return;
 				}
 
 				entity_to_kill->KillEntity(entity_to_kill->ID());
 			}
 			else
-				Msg("! [kill] : Entity with id [%s] not found!", story_id_to_kill);
+				LogInfo("! [kill] : Entity with id [%s] not found!", story_id_to_kill);
 		}
 		else if (RQ.O && story_id_to_kill[0] == 0)
 		{
@@ -595,17 +597,17 @@ public:
 			{
 				if (!entity_to_kill->g_Alive())
 				{
-					Msg("! [kill] : This entity is already dead!");
+					LogInfo("! [kill] : This entity is already dead!");
 					return;
 				}
 
 				entity_to_kill->KillEntity(entity_to_kill->ID());
 			}
 			else
-				Msg("! [kill] : Is not EntityAlive!");
+				LogInfo("! [kill] : Is not EntityAlive!");
 		}
 		else
-			Msg("! [kill] : Empty entity to kill or is not EntityAlive!");
+			LogInfo("! [kill] : Empty entity to kill or is not EntityAlive!");
 	}
 
 	virtual void	Info(TInfo& I)
@@ -638,7 +640,7 @@ public:
 
 			if (!id_to_tp)
 			{
-				Msg("! [tp_to_sid] : Invalid story_id! story_id: %s", story_id_for_tp);
+				LogInfo("! [tp_to_sid] : Invalid story_id! story_id: %s", story_id_for_tp);
 				return;
 			}
 
@@ -651,7 +653,7 @@ public:
 
 					if (actor_level_id != object_level_id)
 					{
-						Msg("! [tp_to_sid] : Object on another level!");
+						LogInfo("! [tp_to_sid] : Object on another level!");
 						return;
 					}
 
@@ -662,10 +664,10 @@ public:
 				}
 			}
 			else
-				Msg("! [tp_to_sid] : Object with id [%s] not found!", story_id_for_tp);
+				LogInfo("! [tp_to_sid] : Object with id [%s] not found!", story_id_for_tp);
 		}
 		else
-			Msg("! [tp_to_sid] : Empty object for teleport!");
+			LogInfo("! [tp_to_sid] : Empty object for teleport!");
 	}
 
 	virtual void	Info(TInfo& I)
@@ -691,7 +693,7 @@ public:
 		if (g_pGameLevel && Level().game){
 //#ifndef	DEBUG
 			if (GameID() != eGameIDSingle){
-				Msg("For this game type difficulty level is disabled.");
+				LogInfo("For this game type difficulty level is disabled.");
 				return;
 			};
 //#endif
@@ -716,25 +718,25 @@ public:
 	CCC_ALifePath(LPCSTR N) : IConsole_Command(N)  { };
 	virtual void Execute(LPCSTR args) {
 		if (!ai().get_level_graph())
-			Msg("! there is no graph!");
+			LogInfo("! there is no graph!");
 		else {
 			int id1=-1, id2=-1;
 			sscanf(args ,"%d %d",&id1,&id2);
 			if ((-1 != id1) && (-1 != id2))
 				if (_max(id1,id2) > (int)ai().game_graph().header().vertex_count() - 1)
-					Msg("! there are only %d vertexes!",ai().game_graph().header().vertex_count());
+					LogInfo("! there are only %d vertexes!",ai().game_graph().header().vertex_count());
 				else
 					if (_min(id1,id2) < 0)
-						Msg("! invalid vertex number (%d)!",_min(id1,id2));
+						LogInfo("! invalid vertex number (%d)!",_min(id1,id2));
 					else {
 //						Sleep				(1);
 //						CTimer				timer;
 //						timer.Start			();
 //						float				fValue = ai().m_tpAStar->ffFindMinimalPath(id1,id2);
-//						Msg					("* %7.2f[%d] : %11I64u cycles (%.3f microseconds)",fValue,ai().m_tpAStar->m_tpaNodes.size(),timer.GetElapsed_ticks(),timer.GetElapsed_ms()*1000.f);
+//						LogInfo("* %7.2f[%d] : %11I64u cycles (%.3f microseconds)",fValue,ai().m_tpAStar->m_tpaNodes.size(),timer.GetElapsed_ticks(),timer.GetElapsed_ms()*1000.f);
 					}
 			else
-				Msg("! not enough parameters!");
+				LogInfo("! not enough parameters!");
 		}
 	}
 };
@@ -747,7 +749,7 @@ public:
 		float id1 = 0.0f;
 		sscanf(args ,"%f",&id1);
 		if (id1 < EPS_L)
-			Msg("Invalid time factor! (%.4f)",id1);
+			LogInfo("Invalid time factor! (%.4f)",id1);
 		else {
 			if (!OnServer())
 				return;
@@ -791,7 +793,7 @@ public:
 			float id1 = 0.0f;
 			sscanf(args ,"%f",&id1);
 			if (id1 < 2.0f)
-				Msg("Invalid online distance! (%.4f)",id1);
+				LogInfo("Invalid online distance! (%.4f)",id1);
 			else {
 				NET_Packet		P;
 				P.w_begin		(M_SWITCH_DISTANCE);
@@ -800,7 +802,7 @@ public:
 			}
 		}
 		else
-			Log("!Not a single player game!");
+			LogInfo("%s", "!Not a single player game!");
 	}
 };
 
@@ -814,12 +816,12 @@ public:
 			int id1 = 0;
 			sscanf(args ,"%d",&id1);
 			if (id1 < 1)
-				Msg("Invalid process time! (%d)",id1);
+				LogInfo("Invalid process time! (%d)",id1);
 			else
 				tpGame->alife().set_process_time(id1);
 		}
 		else
-			Log("!Not a single player game!");
+			LogInfo("%s", "!Not a single player game!");
 	}
 
 };
@@ -837,7 +839,7 @@ public:
 			tpGame->alife().objects_per_update(id1);
 		}
 		else
-			Log("!Not a single player game!");
+			LogInfo("%s", "!Not a single player game!");
 	}
 };
 
@@ -854,7 +856,7 @@ public:
 			tpGame->alife().set_switch_factor(id1);
 		}
 		else
-			Log		("!Not a single player game!");
+			LogInfo("%s", "!Not a single player game!");
 	}
 };
 
@@ -868,7 +870,7 @@ public:
 		#ifndef	DEBUG
 		//if (GameID() != eGameIDSingle) 
 		//{
-		//	Msg("For this game type Demo Record is disabled.");
+		//	LogInfo("For this game type Demo Record is disabled.");
 		//	return;
 		//};
 		#endif
@@ -892,7 +894,7 @@ public:
 		#ifndef	DEBUG
 		//if (GameID() != eGameIDSingle) 
 		//{
-		//	Msg("For this game type Demo Record is disabled.");
+		//	LogInfo("For this game type Demo Record is disabled.");
 		//	return;
 		//};
 		#endif
@@ -915,13 +917,13 @@ public:
 		#ifndef	DEBUG
 		//if (GameID() != eGameIDSingle) 
 		//{
-		//	Msg("For this game type Demo Play is disabled.");
+		//	LogInfo("For this game type Demo Play is disabled.");
 		//	return;
 		//};
 		#endif
 		  if (0==g_pGameLevel)
 		  {
-			  Msg	("! There are no level(s) started");
+			  LogInfo("! There are no level(s) started");
 		  } else {
 			  Console->Hide			();
 			  string_path			fn;
@@ -992,24 +994,24 @@ public:
 		
 #if 0
 		if (!Level().autosave_manager().ready_for_autosave()) {
-			Msg		("! Cannot save the game right now!");
+			LogInfo("! Cannot save the game right now!");
 			return;
 		}
 #endif
 		if(!IsGameTypeSingle()){
-			Msg("for single-mode only");
+			LogInfo("for single-mode only");
 			return;
 		}
 		if(!g_actor || !Actor()->g_Alive())
 		{
-			Msg("cannot make saved game because actor is dead :(");
+			LogInfo("cannot make saved game because actor is dead :(");
 			return;
 		}
 
 		if (g_saves_locked)
 		{
 #ifdef DEBUG
-			Msg("Can`t make saved game: blocked by Lua.");
+			LogInfo("Can`t make saved game: blocked by Lua.");
 #endif
 			SDrawStaticStruct* _s	= CurrentGameUI()->AddCustomStatic("game_save_blocked_icon", true);
 			SDrawStaticStruct* _s2	= CurrentGameUI()->AddCustomStatic("game_saved", true);
@@ -1050,7 +1052,7 @@ public:
 		else
 		{
 			if(!valid_saved_game_name(S)){
-				Msg("! Save failed: invalid file name - %s", S);
+				LogInfo("! Save failed: invalid file name - %s", S);
 				return;
 			}
 
@@ -1061,7 +1063,7 @@ public:
 			Level().Send		(net_packet,net_flags(TRUE));
 		}
 #ifdef DEBUG
-		Msg						("Game save overhead  : %f milliseconds",timer.GetElapsed_sec()*1000.f);
+		LogInfo("Game save overhead  : %f milliseconds",timer.GetElapsed_sec()*1000.f);
 #endif
 		SDrawStaticStruct* _s		= CurrentGameUI()->AddCustomStatic("game_saved", true);
 		SDrawStaticStruct* _s2		= CurrentGameUI()->AddCustomStatic("game_saved_icon", true);
@@ -1081,7 +1083,7 @@ public:
 		MainMenu()->Screenshot		(IRender_interface::SM_FOR_GAMESAVE,S1);
 
 #ifdef DEBUG
-		Msg						("Screenshot overhead : %f milliseconds",timer.GetElapsed_sec()*1000.f);
+		LogInfo("Screenshot overhead : %f milliseconds",timer.GetElapsed_sec()*1000.f);
 #endif
 	}//virtual void Execute
 
@@ -1101,28 +1103,28 @@ public:
 		strncpy_s				(saved_game, sizeof(saved_game), args, _MAX_PATH - 1 );
 
 		if (!ai().get_alife()) {
-			Log						("! ALife simulator has not been started yet");
+			LogInfo("%s", "! ALife simulator has not been started yet");
 			return;
 		}
 
 		if (!xr_strlen(saved_game)) {
-			Log						("! Specify file name!");
+			LogInfo("%s", "! Specify file name!");
 			return;
 		}
 
 		if (!CSavedGameWrapper::saved_game_exist(saved_game)) {
-			Msg						("! Cannot find saved game %s",saved_game);
+			LogInfo("! Cannot find saved game %s",saved_game);
 			return;
 		}
 
 		if (!CSavedGameWrapper::valid_saved_game(saved_game)) {
-			Msg						("! Cannot load saved game %s, version mismatch or saved game is corrupted",saved_game);
+			LogInfo("! Cannot load saved game %s, version mismatch or saved game is corrupted",saved_game);
 			return;
 		}
 
 		if ( !valid_saved_game_name(saved_game) )
 		{
-			Msg						("! Cannot load saved game %s, invalid file name",saved_game);
+			LogInfo("! Cannot load saved game %s, invalid file name",saved_game);
 			return;
 		}
 
@@ -1186,23 +1188,23 @@ public:
 		}
 
 		if (!*g_last_saved_game) {
-			Msg					("! cannot load last saved game since it hasn't been specified");
+			LogInfo("! cannot load last saved game since it hasn't been specified");
 			return;
 		}
 
 		if (!CSavedGameWrapper::saved_game_exist(g_last_saved_game)) {
-			Msg						("! Cannot find saved game %s",g_last_saved_game);
+			LogInfo("! Cannot find saved game %s",g_last_saved_game);
 			return;
 		}
 
 		if (!CSavedGameWrapper::valid_saved_game(g_last_saved_game)) {
-			Msg						("! Cannot load saved game %s, version mismatch or saved game is corrupted",g_last_saved_game);
+			LogInfo("! Cannot load saved game %s, version mismatch or saved game is corrupted",g_last_saved_game);
 			return;
 		}
 
 		if ( !valid_saved_game_name(g_last_saved_game) )
 		{
-			Msg						("! Cannot load saved game %s, invalid file name",g_last_saved_game);
+			LogInfo("! Cannot load saved game %s, invalid file name",g_last_saved_game);
 			return;
 		}
 
@@ -1265,7 +1267,7 @@ public:
 	virtual void Execute(LPCSTR args)
 	{
 		if (g_pGamePersistent && g_pGameLevel && Level().game && (&HUD()))
-			HUD().OnScreenResolutionChanged();// перезагружаем UI через эту команду
+			HUD().OnScreenResolutionChanged();// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ UI пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 	}
 };
 
@@ -1273,8 +1275,8 @@ class CCC_FlushLog : public IConsole_Command {
 public:
 	CCC_FlushLog(LPCSTR N) : IConsole_Command(N)  { bEmptyArgsHandled = true; };
 	virtual void Execute(LPCSTR /**args/**/) {
-		FlushLog();
-		Msg		("* Log file has been saved successfully!");
+		xrAsyncLogger::instance().flush();
+		LogInfo("* Log file has been saved successfully!");
 	}
 };
 
@@ -1283,8 +1285,8 @@ public:
 	CCC_ClearLog(LPCSTR N) : IConsole_Command(N)  { bEmptyArgsHandled = true; };
 	virtual void Execute(LPCSTR) {
 		LogFile->clear_not_free	();
-		FlushLog				();
-		Msg						("* Log file has been cleaned successfully!");
+		xrAsyncLogger::instance().flush();
+		LogInfo("* Log file has been cleaned successfully!");
 	}
 };
 
@@ -1303,7 +1305,7 @@ public:
 			  CCC_Float::Execute(args);
 		  else
 		  {
-			  Msg ("! Command disabled for this type of game");
+			  LogInfo("! Command disabled for this type of game");
 		  }
 #endif
 	  }
@@ -1385,7 +1387,7 @@ public:
 
 		const GameGraph::SLevel	*level = ai().game_graph().header().level(args,true);
 		if (!level) {
-			Msg				("! There is no level %s in the game graph",args);
+			LogInfo("! There is no level %s in the game graph",args);
 			return;
 		}
 
@@ -1406,9 +1408,9 @@ public:
 			if(d->Active())
 				d->initiateDebugBreak();
 			else
-				Msg("Script debugger not active.");
+				LogInfo("Script debugger not active.");
 		}else
-			Msg("Script debugger not present.");
+			LogInfo("Script debugger not present.");
 		}
 		else if(strstr(cName,"script_debug_stop")==cName ){
 			ai().script_engine().stopDebugger();
@@ -1506,7 +1508,7 @@ public:
 		for ( ; I != E; ++I) {
 			CSE_ALifeCreatureAbstract *obj = smart_cast<CSE_ALifeCreatureAbstract *>(I->second);
 			if (obj) {
-				Msg("\"%s\",",obj->name_replace());
+				LogInfo("\"%s\",",obj->name_replace());
 			}
 		}		
 
@@ -1626,7 +1628,7 @@ public:
 #ifndef DEBUG
 		  if (g_pGameLevel && Level().game && GameID() != eGameIDSingle)
 		  {
-			  Msg("Command is not available in Multiplayer");
+			  LogInfo("Command is not available in Multiplayer");
 			  return;
 		  }
 #endif
@@ -1704,7 +1706,7 @@ struct CCC_JumpToLevel : public IConsole_Command {
 	{
 		if (!ai().get_alife())
 		{
-			Msg				("! ALife simulator is needed to perform specified command!");
+			LogInfo("! ALife simulator is needed to perform specified command!");
 			return;
 		}
 
@@ -1716,7 +1718,7 @@ struct CCC_JumpToLevel : public IConsole_Command {
 				ai().alife().jump_to_level(level);
 				return;
 			}
-		Msg							("! There is no level \"%s\" in the game graph!",level);
+		LogInfo("! There is no level \"%s\" in the game graph!",level);
 	}
 
 	virtual void	Save	(IWriter *F)	{};
@@ -1724,7 +1726,7 @@ struct CCC_JumpToLevel : public IConsole_Command {
 	{
 		if ( !ai().get_alife() )
 		{
-			Msg				("! ALife simulator is needed to perform specified command!");
+			LogInfo("! ALife simulator is needed to perform specified command!");
 			return;
 		}
 
@@ -1745,7 +1747,7 @@ public:
 	{
 		if ( !xr_strlen(args) )
 		{
-			Log("* Specify script name!");
+			LogInfo("%s", "* Specify script name!");
 		}
 		else
 		{
@@ -1779,7 +1781,7 @@ public:
 	virtual void	Execute				(LPCSTR args)
 	{
 		if (!xr_strlen(args))
-			Log("* Specify string to run!");
+			LogInfo("%s", "* Specify string to run!");
 		else {
 			if (ai().script_engine().script_process(ScriptEngine::eScriptProcessorLevel)) {
 				ai().script_engine().script_process(ScriptEngine::eScriptProcessorLevel)->add_script(args,true,true);
@@ -2039,7 +2041,7 @@ public:
 	virtual void Execute(LPCSTR arguments)
 	{
 		if (!arguments || !*arguments) {
-			Msg					("! no arguments passed");
+			LogInfo("! no arguments passed");
 			return;
 		}
 
@@ -2053,7 +2055,7 @@ public:
 		string_path				fn;
 
 		if (!FS.exist(arguments) && !FS.exist(fn, "$level$", name) && !FS.exist(fn, "$game_meshes$", name)) {
-			Msg					("! Cannot find visual \"%s\"",arguments);
+			LogInfo("! Cannot find visual \"%s\"",arguments);
 			return;
 		}
 
@@ -2061,13 +2063,13 @@ public:
 		IKinematics				*kinematics = smart_cast<IKinematics*>(visual);
 		if (!kinematics) {
 			Render->model_Delete(visual);
-			Msg					("! Invalid visual type \"%s\" (not a IKinematics)",arguments);
+			LogInfo("! Invalid visual type \"%s\" (not a IKinematics)",arguments);
 			return;
 		}
 
-		Msg						("bones for model \"%s\"",arguments);
+		LogInfo("bones for model \"%s\"",arguments);
 		for (u16 i=0, n=kinematics->LL_BoneCount(); i<n; ++i)
-			Msg					("%s",*kinematics->LL_GetData(i).name);
+			LogInfo("%s",*kinematics->LL_GetData(i).name);
 		
 		Render->model_Delete	(visual);
 	}
@@ -2120,7 +2122,7 @@ public:
 		}
 		else
 		{
-			Msg( "- Current item in ActorMenu is unknown!" );
+			LogInfo( "- Current item in ActorMenu is unknown!" );
 		}
 	}
 };
@@ -2144,11 +2146,11 @@ public:
 		sscanf( args, "%d", &d );
 		if ( ui_game_sp->ActorMenu().DropAllItemsFromRuck( d == 1 ) )
 		{
-			Msg( "- All items from ruck of Actor is dropping now." );
+			LogInfo( "- All items from ruck of Actor is dropping now." );
 		}
 		else
 		{
-			Msg( "! ActorMenu is not in state `Inventory`" );
+			LogInfo( "! ActorMenu is not in state `Inventory`" );
 		}
 	}
 }; // CCC_InvDropAllItems
@@ -2164,7 +2166,7 @@ public:
 		if (CAttachableItem::m_dbgItem)
 		{
 			CAttachableItem::m_dbgItem = NULL;
-			Msg("CCC_TuneAttachableItem switched to off");
+			LogInfo("CCC_TuneAttachableItem switched to off");
 			return;
 		};
 
@@ -2186,9 +2188,9 @@ public:
 		}
 
 		if (CAttachableItem::m_dbgItem)
-			Msg("CCC_TuneAttachableItem switched to ON for [%s]", args);
+			LogInfo("CCC_TuneAttachableItem switched to ON for [%s]", args);
 		else
-			Msg("CCC_TuneAttachableItem cannot find attached item [%s]", args);
+			LogInfo("CCC_TuneAttachableItem cannot find attached item [%s]", args);
 	}
 
 	virtual void	Info(TInfo& I)
@@ -2231,7 +2233,7 @@ public:
 		shared_str result_string;
 		if (!GSA.CheckAvailableServices(result_string))
 		{
-			Msg(*result_string);
+			LogInfo(*result_string);
 //			return;
 		};
 		CGameSpy_Patching GameSpyPatching;
@@ -2340,7 +2342,7 @@ struct CCC_ReloadSystemLtx : public IConsole_Command
 		CInifile::Destroy(pSettings);
 		pSettings = xr_new<CInifile>(fname, TRUE);
 		CHECK_OR_EXIT(0 != pSettings->section_count(), make_string("Cannot find file %s.\nReinstalling application may fix this problem.", fname));
-		Msg("system.ltx was reloaded.");
+		LogInfo("system.ltx was reloaded.");
 	}
 };
 
@@ -2359,7 +2361,7 @@ struct CCC_ReloadAdvancedXRayCfg : public IConsole_Command
 		pAdvancedSettings = xr_new<CInifile>(fname, TRUE);
 		CHECK_OR_EXIT(0 != pAdvancedSettings->section_count(), make_string("Cannot find file %s.\nReinstalling application may fix this problem.", fname));
 		GameConstants::LoadConstants();
-		Msg("AdvancedXRay.ltx was reloaded.");
+		LogInfo("AdvancedXRay.ltx was reloaded.");
 	}
 };
 
@@ -2415,7 +2417,7 @@ public:
 		tokens = CStringTable().GetLanguagesToken();
 		if (!tokens) // Prevent failure without usage Nifty counters
 		{
-			Msg("GetToken: token missing");
+			LogInfo("GetToken: token missing");
 			CStringTable().Destroy();
 			CStringTable().Init();
 
@@ -2456,32 +2458,32 @@ public:
 	{
 		if (!g_pGameLevel)
 		{
-			Log("Error: No game level!");
+			LogInfo("%s", "Error: No game level!");
 			return;
 		}
 
 		if (!g_pGamePersistent->Environment().GetWeather().size())
 		{
-			Log("CCC_ReloadWeather error: No weather in game!");
+			LogInfo("%s", "CCC_ReloadWeather error: No weather in game!");
 			return;
 		}
 
 		g_pGamePersistent->DestroyEnvironment();
 
-		Msg("CCC_ReloadWeather: Environment destroyed");
-		Msg("CCC_ReloadWeather: Start to destroy configs");
+		LogInfo("CCC_ReloadWeather: Environment destroyed");
+		LogInfo("CCC_ReloadWeather: Start to destroy configs");
 		CInifile** s = (CInifile**)(&pSettings);
 		xr_delete(*s);
 		xr_delete(pGameIni);
-		Msg("CCC_ReloadWeather: Start to rescan configs");
+		LogInfo("CCC_ReloadWeather: Start to rescan configs");
 		FS.get_path("$game_config$")->m_Flags.set(FS_Path::flNeedRescan, TRUE);
 		FS.get_path("$game_scripts$")->m_Flags.set(FS_Path::flNeedRescan, TRUE);
 		FS.rescan_pathes();
 
-		Msg("CCC_ReloadWeather: Start to create configs");
+		LogInfo("CCC_ReloadWeather: Start to create configs");
 		string_path					fname;
 		FS.update_path(fname, "$game_config$", "system.ltx");
-		Msg("CCC_ReloadWeather: Updated path to system.ltx is %s", fname);
+		LogInfo("CCC_ReloadWeather: Updated path to system.ltx is %s", fname);
 
 		pSettings = xr_new<CInifile>(fname, TRUE);
 		CHECK_OR_EXIT(0 != pSettings->section_count(), make_string("CCC_ReloadWeather: Cannot find file %s.\nReinstalling application may fix this problem.", fname));
@@ -2506,19 +2508,19 @@ public:
 		pGameIni = xr_new<CInifile>(fname, TRUE);
 		CHECK_OR_EXIT(0 != pGameIni->section_count(), make_string("CCC_ReloadWeather: Cannot find file %s.\nReinstalling application may fix this problem.", fname));
 
-		Msg("CCC_ReloadWeather: Create environment");
+		LogInfo("CCC_ReloadWeather: Create environment");
 		g_pGamePersistent->CreateEnvironment();
 
-		Msg("CCC_ReloadWeather: Call level_weathers.restart_weather_manager");
+		LogInfo("CCC_ReloadWeather: Call level_weathers.restart_weather_manager");
 		luabind::functor<void>	lua_function;
 		string256		fn;
 		xr_strcpy(fn, "level_weathers.restart_weather_manager");
 		if (ai().script_engine().functor<void>(fn, lua_function))
 			lua_function();
 		else
-			Msg("CCC_ReloadWeather: Can't find function %s", fn);
+			LogInfo("CCC_ReloadWeather: Can't find function %s", fn);
 
-		Msg("CCC_ReloadWeather: Reload weather done!");
+		LogInfo("CCC_ReloadWeather: Reload weather done!");
 	}
 };
 

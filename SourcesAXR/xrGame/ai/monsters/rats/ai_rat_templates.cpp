@@ -1,4 +1,4 @@
-////////////////////////////////////////////////////////////////////////////
+п»ї////////////////////////////////////////////////////////////////////////////
 //	Module 		: ai_rat_templates.cpp
 //	Created 	: 23.07.2002
 //  Modified 	: 07.11.2002
@@ -163,7 +163,7 @@ void CAI_Rat::make_turn()
 		return;
 	}
 
-//	Msg					("%6d : Rat %s, %f -> %f [%f]",Device.dwTimeGlobal,*cName(),get_movement().m_body.current.pitch,get_movement().m_body.target.pitch,get_custom_pitch_speed(0.f));
+//	LogInfo("%6d : Rat %s, %f -> %f [%f]",Device.dwTimeGlobal,*cName(),get_movement().m_body.current.pitch,get_movement().m_body.target.pitch,get_custom_pitch_speed(0.f));
 
 	m_turning			= true;
 	get_movement().m_body.speed		= PI_MUL_2;
@@ -281,12 +281,12 @@ Fvector CAI_Rat::calc_position()
 	Fvector position_on_plane;
 	P.project(position_on_plane,Position());
 
-	// находим проекцию точки, лежащей на векторе текущего направления
+	// пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 	Fvector dir_point, proj_point;
 	dir_point.mad(position_on_plane, Direction(), 1.f);
 	P.project(proj_point,dir_point);
 	
-	// получаем искомый вектор направления
+	// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 	Fvector target_dir;
 	target_dir.sub(proj_point,position_on_plane);
 

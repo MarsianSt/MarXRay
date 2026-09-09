@@ -1,4 +1,4 @@
-#include "stdafx.h"
+п»ї#include "stdafx.h"
 #include "wallmark_manager.h"
 #include "Level.h"
 #include "../xrEngine/gamemtllib.h"
@@ -29,10 +29,10 @@ void CWalmarkManager::AddWallmark(const Fvector& dir, const Fvector& start_pos,
 
 	if(pMaterial->Flags.is(SGameMtl::flBloodmark))
 	{
-		//вычислить нормаль к пораженной поверхности
+		//пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 		Fvector*	pVerts	= Level().ObjectSpace.GetStaticVerts();
 
-		//вычислить точку попадания
+		//пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 		Fvector end_point;
 		end_point.set(0,0,0);
 		end_point.mad(start_pos, dir, range);
@@ -48,7 +48,7 @@ void CWalmarkManager::AddWallmark(const Fvector& dir, const Fvector& start_pos,
 
 		if (pWallmarkShader)
 		{
-			//добавить отметку на материале
+			//пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 			::Render->add_StaticWallmark(*pWallmarkShader, end_point, wallmark_size, pTri, pVerts);
 		}
 		*/
@@ -73,7 +73,7 @@ void CWalmarkManager::PlaceWallmark(const Fvector& dir, const Fvector& start_pos
 		&&
 		!result.O;
 
-	//если кровь долетела до статического объекта
+	//пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 	if(reach_wall)
 	{
 		AddWallmark(dir,start_pos,result.range,wallmark_size,wallmarks_vector,result.element);
@@ -184,14 +184,14 @@ void CWalmarkManager::StartWorkflow()
 
 	}
 /*
-	Msg("----------------------------------");
-	Msg("tri count=%d",						XRC.r_count());
-	Msg("far_dist=%d",						_not_dist);
-	Msg("RayTest = %d",						_ray_test);
-	Msg("c==tdBehind = %d",					_tri_behind);
-	Msg	("c!=tdPlane && dist>ndist = %d",	_tri_not_plane);
-	Msg("Wallmarks added = %d",				wm_count);
-	Msg("Time: %d",							T.GetElapsed_ms());
+	LogInfo("----------------------------------");
+	LogInfo("tri count=%d",						XRC.r_count());
+	LogInfo("far_dist=%d",						_not_dist);
+	LogInfo("RayTest = %d",						_ray_test);
+	LogInfo("c==tdBehind = %d",					_tri_behind);
+	LogInfo("c!=tdPlane && dist>ndist = %d",	_tri_not_plane);
+	LogInfo("Wallmarks added = %d",				wm_count);
+	LogInfo("Time: %d",							T.GetElapsed_ms());
 
 	DBG_ClosedCashedDraw	(10000);
 */
@@ -199,7 +199,7 @@ void CWalmarkManager::StartWorkflow()
 
 void CWalmarkManager::Load (LPCSTR section)
 {
-	//кровавые отметки на стенах
+	//пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
 //	string256	tmp;
 	LPCSTR wallmarks_name = pSettings->r_string(section, "wallmarks"); 
 	m_wallmarks->AppendMark(wallmarks_name);

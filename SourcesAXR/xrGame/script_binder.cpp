@@ -1,4 +1,4 @@
-////////////////////////////////////////////////////////////////////////////
+﻿////////////////////////////////////////////////////////////////////////////
 //	Module 		: script_binder.cpp
 //	Created 	: 26.03.2004
 //  Modified 	: 26.03.2004
@@ -69,7 +69,7 @@ void CScriptBinder::reinit			()
 	if (g_bMEMO) {
 //		lua_gc				(ai().script_engine().lua(),LUA_GCCOLLECT,0);
 //		lua_gc				(ai().script_engine().lua(),LUA_GCCOLLECT,0);
-		Msg					("CScriptBinder::reinit() : %d",Memory.mem_usage() - start);
+		LogInfo("CScriptBinder::reinit() : %d",Memory.mem_usage() - start);
 	}
 #endif // DEBUG_MEMORY_MANAGER
 }
@@ -121,7 +121,7 @@ void CScriptBinder::reload			(LPCSTR section)
 	if (g_bMEMO) {
 //		lua_gc				(ai().script_engine().lua(),LUA_GCCOLLECT,0);
 //		lua_gc				(ai().script_engine().lua(),LUA_GCCOLLECT,0);
-		Msg					("CScriptBinder::reload() : %d",Memory.mem_usage() - start);
+		LogInfo("CScriptBinder::reload() : %d",Memory.mem_usage() - start);
 	}
 #endif // DEBUG_MEMORY_MANAGER
 }
@@ -153,7 +153,7 @@ BOOL CScriptBinder::net_Spawn		(CSE_Abstract* DC)
 	if (g_bMEMO) {
 //		lua_gc				(ai().script_engine().lua(),LUA_GCCOLLECT,0);
 //		lua_gc				(ai().script_engine().lua(),LUA_GCCOLLECT,0);
-		Msg					("CScriptBinder::net_Spawn() : %d",Memory.mem_usage() - start);
+		LogInfo("CScriptBinder::net_Spawn() : %d",Memory.mem_usage() - start);
 	}
 #endif // DEBUG_MEMORY_MANAGER
 
@@ -164,7 +164,7 @@ void CScriptBinder::net_Destroy		()
 {
 	if (m_object) {
 #ifdef _DEBUG
-		Msg						("* Core object %s is UNbinded from the script object",smart_cast<CGameObject*>(this) ? *smart_cast<CGameObject*>(this)->cName() : "");
+		LogInfo("* Core object %s is UNbinded from the script object",smart_cast<CGameObject*>(this) ? *smart_cast<CGameObject*>(this)->cName() : "");
 #endif // _DEBUG
 		try {
 			m_object->net_Destroy	();
@@ -181,7 +181,7 @@ void CScriptBinder::set_object		(CScriptBinderObject *object)
 	if (IsGameTypeSingle()) {
 		VERIFY2				(!m_object,"Cannot bind to the object twice!");
 #ifdef _DEBUG
-		Msg					("* Core object %s is binded with the script object",smart_cast<CGameObject*>(this) ? *smart_cast<CGameObject*>(this)->cName() : "");
+		LogInfo("* Core object %s is binded with the script object",smart_cast<CGameObject*>(this) ? *smart_cast<CGameObject*>(this)->cName() : "");
 #endif // _DEBUG
 		m_object			= object;
 	} else {

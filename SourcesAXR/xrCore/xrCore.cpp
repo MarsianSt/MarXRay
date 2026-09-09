@@ -1,4 +1,4 @@
-// xrCore.cpp : Defines the entry point for the DLL application.
+﻿// xrCore.cpp : Defines the entry point for the DLL application.
 //
 #include "stdafx.h"
 #pragma hdrstop
@@ -85,7 +85,6 @@ void xrCore::_initialize	(LPCSTR _ApplicationName, LogCallback cb, BOOL init_fs,
 		
 		Memory._initialize	(strstr(Params,"-mem_debug") ? TRUE : FALSE);
 
-		InitLog				();
 		_initialize_cpu		();
 
 //		Debug._initialize	();
@@ -116,9 +115,9 @@ void xrCore::_initialize	(LPCSTR _ApplicationName, LogCallback cb, BOOL init_fs,
 	#endif
 #endif
         FS._initialize(flags, 0, fs_fname);
-        Msg("'%s %s' build %d, ver. %s, M.F.S. Team %s\n", "Advanced X-Ray", GAME_PLATFORM, build_id, GAME_VERSION, build_date);
-        Msg("M.F.S. Team VK: https://vk.com/mfs_studio");
-		Msg("M.F.S. Team Discord: https://discord.gg/AFPqkfBfQs \n");
+        LogInfo("'%s %s' build %d, ver. %s, M.F.S. Team %s\n", "Advanced X-Ray", GAME_PLATFORM, build_id, GAME_VERSION, build_date);
+        LogInfo("M.F.S. Team VK: https://vk.com/mfs_studio");
+		LogInfo("M.F.S. Team Discord: https://discord.gg/AFPqkfBfQs \n");
 
 #ifdef PROTECT_CBT
 		UserAccessData loadedData;
@@ -129,8 +128,8 @@ void xrCore::_initialize	(LPCSTR _ApplicationName, LogCallback cb, BOOL init_fs,
 		{
 			authorizedID = loadedData.userId;
 
-			Msg("\nUser Name: %s", loadedData.username.c_str());
-			Msg("User Discord ID: %s\n", authorizedID.c_str());
+			LogInfo("\nUser Name: %s", loadedData.username.c_str());
+			LogInfo("User Discord ID: %s\n", authorizedID.c_str());
 
 			const std::vector<std::string> sUserKeys = loadedData.userKeys;
 
@@ -150,14 +149,13 @@ void xrCore::_initialize	(LPCSTR _ApplicationName, LogCallback cb, BOOL init_fs,
         EFS._initialize();
 #ifdef DEBUG
 #ifndef _EDITOR
-        Msg("\nProcess heap 0x%08x", GetProcessHeap());
+        LogInfo("\nProcess heap 0x%08x", GetProcessHeap());
 #endif
 #endif // DEBUG
 	}
-	SetLogCB				(cb);
+	xrAsyncLogger::instance().set_log_callback(cb);
 	init_counter++;
 }
-
 #ifndef	_EDITOR
 #include "compression_ppmd_stream.h"
 extern compression::ppmd::stream	*trained_model;

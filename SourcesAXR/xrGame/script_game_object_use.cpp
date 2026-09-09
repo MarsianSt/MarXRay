@@ -1,4 +1,4 @@
-#include "pch_script.h"
+﻿#include "pch_script.h"
 #include "script_game_object.h"
 #include "script_game_object_impl.h"
 #include "UsableScriptObject.h"
@@ -146,7 +146,7 @@ IC	T	*CScriptGameObject::action_planner()
 	auto manager = smart_cast<CAI_Stalker*>(&object());
 	if (!manager)
 	{
-		Msg("!!CAI_Stalker : cannot access class member action_planner! Object: [%s]",
+		LogInfo("!!CAI_Stalker : cannot access class member action_planner! Object: [%s]",
 			object().Name());
 		return nullptr;
 	}
@@ -231,7 +231,7 @@ void CScriptGameObject::set_const_force(const Fvector &dir,float value,u32 time_
 		return;
 	}
 //#ifdef DEBUG
-//	Msg( "const force added: force: %f,  time: %d ,dir(%f,%f,%f)", value, time_interval, dir.x, dir.y, dir.z );
+//	LogInfo( "const force added: force: %f,  time: %d ,dir(%f,%f,%f)", value, time_interval, dir.x, dir.y, dir.z );
 //#endif
 	Fvector force;force.set(dir);force.mul(value);
 	CPHConstForceAction *a=	xr_new<CPHConstForceAction>(shell,force);

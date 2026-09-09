@@ -1,4 +1,4 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 #include "dxEnvironmentRender.h"
 
 #include "dxRenderDeviceRender.h"
@@ -174,7 +174,7 @@ void dxEnvDescriptorRender::OnDeviceDestroy()
 
 void dxEnvDescriptorRender::OnPrepare(CEnvDescriptor& owner)
 {
-	Msg("dxEnvDescriptorRender::OnPrepare call");
+	LogInfo("dxEnvDescriptorRender::OnPrepare call");
 	if (b_textures_loaded)
 		return;
 

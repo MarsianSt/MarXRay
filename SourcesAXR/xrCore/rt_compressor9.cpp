@@ -1,4 +1,4 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 #pragma hdrstop
 
 #include "rt_lzo1x.h"
@@ -44,11 +44,11 @@ rtc9_initialize()
 		reader->r( _LZO_Dictionary, _LZO_DictionarySize );
 		FS.r_close( reader );
 
-        Msg( "using LZO-dictionary \"%s\"", file_name );
+        LogInfo( "using LZO-dictionary \"%s\"", file_name );
 	}
 	else
 	{
-	    Msg( "\"%s\" not found", file_name );
+	    LogInfo( "\"%s\" not found", file_name );
 	}
 
 	initialized = true;

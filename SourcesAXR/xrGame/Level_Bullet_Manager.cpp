@@ -1,5 +1,5 @@
-// Level_Bullet_Manager.cpp:	для обеспечения полета пули по траектории
-//								все пули и осколки передаются сюда
+п»ї// Level_Bullet_Manager.cpp:	пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
+//								пїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ
 //////////////////////////////////////////////////////////////////////
 
 #include "stdafx.h"
@@ -728,14 +728,14 @@ BOOL CBulletManager::firetrace_callback	(collide::rq_result& result, LPVOID para
 	if ( fis_zero(data.collide_time) )
 		return						(TRUE);
 
-	//статический объект
+	//пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
 	if (!result.O) {
 		CDB::TRI const& triangle	= *(Level().ObjectSpace.GetStaticTris() + result.element);
 		bullet_manager.RegisterEvent(EVENT_HIT, FALSE, &bullet, collide_position, result, triangle.material);
 		return						(FALSE);
 	}
 
-	//динамический объект
+	//пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
 	VERIFY							( !(result.O->ID() == bullet.parent_id &&  bullet.fly_dist < parent_ignore_distance) );
 	IKinematics* const kinematics	= smart_cast<IKinematics*>(result.O->Visual());
 	if (!kinematics)
@@ -842,7 +842,7 @@ bool CBulletManager::process_bullet			(collide::rq_results & storage, SBullet& b
 	extern BOOL g_bDrawBulletHit;
 	if (g_bDrawBulletHit)
 	{
-		Msg	(
+		LogInfo(
 			"free fly velocity: %f",
 			trajectory_velocity(
 				bullet.start_velocity,
@@ -860,7 +860,7 @@ bool CBulletManager::process_bullet			(collide::rq_results & storage, SBullet& b
 	Fvector	previous_position	= start_position;
 	float low					= bullet.life_time;
 	float high					= bullet.life_time + time_delta;
-//	Msg							("process_bullet0: low[%f], high[%f]", low, high);
+//	LogInfo("process_bullet0: low[%f], high[%f]", low, high);
 
 	bullet.change_rajectory_count	= 0;
 
@@ -958,9 +958,9 @@ void CBulletManager::Render	()
 	else
 		m_bullet_points.clear_not_free	();
 
-	//0-рикошет
-	//1-застрявание пули в материале
-	//2-пробивание материала
+	//0-пїЅпїЅпїЅпїЅпїЅпїЅпїЅ
+	//1-пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
+	//2-пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 	if (g_bDrawBulletHit) {
 		extern FvectorVec g_hit[];
 		FvectorIt it;
@@ -1046,7 +1046,7 @@ void CBulletManager::CommitEvents			()	// @ the start of frame
 	ZoneScoped;
 
 	if (m_Events.size() > 1000)
-		Msg			("! too many bullets during single frame: %d", m_Events.size());
+		LogInfo("! too many bullets during single frame: %d", m_Events.size());
 
 	for (u32 _it=0; _it<m_Events.size(); _it++)	{
 		_event&		E	= m_Events[_it];

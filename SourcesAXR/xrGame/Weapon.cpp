@@ -1,4 +1,4 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 #include "Weapon.h"
 #include "ParticlesObject.h"
 #include "entity_alive.h"
@@ -385,7 +385,7 @@ void CWeapon::UpdateXForm	()
 		if (loggedVisuals.find(visualStr) == loggedVisuals.end())
 		{
 			loggedVisuals.insert(visualStr);
-			Msg("! Bone [%s] not found in entity [%s](%s) with visual [%s]!", m_strap_bone0, E->cNameSect().c_str(), E->Name(), E->cNameVisual().c_str());
+			LogInfo("! Bone [%s] not found in entity [%s](%s) with visual [%s]!", m_strap_bone0, E->cNameSect().c_str(), E->Name(), E->cNameVisual().c_str());
 		}
 #endif
 
@@ -397,7 +397,7 @@ void CWeapon::UpdateXForm	()
 		if (loggedVisuals.find(visualStr) == loggedVisuals.end())
 		{
 			loggedVisuals.insert(visualStr);
-			Msg("! Bone [%s] not found in entity [%s]([%s]) with visual [%s]!", m_strap_bone1, E->cNameSect().c_str(), E->Name(), E->cNameVisual().c_str());
+			LogInfo("! Bone [%s] not found in entity [%s]([%s]) with visual [%s]!", m_strap_bone1, E->cNameSect().c_str(), E->Name(), E->cNameVisual().c_str());
 		}
 #endif
 
@@ -1107,7 +1107,7 @@ void CWeapon::LoadLaserLightParams(LPCSTR section)
 		}
 		else
 		{
-			Msg("! [%s]: No valid laser section found. Weapon section: [%s]", __FUNCTION__, section);
+			LogInfo("! [%s]: No valid laser section found. Weapon section: [%s]", __FUNCTION__, section);
 		}
 	}
 }
@@ -1216,7 +1216,7 @@ void CWeapon::LoadTacticalTorchLightParams(LPCSTR section)
 		}
 		else
 		{
-			Msg("! [%s]: No valid tactical torch section found. Weapon section: [%s]", __FUNCTION__, section);
+			LogInfo("! [%s]: No valid tactical torch section found. Weapon section: [%s]", __FUNCTION__, section);
 		}
 	}
 }
@@ -1517,7 +1517,7 @@ void CWeapon::net_Import(NET_Packet& P)
 	default:
 		{
 			if (ammoType >= m_ammoTypes.size())
-				Msg("!! Weapon [%d], State - [%d]", ID(), wstate);
+				LogInfo("!! Weapon [%d], State - [%d]", ID(), wstate);
 			else
 			{
 				m_ammoType = ammoType;
@@ -2695,7 +2695,7 @@ void CWeapon::UpdateAddonsVisibility(IKinematics* visual)
 	if (m_eScopeStatus==ALife::eAddonDisabled && bone_id!=BI_NONE && pWeaponVisual->LL_GetBoneVisible(bone_id))
 	{
 		pWeaponVisual->LL_SetBoneVisible					(bone_id,FALSE,TRUE);
-//		Log("scope", pWeaponVisual->LL_GetBoneVisible		(bone_id));
+//		LogInfo("%s", "scope", pWeaponVisual->LL_GetBoneVisible		(bone_id));
 	}
 
 	bone_id = pWeaponVisual->LL_BoneID						(m_sWpn_silencer_bone);
@@ -2717,7 +2717,7 @@ void CWeapon::UpdateAddonsVisibility(IKinematics* visual)
 	if (m_eSilencerStatus==ALife::eAddonDisabled && bone_id!=BI_NONE && pWeaponVisual->LL_GetBoneVisible(bone_id) )
 	{
 		pWeaponVisual->LL_SetBoneVisible					(bone_id,FALSE,TRUE);
-//		Log("silencer", pWeaponVisual->LL_GetBoneVisible	(bone_id));
+//		LogInfo("%s", "silencer", pWeaponVisual->LL_GetBoneVisible	(bone_id));
 	}
 
 	bone_id = pWeaponVisual->LL_BoneID						(m_sWpn_launcher_bone);
@@ -2738,7 +2738,7 @@ void CWeapon::UpdateAddonsVisibility(IKinematics* visual)
 	if (m_eGrenadeLauncherStatus==ALife::eAddonDisabled && bone_id!=BI_NONE && pWeaponVisual->LL_GetBoneVisible(bone_id) )
 	{
 		pWeaponVisual->LL_SetBoneVisible					(bone_id,FALSE,TRUE);
-//		Log("gl", pWeaponVisual->LL_GetBoneVisible			(bone_id));
+//		LogInfo("%s", "gl", pWeaponVisual->LL_GetBoneVisible			(bone_id));
 	}
 
 	bone_id = pWeaponVisual->LL_BoneID(m_sWpn_laser_bone);
@@ -2759,7 +2759,7 @@ void CWeapon::UpdateAddonsVisibility(IKinematics* visual)
 	if (m_eLaserDesignatorStatus == ALife::eAddonDisabled && bone_id != BI_NONE && pWeaponVisual->LL_GetBoneVisible(bone_id))
 	{
 		pWeaponVisual->LL_SetBoneVisible(bone_id, FALSE, TRUE);
-		//		Log("laser", pWeaponVisual->LL_GetBoneVisible	(bone_id));
+		//		LogInfo("%s", "laser", pWeaponVisual->LL_GetBoneVisible	(bone_id));
 	}
 
 	bone_id = pWeaponVisual->LL_BoneID(m_sWpn_flashlight_bone);
@@ -2780,7 +2780,7 @@ void CWeapon::UpdateAddonsVisibility(IKinematics* visual)
 	if (m_eTacticalTorchStatus == ALife::eAddonDisabled && bone_id != BI_NONE && pWeaponVisual->LL_GetBoneVisible(bone_id))
 	{
 		pWeaponVisual->LL_SetBoneVisible(bone_id, FALSE, TRUE);
-		//		Log("tactical torch", pWeaponVisual->LL_GetBoneVisible	(bone_id));
+		//		LogInfo("%s", "tactical torch", pWeaponVisual->LL_GetBoneVisible	(bone_id));
 	}
 
 	if (m_sWpn_laser_ray_bone.size() && has_laser)
@@ -3007,7 +3007,7 @@ void CWeapon::SwitchState(u32 S)
 #ifndef MASTER_GOLD
 	if ( bDebug )
 	{
-		Msg("---Server is going to send GE_WPN_STATE_CHANGE to [%d], weapon_section[%s], parent[%s]",
+		LogInfo("---Server is going to send GE_WPN_STATE_CHANGE to [%d], weapon_section[%s], parent[%s]",
 			S, cNameSect().c_str(), H_Parent() ? H_Parent()->cName().c_str() : "NULL Parent");
 	}
 #endif // #ifndef MASTER_GOLD
@@ -3953,7 +3953,7 @@ bool CWeapon::WeaponSoundExist(LPCSTR section, LPCSTR sound_name, bool log) cons
 		return true;
 #ifdef DEBUG
 	if (log)
-		Msg("~ [WARNING] ------ Sound [%s] does not exist in [%s]", sound_name, section);
+		LogInfo("~ [WARNING] ------ Sound [%s] does not exist in [%s]", sound_name, section);
 #endif
 	return false;
 }
@@ -4032,7 +4032,7 @@ void CWeapon::update_visual_bullet_textures(const bool forced)
 		const auto textures = Device.m_pRender->GetResourceManager()->FindTexture(tex_name.c_str());
 		if (textures.empty())
 		{
-			Msg("!![%s] can't find texture [%s] for [%s]", __FUNCTION__, tex_name.c_str(), cNameSect().c_str());
+			LogInfo("!![%s] can't find texture [%s] for [%s]", __FUNCTION__, tex_name.c_str(), cNameSect().c_str());
 			continue;
 		}
 

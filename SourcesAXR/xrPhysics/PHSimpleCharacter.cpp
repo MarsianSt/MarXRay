@@ -1,4 +1,4 @@
-#include "stdafx.h"
+п»ї#include "stdafx.h"
 
 #include "PHDynamicData.h"
 #include "ExtendedGeom.h"
@@ -603,7 +603,7 @@ void CPHSimpleCharacter::PhTune(dReal step){
 	{
 		b_death_pos=true;
 //#ifdef DEBUG
-//		Msg("death pos %f2.2,%f2.2,%f2.2",ud->last_pos[0],ud->last_pos[1],ud->last_pos[2]);
+//		LogInfo("death pos %f2.2,%f2.2,%f2.2",ud->last_pos[0],ud->last_pos[1],ud->last_pos[2]);
 //#endif
 		Fvector pos;pos.set(cast_fv(dBodyGetPosition(m_body)));
 		Fvector d;d.set(cast_fv(dBodyGetLinearVel(m_body)));d.mul(fixed_step);
@@ -702,7 +702,7 @@ void CPHSimpleCharacter::PhTune(dReal step){
 		b_lose_control=true;
 		b_depart_control = true;
 		dBodySetLinearVel(m_body,m_jump_accel.x,m_jump_accel.y,m_jump_accel.z);//vel[1]+
-		//Log("jmp",m_jump_accel);
+		//LogInfo("%s", "jmp",m_jump_accel);
 		dVectorSet(m_jump_depart_position,dBodyGetPosition(m_body));
 		//m_jump_accel=m_acceleration;
 		b_jump=false;
@@ -1151,7 +1151,7 @@ void CPHSimpleCharacter::SetVelocity(Fvector vel)
 		float mag=_sqrt(sq_mag);
 		vel.mul(default_l_limit/mag);
 #ifdef DEBUG
-		Msg("set velocity magnitude is too large %f",mag);
+		LogInfo("set velocity magnitude is too large %f",mag);
 #endif
 	}
 	dBodySetLinearVel(m_body,vel.x,vel.y,vel.z);
@@ -1529,7 +1529,7 @@ void CPHSimpleCharacter::InitContact(dContact* c,bool	&do_collide,u16 material_i
 	b_on_object=b_on_object||object;
 	
 	
-////////////////////////нужно сместить колижен!!
+////////////////////////пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ!!
 //////////////
 	FootProcess(c,do_collide,bo1);
 	if(!do_collide) return;
@@ -1941,7 +1941,7 @@ bool	CPHSimpleCharacter::	UpdateRestrictionType(CPHCharacter* ach)
 	m_new_restriction_type=old;
 #ifdef DEBUG
 	if(debug_output().ph_dbg_draw_mask1().test(ph_m1_DbgActorRestriction))
-		Msg("restriction can not change change small -> large");
+		LogInfo("restriction can not change change small -> large");
 #endif
 	return false;
 }

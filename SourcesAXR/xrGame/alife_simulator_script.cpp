@@ -1,4 +1,4 @@
-////////////////////////////////////////////////////////////////////////////
+﻿////////////////////////////////////////////////////////////////////////////
 //	Module 		: alife_simulator_script.cpp
 //	Created 	: 25.12.2002
 //  Modified 	: 13.05.2004
@@ -173,7 +173,7 @@ CSE_Abstract *CALifeSimulator__spawn_item2		(CALifeSimulator * self_, LPCSTR sec
 
 	CSE_ALifeDynamicObject				*object = ai().alife().objects().object(id_parent,true);
 	if (!object) {
-		Msg								("! invalid parent id [%d] specified",id_parent);
+		LogInfo("! invalid parent id [%d] specified",id_parent);
 		return							(0);
 	}
 
@@ -206,7 +206,7 @@ CSE_Abstract *CALifeSimulator__spawn_ammo		(CALifeSimulator * self_, LPCSTR sect
 	if (id_parent != ALife::_OBJECT_ID(-1)) {
 		object							= ai().alife().objects().object(id_parent,true);
 		if (!object) {
-			Msg							("! invalid parent id [%d] specified",id_parent);
+			LogInfo("! invalid parent id [%d] specified",id_parent);
 			return						(0);
 		}
 	}

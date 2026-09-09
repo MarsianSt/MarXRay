@@ -1,4 +1,4 @@
-////////////////////////////////////////////////////////////////////////////
+﻿////////////////////////////////////////////////////////////////////////////
 //	Module 		: stalker_animation_pair.cpp
 //	Created 	: 25.02.2003
 //  Modified 	: 19.11.2004
@@ -98,7 +98,7 @@ void CStalkerAnimationPair::play			(IKinematicsAnimated *skeleton_animated, Play
 #if 0
 #	ifdef DEBUG
 		if (psAI_Flags.is(aiAnimation) && blend())
-			Msg				("%6d [%s][%s][%s][%f]",Device.dwTimeGlobal,m_object_name,m_animation_type_name,*animation()->name(),blend()->timeCurrent);
+			LogInfo("%6d [%s][%s][%s][%f]",Device.dwTimeGlobal,m_object_name,m_animation_type_name,*animation()->name(),blend()->timeCurrent);
 #	endif
 #endif
 
@@ -162,7 +162,7 @@ void CStalkerAnimationPair::play			(IKinematicsAnimated *skeleton_animated, Play
 		CMotionDef			*motion = skeleton_animated->LL_GetMotionDef(animation());
 		VERIFY				(motion);
 		LPCSTR				name = skeleton_animated->LL_MotionDefName_dbg(animation()).first;
-		Msg					(
+		LogInfo(
 			"%6d [%s][%s][%s][%d][%c][%c][%c][%f][%f][%f]",
 			Device.dwTimeGlobal,
 			m_object_name,
@@ -298,7 +298,7 @@ void CStalkerAnimationPair::reset							()
 {
 #if 0//def DEBUG
 	if (m_animation)
-		Msg						("animation [%s][%s] is reset",m_object_name,m_animation_type_name);
+		LogInfo("animation [%s][%s] is reset",m_object_name,m_animation_type_name);
 #endif // DEBUG
 
 	m_animation.invalidate		();

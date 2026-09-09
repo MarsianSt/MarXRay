@@ -1,4 +1,4 @@
-////////////////////////////////////////////////////////////////////////////
+﻿////////////////////////////////////////////////////////////////////////////
 //	Module 		: action_planner_inline.h
 //	Created 	: 28.01.2004
 //  Modified 	: 10.03.2004
@@ -75,9 +75,9 @@ void CPlanner::update				()
 		if (m_solution_changed) {
 			show_current_world_state();
 			show_target_world_state	();
-			Msg						("%6d : Solution for object %s [%d vertices searched]",Device.dwTimeGlobal,object_name(),ai().graph_engine().solver_algorithm().data_storage().get_visited_node_count());
+			LogInfo("%6d : Solution for object %s [%d vertices searched]",Device.dwTimeGlobal,object_name(),ai().graph_engine().solver_algorithm().data_storage().get_visited_node_count());
 			for (int i=0; i<(int)solution().size(); ++i)
-				Msg					("%s",action2string(solution()[i]));
+				LogInfo("%s",action2string(solution()[i]));
 		}
 	}
 #endif
@@ -87,9 +87,9 @@ void CPlanner::update				()
 		// printing current world state
 		show						();
 
-		Msg							("! ERROR : there is no action sequence, which can transfer current world state to the target one");
-		Msg							("Time : %6d",Device.dwTimeGlobal);
-		Msg							("Object : %s",object_name());
+		LogInfo("! ERROR : there is no action sequence, which can transfer current world state to the target one");
+		LogInfo("Time : %6d",Device.dwTimeGlobal);
+		LogInfo("Object : %s",object_name());
 
 		show_current_world_state	();
 		show_target_world_state		();
@@ -276,7 +276,7 @@ IC	void CPlanner::set_use_log		(bool value)
 TEMPLATE_SPECIALIZATION
 IC	void CPlanner::show_current_world_state	()
 {
-	Msg						("Current world state :");
+	LogInfo("Current world state :");
 	EVALUATORS::const_iterator	I = evaluators().begin();
 	EVALUATORS::const_iterator	E = evaluators().end();
 	for ( ; I != E; ++I) {
@@ -284,7 +284,7 @@ IC	void CPlanner::show_current_world_state	()
 		char				temp = '?';
 		if ((J != current_state().conditions().end()) && ((*J).condition() == (*I).first)) {
 			temp			= (*J).value() ? '+' : '-';
-			Msg				("%5c : [%d][%s]",temp,(*I).first,property2string((*I).first));
+			LogInfo("%5c : [%d][%s]",temp,(*I).first,property2string((*I).first));
 		}
 	}
 }
@@ -292,7 +292,7 @@ IC	void CPlanner::show_current_world_state	()
 TEMPLATE_SPECIALIZATION
 IC	void CPlanner::show_target_world_state	()
 {
-	Msg						("Target world state :");
+	LogInfo("Target world state :");
 	EVALUATORS::const_iterator	I = evaluators().begin();
 	EVALUATORS::const_iterator	E = evaluators().end();
 	for ( ; I != E; ++I) {
@@ -300,7 +300,7 @@ IC	void CPlanner::show_target_world_state	()
 		char				temp = '?';
 		if ((J != target_state().conditions().end()) && ((*J).condition() == (*I).first)) {
 			temp			= (*J).value() ? '+' : '-';
-			Msg				("%5c : [%d][%s]",temp,(*I).first,property2string((*I).first));
+			LogInfo("%5c : [%d][%s]",temp,(*I).first,property2string((*I).first));
 		}
 	}
 }
@@ -311,34 +311,34 @@ IC	void CPlanner::show				(LPCSTR offset)
 	string256		temp;
 	strconcat		(sizeof(temp),temp,offset,"    ");
 	{
-		Msg			("\n%sEVALUATORS : %d\n",offset,evaluators().size());
+		LogInfo("\n%sEVALUATORS : %d\n",offset,evaluators().size());
 		EVALUATORS::const_iterator	I = evaluators().begin();
 		EVALUATORS::const_iterator	E = evaluators().end();
 		for ( ; I != E; ++I)
-			Msg		("%sevaluator   [%d][%s]",offset,(*I).first,property2string((*I).first));
+			LogInfo("%sevaluator   [%d][%s]",offset,(*I).first,property2string((*I).first));
 	}
 	{
-		Msg			("\n%sOPERATORS : %d\n",offset,operators().size());
+		LogInfo("\n%sOPERATORS : %d\n",offset,operators().size());
 		OPERATOR_VECTOR::const_iterator	I = operators().begin();
 		OPERATOR_VECTOR::const_iterator	E = operators().end();
 		for ( ; I != E; ++I) {
-			Msg		("%soperator    [%d][%s]",offset,(*I).m_operator_id,(*I).m_operator->m_action_name);
+			LogInfo("%soperator    [%d][%s]",offset,(*I).m_operator_id,(*I).m_operator->m_action_name);
 
 			{
 				xr_vector<COperatorCondition>::const_iterator	i = (*I).m_operator->conditions().conditions().begin();
 				xr_vector<COperatorCondition>::const_iterator	e = (*I).m_operator->conditions().conditions().end();
 				for ( ; i != e; ++i)
-					Msg	("%s	condition [%d][%s] = %s",offset,(*i).condition(),property2string((*i).condition()),(*i).value() ? "TRUE" : "FALSE");
+					LogInfo("%s	condition [%d][%s] = %s",offset,(*i).condition(),property2string((*i).condition()),(*i).value() ? "TRUE" : "FALSE");
 			}
 			{
 				xr_vector<COperatorCondition>::const_iterator	i = (*I).m_operator->effects().conditions().begin();
 				xr_vector<COperatorCondition>::const_iterator	e = (*I).m_operator->effects().conditions().end();
 				for ( ; i != e; ++i)
-					Msg	("%s	effect    [%d][%s] = %s",offset,(*i).condition(),property2string((*i).condition()),(*i).value() ? "TRUE" : "FALSE");
+					LogInfo("%s	effect    [%d][%s] = %s",offset,(*i).condition(),property2string((*i).condition()),(*i).value() ? "TRUE" : "FALSE");
 			}
 
 			(*I).m_operator->show(temp);
-			Msg	(" ");
+			LogInfo(" ");
 		}
 	}
 }

@@ -120,8 +120,8 @@ void CRenderDevice::End		(void)
 
 			m_pRender->ResourcesDestroyNecessaryTextures	();
 			Memory.mem_compact								();
-			Msg												("* MEMORY USAGE: %d K",Memory.mem_usage()/1024);
-			Msg												("* End of synchronization A[%d] R[%d]",b_is_Active, b_is_Ready);
+			LogInfo("* MEMORY USAGE: %d K",Memory.mem_usage()/1024);
+			LogInfo("* End of synchronization A[%d] R[%d]",b_is_Active, b_is_Ready);
 
 #ifdef FIND_CHUNK_BENCHMARK_ENABLE
 			g_find_chunk_counter.flush();
@@ -151,7 +151,7 @@ void CRenderDevice::End		(void)
 	if (g_appLoaded)
 	{
 		ImGui::Render();
-		if(g_current_renderer == 4)
+		if(g_current_renderer >= 4)
 			ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 		else
 			ImGui_ImplDX9_RenderDrawData(ImGui::GetDrawData());
@@ -200,7 +200,7 @@ void CRenderDevice::SecondaryThreadProc(void* context)
 void CRenderDevice::PreCache	(u32 amount, bool b_draw_loadscreen, bool b_wait_user_input)
 {
 	if (m_pRender->GetForceGPU_REF()) amount=0;
-	// Msg			("* PCACHE: start for %d...",amount);
+	// LogInfo("* PCACHE: start for %d...",amount);
 	dwPrecacheFrame	= dwPrecacheTotal = amount;
 	if (amount && !precache_light && g_pGameLevel && g_loading_events.empty()) {
 		precache_light					= ::Render->light_create();
@@ -280,7 +280,7 @@ void ImGui_NewFrame()
 	//	SetCursor(NULL);
 
 	// Start the frame
-	if(g_current_renderer == 4)
+	if(g_current_renderer >= 4)
 		ImGui_ImplDX11_NewFrame();
 	else
 		ImGui_ImplDX9_NewFrame();
@@ -342,7 +342,6 @@ void CRenderDevice::on_idle		()
 		if( g_loading_events.front()() )
 			g_loading_events.pop_front();
 		pApp->LoadDraw				();
-		return;
 	}
 
 	if ((!Device.dwPrecacheFrame) && (!g_SASH.IsBenchmarkRunning()) && g_bLoaded)
@@ -511,6 +510,8 @@ void CRenderDevice::on_idle		()
 	dwFrame += stored_cur_frame;
 #endif
 
+	m_pRender->PresentFrame();
+
 	ImGui::EndFrame();
 
 	syncFrameDone.Wait(); // wait until secondary thread finish its job
@@ -542,7 +543,7 @@ void CRenderDevice::Run			()
 
 //	DUMP_PHASE;
 	g_bLoaded		= FALSE;
-	Log				("Starting engine...");
+	LogInfo("%s", "Starting engine...");
 	set_current_thread_name("X-RAY Primary thread");
 
 	// Startup timers and calculate timer delta
@@ -656,7 +657,7 @@ void CRenderDevice::Pause(BOOL bOn, BOOL bTimer, BOOL bSound
 
 
 #ifdef DEBUG
-//	Msg("pause [%s] timer=[%s] sound=[%s] reason=%s",bOn?"ON":"OFF", bTimer?"ON":"OFF", bSound?"ON":"OFF", reason);
+//	LogInfo("pause [%s] timer=[%s] sound=[%s] reason=%s",bOn?"ON":"OFF", bTimer?"ON":"OFF", bSound?"ON":"OFF", reason);
 #endif // DEBUG
 
 	if(bOn)
@@ -680,7 +681,7 @@ void CRenderDevice::Pause(BOOL bOn, BOOL bTimer, BOOL bSound
 		if (bSound && ::Sound) {
 			snd_emitters_ =					::Sound->pause_emitters(true);
 #ifdef DEBUG
-//			Log("snd_emitters_[true]",snd_emitters_);
+//			LogInfo("%s", "snd_emitters_[true]",snd_emitters_);
 #endif // DEBUG
 		}
 	}else
@@ -697,11 +698,11 @@ void CRenderDevice::Pause(BOOL bOn, BOOL bTimer, BOOL bSound
 			{
 				snd_emitters_ =				::Sound->pause_emitters(false);
 #ifdef DEBUG
-//				Log("snd_emitters_[false]",snd_emitters_);
+//				LogInfo("%s", "snd_emitters_[false]",snd_emitters_);
 #endif // DEBUG
 			}else {
 #ifdef DEBUG
-				Log("Sound->pause_emitters underflow");
+				LogInfo("%s", "Sound->pause_emitters underflow");
 #endif // DEBUG
 			}
 		}

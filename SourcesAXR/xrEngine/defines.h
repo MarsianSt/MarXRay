@@ -1,4 +1,4 @@
-#ifndef DefinesH
+﻿#ifndef DefinesH
 #define DefinesH
 
 #ifdef	DEBUG
@@ -8,7 +8,7 @@
 #endif
 
 #define _RELEASE(x)			{ if(x) { (x)->Release();       (x)=NULL; } }
-#define _SHOW_REF(msg, x)   { if(x) { x->AddRef(); Log(msg,u32(x->Release()));}}
+#define _SHOW_REF(msg, x)   { if(x) { x->AddRef(); LogInfo("%s", msg,u32(x->Release()));}}
 
 ENGINE_API extern	bool		CallOfPripyatMode;
 ENGINE_API extern	bool		ClearSkyMode;
@@ -44,6 +44,7 @@ enum {
 	rsR2							= (1ul<<20ul),
 	rsR4							= (1ul<<21ul), // was reserved to Editor
 	rsDrawFPS						= (1ul<<22ul),
+	rsBGFX							= (1ul<<23ul),
 };
 
 

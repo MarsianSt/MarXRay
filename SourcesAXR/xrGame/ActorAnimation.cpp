@@ -1,4 +1,4 @@
-#include "stdafx.h"
+п»ї#include "stdafx.h"
 #include "Actor.h"
 #include "ActorAnimation.h"
 #include "actor_anim_defs.h"
@@ -381,12 +381,12 @@ void CActor::g_SetAnimation( u32 mstate_rl )
 		else
 			moving_idx				= STorsoWpn::eWalk;
 	}
-	// анимации
+	// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 	MotionID 						M_legs;
 	MotionID 						M_torso;
 	MotionID 						M_head;
 
-	//если мы просто стоим на месте
+	//пїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅ
 	bool is_standing = false;
 
 	CInventoryItem* _i = inventory().ActiveItem();
@@ -465,7 +465,7 @@ void CActor::g_SetAnimation( u32 mstate_rl )
 					M_torso = TW->drop;
 					if (!M_torso)
 					{
-						Msg("! drop animation for %s", *(H->object().cName()));
+						LogInfo("! drop animation for %s", *(H->object().cName()));
 						M_torso = ST->m_torso_idle;
 					};
 					m_bAnimTorsoPlayed = TRUE;
@@ -626,7 +626,7 @@ void CActor::g_SetAnimation( u32 mstate_rl )
 			M_torso = ST->m_torso_idle;
 	}
 	
-	// есть анимация для всего - запустим / иначе запустим анимацию по частям
+	// пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ - пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ / пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
 	if (m_current_torso!=M_torso)
 	{
 		if (m_bAnimTorsoPlayed)		

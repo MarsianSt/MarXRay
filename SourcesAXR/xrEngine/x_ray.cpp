@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------------
 // File: x_ray.cpp
 //
 // Programmers:
@@ -29,6 +29,9 @@
 #include "Rain.h"
 #include "..\Layers\xrAPI\xrGameManager.h"
 #include "Render.h"
+#include "../Include/xrRender/UIRender.h"
+#include "../Include/xrRender/DebugRender.h"
+#include "../Include/xrAPI/xrAPI.h"
 
 #include "DiscordRichPresense.h"
 #include <atlimage.h>
@@ -48,6 +51,17 @@ ENGINE_API CInifile* pGameIni		= NULL;
 XRAPI_API extern EGamePath GCurrentGame;
 BOOL	g_bIntroFinished			= FALSE;
 extern	void	Intro				( void* fn );
+
+// Define and export global pointers that were previously in xrRender.dll
+__declspec(dllexport) IUIRender* UIRender = nullptr;
+__declspec(dllexport) CGameMtlLibrary* PGMLib = nullptr;
+__declspec(dllexport) IDebugRender* DRender = nullptr;
+__declspec(dllexport) xr_token* vid_mode_token = nullptr;
+
+extern "C" __declspec(dllexport) void* BGFX_GetGMLib()
+{
+	return PGMLib;
+}
 extern	void	Intro_DSHOW			( void* fn );
 extern	int PASCAL IntroDSHOW_wnd	(HINSTANCE hInstC, HINSTANCE hInstP, LPSTR lpCmdLine, int nCmdShow);
 //int		max_load_stage = 0;
@@ -140,7 +154,7 @@ struct _SoundProcessor	: public pureFrame
 {
 	virtual void	_BCL	OnFrame	( )
 	{
-		//Msg							("------------- sound: %d [%3.2f,%3.2f,%3.2f]",u32(Device.dwFrame),VPUSH(Device.vCameraPosition));
+		//LogInfo("------------- sound: %d [%3.2f,%3.2f,%3.2f]",u32(Device.dwFrame),VPUSH(Device.vCameraPosition));
 		Device.Statistic->Sound.Begin();
 		::Sound->update				(Device.vCameraPosition,Device.vCameraDirection,Device.vCameraTop);
 		Device.Statistic->Sound.End	();
@@ -237,9 +251,9 @@ void InitSettings()
 	rain_max_particles		= READ_IF_EXISTS(pAdvancedSettings, r_u32,		"precipitation_params", "max_particles",		1000);
 	rain_particles_cache	= READ_IF_EXISTS(pAdvancedSettings, r_u32,		"precipitation_params", "particles_cache",		400);
 
-	Msg("# Engine Mode: %s", EngineMode);
-	Msg("# Developer Mode: %d", bDeveloperMode);
-	Msg("# Winter Mode: %d", bWinterMode);
+	LogInfo("# Engine Mode: %s", EngineMode);
+	LogInfo("# Developer Mode: %d", bDeveloperMode);
+	LogInfo("# Winter Mode: %d", bWinterMode);
 
 	CallOfPripyatMode		= (xr_strcmp("cop", EngineMode) == 0);
 	ClearSkyMode			= (xr_strcmp("cs", EngineMode) == 0);
@@ -648,10 +662,10 @@ void	test_rtc	()
 	tM.FrameEnd		(); float rM		= 1000.f*(float(bytes)/tM.result)/(1024.f*1024.f);
 	tC.FrameEnd		(); float rC		= 1000.f*(float(bytes)/tC.result)/(1024.f*1024.f);
 	tD.FrameEnd		(); float rD		= 1000.f*(float(bytes)/tD.result)/(1024.f*1024.f);
-	Msg				("* memcpy:        %5.2f M/s (%3.1f%%)",rMc,100.f*rMc/rMc);
-	Msg				("* mm-memcpy:     %5.2f M/s (%3.1f%%)",rM,100.f*rM/rMc);
-	Msg				("* compression:   %5.2f M/s (%3.1f%%)",rC,100.f*rC/rMc);
-	Msg				("* decompression: %5.2f M/s (%3.1f%%)",rD,100.f*rD/rMc);
+	LogInfo("* memcpy:        %5.2f M/s (%3.1f%%)",rMc,100.f*rMc/rMc);
+	LogInfo("* mm-memcpy:     %5.2f M/s (%3.1f%%)",rM,100.f*rM/rMc);
+	LogInfo("* compression:   %5.2f M/s (%3.1f%%)",rC,100.f*rC/rMc);
+	LogInfo("* decompression: %5.2f M/s (%3.1f%%)",rD,100.f*rD/rMc);
 }
 */
 extern void	testbed	(void);
@@ -886,7 +900,7 @@ int APIENTRY WinMain_impl(HINSTANCE hInstance,
 			return 0;
 		}
 
-		Msg("command line %s", lpCmdLine);
+		LogInfo("command line %s", lpCmdLine);
 		LPCSTR sashName = "-openautomate ";
 		if(strstr(lpCmdLine, sashName))
 		{
@@ -1198,8 +1212,8 @@ void CApplication::LoadEnd		()
 {
 	ll_dwReference--;
 	if (0==ll_dwReference)		{
-		Msg						("* phase time: %d ms",phase_timer.GetElapsed_ms());
-		Msg						("* phase cmem: %d K", Memory.mem_usage()/1024);
+		LogInfo("* phase time: %d ms",phase_timer.GetElapsed_ms());
+		LogInfo("* phase cmem: %d K", Memory.mem_usage()/1024);
 		Console->Execute		("stat_memory");
 		g_appLoaded				= TRUE;
 //		DUMP_PHASE;
@@ -1210,7 +1224,7 @@ void CApplication::SetLoadingScreen(ILoadingScreen* newScreen)
 {
 	if (loadingScreen)
 	{
-		Log("! Trying to create new loading screen, but there is already one..");
+		LogInfo("%s", "! Trying to create new loading screen, but there is already one..");
 		DestroyLoadingScreen();
 	}
 
@@ -1263,8 +1277,8 @@ void CApplication::LoadTitleInt(LPCSTR str1, LPCSTR str2, LPCSTR str3)
 void CApplication::LoadStage()
 {
 	VERIFY						(ll_dwReference);
-	Msg							("* phase time: %d ms",phase_timer.GetElapsed_ms());	phase_timer.Start();
-	Msg							("* phase cmem: %d K", Memory.mem_usage()/1024);
+	LogInfo("* phase time: %d ms",phase_timer.GetElapsed_ms());	phase_timer.Start();
+	LogInfo("* phase cmem: %d K", Memory.mem_usage()/1024);
 	
 	if (g_pGamePersistent->GameType() == 1 && !xr_strcmp(g_pGamePersistent->m_game_params.m_alife, "alife"))
 		max_load_stage			= 17;

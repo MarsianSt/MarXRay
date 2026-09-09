@@ -1,4 +1,4 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 #pragma hdrstop
 
 #include <freeimage/freeimage.h>
@@ -44,7 +44,7 @@ void	Surface_FormatExt(FREE_IMAGE_FORMAT f)
 }
 void	Surface_Init()
 {
-	Msg("* ImageLibrary version: %s",FreeImage_GetVersion());
+	LogInfo("* ImageLibrary version: %s",FreeImage_GetVersion());
 
     formats.format_register("tga");
 	Surface_FormatExt(FIF_BMP);
@@ -70,7 +70,7 @@ void	Surface_Init()
 	Surface_FormatExt(FIF_PSD);
 	Surface_FormatExt(FIF_IFF);
 
-	Msg("* %d supported formats",formats.size());
+	LogInfo("* %d supported formats",formats.size());
 }
 
 BOOL	Surface_Detect(string_path& F, LPSTR N)

@@ -1,4 +1,4 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 #include "import_ses.hpp"
 
 //const char* import_ses::user_name()
@@ -8,7 +8,7 @@
 
 void import_ses::LuaLog(const char* caMessage)
 {
-	Msg("![Script]: %s", caMessage);
+	LogInfo("![Script]: %s", caMessage);
 }
 
 LUACORE const char* import_ses::user_name() 

@@ -1,4 +1,4 @@
-#include "stdafx.h"
+п»ї#include "stdafx.h"
 #include "phmovementcontrol.h"
 
 #include "../xrEngine/cl_intersect.h"
@@ -50,7 +50,7 @@ CPHMovementControl::CPHMovementControl(CObject* parent)
 #ifdef DEBUG
 	if(debug_output().ph_dbg_draw_mask1().test(ph_m1_DbgTrackObject)&&(!!pObject->cName())&&stricmp(debug_output().PH_DBG_ObjectTrackName(),*pObject->cName())==0)
 	{
-		Msg("CPHMovementControl::CPHMovementControl %s (constructor) %f,%f,%pObjectf",debug_output().PH_DBG_ObjectTrackName(),pObject->Position().x,pObject->Position().y,pObject->Position().z);
+		LogInfo("CPHMovementControl::CPHMovementControl %s (constructor) %f,%f,%pObjectf",debug_output().PH_DBG_ObjectTrackName(),pObject->Position().x,pObject->Position().y,pObject->Position().z);
 	}
 
 #endif
@@ -187,7 +187,7 @@ void CPHMovementControl::Calculate(Fvector& vAccel,const Fvector& camDir,float /
 	
 	m_character->GetSavedVelocity(vVelocity); 
 	fActualVelocity=vVelocity.magnitude();
-	//Msg("saved avel %f", fActualVelocity);
+	//LogInfo("saved avel %f", fActualVelocity);
 	gcontact_Was=m_character->ContactWas();
 
 //////
@@ -339,8 +339,8 @@ void CPHMovementControl::Calculate(const xr_vector<DetailPathManager::STravelPat
 	if(	debug_output().ph_dbg_draw_mask1().test(ph_m1_DbgTrackObject)&&
 		( !!pObject->cName() ) && stricmp(debug_output().PH_DBG_ObjectTrackName(), *pObject->cName() )==0)
 	{
-		Msg("CPHMovementControl::Calculate in %s (Object Position) %f,%f,%f",debug_output().PH_DBG_ObjectTrackName(),pObject->Position().x,pObject->Position().y,pObject->Position().z);
-		Msg("CPHMovementControl::Calculate in %s (CPHMovementControl::vPosition) %f,%f,%f",debug_output().PH_DBG_ObjectTrackName(),vPosition.x,vPosition.y,vPosition.z);
+		LogInfo("CPHMovementControl::Calculate in %s (Object Position) %f,%f,%f",debug_output().PH_DBG_ObjectTrackName(),pObject->Position().x,pObject->Position().y,pObject->Position().z);
+		LogInfo("CPHMovementControl::Calculate in %s (CPHMovementControl::vPosition) %f,%f,%f",debug_output().PH_DBG_ObjectTrackName(),vPosition.x,vPosition.y,vPosition.z);
 	}
 #endif
 
@@ -598,8 +598,8 @@ void CPHMovementControl::PathNearestPoint(const xr_vector<DetailPathManager::STr
 #ifdef DEBUG
 	if(ph_dbg_draw_mask1.test(ph_m1_DbgTrackObject)&&(!!pObject->cName())&&stricmp(PH_DBG_ObjectTrackName(),*pObject->cName())==0)
 	{
-		Msg("CPHMovementControl::Calculate out %s (Object Position) %f,%f,%f",PH_DBG_ObjectTrackName(),pObject->Position().x,pObject->Position().y,pObject->Position().z);
-		Msg("CPHMovementControl::Calculate out %s (CPHMovementControl::vPosition) %f,%f,%f",PH_DBG_ObjectTrackName(),vPosition.x,vPosition.y,vPosition.z);
+		LogInfo("CPHMovementControl::Calculate out %s (Object Position) %f,%f,%f",PH_DBG_ObjectTrackName(),pObject->Position().x,pObject->Position().y,pObject->Position().z);
+		LogInfo("CPHMovementControl::Calculate out %s (CPHMovementControl::vPosition) %f,%f,%f",PH_DBG_ObjectTrackName(),vPosition.x,vPosition.y,vPosition.z);
 	}
 #endif
 	return;
@@ -981,8 +981,8 @@ void	CPHMovementControl::SetPosition(const Fvector &P){
 #ifdef DEBUG
 	if(ph_dbg_draw_mask1.test(ph_m1_DbgTrackObject)&&(!!pObject->cName())&&stricmp(PH_DBG_ObjectTrackName(),*pObject->cName())==0)
 	{
-		Msg("CPHMovementControl::SetPosition %s (Object Position) %f,%f,%f",PH_DBG_ObjectTrackName(),pObject->Position().x,pObject->Position().y,pObject->Position().z);
-		Msg("CPHMovementControl::SetPosition %s (CPHMovementControl::vPosition) %f,%f,%f",PH_DBG_ObjectTrackName(),vPosition.x,vPosition.y,vPosition.z);
+		LogInfo("CPHMovementControl::SetPosition %s (Object Position) %f,%f,%f",PH_DBG_ObjectTrackName(),pObject->Position().x,pObject->Position().y,pObject->Position().z);
+		LogInfo("CPHMovementControl::SetPosition %s (CPHMovementControl::vPosition) %f,%f,%f",PH_DBG_ObjectTrackName(),vPosition.x,vPosition.y,vPosition.z);
 	}
 #endif
 	vPosition.set	(P);  VERIFY( m_character ) ;m_character->SetPosition(vPosition);
@@ -996,8 +996,8 @@ VERIFY_BOUNDARIES2(pos,ph_boundaries(),m_character->PhysicsRefObject(),"CPHMovem
 #ifdef DEBUG
 		if(ph_dbg_draw_mask1.test(ph_m1_DbgTrackObject)&&(!!pObject->cName())&&stricmp(PH_DBG_ObjectTrackName(),*pObject->cName())==0)
 		{
-			Msg("CPHMovementControl::TryPosition %s (Object Position) %f,%f,%f",PH_DBG_ObjectTrackName(),pObject->Position().x,pObject->Position().y,pObject->Position().z);
-			Msg("CPHMovementControl::TryPosition %s (CPHMovementControl::vPosition) %f,%f,%f",PH_DBG_ObjectTrackName(),vPosition.x,vPosition.y,vPosition.z);
+			LogInfo("CPHMovementControl::TryPosition %s (Object Position) %f,%f,%f",PH_DBG_ObjectTrackName(),pObject->Position().x,pObject->Position().y,pObject->Position().z);
+			LogInfo("CPHMovementControl::TryPosition %s (CPHMovementControl::vPosition) %f,%f,%f",PH_DBG_ObjectTrackName(),vPosition.x,vPosition.y,vPosition.z);
 		}
 #endif
 		if (m_character->b_exist) {	
@@ -1018,8 +1018,8 @@ VERIFY_BOUNDARIES2(P,ph_boundaries(),m_character->PhysicsRefObject(),"CPHMovemen
 #ifdef DEBUG
 	if(ph_dbg_draw_mask1.test(ph_m1_DbgTrackObject)&&(!!pObject->cName())&&stricmp(PH_DBG_ObjectTrackName(),*pObject->cName())==0)
 	{
-		Msg("CPHMovementControl::GetPosition %s (Object Position) %f,%f,%f",PH_DBG_ObjectTrackName(),pObject->Position().x,pObject->Position().y,pObject->Position().z);
-		Msg("CPHMovementControl::GetPosition %s (CPHMovementControl::vPosition) %f,%f,%f",PH_DBG_ObjectTrackName(),vPosition.x,vPosition.y,vPosition.z);
+		LogInfo("CPHMovementControl::GetPosition %s (Object Position) %f,%f,%f",PH_DBG_ObjectTrackName(),pObject->Position().x,pObject->Position().y,pObject->Position().z);
+		LogInfo("CPHMovementControl::GetPosition %s (CPHMovementControl::vPosition) %f,%f,%f",PH_DBG_ObjectTrackName(),vPosition.x,vPosition.y,vPosition.z);
 	}
 #endif
 	P.set			(vPosition); 
@@ -1042,8 +1042,8 @@ void	CPHMovementControl::AllocateCharacterObject(CharacterType type)
 #ifdef DEBUG
 	if(ph_dbg_draw_mask1.test(ph_m1_DbgTrackObject)&&(!!pObject->cName())&&stricmp(PH_DBG_ObjectTrackName(),*pObject->cName())==0)
 	{
-		Msg("CPHMovementControl::AllocateCharacterObject %s (Object Position) %f,%f,%f",PH_DBG_ObjectTrackName(),pObject->Position().x,pObject->Position().y,pObject->Position().z);
-		Msg("CPHMovementControl::AllocateCharacterObject %s (CPHMovementControl::vPosition) %f,%f,%f",PH_DBG_ObjectTrackName(),vPosition.x,vPosition.y,vPosition.z);
+		LogInfo("CPHMovementControl::AllocateCharacterObject %s (Object Position) %f,%f,%f",PH_DBG_ObjectTrackName(),pObject->Position().x,pObject->Position().y,pObject->Position().z);
+		LogInfo("CPHMovementControl::AllocateCharacterObject %s (CPHMovementControl::vPosition) %f,%f,%f",PH_DBG_ObjectTrackName(),vPosition.x,vPosition.y,vPosition.z);
 	}
 #endif
 }
@@ -1213,8 +1213,8 @@ void CPHMovementControl::CreateCharacter()
 #ifdef DEBUG
 	if(ph_dbg_draw_mask1.test(ph_m1_DbgTrackObject)&&(!!pObject->cName())&&stricmp(PH_DBG_ObjectTrackName(),*pObject->cName())==0)
 	{
-		Msg("CPHMovementControl::CreateCharacter %s (Object Position) %f,%f,%f",PH_DBG_ObjectTrackName(),pObject->Position().x,pObject->Position().y,pObject->Position().z);
-		Msg("CPHMovementControl::CreateCharacter %s (CPHMovementControl::vPosition) %f,%f,%f",PH_DBG_ObjectTrackName(),vPosition.x,vPosition.y,vPosition.z);
+		LogInfo("CPHMovementControl::CreateCharacter %s (Object Position) %f,%f,%f",PH_DBG_ObjectTrackName(),pObject->Position().x,pObject->Position().y,pObject->Position().z);
+		LogInfo("CPHMovementControl::CreateCharacter %s (CPHMovementControl::vPosition) %f,%f,%f",PH_DBG_ObjectTrackName(),vPosition.x,vPosition.y,vPosition.z);
 	}
 #endif
 	m_character->SetPosition(vPosition);
@@ -1337,7 +1337,7 @@ BOOL CPHMovementControl::BorderTraceCallback(collide::rq_result& result, LPVOID 
 	if(result.O){
 		return true;
 	}else{
-		//получить треугольник и узнать его материал
+		//пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 		T				= Level().ObjectSpace.GetStaticTris()+result.element;
 		mtl_idx			= T->material;
 	}
@@ -1403,7 +1403,7 @@ void CPHMovementControl::SetPathDir( const Fvector& v)
 
 	if(_abs(_vPathDir.x)>1000 || _abs(_vPathDir.y)>1000 || _abs(_vPathDir.z)>1000)
 	{
-		Log					("_vPathDir",	_vPathDir );
+		LogInfo("%s", "_vPathDir",	_vPathDir );
 	
 	}
 	VERIFY2				( _abs(_vPathDir.x)<1000," incorrect SetPathDir ");

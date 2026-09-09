@@ -1,4 +1,4 @@
-#include "stdafx.h"
+п»ї#include "stdafx.h"
 #pragma hdrstop
 
 #include "cl_intersect.h"
@@ -109,14 +109,14 @@ void CSoundRender_Core::update	( const Fvector& P, const Fvector& D, const Fvect
 			{
 				curr_env = e_target.name;
 #ifdef DEBUG
-				Msg("curr env [%s]", curr_env.c_str());
+				LogInfo("curr env [%s]", curr_env.c_str());
 #endif
 			}
 		}
 
         e_current.lerp				(e_current,e_target,dt_sec);
 
-		i_efx_listener_set(&e_current); //KRodin: Сделал по аналогии с eax. Некоторые эффекты подошли. Посмотрим, что получится.
+		i_efx_listener_set(&e_current); //KRodin: пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ eax. пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ. пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ.
 		bEFX = i_efx_commit_setting();
 	}
 

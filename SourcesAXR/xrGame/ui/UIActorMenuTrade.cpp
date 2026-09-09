@@ -1,4 +1,4 @@
-//#include "stdafx.h"
+п»ї//#include "stdafx.h"
 #include "pch_script.h"
 #include "UIActorMenu.h"
 #include "UI3tButton.h"
@@ -149,7 +149,7 @@ void CUIActorMenu::DeInitTradeMode()
 
 	if(!CurrentGameUI())
 		return;
-	//только если находимся в режиме single
+	//пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅ single
 	CUIGameSP* pGameSP = smart_cast<CUIGameSP*>(CurrentGameUI());
 	if(!pGameSP) return;
 
@@ -207,7 +207,7 @@ bool CUIActorMenu::ToPartnerTrade(CUICellItem* itm, bool b_use_cursor_pos)
 	if ( !m_pPartnerInvOwner->AllowItemToTrade( iitem, pl ) )
 	{
 		///R_ASSERT2( 0, make_string( "Partner can`t cell item (%s)", iitem->NameItem() ) );
-		Msg( "! Partner can`t cell item (%s)", iitem->NameItem() );
+		LogInfo( "! Partner can`t cell item (%s)", iitem->NameItem() );
 		return false;
 	}
 

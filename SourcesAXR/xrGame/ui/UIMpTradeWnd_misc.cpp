@@ -1,4 +1,4 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 #include "UIMpTradeWnd.h"
 #include "UIMpItemsStoreWnd.h"
 
@@ -126,7 +126,7 @@ void CUIMpTradeWnd::SetInfoString(LPCSTR str)
 	m_static_information->SetText			(str);
 	m_static_information->ResetColorAnimation	();
 #ifndef MASTER_GOLD
-	Msg("Buy menu message:%s", str);
+	LogInfo("Buy menu message:%s", str);
 #endif // #ifndef MASTER_GOLD
 }
 
@@ -510,7 +510,7 @@ void CUIMpTradeWnd::SetMoneyAmount(u32 money)
 void CUIMpTradeWnd::ResetItems()
 {
 #ifdef DEBUG
-	Msg("--ResetItems");
+	LogInfo("--ResetItems");
 #endif // #ifdef DEBUG
 	ResetToOrigin						();
 	CleanUserItems						();

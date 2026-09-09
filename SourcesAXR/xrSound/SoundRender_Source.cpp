@@ -1,4 +1,4 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 #pragma hdrstop
 
 #include "SoundRender_Core.h"
@@ -26,18 +26,18 @@ bool ov_error(int res)
     switch (res){
     case 0:				return false;
 // info
-    case OV_HOLE:		Msg("Vorbisfile encoutered missing or corrupt data in the bitstream. Recovery is normally automatic and this return code is for informational purposes only."); return true;
-    case OV_EBADLINK:	Msg("The given link exists in the Vorbis data stream, but is not decipherable due to garbacge or corruption."); return true;
+    case OV_HOLE:		LogInfo("Vorbisfile encoutered missing or corrupt data in the bitstream. Recovery is normally automatic and this return code is for informational purposes only."); return true;
+    case OV_EBADLINK:	LogInfo("The given link exists in the Vorbis data stream, but is not decipherable due to garbacge or corruption."); return true;
 // error
-    case OV_FALSE: 		Msg("Not true, or no data available"); return false;
-    case OV_EREAD:		Msg("Read error while fetching compressed data for decode"); return false;
-    case OV_EFAULT:		Msg("Internal inconsistency in decode state. Continuing is likely not possible."); return false;
-    case OV_EIMPL:		Msg("Feature not implemented"); return false; 
-    case OV_EINVAL:		Msg("Either an invalid argument, or incompletely initialized argument passed to libvorbisfile call"); return false;
-    case OV_ENOTVORBIS:	Msg("The given file/data was not recognized as Ogg Vorbis data."); return false;
-    case OV_EBADHEADER:	Msg("The file/data is apparently an Ogg Vorbis stream, but contains a corrupted or undecipherable header."); return false;
-    case OV_EVERSION:	Msg("The bitstream format revision of the given stream is not supported."); return false;
-    case OV_ENOSEEK:	Msg("The given stream is not seekable"); return false;
+    case OV_FALSE: 		LogInfo("Not true, or no data available"); return false;
+    case OV_EREAD:		LogInfo("Read error while fetching compressed data for decode"); return false;
+    case OV_EFAULT:		LogInfo("Internal inconsistency in decode state. Continuing is likely not possible."); return false;
+    case OV_EIMPL:		LogInfo("Feature not implemented"); return false; 
+    case OV_EINVAL:		LogInfo("Either an invalid argument, or incompletely initialized argument passed to libvorbisfile call"); return false;
+    case OV_ENOTVORBIS:	LogInfo("The given file/data was not recognized as Ogg Vorbis data."); return false;
+    case OV_EBADHEADER:	LogInfo("The file/data is apparently an Ogg Vorbis stream, but contains a corrupted or undecipherable header."); return false;
+    case OV_EVERSION:	LogInfo("The bitstream format revision of the given stream is not supported."); return false;
+    case OV_ENOSEEK:	LogInfo("The given stream is not seekable"); return false;
     }
     return false;
 

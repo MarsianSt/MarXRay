@@ -1,4 +1,4 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 #include "UIMpTradeWnd.h"
 
 #include "UIMpItemsStoreWnd.h"
@@ -166,7 +166,7 @@ void CUIMpTradeWnd::UpdateShop()
 		m_root_tab_control->ResetTab	();
 
 #ifdef DEBUG
-	Msg									("current level=[%s]",m_store_hierarchy->CurrentLevel().m_name.c_str());
+	LogInfo("current level=[%s]",m_store_hierarchy->CurrentLevel().m_name.c_str());
 #endif // #ifdef DEBUG
 	SetCurrentItem						(NULL);
 	if(m_store_hierarchy->CurrentIsRoot())	return;

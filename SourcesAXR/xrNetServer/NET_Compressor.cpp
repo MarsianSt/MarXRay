@@ -1,4 +1,4 @@
-// NET_Compressor.cpp: implementation of the NET_Compressor class.
+﻿// NET_Compressor.cpp: implementation of the NET_Compressor class.
 //
 //////////////////////////////////////////////////////////////////////
 #include "stdafx.h"
@@ -393,7 +393,7 @@ u16 NET_Compressor::Compress(BYTE* dest, const u32 &dest_size, BYTE* src, const 
         #endif // NET_USE_COMPRESSION_CRC
 
         #if NET_LOG_COMPRESSION
-        Msg( "#compress %u->%u  %02X (%08X)", count, compressed_size, *dest, *((u32*)(src+1)) );
+        LogInfo( "#compress %u->%u  %02X (%08X)", count, compressed_size, *dest, *((u32*)(src+1)) );
         #endif
         #if NET_DUMP_COMPRESSION
         #if NET_USE_LZO_COMPRESSION
@@ -422,7 +422,7 @@ u16 NET_Compressor::Compress(BYTE* dest, const u32 &dest_size, BYTE* src, const 
 		CopyMemory( dest+1, src, count );
 
         #if NET_LOG_COMPRESSION
-        Msg( "#compress/as-is %u->%u  %02X", count, compressed_size, *dest );
+        LogInfo( "#compress/as-is %u->%u  %02X", count, compressed_size, *dest );
         #endif
 	}
 	if(g_net_compressor_gather_stats && b_compress_packet)
@@ -464,13 +464,13 @@ u16 NET_Compressor::Decompress	(BYTE* dest, const u32 &dest_size, BYTE* src, con
 	VERIFY(count);
 
     #if NET_LOG_COMPRESSION
-    Msg( "#decompress %u  %02X (%08X)", count, src[0], *((u32*)(src+1)) );
+    LogInfo( "#decompress %u  %02X (%08X)", count, src[0], *((u32*)(src+1)) );
     #endif
 
     #if NET_USE_COMPRESSSION
     if( src[0] != NET_TAG_COMPRESSED  &&  src[0] != NET_TAG_NONCOMPRESSED )
     {
-        Msg( "! invalid compression-tag %02X", src[0] );
+        LogInfo( "! invalid compression-tag %02X", src[0] );
         __asm { int 3 }
     }
     #endif NET_USE_COMPRESSSION
@@ -504,9 +504,9 @@ u16 NET_Compressor::Decompress	(BYTE* dest, const u32 &dest_size, BYTE* src, con
 	boost::crc_32_type	temp;
 	temp.process_block	(src + offset,src + count);
 	u32					crc = temp.checksum();
-//	Msg					("decompressed %d -> ? [0x%08x]",count,crc);
+//	LogInfo("decompressed %d -> ? [0x%08x]",count,crc);
     if( crc != *((u32*)(src + 1)) )
-        Msg( "!CRC mismatch" );
+        LogInfo( "!CRC mismatch" );
         
 	R_ASSERT2(crc == *((u32*)(src + 1)),make_string("crc is different! (0x%08x != 0x%08x)",crc,*((u32*)(src + 1))));
     #endif // NET_USE_COMPRESSION_CRC
@@ -525,12 +525,12 @@ void NET_Compressor::DumpStats(bool brief)
 	xr_map<u32,SCompressorStats::SStatPacket>::const_iterator it		= m_stats.m_packets.begin();
 	xr_map<u32,SCompressorStats::SStatPacket>::const_iterator it_e	= m_stats.m_packets.end();
 
-	Msg("---------NET_Compressor::DumpStats-----------");
+	LogInfo("---------NET_Compressor::DumpStats-----------");
 	
-	Msg("Active=[%s]",g_net_compressor_enabled?"yes":"no");
+	LogInfo("Active=[%s]",g_net_compressor_enabled?"yes":"no");
 
-	Msg("uncompressed [%d]",m_stats.total_uncompressed_bytes);
-	Msg("compressed   [%d]",m_stats.total_compressed_bytes);
+	LogInfo("uncompressed [%d]",m_stats.total_uncompressed_bytes);
+	LogInfo("compressed   [%d]",m_stats.total_compressed_bytes);
 	
 	u32 total_hits		= 0;
 	u32 unlucky_hits	= 0;
@@ -541,9 +541,9 @@ void NET_Compressor::DumpStats(bool brief)
 		unlucky_hits	+= it->second.unlucky_attempts;
 		if(!brief)
 		{
-			Msg	("size[%d] count[%d] unlucky[%d] avg_c[%d]",it->first, it->second.hit_count, it->second.unlucky_attempts, iFloor(float(it->second.compressed_size)/float(it->second.hit_count)) );
+			LogInfo("size[%d] count[%d] unlucky[%d] avg_c[%d]",it->first, it->second.hit_count, it->second.unlucky_attempts, iFloor(float(it->second.compressed_size)/float(it->second.hit_count)) );
 		}
 	}
-	Msg("total   [%d]",	total_hits);
-	Msg("unlucky [%d]",	unlucky_hits);
+	LogInfo("total   [%d]",	total_hits);
+	LogInfo("unlucky [%d]",	unlucky_hits);
 }

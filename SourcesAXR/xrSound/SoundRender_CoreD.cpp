@@ -1,4 +1,4 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 #pragma hdrstop
 
 #include "soundrender_coreD.h"
@@ -142,7 +142,7 @@ void CSoundRender_CoreD::_initialize	(u64 window)
 	Listener.fRolloffFactor		= DS3D_DEFAULTROLLOFFFACTOR;
 	Listener.fDopplerFactor		= DS3D_DEFAULTDOPPLERFACTOR;
 
-	Msg				        	("DirectSound: Create device successfully.");
+	LogInfo("DirectSound: Create device successfully.");
     // inherited initialize
     inherited::_initialize		(window);
 

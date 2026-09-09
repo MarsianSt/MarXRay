@@ -1,4 +1,4 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 #pragma hdrstop
 
 #include <msacm.h>
@@ -70,12 +70,12 @@ bool CSoundRender_Source::LoadWave(pcstr pName, bool crashOnError)
 	R_ASSERT3				(ovi,"Invalid source info:",pName);
 	//R_ASSERT3				(ovi->rate>=44100,"Invalid source rate:",pName);
 	if (ovi->rate != 44100)
-		Msg("! Source rate !=44100, file: [%s]", pName);
+		LogInfo("! Source rate !=44100, file: [%s]", pName);
 
 #ifdef DEBUG
 	if(ovi->channels==2)
 	{
-		Msg("stereo sound source [%s]", pName);
+		LogInfo("stereo sound source [%s]", pName);
 	}
 #endif // #ifdef DEBUG
 
@@ -117,10 +117,10 @@ bool CSoundRender_Source::LoadWave(pcstr pName, bool crashOnError)
 			m_uGameType		= F.r_u32	();
 			m_fMaxAIDist	= F.r_float	();
 		}else{
-			Log				("! Invalid ogg-comment version, file: ",pName);
+			LogInfo("%s", "! Invalid ogg-comment version, file: ",pName);
 		}
 	}else{
-		Log					("! Missing ogg-comment, file: ",pName);
+		LogInfo("%s", "! Missing ogg-comment, file: ",pName);
 	}
 	R_ASSERT3((m_fMaxAIDist>=0.1f)&&(m_fMaxDist>=0.1f),"Invalid max distance.",pName);
 
@@ -144,7 +144,7 @@ bool CSoundRender_Source::load(pcstr name, bool replaceWithNoSound /*= true*/, b
 
 	if (!FS.exist(fn))
 	{
-		Msg("! Can`t find sound '%s'", name);
+		LogInfo("! Can`t find sound '%s'", name);
 		FS.update_path	(fn,"$game_sounds$","$no_sound.ogg");
     }
 

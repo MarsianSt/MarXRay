@@ -1,4 +1,4 @@
-////////////////////////////////////////////////////////////////////////////
+﻿////////////////////////////////////////////////////////////////////////////
 //	Module 		: script_engine.cpp
 //	Created 	: 01.04.2004
 //  Modified 	: 01.04.2004
@@ -60,7 +60,7 @@ static void initialize_lua_studio	( lua_State* state, cs::lua_studio::world*& wo
 	s_script_debugger_handle		= LoadLibrary(CS_LUA_STUDIO_BACKEND_FILE_NAME);
 	SetErrorMode					(old_error_mode);
 	if (!s_script_debugger_handle) {
-		Msg							("! cannot load %s dynamic library", CS_LUA_STUDIO_BACKEND_FILE_NAME);
+		LogInfo("! cannot load %s dynamic library", CS_LUA_STUDIO_BACKEND_FILE_NAME);
 		return;
 	}
 
@@ -84,7 +84,7 @@ static void initialize_lua_studio	( lua_State* state, cs::lua_studio::world*& wo
 	world							= s_create_world( *engine, false, false );
 	VERIFY							(world);
 
-	s_old_log_callback				= SetLogCB(&log_callback);
+	s_old_log_callback				= xrAsyncLogger::instance().set_log_callback(&log_callback);
 
 	jit_command						(state, "debug=2");
 	jit_command						(state, "off");
@@ -106,7 +106,7 @@ static void finalize_lua_studio		( lua_State* state, cs::lua_studio::world*& wor
 	FreeLibrary						(s_script_debugger_handle);
 	s_script_debugger_handle		= 0;
 
-	SetLogCB						(s_old_log_callback);
+	xrAsyncLogger::instance().set_log_callback(s_old_log_callback);
 }
 
 void CScriptEngine::try_connect_to_debugger		()
@@ -391,7 +391,7 @@ void CScriptEngine::process_file_if_exists	(LPCSTR file_name, bool warn_if_not_e
 #	endif
 			{
 				print_stack			();
-				Msg					("* trying to access variable %s, which doesn't exist, or to load script %s, which doesn't exist too",file_name,S1);
+				LogInfo("* trying to access variable %s, which doesn't exist, or to load script %s, which doesn't exist too",file_name,S1);
 				m_stack_is_ready	= true;
 			}
 #endif
@@ -399,7 +399,7 @@ void CScriptEngine::process_file_if_exists	(LPCSTR file_name, bool warn_if_not_e
 			return;
 		}
 #ifndef MASTER_GOLD
-		Msg					("* loading script %s",S1);
+		LogInfo("* loading script %s",S1);
 #endif // MASTER_GOLD
 		m_reload_modules	= false;
 		load_file_into_namespace(S,*file_name ? file_name : "_G");
@@ -481,10 +481,10 @@ void CScriptEngine::stopDebugger				()
 {
 	if (debugger()){
 		xr_delete	(m_scriptDebugger);
-		Msg			("Script debugger succesfully stoped.");
+		LogInfo("Script debugger succesfully stoped.");
 	}
 	else
-		Msg			("Script debugger not present.");
+		LogInfo("Script debugger not present.");
 }
 
 void CScriptEngine::restartDebugger				()
@@ -494,7 +494,7 @@ void CScriptEngine::restartDebugger				()
 
 	m_scriptDebugger = xr_new<CScriptDebugger>();
 	debugger()->PrepareLuaBind();
-	Msg				("Script debugger succesfully restarted.");
+	LogInfo("Script debugger succesfully restarted.");
 }
 #endif // #if defined(USE_DEBUGGER) && !defined(USE_LUA_STUDIO)
 

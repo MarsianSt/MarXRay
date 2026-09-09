@@ -47,6 +47,7 @@ public:
 	void				Initialize	();
 	void				InitializeRenderer();
 	void				Destroy		();
+	void				SwitchRenderer();
 
 	void				CreateRendererList();
 

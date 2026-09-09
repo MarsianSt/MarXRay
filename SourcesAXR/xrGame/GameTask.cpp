@@ -1,4 +1,4 @@
-#include "pch_script.h"
+﻿#include "pch_script.h"
 #include "GameTask.h"
 #include "ui/xrUIXmlParser.h"
 #include "encyclopedia_article.h"
@@ -304,7 +304,7 @@ void SScriptTaskHelper::init_functors(xr_vector<shared_str>& v_src, task_state_f
 	for(u32 idx=0 ;it!=it_e;++it,++idx)
 	{
 			bool functor_exists		= ai().script_engine().functor(*(*it) ,v_dest[idx]);
-			if(!functor_exists)		Log("Cannot find script function described in task objective  ", *(*it));
+			if(!functor_exists)		LogInfo("%s", "Cannot find script function described in task objective  ", *(*it));
 	}
 }
 

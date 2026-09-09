@@ -1,4 +1,4 @@
-#include "stdafx.h"
+п»ї#include "stdafx.h"
 #pragma hdrstop
 
 #include "SoundRender_Emitter.h"
@@ -12,7 +12,7 @@ inline u32 calc_cursor(const float& fTimeStarted, float& fTime, const float& fTi
 {
 	
 	if( fTime < fTimeStarted )
-			fTime = fTimeStarted;// Андрюха посоветовал, ассерт что ниже вылетел из за паузы как то хитро
+			fTime = fTimeStarted;// пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅ
 	R_ASSERT	((fTime-fTimeStarted)>=0.0f);
 	while((fTime-fTimeStarted)>fTimeTotal / fFreq) //looped
 	{
@@ -218,8 +218,8 @@ void CSoundRender_Emitter::update(float dt)
 
 			if (fTimeStarted < 0.0f)
 			{
-				//Log("fTimer_Value = ", SoundRender->fTimer_Value);
-				//Log("fTimeStarted = ", fTimeStarted);
+				//LogInfo("%s", "fTimer_Value = ", SoundRender->fTimer_Value);
+				//LogInfo("%s", "fTimeStarted = ", fTimeStarted);
 				//Log("fRemainingTime = ", fRemainingTime);
 				//Log("fPastTime = ", fPastTime);
 				R_ASSERT2(fTimeStarted >= 0.0f, "Possible error in sound rewind logic! See log.");
@@ -230,7 +230,7 @@ void CSoundRender_Emitter::update(float dt)
 
 			if (!bLooped)
 			{
-				//--> Пересчитываем время, когда звук должен остановиться [recalculate stop time]
+				//--> пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ [recalculate stop time]
 				fTimeToStop = SoundRender->fTimer_Value + fRemainingTime;
 			}
 

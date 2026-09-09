@@ -1,4 +1,4 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 #include "game_sv_single.h"
 #include "xrserver_objects_alife_monsters.h"
 #include "alife_simulator.h"
@@ -89,7 +89,7 @@ BOOL	game_sv_Single::OnTouch			(u16 eid_who, u16 eid_what, BOOL bForced)
 #ifdef DEBUG
 		else
 			if (psAI_Flags.test(aiALife)) {
-				Msg				("Cannot attach object [%s][%s][%d] to object [%s][%s][%d]",e_what->name_replace(),*e_what->s_name,e_what->ID,e_who->name_replace(),*e_who->s_name,e_who->ID);
+				LogInfo("Cannot attach object [%s][%s][%d] to object [%s][%s][%d]",e_what->name_replace(),*e_what->s_name,e_what->ID,e_who->name_replace(),*e_who->s_name,e_who->ID);
 			}
 #endif
 	}
@@ -134,7 +134,7 @@ void game_sv_Single::OnDetach(u16 eid_who, u16 eid_what)
 #ifdef DEBUG
 			else
 				if (psAI_Flags.test(aiALife)) {
-					Msg("Cannot detach object [%s][%s][%d] from object [%s][%s][%d]", l_tpALifeInventoryItem->base()->name_replace(),
+					LogInfo("Cannot detach object [%s][%s][%d] from object [%s][%s][%d]", l_tpALifeInventoryItem->base()->name_replace(),
 						*l_tpALifeInventoryItem->base()->s_name.c_str(), l_tpALifeInventoryItem->base()->ID, l_tpDynamicObject->base()->name_replace(),
 						l_tpDynamicObject->base()->s_name.c_str(), l_tpDynamicObject->ID);
 				}

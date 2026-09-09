@@ -164,10 +164,20 @@ void CDialogHolder::DoRenderDialogs()
 {
 	ZoneScoped;
 
+	static u32 s_calls = 0;
+	const bool bLog = (s_calls < 5);
+	if (bLog)
+		LogInfo("[DH] DoRenderDialogs: count=%u", m_dialogsToRender.size());
+	s_calls++;
+
 	xr_vector<dlgItem>::iterator it = m_dialogsToRender.begin();
 	for(; it!=m_dialogsToRender.end();++it){
 		if( (*it).enabled && (*it).wnd->IsShown() )
+		{
+			if (bLog)
+				LogInfo("[DH] Drawing window: %s", (*it).wnd->GetDebugType());
 			(*it).wnd->Draw();
+		}
 	}
 }
 

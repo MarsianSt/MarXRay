@@ -1,8 +1,10 @@
-// TextureManager.cpp: implementation of the CResourceManager class.
+п»ї// TextureManager.cpp: implementation of the CResourceManager class.
 //
 //////////////////////////////////////////////////////////////////////
 
 #include "stdafx.h"
+#undef LOG_MODULE
+#define LOG_MODULE "Renderer"
 #pragma hdrstop
 
 #pragma warning(disable:4995)
@@ -54,7 +56,7 @@ IBlender* CResourceManager::_GetBlender		(LPCSTR Name)
 #ifdef USE_DX11
 	if (I==m_blenders.end())	
 	{
-		Msg("DX10: Shader '%s' not found in library.",Name); 
+		LogInfo("DX10: Shader '%s' not found in library.",Name); 
 		return 0;
 	}
 #endif
@@ -147,7 +149,7 @@ void CResourceManager::_DeleteElement(const ShaderElement* S)
 {
 	if (0==(S->dwFlags&xr_resource_flagged::RF_REGISTERED))	return;
 	if (reclaim(v_elements,S))						return;
-	Msg	("! ERROR: Failed to find compiled 'shader-element'");
+	LogInfo("! ERROR: Failed to find compiled 'shader-element'");
 }
 
 Shader*	CResourceManager::_cpp_Create	(IBlender* B, LPCSTR s_shader, LPCSTR s_textures, LPCSTR s_constants, LPCSTR s_matrices)
@@ -169,7 +171,7 @@ Shader*	CResourceManager::_cpp_Create	(IBlender* B, LPCSTR s_shader, LPCSTR s_te
 #endif
 
 #ifdef _EDITOR
-	if (!C.BT)			{ ELog.Msg(mtError,"Can't find shader '%s'",s_shader); return 0; }
+	if (!C.BT)			{ ELog.LogInfo(mtError,"Can't find shader '%s'",s_shader); return 0; }
 	C.bEditor			= TRUE;
 #endif
 
@@ -182,7 +184,7 @@ Shader*	CResourceManager::_cpp_Create	(IBlender* B, LPCSTR s_shader, LPCSTR s_te
 	if (::Render->hud_loading && RImplementation.o.ssfx_hud_raindrops)
 	{
 #ifdef DEBUG
-		Msg(":::::::::::::::: HUD ELEMENT [%s] [%s]", s_shader, s_textures);
+		LogInfo(":::::::::::::::: HUD ELEMENT [%s] [%s]", s_shader, s_textures);
 #endif
 		C.HudElement = true;
 	}
@@ -253,7 +255,7 @@ Shader*	CResourceManager::_cpp_Create	(IBlender* B, LPCSTR s_shader, LPCSTR s_te
 	N->dwFlags				|=	xr_resource_flagged::RF_REGISTERED;
 	v_shaders.push_back		(N);
 
-	if (time.GetElapsed_sec() * 1000.f > 50.0 && g_loading_events.empty() && !prefetching_in_progress) Msg("---Loading of %s made a %fms stutter, should it be prefetched?!", s_textures, time.GetElapsed_sec() * 1000.f);
+	if (time.GetElapsed_sec() * 1000.f > 50.0 && g_loading_events.empty() && !prefetching_in_progress) LogInfo("---Loading of %s made a %fms stutter, should it be prefetched?!", s_textures, time.GetElapsed_sec() * 1000.f);
 
 	return N;
 }
@@ -283,10 +285,10 @@ Shader*		CResourceManager::Create	(LPCSTR s_shader,	LPCSTR s_textures,	LPCSTR s_
 		//	TODO: DX10: When all shaders are ready switch to common path
 #ifdef USE_DX11
 		if	(_lua_HasShader(s_shader))
-			return	_lua_Create	(s_shader,s_textures); // Если есть .s шейдер, начнёт его грузить.
+			return	_lua_Create	(s_shader,s_textures); // пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ .s пїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ.
 		else								
 		{
-			Shader* pShader = _cpp_Create	(s_shader,s_textures,s_constants,s_matrices);  // Если .s шейдера нет, создаст новый
+			Shader* pShader = _cpp_Create	(s_shader,s_textures,s_constants,s_matrices);  // пїЅпїЅпїЅпїЅ .s пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ, пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ
 			if (pShader)
 				return pShader;
 			else
@@ -315,14 +317,14 @@ void CResourceManager::Delete(const Shader* S)
 {
 	if (0==(S->dwFlags&xr_resource_flagged::RF_REGISTERED))	return;
 	if (reclaim(v_shaders,S))						return;
-	Msg	("! ERROR: Failed to find complete shader");
+	LogInfo("! ERROR: Failed to find complete shader");
 }
 
 xr_vector<CTexture*> tex_to_load;
 
 void TextureLoading(u16 thread_num)
 {
-	Msg("TextureLoading -> thread %d started!", thread_num);
+	LogInfo("TextureLoading -> thread %d started!", thread_num);
 
 	u16 upperbound = thread_num * 100;
 	u32 lowerbound = upperbound - 100;
@@ -335,7 +337,7 @@ void TextureLoading(u16 thread_num)
 			break;
 	}
 
-	Msg("TextureLoading -> thread %d finished!", thread_num);
+	LogInfo("TextureLoading -> thread %d finished!", thread_num);
 }
 
 void CResourceManager::DeferredUpload()
@@ -344,16 +346,16 @@ void CResourceManager::DeferredUpload()
 
 	ZoneScoped;
 
-	Msg("CResourceManager::DeferredUpload [%s] -> START, size = [%u]", ps_mt_texture_load ? "MT" : "NO MT", m_textures.size());
+	LogInfo("CResourceManager::DeferredUpload [%s] -> START, size = [%u]", ps_mt_texture_load ? "MT" : "NO MT", m_textures.size());
 
-	// Теперь многопоточная загрузка текстур даёт очень существенный прирост скорости, проверено.
+	// пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ.
 	if (ps_mt_texture_load)
 		std::for_each(std::execution::par_unseq, m_textures.begin(), m_textures.end(), [](auto& pair) { pair.second->Load(); });
 	else
 		for (auto& pair : m_textures)
 			pair.second->Load();
 
-	Msg("CResourceManager::DeferredUpload -> END");
+	LogInfo("CResourceManager::DeferredUpload -> END");
 }
 /*
 void	CResourceManager::DeferredUnload	()
@@ -426,7 +428,7 @@ void	CResourceManager::_DumpMemoryUsage		()
 		xr_multimap<u32,std::pair<u32,shared_str> >::iterator I = mtex.begin	();
 		xr_multimap<u32,std::pair<u32,shared_str> >::iterator E = mtex.end		();
 		for (; I!=E; I++)
-			Msg			("* %4.1f : [%4d] %s",float(I->first)/1024.f, I->second.first, I->second.second.c_str());
+			LogDebug("* %4.1f : [%4d] %s",float(I->first)/1024.f, I->second.first, I->second.second.c_str());
 	}
 }
 
@@ -469,11 +471,11 @@ void CResourceManager::RMPrefetchUITextures()
 			_GetItem(string, 1, shadername);
 			LPCSTR temptexturename = texturename;
 			LPCSTR tempshadername = shadername;
-			Msg("*Prefetching %s, %s", temptexturename, tempshadername);
+			LogInfo("*Prefetching %s, %s", temptexturename, tempshadername);
 			Shader* temp = _cpp_Create(tempshadername, temptexturename);
 		}
 	}
-	Msg("*RMPrefetchUITextures %fms", time.GetElapsed_sec() * 1000.f);
+	LogInfo("*RMPrefetchUITextures %fms", time.GetElapsed_sec() * 1000.f);
 }
 
 xr_vector<ITexture*> CResourceManager::FindTexture(const char* Name) const

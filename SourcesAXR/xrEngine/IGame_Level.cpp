@@ -1,4 +1,4 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 #include "igame_level.h"
 #include "igame_persistent.h"
 
@@ -59,7 +59,7 @@ IGame_Level::~IGame_Level	()
 	if (Device.m_pRender) 
 		Device.m_pRender->ResourcesGetMemoryUsage(m_base,c_base,m_lmaps,c_lmaps);
 
-	Msg		("* [ D3D ]: textures[%d K]", (m_base+m_lmaps)/1024);
+	LogInfo("* [ D3D ]: textures[%d K]", (m_base+m_lmaps)/1024);
 
 }
 
@@ -137,7 +137,7 @@ BOOL IGame_Level::Load			(u32 dwNum)
 	// Render-level Load
 	Render->level_Load			(LL_Stream);
 	// tscreate.FrameEnd			();
-	// Msg						("* S-CREATE: %f ms, %d times",tscreate.result,tscreate.count);
+	// LogInfo("* S-CREATE: %f ms, %d times",tscreate.result,tscreate.count);
 
 	// Objects
 	g_pGamePersistent->Environment().mods_load	();
@@ -192,7 +192,7 @@ void	IGame_Level::OnRender		( )
 
 void	IGame_Level::OnFrame		( ) 
 {
-	// Log				("- level:on-frame: ",u32(Device.dwFrame));
+	// LogInfo("%s", "- level:on-frame: ",u32(Device.dwFrame));
 //	if (_abs(Device.fTimeDelta)<EPS_S) return;
 
 	ZoneScoped;

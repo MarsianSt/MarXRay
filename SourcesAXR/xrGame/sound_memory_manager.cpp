@@ -1,4 +1,4 @@
-////////////////////////////////////////////////////////////////////////////
+﻿////////////////////////////////////////////////////////////////////////////
 //	Module 		: sound_memory_manager.cpp
 //	Created 	: 02.10.2001
 //  Modified 	: 19.11.2003
@@ -142,7 +142,7 @@ void CSoundMemoryManager::feel_sound_new(CObject *object, int sound_type, CSound
 	CObject					*self = m_object;
 	VERIFY					(self);
 #ifndef SILENCE
-	Msg						("%s (%d) - sound type %x from %s at %d in (%.2f,%.2f,%.2f) with power %.2f",*self->cName(),Device.dwTimeGlobal,sound_type,object ? *object->cName() : "world",Device.dwTimeGlobal,position.x,position.y,position.z,sound_power);
+	LogInfo("%s (%d) - sound type %x from %s at %d in (%.2f,%.2f,%.2f) with power %.2f",*self->cName(),Device.dwTimeGlobal,sound_type,object ? *object->cName() : "world",Device.dwTimeGlobal,position.x,position.y,position.z,sound_power);
 #endif
 
 	VERIFY					(_valid(m_sound_threshold));

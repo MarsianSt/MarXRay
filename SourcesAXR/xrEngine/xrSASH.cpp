@@ -1,4 +1,4 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 #include "xrSASH.h"
 
 #include "xr_ioconsole.h"
@@ -29,7 +29,7 @@ bool xrSASH::Init(const char* pszParam)
 		m_bInited = true;
 		m_bOpenAutomate = true;
 
-		Msg("oa:: Version: %d.%d.%d.%d", ver.Major, ver.Minor, ver.Minor, ver.Custom);
+		LogInfo("oa:: Version: %d.%d.%d.%d", ver.Major, ver.Minor, ver.Minor, ver.Custom);
 
 		return true;
 	}
@@ -37,8 +37,8 @@ bool xrSASH::Init(const char* pszParam)
 	{
 		m_bInited = true;
 		xr_strcpy( m_strBenchCfgName, pszParam);
-		Msg("oa:: Failed to init.");
-		Msg("oa:: Running native path.");
+		LogInfo("oa:: Failed to init.");
+		LogInfo("oa:: Running native path.");
 		return false;
 	}
 }
@@ -75,14 +75,14 @@ void xrSASH::LoopOA()
 		{
 			/* No more commands, exit program */
 		case OA_CMD_EXIT:
-			Msg("SASH:: Exit.");
+			LogInfo("SASH:: Exit.");
 			bExit = true;
 			break;
 
 			/* Run as normal */
 		case OA_CMD_RUN: 
 			//RunApp();
-			//Msg("SASH:: GetCurrentOptions.");
+			//LogInfo("SASH:: GetCurrentOptions.");
 			bExit = true;
 			break;
 
@@ -146,9 +146,9 @@ void xrSASH::LoopNative()
 		}
 	}
 	else
-		Msg("oa:: Native path can't find \"%s\" config file.", in_file);
+		LogInfo("oa:: Native path can't find \"%s\" config file.", in_file);
 
-	FlushLog();
+	xrAsyncLogger::instance().flush();
 }
 
 void xrSASH::ReportNative( LPCSTR pszTestName )
@@ -260,7 +260,7 @@ void destroyEngine();
 
 void xrSASH::GetAllOptions()
 {
-	Msg("SASH:: GetAllOptions.");
+	LogInfo("SASH:: GetAllOptions.");
 	TryInitEngine();
 
 	oaNamedOptionStruct Option; 
@@ -348,7 +348,7 @@ void xrSASH::GetAllOptions()
 
 void xrSASH::GetCurrentOptions()
 {
-	Msg("SASH:: GetCurrentOptions.");
+	LogInfo("SASH:: GetCurrentOptions.");
 	TryInitEngine();
 
 	GetOption("renderer");
@@ -401,7 +401,7 @@ void xrSASH::GetCurrentOptions()
 
 void xrSASH::SetOptions()
 {
-	Msg("SASH:: SetOptions.");
+	LogInfo("SASH:: SetOptions.");
 	TryInitEngine();
 
 	oaNamedOption *Option;
@@ -417,7 +417,7 @@ void xrSASH::SetOptions()
 
 void xrSASH::GetBenchmarks()
 {
-	Msg("SASH:: GetBenchmarks.");
+	LogInfo("SASH:: GetBenchmarks.");
 	/* foreach known available benchmark */
 	{
 		/* Set BenchmarkName to a unique string identifying the benchmark */
@@ -432,7 +432,7 @@ void Startup();
 
 void xrSASH::RunBenchmark( LPCSTR pszName)
 {
-	Msg("SASH:: RunBenchmark.");
+	LogInfo("SASH:: RunBenchmark.");
 
 	TryInitEngine(false);
 
@@ -514,7 +514,7 @@ oaOptionDataType xrSASH::GetOptionType( char* pszOptionName )
 	CConsole::vecCMD_IT I = Console->Commands.find(pszOptionName);
 	if (I==Console->Commands.end())
 	{
-		Msg("SASH:: Option \"%s\" not found.", pszOptionName);
+		LogInfo("SASH:: Option \"%s\" not found.", pszOptionName);
 		VERIFY(I!=Console->Commands.end());
 		return OA_TYPE_BOOL;
 	}
@@ -551,7 +551,7 @@ void xrSASH::DescribeOption( char* pszOptionName, const oaOptionDependency &Depe
 	CConsole::vecCMD_IT I = Console->Commands.find(pszOptionName);
 	if (I==Console->Commands.end())
 	{
-		Msg("SASH:: Option \"%s\" not found.", pszOptionName);
+		LogInfo("SASH:: Option \"%s\" not found.", pszOptionName);
 		VERIFY(I!=Console->Commands.end());
 		return;
 	}
@@ -564,7 +564,7 @@ void xrSASH::DescribeOption( char* pszOptionName, const oaOptionDependency &Depe
 
 	Option.Name = pszOptionName;
 
-	Msg("SASH:: Registering option \"%s\".", pszOptionName);
+	LogInfo("SASH:: Registering option \"%s\".", pszOptionName);
 
 	if (pMask)
 	{
@@ -616,7 +616,7 @@ void xrSASH::GetOption( char* pszOptionName)
 	CConsole::vecCMD_IT I = Console->Commands.find(pszOptionName);
 	if (I==Console->Commands.end())
 	{
-		Msg("SASH:: Option \"%s\" not found.", pszOptionName);
+		LogInfo("SASH:: Option \"%s\" not found.", pszOptionName);
 		VERIFY(I!=Console->Commands.end());
 		return;
 	}
@@ -628,7 +628,7 @@ void xrSASH::GetOption( char* pszOptionName)
 	CCC_Float* pFloat = dynamic_cast<CCC_Float*>(pCmd);
 	CCC_Integer* pInt = dynamic_cast<CCC_Integer*>(pCmd);
 
-	Msg("SASH:: Getting option \"%s\".", pszOptionName);
+	LogInfo("SASH:: Getting option \"%s\".", pszOptionName);
 
 	if (pMask)
 	{
@@ -668,7 +668,7 @@ void xrSASH::SetOption(oaNamedOption *pOption)
 	CConsole::vecCMD_IT I = Console->Commands.find(pOption->Name);
 	if (I==Console->Commands.end())
 	{
-		Msg("SASH:: Option \"%s\" not found.", pOption->Name);
+		LogInfo("SASH:: Option \"%s\" not found.", pOption->Name);
 		VERIFY(I!=Console->Commands.end());
 		return;
 	}
@@ -679,7 +679,7 @@ void xrSASH::SetOption(oaNamedOption *pOption)
 	CCC_Float* pFloat = dynamic_cast<CCC_Float*>(pCmd);
 	CCC_Integer* pInt = dynamic_cast<CCC_Integer*>(pCmd);
 
-	Msg("SASH:: Setting option \"%s\".", pOption->Name);
+	LogInfo("SASH:: Setting option \"%s\".", pOption->Name);
 
 	string512	CmdBuf;
 

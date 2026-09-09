@@ -138,7 +138,7 @@
     <LinkIncremental>false</LinkIncremental>
     <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
     <LibraryPath>$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64)</LibraryPath>
-    <OutDir>..\..\OutputDirectory\Binaries\$(Configuration)\</OutDir>
+    <OutDir>$(SolutionDir)\..\..\game\bin\</OutDir>
     <IntDir>..\..\OutputDirectory\Intermediate\$(Configuration)\$(ProjectName)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Mixed|Win32'">
@@ -162,7 +162,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>../../sdk/include/;../../sdk/include/directx;../3rd party/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../sdk/include/;../../sdk/include/directx;../3rd party/;$(SolutionDir)3rd party/tracy/public;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;DEBUG;_WINDOWS;_USRDLL;TRACY_EXPORTS;XRCORE_EXPORTS;_SECURE_SCL=0;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>false</StringPooling>
       <MinimalRebuild>false</MinimalRebuild>
@@ -256,7 +256,7 @@ copy /Y "..\..\SDK\binaries\jpeg62.dll" "$(OutDir)"</Command>
       <OmitFramePointers>true</OmitFramePointers>
       <EnableFiberSafeOptimizations>true</EnableFiberSafeOptimizations>
       <WholeProgramOptimization>true</WholeProgramOptimization>
-      <AdditionalIncludeDirectories>../../sdk/include/;../../sdk/include/directx;../3rd party/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../sdk/include/;../../sdk/include/directx;../3rd party/;$(SolutionDir)3rd party/tracy/public;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;TRACY_EXPORTS;XRCORE_EXPORTS;_SECURE_SCL=0;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <ExceptionHandling />
@@ -348,10 +348,6 @@ copy /Y "..\..\SDK\binaries\jpeg62.dll" "$(OutDir)"</Command>
       <ImportLibrary>..\..\OutputDirectory\Libraries\$(Configuration)\$(ProjectName).lib</ImportLibrary>
       <AdditionalDependencies>AccessMFS.lib;jpeg.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
-    <PostBuildEvent>
-      <Command>copy /Y "..\..\SDK\binaries\tbb.dll" "$(OutDir)"
-copy /Y "..\..\SDK\binaries\jpeg62.dll" "$(OutDir)"</Command>
-    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Mixed|Win32'">
     <ClCompile>
@@ -533,19 +529,39 @@ copy /Y "..\..\SDK\binaries\jpeg62.dll" "$(OutDir)"</Command>
     <ClCompile Include="..\3rd party\tracy\public\TracyClient.cpp">
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="blackbox\BlackBoxUI.cpp" />
-    <ClCompile Include="blackbox\BSUFunctions.cpp" />
-    <ClCompile Include="blackbox\CrashHandler.cpp" />
-    <ClCompile Include="blackbox\DiagAssert.cpp" />
-    <ClCompile Include="blackbox\GetLoadedModules.cpp" />
-    <ClCompile Include="blackbox\IsNT.cpp" />
-    <ClCompile Include="blackbox\NT4ProcessInfo.cpp" />
-    <ClCompile Include="blackbox\stdafx_.cpp" />
-    <ClCompile Include="blackbox\TLHELPProcessInfo.cpp" />
+    <ClCompile Include="blackbox\BlackBoxUI.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="blackbox\BSUFunctions.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="blackbox\CrashHandler.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="blackbox\DiagAssert.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="blackbox\GetLoadedModules.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="blackbox\IsNT.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="blackbox\NT4ProcessInfo.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="blackbox\stdafx_.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="blackbox\TLHELPProcessInfo.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include="clsid.cpp" />
     <ClCompile Include="cpuid.cpp" />
     <ClCompile Include="crc32.cpp" />
-    <ClCompile Include="Crypto\trivial_encryptor.cpp" />
+    <ClCompile Include="Crypto\trivial_encryptor.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include="doug_lea_allocator.cpp" />
     <ClCompile Include="dump_string.cpp" />
     <ClCompile Include="FileSystem.cpp" />
@@ -566,7 +582,6 @@ copy /Y "..\..\SDK\binaries\jpeg62.dll" "$(OutDir)"</Command>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="log.cpp" />
     <ClCompile Include="LzHuf.cpp" />
     <ClCompile Include="lzo_compressor.cpp" />
     <ClCompile Include="memory_allocation_stats.cpp" />
@@ -645,8 +660,12 @@ copy /Y "..\..\SDK\binaries\jpeg62.dll" "$(OutDir)"</Command>
     <ClCompile Include="rt_lzo1x_d2.cpp" />
     <ClCompile Include="rt_lzo1x_d3.cpp" />
     <ClCompile Include="rt_lzo_init.cpp" />
-    <ClCompile Include="Spheremap\stb_image.cpp" />
-    <ClCompile Include="Spheremap\stb_image_write.cpp" />
+    <ClCompile Include="Spheremap\stb_image.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="Spheremap\stb_image_write.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
@@ -663,7 +682,9 @@ copy /Y "..\..\SDK\binaries\jpeg62.dll" "$(OutDir)"</Command>
     </ClCompile>
     <ClCompile Include="stream_reader.cpp" />
     <ClCompile Include="string_concatenations.cpp" />
-    <ClCompile Include="Threading\Event.cpp" />
+    <ClCompile Include="Threading\Event.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include="xrCore.cpp" />
     <ClCompile Include="xrDebug.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
@@ -714,6 +735,30 @@ copy /Y "..\..\SDK\binaries\jpeg62.dll" "$(OutDir)"</Command>
     <ClCompile Include="_math.cpp" />
     <ClCompile Include="_sphere.cpp" />
     <ClCompile Include="_std_extensions.cpp" />
+    <ClCompile Include="TaskManager.cpp" />
+    <ClCompile Include="TaskScheduler.cpp" />
+    <ClCompile Include="xrArchiver.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="xrAsyncLogger.cpp" />
+    <ClCompile Include="xrStatusConsole.cpp" />
+    <ClCompile Include="xrFS.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="zstd\zstd.c">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+      </PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Mixed|Win32'">
+      </PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Mixed|x64'">
+      </PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+      </PrecompiledHeader>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="blackbox\BugslayerUtil.h" />
@@ -758,7 +803,6 @@ copy /Y "..\..\SDK\binaries\jpeg62.dll" "$(OutDir)"</Command>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </CustomBuild>
-    <ClInclude Include="log.h" />
     <ClInclude Include="lzhuf.h" />
     <ClInclude Include="lzo_compressor.h" />
     <ClInclude Include="Math\Random32.hpp" />
@@ -843,6 +887,16 @@ copy /Y "..\..\SDK\binaries\jpeg62.dll" "$(OutDir)"</Command>
     <ClInclude Include="_vector3d.h" />
     <ClInclude Include="_vector3d_ext.h" />
     <ClInclude Include="_vector4.h" />
+    <ClInclude Include="LockLessMultiReadPipe.h" />
+    <ClInclude Include="TaskManager.h" />
+    <ClInclude Include="TaskScheduler.h" />
+    <ClInclude Include="xrArchiver.h" />
+    <ClInclude Include="xrAsyncLogger.h" />
+    <ClInclude Include="xrStatusConsole.h" />
+    <ClInclude Include="xrFS.h" />
+    <ClInclude Include="zstd\zdict.h" />
+    <ClInclude Include="zstd\zstd.h" />
+    <ClInclude Include="zstd\zstd_errors.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="xrCore.rc" />

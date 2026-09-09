@@ -1,4 +1,4 @@
-#include "pch_script.h"
+п»ї#include "pch_script.h"
 #include "HangingLamp.h"
 #include "../xrEngine/LightAnimLibrary.h"
 #include "../xrEngine/xr_collide_form.h"
@@ -145,7 +145,7 @@ BOOL CHangingLamp::net_Spawn(CSE_Abstract* DC)
 		//.intepolate_pos
 	}
 	if (lamp->flags.is(CSE_ALifeObjectHangingLamp::flPhysic)&&!Visual())
-		Msg("! WARNING: lamp, obj name [%s],flag physics set, but has no visual",*cName());
+		LogInfo("! WARNING: lamp, obj name [%s],flag physics set, but has no visual",*cName());
 //.	if (lamp->flags.is(CSE_ALifeObjectHangingLamp::flPhysic)&&Visual()&&!guid_physic_bone)	fHealth=0.f;
 	if (Alive() && m_bState)
 		TurnOn	();
@@ -249,7 +249,7 @@ void CHangingLamp::UpdateCL	()
 		
 		if (lanim){
 			int frame;
-			u32 clr					= lanim->CalculateBGR(Device.fTimeGlobal,frame); // возвращает в формате BGR
+			u32 clr					= lanim->CalculateBGR(Device.fTimeGlobal,frame); // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ BGR
 			Fcolor					fclr;
 			fclr.set				((float)color_get_B(clr),(float)color_get_G(clr),(float)color_get_R(clr),1.f);
 			fclr.mul_rgb			(fBrightness/255.f);

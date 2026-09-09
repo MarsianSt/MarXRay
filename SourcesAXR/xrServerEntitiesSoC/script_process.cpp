@@ -1,4 +1,4 @@
-////////////////////////////////////////////////////////////////////////////
+﻿////////////////////////////////////////////////////////////////////////////
 //	Module 		: script_process.cpp
 //	Created 	: 19.09.2003
 //  Modified 	: 29.06.2004
@@ -23,7 +23,7 @@ CScriptProcess::CScriptProcess	(shared_str name, shared_str scripts) :
 	m_name						(name)
 {
 #ifdef DEBUG
-	Msg				("* Initializing %s script process",*m_name);
+	LogInfo("* Initializing %s script process",*m_name);
 #endif
 	
 	string256		I;

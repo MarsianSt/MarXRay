@@ -1,4 +1,4 @@
-////////////////////////////////////////////////////////////////////////////
+п»ї////////////////////////////////////////////////////////////////////////////
 //	Module 		: Battery.cpp
 //	Created 	: 07.04.2021
 //  Modified 	: 15.09.2025
@@ -91,7 +91,7 @@ bool CBattery::Useful() const
 	if (!inherited::Useful())
 		return false;
 
-	//проверить не все ли еще съедено
+	//пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 	if (m_iPortionsNum == 0)
 		return false;
 
@@ -151,7 +151,7 @@ void CBattery::ChargeTorch(CTorch* flashlight)
 			m_iPortionsNum = 0;
 	}
 
-	//Msg("Battery Charge is: %f", m_fBatteryChargeLevel); //Для тестов
+	//LogInfo("Battery Charge is: %f", m_fBatteryChargeLevel); //пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
 }
 
 void CBattery::ChargeArtifactDetector(CCustomDetector* artifact_detector)
@@ -166,7 +166,7 @@ void CBattery::ChargeArtifactDetector(CCustomDetector* artifact_detector)
 			m_iPortionsNum = 0;
 	}
 
-	//Msg("Battery Charge is: %f", m_fBatteryChargeLevel); //Для тестов
+	//LogInfo("Battery Charge is: %f", m_fBatteryChargeLevel); //пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
 }
 
 void CBattery::ChargeAnomalyDetector(CDetectorAnomaly* anomaly_detector)
@@ -181,7 +181,7 @@ void CBattery::ChargeAnomalyDetector(CDetectorAnomaly* anomaly_detector)
 			m_iPortionsNum = 0;
 	}
 
-	//Msg("Battery Charge is: %f", m_fBatteryChargeLevel); //Для тестов
+	//LogInfo("Battery Charge is: %f", m_fBatteryChargeLevel); //пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
 }
 
 float CBattery::GetCurrentChargeLevel() const

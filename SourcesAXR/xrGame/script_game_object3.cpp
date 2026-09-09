@@ -1,4 +1,4 @@
-////////////////////////////////////////////////////////////////////////////
+﻿////////////////////////////////////////////////////////////////////////////
 //	Module 		: script_game_object_script3.cpp
 //	Created 	: 17.11.2004
 //  Modified 	: 17.11.2004
@@ -1016,7 +1016,7 @@ bool CScriptGameObject::weapon_strapped	() const
 	}
 
 	bool const result	= stalker->weapon_strapped();
-//	Msg					( "[%6d][%s] weapon_strapped = %s", Device.dwTimeGlobal, stalker->cName().c_str(), result ? "true" : "false" );
+//	LogInfo( "[%6d][%s] weapon_strapped = %s", Device.dwTimeGlobal, stalker->cName().c_str(), result ? "true" : "false" );
 	return			(result);
 }
 
@@ -1028,7 +1028,7 @@ bool CScriptGameObject::weapon_unstrapped	() const
 		return		(false);
 	}
 	bool const result	= stalker->weapon_unstrapped();
-//	Msg					( "[%6d][%s] weapon_unstrapped = %s", Device.dwTimeGlobal, stalker->cName().c_str(), result ? "true" : "false" );
+//	LogInfo( "[%6d][%s] weapon_unstrapped = %s", Device.dwTimeGlobal, stalker->cName().c_str(), result ? "true" : "false" );
 	return			(result);
 }
 
@@ -1808,7 +1808,7 @@ bool CScriptGameObject::IsQuestItem() const
 	CInventoryItem* IItm = object().cast_inventory_item();
 	if (!IItm)
 	{
-		Msg("[CScriptGameObject::IsQuestItem]: The object class is not CInventoryItem!");
+		LogInfo("[CScriptGameObject::IsQuestItem]: The object class is not CInventoryItem!");
 		return false;
 	}
 

@@ -1,4 +1,4 @@
-////////////////////////////////////////////////////////////////////////////
+﻿////////////////////////////////////////////////////////////////////////////
 //	Module 		: ai_trader.cpp
 //	Created 	: 13.05.2002
 //  Modified 	: 13.05.2002
@@ -214,7 +214,7 @@ void CAI_Trader::feel_touch_new				(CObject* O)
 	CInventoryItem		*I	= smart_cast<CInventoryItem*>	(O);
 
 	if (I && I->useful_for_NPC()) {
-		Msg("Taking item %s!",*I->object().cName());
+		LogInfo("Taking item %s!",*I->object().cName());
 		NET_Packet		P;
 		u_EventGen		(P,GE_OWNERSHIP_TAKE,ID());
 		P.w_u16			(u16(I->object().ID()));
@@ -227,7 +227,7 @@ void CAI_Trader::DropItemSendMessage(CObject *O)
 	if (!O || !O->H_Parent() || (this != O->H_Parent()))
 		return;
 
-	Msg("Dropping item!");
+	LogInfo("Dropping item!");
 	// We doesn't have similar weapon - pick up it
 	NET_Packet				P;
 	u_EventGen				(P,GE_OWNERSHIP_REJECT,ID());

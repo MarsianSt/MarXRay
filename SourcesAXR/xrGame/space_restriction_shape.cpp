@@ -1,4 +1,4 @@
-////////////////////////////////////////////////////////////////////////////
+﻿////////////////////////////////////////////////////////////////////////////
 //	Module 		: space_restriction_shape.cpp
 //	Created 	: 17.08.2004
 //  Modified 	: 27.08.2004
@@ -167,7 +167,7 @@ void CSpaceRestrictionShape::test_correctness	()
 	//if (!m_correct && (xr_strcmp(*m_restrictor->cName(), "agr_factory_hold_restrictor") == 0)) {
 	//	bool flood_less = m_test_storage.size() > nodes.size();
 
-	//	Msg("NOT Correct restrictor: [%s], flood less = [%u] Dump unique nodes: ", *m_restrictor->cName(), flood_less);
+	//	LogInfo("NOT Correct restrictor: [%s], flood less = [%u] Dump unique nodes: ", *m_restrictor->cName(), flood_less);
 
 	//	xr_vector<u32>::iterator src_b, src_e, tgt_b, tgt_e;
 	//	
@@ -200,7 +200,7 @@ void CSpaceRestrictionShape::test_correctness	()
 	//		}
 
 	//		if (!b_found) {
-	//			Msg("Node%u :: index[%u]:: position[%f,%f,%f]", index, (*I), VPUSH(ai().level_graph().vertex_position((*I))));
+	//			LogInfo("Node%u :: index[%u]:: position[%f,%f,%f]", index, (*I), VPUSH(ai().level_graph().vertex_position((*I))));
 	//			index ++;
 	//		}
 

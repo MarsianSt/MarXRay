@@ -1,4 +1,4 @@
-#include "pch_script.h"
+п»ї#include "pch_script.h"
 #include "helicopter.h"
 //#include "level.h"
 #include "script_game_object.h"
@@ -89,7 +89,7 @@ void CHelicopter::UpdateHeliParticles	()
 		if (m_lanim)
 		{
 			int frame;
-			u32 clr					= m_lanim->CalculateBGR(Device.fTimeGlobal,frame); // тючтЁр•рхЄ т ЇюЁьрЄх BGR
+			u32 clr					= m_lanim->CalculateBGR(Device.fTimeGlobal,frame); // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅ BGR
 			Fcolor					fclr;
 			fclr.set				((float)color_get_B(clr),(float)color_get_G(clr),(float)color_get_R(clr),1.f);
 			fclr.mul_rgb			(m_light_brightness/255.f);
@@ -121,7 +121,7 @@ void CHelicopter::SetDestPosition (Fvector* pos)
 	m_movement.SetDestPosition(pos);
 #ifndef MASTER_GOLD
 	if(bDebug)
-		Msg("---SetDestPosition %f %f %f", pos->x, pos->y, pos->z);
+		LogInfo("---SetDestPosition %f %f %f", pos->x, pos->y, pos->z);
 #endif // #ifndef MASTER_GOLD
 }
 
@@ -165,8 +165,8 @@ float CHelicopter::GetMaxVelocity()
 //////////////////////Start By JoHnY///////////////////////
 void CHelicopter::SetLinearAcc(float LAcc_fw, float LAcc_bw)
 {
-	m_movement.LinearAcc_fw = LAcc_fw;	//ускорение разгона
-	m_movement.LinearAcc_bk = LAcc_bw;	//ускорение торможения
+	m_movement.LinearAcc_fw = LAcc_fw;	//пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ
+	m_movement.LinearAcc_bk = LAcc_bw;	//пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 
 }
 //////////////////////End By JoHnY/////////////////////////
@@ -175,7 +175,7 @@ void CHelicopter::SetSpeedInDestPoint(float sp)
 	m_movement.SetSpeedInDestPoint(sp);
 #ifndef MASTER_GOLD
 	if(bDebug)
-		Msg("---SetSpeedInDestPoint %f", sp);
+		LogInfo("---SetSpeedInDestPoint %f", sp);
 #endif // #ifndef MASTER_GOLD
 }
 
@@ -188,7 +188,7 @@ void CHelicopter::SetOnPointRangeDist(float d)
 	m_movement.onPointRangeDist = d;
 #ifndef MASTER_GOLD
 	if(bDebug)
-		Msg("---SetOnPointRangeDist %f", d);
+		LogInfo("---SetOnPointRangeDist %f", d);
 #endif // #ifndef MASTER_GOLD
 }
 
@@ -229,7 +229,7 @@ void	CHelicopter::Hit							(SHit* pHDS)
 		curHealth -= pHDS->damage()*It->second*1000.0f;
 		SetfHealth(curHealth);
 #ifdef DEBUG
-		if (bDebug)	Log("----Helicopter::PilotHit(). health=",curHealth);
+		if (bDebug)	LogInfo("%s", "----Helicopter::PilotHit(). health=",curHealth);
 #endif
 	}else {
 		float hit_power		= pHDS->damage();
@@ -238,7 +238,7 @@ void	CHelicopter::Hit							(SHit* pHDS)
 		SetfHealth(GetfHealth()-hit_power);
 #ifdef DEBUG
 		if (bDebug)
-			Log("----Helicopter::Hit(). health=",GetfHealth());
+			LogInfo("%s", "----Helicopter::Hit(). health=",GetfHealth());
 #endif
 	};
 	if (pHDS->who&&

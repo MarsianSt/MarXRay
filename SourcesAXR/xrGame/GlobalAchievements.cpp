@@ -1,4 +1,4 @@
-////////////////////////////////////////////////////////////////////////////
+п»ї////////////////////////////////////////////////////////////////////////////
 //	Module 		: GlobalAchievements.cpp
 //	Created 	: 22.02.2025
 //  Modified 	: 22.02.2025
@@ -28,7 +28,7 @@ void CGlobalAchievementsManager::Create(std::string name, std::string descriptio
 	m_AchievementsData.push_back(achievement);
 
 #ifdef DEBUG
-    Msg("[CGlobalAchievementsManager::Create]: Achievement created! Name: %s, Description: %s, Icon: %s", name.c_str(), description.c_str(), iconName.c_str());
+    LogInfo("[CGlobalAchievementsManager::Create]: Achievement created! Name: %s, Description: %s, Icon: %s", name.c_str(), description.c_str(), iconName.c_str());
 #endif
 
 	SaveAchievements();
@@ -43,7 +43,7 @@ void CGlobalAchievementsManager::Delete(std::string name)
             m_AchievementsData.erase(it, m_AchievementsData.end());
 
 #ifdef DEBUG
-            Msg("[CGlobalAchievementsManager::Delete]: Achievement with name [%s] : Deleted", (*it)->getName().c_str());
+            LogInfo("[CGlobalAchievementsManager::Delete]: Achievement with name [%s] : Deleted", (*it)->getName().c_str());
 #endif
             xr_delete(*it);
         }
@@ -63,7 +63,7 @@ CGlobalAchievement* CGlobalAchievementsManager::GetAchievement(std::string name)
 	}
 
 #ifdef DEBUG
-    Msg("![CGlobalAchievementsManager::GetAchievement]: Achievement with name [%s] not founded!", name.c_str());
+    LogInfo("![CGlobalAchievementsManager::GetAchievement]: Achievement with name [%s] not founded!", name.c_str());
 #endif
 
 	return nullptr;
@@ -77,33 +77,33 @@ void CGlobalAchievementsManager::SaveAchievements()
     if (!outFile)
     {
 #ifdef DEBUG
-        Msg("![CGlobalAchievementsManager::SaveAchievements]: Error with open file for write! File: [%s]", path.c_str());
+        LogInfo("![CGlobalAchievementsManager::SaveAchievements]: Error with open file for write! File: [%s]", path.c_str());
 #endif
         return;
     }
 
     for (const auto& achievement : m_AchievementsData)
     {
-        // Имя
+        // пїЅпїЅпїЅ
         std::string name = achievement->getName().c_str();
         size_t nameLength = name.size();
         outFile.write(reinterpret_cast<const char*>(&nameLength), sizeof(nameLength));
         outFile.write(name.c_str(), nameLength);
 
-        // Описание
+        // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
         std::string description = achievement->getDescription().c_str();
         size_t descriptionLength = description.size();
         outFile.write(reinterpret_cast<const char*>(&descriptionLength), sizeof(descriptionLength));
         outFile.write(description.c_str(), descriptionLength);
 
-        // Название иконки
+        // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
         std::string iconName = achievement->getIconName().c_str();
         size_t iconNameLength = iconName.size();
         outFile.write(reinterpret_cast<const char*>(&iconNameLength), sizeof(iconNameLength));
         outFile.write(iconName.c_str(), iconNameLength);
 
 #ifdef DEBUG
-        Msg("[CGlobalAchievementsManager::SaveAchievements]: Achievement saved! Name: %s, Description: %s, Icon: %s", name.c_str(), description.c_str(), iconName.c_str());
+        LogInfo("[CGlobalAchievementsManager::SaveAchievements]: Achievement saved! Name: %s, Description: %s, Icon: %s", name.c_str(), description.c_str(), iconName.c_str());
 #endif
     }
 
@@ -118,7 +118,7 @@ xr_vector<CGlobalAchievement*> CGlobalAchievementsManager::LoadAchievements()
     if (!inFile.is_open())
     {
 #ifdef DEBUG
-        Msg("[CGlobalAchievementsManager::LoadAchievements]: File not found or cannot be opened! File: [%s]", path.c_str());
+        LogInfo("[CGlobalAchievementsManager::LoadAchievements]: File not found or cannot be opened! File: [%s]", path.c_str());
 #endif
         return {};
     }
@@ -128,21 +128,21 @@ xr_vector<CGlobalAchievement*> CGlobalAchievementsManager::LoadAchievements()
         size_t nameLength;
         inFile.read(reinterpret_cast<char*>(&nameLength), sizeof(nameLength));
 
-        // Имя
+        // пїЅпїЅпїЅ
         std::string name(nameLength, '\0');
         inFile.read(&name[0], nameLength);
 
         size_t descriptionLength;
         inFile.read(reinterpret_cast<char*>(&descriptionLength), sizeof(descriptionLength));
 
-        // Описание
+        // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
         std::string description(descriptionLength, '\0');
         inFile.read(&description[0], descriptionLength);
 
         size_t iconNameLength;
         inFile.read(reinterpret_cast<char*>(&iconNameLength), sizeof(iconNameLength));
 
-        // Название иконки
+        // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
         std::string iconName(iconNameLength, '\0');
         inFile.read(&iconName[0], iconNameLength);
 
@@ -150,7 +150,7 @@ xr_vector<CGlobalAchievement*> CGlobalAchievementsManager::LoadAchievements()
         m_AchievementsData.push_back(achievement);
 
 #ifdef DEBUG
-        Msg("[CGlobalAchievementsManager::LoadAchievements]: Achievement loaded! Name: %s, Description: %s, Icon: %s", name.c_str(), description.c_str(), iconName.c_str());
+        LogInfo("[CGlobalAchievementsManager::LoadAchievements]: Achievement loaded! Name: %s, Description: %s, Icon: %s", name.c_str(), description.c_str(), iconName.c_str());
 #endif
     }
     inFile.close();

@@ -1,4 +1,4 @@
-////////////////////////////////////////////////////////////////////////////
+﻿////////////////////////////////////////////////////////////////////////////
 //	Module 		: ai_stalker_misc.cpp
 //	Created 	: 27.02.2003
 //  Modified 	: 27.02.2003
@@ -115,7 +115,7 @@ void CAI_Stalker::react_on_grenades		()
 //	m_object->agent_manager().add_danger_location(reaction.m_game_object->Position(),Device.dwTimeGlobal,interval,GRENADE_RADIUS);
 
 	if (missile && agent_manager().get_member().group_behaviour()) {
-//		Msg						("%6d : Stalker %s : grenade reaction",Device.dwTimeGlobal,*m_object->cName());
+//		LogInfo("%6d : Stalker %s : grenade reaction",Device.dwTimeGlobal,*m_object->cName());
 		CEntityAlive			*initiator = smart_cast<CEntityAlive*>(Level().Objects.net_Find(reaction.m_grenade->CurrentParentID()));
 /*		VERIFY2					(
 			initiator,

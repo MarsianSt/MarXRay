@@ -1,4 +1,4 @@
-#include "StdAfx.h"
+﻿#include "StdAfx.h"
 #include "light.h"
 
 static const float	SQRT2		=	1.4142135623730950488016887242097f;
@@ -118,12 +118,12 @@ void light::set_active		(bool a)
 		flags.bActive						= true;
 		spatial_register					();
 		spatial_move						();
-		//Msg								("!!! L-register: %X",u32(this));
+		//LogInfo("!!! L-register: %X",u32(this));
 
 #ifdef DEBUG
 		Fvector	zero = {0,-1000,0}			;
 		if (position.similar(zero))			{
-			Msg	("- Uninitialized light position.");
+			LogInfo("- Uninitialized light position.");
 		}
 #endif // DEBUG
 	}
@@ -133,7 +133,7 @@ void light::set_active		(bool a)
 		flags.bActive						= false;
 		spatial_move						();
 		spatial_unregister					();
-		//Msg								("!!! L-unregister: %X",u32(this));
+		//LogInfo("!!! L-unregister: %X",u32(this));
 	}
 }
 

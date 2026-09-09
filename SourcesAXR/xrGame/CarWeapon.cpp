@@ -1,4 +1,4 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 #include "CarWeapon.h"
 #include "../xrphysics/PhysicsShell.h"
 #include "PhysicsShellHolder.h"
@@ -185,8 +185,8 @@ void CCarWeapon::UpdateBarrelDir()
 
 #if (0)
 	if(Device.dwFrame%200==0){
-		Msg("m_cur_x_rot=[%f]",m_cur_x_rot);
-		Msg("m_cur_y_rot=[%f]",m_cur_y_rot);
+		LogInfo("m_cur_x_rot=[%f]",m_cur_x_rot);
+		LogInfo("m_cur_y_rot=[%f]",m_cur_y_rot);
 	}
 #endif
 }

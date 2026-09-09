@@ -1,4 +1,4 @@
-////////////////////////////////////////////////////////////////////////////
+п»ї////////////////////////////////////////////////////////////////////////////
 //	Module 		: ai_stalker_fire.cpp
 //	Created 	: 25.02.2003
 //  Modified 	: 25.02.2003
@@ -69,7 +69,7 @@ float CAI_Stalker::GetWeaponAccuracy	() const
 {
 	float				base = PI/180.f;
 	
-	//влияние ранга на меткость
+	//пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 	base				*= m_fRankDisperison;
 
 	if (!get_movement().path_completed()) {
@@ -103,7 +103,7 @@ void CAI_Stalker::g_fireParams(CHudItem* pHudItem, Fvector& P, Fvector& D)
 //.	VERIFY				(inventory().ActiveItem());
 	if (!inventory().ActiveItem()) {
 #ifdef DEBUG
-		Msg				("! CAI_Stalker::g_fireParams() : VERIFY(inventory().ActiveItem())");
+		LogInfo("! CAI_Stalker::g_fireParams() : VERIFY(inventory().ActiveItem())");
 #endif // DEBUG
 		P				= Position();
 		D				= Fvector().set(0.f,0.f,1.f);
@@ -211,7 +211,7 @@ void CAI_Stalker::g_WeaponBones	(int &L, int &R1, int &R2)
 
 void CAI_Stalker::Hit(SHit* pHDS)
 {
-	//хит может меняться в зависимости от ранга (новички получают больше хита, чем ветераны)
+	//пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅ (пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ, пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ)
 	SHit HDS = *pHDS;
 	HDS.add_wound = true;
 	
@@ -239,7 +239,7 @@ void CAI_Stalker::Hit(SHit* pHDS)
 			}
 		}
 
-		if ( wounded() ) //уже лежит => добивание
+		if ( wounded() ) //пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ => пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 		{
 			hit_power = 1000.f;
 		}
@@ -298,7 +298,7 @@ void CAI_Stalker::Hit(SHit* pHDS)
 	#ifdef DEBUG
 				tpKinematics->LL_GetBoneInstance	(HDS.bone());
 				if (HDS.bone() >= tpKinematics->LL_BoneCount()) {
-					Msg					("tpKinematics has no bone_id %d",HDS.bone());
+					LogInfo("tpKinematics has no bone_id %d",HDS.bone());
 					HDS._dump			();
 				}
 	#endif
@@ -1103,7 +1103,7 @@ bool CAI_Stalker::critical_wound_external_conditions_suitable()
 	if (!agent_manager().get_member().registered_in_combat(this))
 		return						(false);
 
-//	Msg								("%6d executing critical hit",Device.dwTimeGlobal);
+//	LogInfo("%6d executing critical hit",Device.dwTimeGlobal);
 	get_animation().global().make_inactual	();
 	return							(true);
 }

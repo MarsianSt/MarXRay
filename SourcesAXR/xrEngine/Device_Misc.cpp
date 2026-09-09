@@ -1,4 +1,4 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 //#include "dxerr8.h"
 
 // *****************************************************************************************
@@ -18,10 +18,10 @@ static struct _DF {
 
 void CRenderDevice::DumpFlags()
 {
-	Log("- Dumping device flags");
+	LogInfo("%s", "- Dumping device flags");
 	_DF *p = DF;
 	while (p->name) {
-		Msg("* %20s %s",p->name,psDeviceFlags.test(p->mask)?"on":"off");
+		LogInfo("* %20s %s",p->name,psDeviceFlags.test(p->mask)?"on":"off");
 		p++;
 	}
 }

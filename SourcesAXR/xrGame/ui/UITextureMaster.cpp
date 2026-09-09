@@ -1,4 +1,4 @@
-// file:		UITextureMaster.h
+﻿// file:		UITextureMaster.h
 // description:	holds info about shared textures. able to initialize external controls
 //				through IUITextureControl interface
 // created:		11.05.2005
@@ -107,7 +107,7 @@ void CUITextureMaster::InitTexture(const shared_str& texture_name, CUIStaticItem
 	{
 		string256 str;
 		xr_sprintf(str, "%s, %s", texture_name.c_str(), shader_name.c_str());
-		Msg("UI:Initing texture = %s, stutter time = %fms", str, time.GetElapsed_sec() * 1000.f);
+		LogInfo("UI:Initing texture = %s, stutter time = %fms", str, time.GetElapsed_sec() * 1000.f);
 		shared_str str2 = str;
 		MainMenu()->SuggestedForPrefetching.push_back(str2);
 	}

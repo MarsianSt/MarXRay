@@ -1,4 +1,4 @@
-#include "stdafx.h"
+п»ї#include "stdafx.h"
 #pragma hdrstop
 
 #include "fs_internal.h"
@@ -26,7 +26,7 @@ bool item_pred(const CInifile::Item& x, LPCSTR val)
 }
 
 //------------------------------------------------------------------------------
-//Тело функций Inifile
+//пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ Inifile
 //------------------------------------------------------------------------------
 XRCORE_API BOOL _parseSOC(LPSTR dest, LPCSTR src)
 {
@@ -150,7 +150,7 @@ CInifile::CInifile(LPCSTR szFileName,
 
 {
 	if(szFileName && strstr(szFileName,"system"))
-		Msg("-----loading %s",szFileName);
+		LogInfo("-----loading %s",szFileName);
 
 	m_file_name[0]	= 0;
 	m_flags.zero	();
@@ -186,7 +186,7 @@ CInifile::~CInifile( )
 	if (!m_flags.test(eReadOnly) && m_flags.test(eSaveAtEnd)) 
 	{
 		if (!save_as())
-			Log		("!Can't save inifile:",m_file_name);
+			LogInfo("%s", "!Can't save inifile:",m_file_name);
 	}
 
 	RootIt			I = DATA.begin();
@@ -494,7 +494,7 @@ BOOL	CInifile::section_exist( LPCSTR S )const
 {
 	if (!S)
 	{
-		Msg("! [CInifile::section_exist]: Empty section value! Return FALSE!");
+		LogInfo("! [CInifile::section_exist]: Empty section value! Return FALSE!");
 		return FALSE;
 	}
 
@@ -564,7 +564,7 @@ CInifile::Sect& CInifile::r_section( LPCSTR S )const
 LPCSTR	CInifile::r_string(LPCSTR S, LPCSTR L)const
 {
 	if (!S || !L || !strlen(S) || !strlen(L)) //--#SM+#-- [fix for one of "xrDebug - Invalid handler" error log]
-		Msg("!![ERROR] CInifile::r_string: S = [%s], L = [%s]", S, L);
+		LogInfo("!![ERROR] CInifile::r_string: S = [%s], L = [%s]", S, L);
 
 	Sect const&	I = r_section(S);
 	SectCIt	A = std::lower_bound(I.Data.begin(),I.Data.end(),L,item_pred);

@@ -1,4 +1,4 @@
-// dxRender_Visual.cpp: implementation of the dxRender_Visual class.
+﻿// dxRender_Visual.cpp: implementation of the dxRender_Visual class.
 //
 //////////////////////////////////////////////////////////////////////
 
@@ -54,7 +54,7 @@ static bool replaceShadersLine(const char* N, char* fnS, u32 fnS_size, LPCSTR it
 		if (xr_strcmp(s1, fnS) == 0)
 		{
 			xr_strcpy(fnS, fnS_size, s2);
-			//Msg("~~[%s][%s] replaced [%s] by [%s]", __FUNCTION__, N, s1, s2);
+			//LogInfo("~~[%s][%s] replaced [%s] by [%s]", __FUNCTION__, N, s1, s2);
 			break;
 		}
 	}
@@ -115,7 +115,7 @@ void dxRender_Visual::Load(const char* N, IReader* data, u32)
 		data->r_stringZ(fnT, sizeof(fnT));
 		data->r_stringZ(fnS, sizeof(fnS));
 		if (replaceShaders(N, fnS, sizeof fnS)) {
-			//Msg("~~[%s] replaced shaders for [%s]: %s", __FUNCTION__, N, fnS);
+			//LogInfo("~~[%s] replaced shaders for [%s]: %s", __FUNCTION__, N, fnS);
 		}
 		shader.create(fnS, fnT);
 	}

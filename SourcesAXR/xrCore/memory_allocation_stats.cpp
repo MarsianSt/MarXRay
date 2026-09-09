@@ -1,4 +1,4 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 
 #ifdef DEBUG_MEMORY_MANAGER
 #	pragma warning(push)
@@ -56,8 +56,8 @@
 
 		int						j = 0;
 		for (i = strings; i != e; ++i, ++j) {
-			Msg					("%d(%d)-----------------%d[%d]:%5.2f%%------------------",j,size,(*i).second,accumulator,((*i).second*100)/float(accumulator));
-			Log					((*i).first);
+			LogInfo("%d(%d)-----------------%d[%d]:%5.2f%%------------------",j,size,(*i).second,accumulator,((*i).second*100)/float(accumulator));
+			LogInfo("%s", (*i).first);
 		}
 	}
 

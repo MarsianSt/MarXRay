@@ -1,4 +1,4 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 #pragma hdrstop
 
 #pragma warning(disable:4995)
@@ -99,7 +99,7 @@ BOOL	R_constant_table::parse	(void* _desc, u32 destination)
 						case 2:	r_type	=	RC_2x4;	break;
 						case 3: r_type	=	RC_3x4;	break;
 						default:
-							Msg("Invalid matrix dimension:%dx%d in constant %s", it->RegisterCount, T->Columns, name);
+							LogInfo("Invalid matrix dimension:%dx%d in constant %s", it->RegisterCount, T->Columns, name);
 							fatal		("MATRIX_ROWS: unsupported number of RegisterCount");
 							break;
 						}

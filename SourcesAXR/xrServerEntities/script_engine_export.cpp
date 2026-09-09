@@ -1,4 +1,4 @@
-////////////////////////////////////////////////////////////////////////////
+﻿////////////////////////////////////////////////////////////////////////////
 //	Module 		: script_engine_export.cpp
 //	Created 	: 01.04.2004
 //  Modified 	: 22.06.2004
@@ -22,7 +22,7 @@ template <typename TList> struct Register
 		Register<TList::Tail>::_Register(L);
 #ifdef XRGAME_EXPORTS
 #	ifdef _DEBUG
-		Msg("Exporting %s",typeid(TList::Head).name());
+		LogInfo("Exporting %s",typeid(TList::Head).name());
 #	endif
 #endif
 		TList::Head::script_register(L);
@@ -64,7 +64,7 @@ template <typename TFullList> struct DynamicCast
 		template <>
 		static void declare<true>()
 		{
-			Msg		("Exporting function to cast from \"%s\" to \"%s\"",typeid(T).name(),typeid(Head).name());
+			LogInfo("Exporting function to cast from \"%s\" to \"%s\"",typeid(T).name(),typeid(Head).name());
 		}
 	};
 

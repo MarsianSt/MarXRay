@@ -1,4 +1,4 @@
-#include "pch_script.h"
+п»ї#include "pch_script.h"
 #include "actorcondition.h"
 #include "actor.h"
 #include "actorEffector.h"
@@ -115,7 +115,7 @@ void CActorCondition::LoadCondition(LPCSTR entity_section)
 	m_fAccelK					= pSettings->r_float(section,"accel_k");
 	m_fSprintK					= pSettings->r_float(section,"sprint_k");
 
-	//порог силы и здоровья меньше которого актер начинает хромать
+	//пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 	m_fLimpingHealthBegin		= pSettings->r_float(section,	"limping_health_begin");
 	m_fLimpingHealthEnd			= pSettings->r_float(section,	"limping_health_end");
 	R_ASSERT					(m_fLimpingHealthBegin<=m_fLimpingHealthEnd);
@@ -842,7 +842,7 @@ void CActorCondition::UpdateFrostbite()
 		Actor()->SetHeatingStatus(false);
 
 	float cur_temperature = g_pGamePersistent->Environment().CurrentEnv->m_fAirTemperature;
-	bool IsHeat = Actor()->GetHeatingStatus() || cur_temperature > m_fFrostbiteDecTemp; // Сейчас ГГ около источника тепла
+	bool IsHeat = Actor()->GetHeatingStatus() || cur_temperature > m_fFrostbiteDecTemp; // пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ
 
 	if (IsHeat)
 		m_fFrostbite -= (m_fV_Frostbite * Actor()->GetCurrentHeating() + (cur_temperature / 1000000.f)) * m_fDeltaTime;
@@ -875,7 +875,7 @@ void CActorCondition::PowerHit(float power, bool apply_outfit)
 	clamp					(m_fPower, 0.f, 1.f);
 }
 
-//weight - "удельный" вес от 0..1
+//weight - "пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ" пїЅпїЅпїЅ пїЅпїЅ 0..1
 void CActorCondition::ConditionJump(float weight)
 {
 	if (GodMode()) return;
@@ -1647,7 +1647,7 @@ void CActorDeathEffector::UpdateCL()
 void CActorDeathEffector::OnPPEffectorReleased()
 {
 	m_b_actual				= false;	
-	Msg("111");
+	LogInfo("111");
 	//m_pParent->health()		= -1.0f;
 	m_pParent->SetHealth		(-1.0f);
 }

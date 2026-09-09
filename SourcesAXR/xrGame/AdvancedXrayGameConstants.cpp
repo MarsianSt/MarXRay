@@ -146,7 +146,7 @@ namespace GameConstants
 		m_bMiniMapEnabled = READ_IF_EXISTS(pAdvancedSettings, r_bool, "ui_settings", "enable_mini_map", true);
 		m_bCompassPanelEnabled = READ_IF_EXISTS(pAdvancedSettings, r_bool, "ui_settings", "enable_compass_panel", false);
 
-		Msg("# Advanced X-Ray GameConstants are loaded");
+		LogInfo("# Advanced X-Ray GameConstants are loaded");
 	}
 
 	bool GetKnifeSlotEnabled()

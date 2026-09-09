@@ -1,4 +1,4 @@
-////////////////////////////////////////////////////////////////////////////
+п»ї////////////////////////////////////////////////////////////////////////////
 //	Module 		: xrServer_Objects_ALife_Items.cpp
 //	Created 	: 19.09.2002
 //  Modified 	: 04.06.2003
@@ -28,7 +28,7 @@
 ////////////////////////////////////////////////////////////////////////////
 CSE_ALifeInventoryItem::CSE_ALifeInventoryItem(LPCSTR caSection)
 {
-	//текущее состояние вещи
+	//пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ
 	m_fCondition				= 1.0f;
 
 	m_fMass						= pSettings->r_float(caSection, "inv_weight");
@@ -195,7 +195,7 @@ void CSE_ALifeInventoryItem::UPDATE_Read	(NET_Packet &tNetPacket)
 {
 	tNetPacket.r_u8					(m_u8NumItems);
 	if (!m_u8NumItems) {
-		//Msg("--- Object [%d] has no sync items", this->cast_abstract()->ID);
+		//LogInfo("--- Object [%d] has no sync items", this->cast_abstract()->ID);
 		return;
 	}
 

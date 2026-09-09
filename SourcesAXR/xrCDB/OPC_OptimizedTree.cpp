@@ -1,4 +1,4 @@
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+﻿///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /*
  *	OPCODE - Optimized Collision Detection
  *	Copyright (C) 2001 Pierre Terdiman
@@ -244,8 +244,8 @@ bool AABBCollisionTree::Build(AABBTree* tree)
 	ASSERT(CurID==mNbNodes);
 
 #ifdef __ICECORE_H__
-	Log("Original tree: %d nodes, depth %d\n", NbNodes, tree->ComputeDepth());
-	Log("AABB Collision tree: %d nodes, %d bytes - Alignment: %d\n", mNbNodes, GetUsedBytes(), Alignment(udword(mNodes)));
+	LogInfo("%s", "Original tree: %d nodes, depth %d\n", NbNodes, tree->ComputeDepth());
+	LogInfo("%s", "AABB Collision tree: %d nodes, %d bytes - Alignment: %d\n", mNbNodes, GetUsedBytes(), Alignment(udword(mNodes)));
 #endif
 
 	return true;
@@ -298,8 +298,8 @@ bool AABBNoLeafTree::Build(AABBTree* tree)
 	ASSERT(CurID==mNbNodes);
 
 #ifdef __ICECORE_H__
-	Log("Original tree: %d nodes, depth %d\n", NbNodes, tree->ComputeDepth());
-	Log("AABB quantized tree: %d nodes, %d bytes - Alignment: %d\n", mNbNodes, GetUsedBytes(), Alignment(udword(mNodes)));
+	LogInfo("%s", "Original tree: %d nodes, depth %d\n", NbNodes, tree->ComputeDepth());
+	LogInfo("%s", "AABB quantized tree: %d nodes, %d bytes - Alignment: %d\n", mNbNodes, GetUsedBytes(), Alignment(udword(mNodes)));
 #endif
 
 	return true;
@@ -470,8 +470,8 @@ bool AABBQuantizedTree::Build(AABBTree* tree)
 	}
 
 #ifdef __ICECORE_H__
-	Log("Original tree: %d nodes, depth %d\n", NbNodes, tree->ComputeDepth());
-	Log("AABB quantized tree: %d nodes, %d bytes - Alignment: %d\n", mNbNodes, GetUsedBytes(), Alignment(udword(mNodes)));
+	LogInfo("%s", "Original tree: %d nodes, depth %d\n", NbNodes, tree->ComputeDepth());
+	LogInfo("%s", "AABB quantized tree: %d nodes, %d bytes - Alignment: %d\n", mNbNodes, GetUsedBytes(), Alignment(udword(mNodes)));
 #endif
 	return true;
 }
@@ -549,8 +549,8 @@ bool AABBQuantizedNoLeafTree::Build(AABBTree* tree)
 	}
 
 #ifdef __ICECORE_H__
-	Log("Original tree: %d nodes, depth %d\n", NbNodes, tree->ComputeDepth());
-	Log("AABB quantized no-leaf tree: %d nodes, %d bytes - Alignment: %d\n", mNbNodes, GetUsedBytes(), Alignment(udword(mNodes)));
+	LogInfo("%s", "Original tree: %d nodes, depth %d\n", NbNodes, tree->ComputeDepth());
+	LogInfo("%s", "AABB quantized no-leaf tree: %d nodes, %d bytes - Alignment: %d\n", mNbNodes, GetUsedBytes(), Alignment(udword(mNodes)));
 #endif
 
 	return true;

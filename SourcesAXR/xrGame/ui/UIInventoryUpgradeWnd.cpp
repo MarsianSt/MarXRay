@@ -1,4 +1,4 @@
-////////////////////////////////////////////////////////////////////////////
+п»ї////////////////////////////////////////////////////////////////////////////
 //	Module 		: UIInventoryUpgradeWnd.cpp
 //	Created 	: 06.10.2007
 //  Modified 	: 13.03.2009
@@ -118,7 +118,7 @@ void CUIInventoryUpgradeWnd::InitInventory( CInventoryItem* item, bool can_upgra
 	bool is_3d_static = m_inv_item && m_inv_item->GetUpgradeIcon3D();
 	bool b_r4 = !!psDeviceFlags.test(rsR4);
 
-	// Загружаем картинку
+	// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 	if (!is_3d_static || !b_r4)
 	{
 		if (m_item_3d)
@@ -278,7 +278,7 @@ bool CUIInventoryUpgradeWnd::install_item( CInventoryItem& inv_item, bool can_up
 	if ( !can_upgrade )
 	{
 #ifdef DEBUG
-		Msg( "Inventory item <%s> cannot upgrade - Mechanic say.", inv_item.m_section_id.c_str() );
+		LogInfo( "Inventory item <%s> cannot upgrade - Mechanic say.", inv_item.m_section_id.c_str() );
 #endif // DEBUG
 		m_current_scheme = NULL;
 		return false;
@@ -288,7 +288,7 @@ bool CUIInventoryUpgradeWnd::install_item( CInventoryItem& inv_item, bool can_up
 	if ( !scheme_name )
 	{
 #ifdef DEBUG
-		Msg( "Inventory item <%s> does not contain upgrade scheme.", inv_item.m_section_id.c_str() );
+		LogInfo( "Inventory item <%s> does not contain upgrade scheme.", inv_item.m_section_id.c_str() );
 #endif // DEBUG
 		m_current_scheme = NULL;
 		return false;

@@ -1,4 +1,4 @@
-//----------------------------------------------------
+п»ї//----------------------------------------------------
 // file: PSObject.cpp
 //----------------------------------------------------
 #include "stdafx.h"
@@ -146,7 +146,7 @@ void CParticlesObject::Stop		(BOOL bDefferedStop)
 	if (!V)
 	{
 #ifdef DEBUG
-		Msg("[CParticlesObject::Stop]: Attempt to stop a null IParticleCustom! The function has been canceled.");
+		LogInfo("[CParticlesObject::Stop]: Attempt to stop a null IParticleCustom! The function has been canceled.");
 #endif
 		return;
 	}
@@ -248,8 +248,8 @@ void CParticlesObject::SetAutoRemove		(bool auto_remove)
 	m_bAutoRemove = auto_remove;
 }
 
-//играются ли партиклы, отличается от PSI_Alive, тем что после
-//остановки Stop партиклы могут еще доигрывать анимацию IsPlaying = true
+//пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ PSI_Alive, пїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ
+//пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ Stop пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ IsPlaying = true
 bool CParticlesObject::IsPlaying()
 {
 	IParticleCustom* V	= smart_cast<IParticleCustom*>(renderable.visual); 

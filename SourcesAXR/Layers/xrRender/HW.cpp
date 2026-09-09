@@ -74,7 +74,7 @@ void CHW::Reset		(HWND hwnd)
 	while	(TRUE)	{
 		HRESULT _hr							= HW.pDevice->Reset	(&DevPP);
 		if (SUCCEEDED(_hr))					break;
-		Msg		("! ERROR: [%dx%d]: %s",DevPP.BackBufferWidth,DevPP.BackBufferHeight,Debug.error2string(_hr));
+		LogInfo("! ERROR: [%dx%d]: %s",DevPP.BackBufferWidth,DevPP.BackBufferHeight,Debug.error2string(_hr));
 		Sleep	(100);
 	}
 	R_CHK				(pDevice->GetRenderTarget			(0,&pBaseRT));
@@ -245,13 +245,13 @@ void		CHW::CreateDevice		(HWND m_hWnd, bool move_window)
 	// Display the name of video board
 	D3DADAPTER_IDENTIFIER9	adapterID;
 	R_CHK	(pD3D->GetAdapterIdentifier(DevAdapter,0,&adapterID));
-	Msg		("* GPU [vendor:%X]-[device:%X]: %s",adapterID.VendorId,adapterID.DeviceId,adapterID.Description);
+	LogInfo("* GPU [vendor:%X]-[device:%X]: %s",adapterID.VendorId,adapterID.DeviceId,adapterID.Description);
 
 	u16	drv_Product		= HIWORD(adapterID.DriverVersion.HighPart);
 	u16	drv_Version		= LOWORD(adapterID.DriverVersion.HighPart);
 	u16	drv_SubVersion	= HIWORD(adapterID.DriverVersion.LowPart);
 	u16	drv_Build		= LOWORD(adapterID.DriverVersion.LowPart);
-	Msg		("* GPU driver: %d.%d.%d.%d",u32(drv_Product),u32(drv_Version),u32(drv_SubVersion), u32(drv_Build));
+	LogInfo("* GPU driver: %d.%d.%d.%d",u32(drv_Product),u32(drv_Version),u32(drv_SubVersion), u32(drv_Build));
 
 	Caps.id_vendor	= adapterID.VendorId;
 	Caps.id_device	= adapterID.DeviceId;
@@ -300,11 +300,11 @@ void		CHW::CreateDevice		(HWND m_hWnd, bool move_window)
 	}
 
 	if ((D3DFMT_UNKNOWN==fTarget) || (D3DFMT_UNKNOWN==fTarget))	{
-		Msg					("Failed to initialize graphics hardware.\n"
+		LogInfo("Failed to initialize graphics hardware.\n"
 							 "Please try to restart the game.\n"
 							 "Can not find matching format for back buffer."
 							 );
-		FlushLog			();
+		xrAsyncLogger::instance().flush();
 		MessageBox			(NULL,"Failed to initialize graphics hardware.\nPlease try to restart the game.","Error!",MB_OK|MB_ICONERROR);
 		TerminateProcess	(GetCurrentProcess(),0);
 	}
@@ -363,10 +363,10 @@ void		CHW::CreateDevice		(HWND m_hWnd, bool move_window)
 	}
 	if (D3DERR_DEVICELOST==R)	{
 		// Fatal error! Cannot create rendering device AT STARTUP !!!
-		Msg					("Failed to initialize graphics hardware.\n"
+		LogInfo("Failed to initialize graphics hardware.\n"
 							 "Please try to restart the game.\n"
 							 "CreateDevice returned 0x%08x(D3DERR_DEVICELOST)", R);
-		FlushLog			();
+		xrAsyncLogger::instance().flush();
 		MessageBox			(NULL,"Failed to initialize graphics hardware.\nPlease try to restart the game.","Error!",MB_OK|MB_ICONERROR);
 		TerminateProcess	(GetCurrentProcess(),0);
 	};
@@ -376,28 +376,28 @@ void		CHW::CreateDevice		(HWND m_hWnd, bool move_window)
 	switch (GPU)
 	{
 	case D3DCREATE_SOFTWARE_VERTEXPROCESSING:
-		Log	("* Vertex Processor: SOFTWARE");
+		LogInfo("* Vertex Processor: SOFTWARE");
 		break;
 	case D3DCREATE_MIXED_VERTEXPROCESSING:
-		Log	("* Vertex Processor: MIXED");
+		LogInfo("* Vertex Processor: MIXED");
 		break;
 	case D3DCREATE_HARDWARE_VERTEXPROCESSING:
-		Log	("* Vertex Processor: HARDWARE");
+		LogInfo("* Vertex Processor: HARDWARE");
 		break;
 	case D3DCREATE_HARDWARE_VERTEXPROCESSING|D3DCREATE_PUREDEVICE:
-		Log	("* Vertex Processor: PURE HARDWARE");
+		LogInfo("* Vertex Processor: PURE HARDWARE");
 		break;
 	}
 
 	// Capture misc data
 #ifdef DEBUG
-	R_CHK	(pDevice->CreateStateBlock			(D3DSBT_ALL,&dwDebugSB));
+	R_CHK	(pDevice->CreateStateBlock			(D3DSBT_ALL, &dwDebugSB));
 #endif
 	R_CHK	(pDevice->GetRenderTarget			(0,&pBaseRT));
 	R_CHK	(pDevice->GetDepthStencilSurface	(&pBaseZB));
 	u32	memory									= pDevice->GetAvailableTextureMem	();
-	Msg		("*     Texture memory: %d M",		memory/(1024*1024));
-	Msg		("*          DDI-level: %2.1f",		float(D3DXGetDriverLevel(pDevice))/100.f);
+	LogInfo("*     Texture memory: %d M",		memory/(1024*1024));
+	LogInfo("*          DDI-level: %2.1f",		float(D3DXGetDriverLevel(pDevice))/100.f);
 #ifndef _EDITOR
 	updateWindowProps							(m_hWnd);
 	fill_vid_mode_list							(this);
@@ -473,20 +473,20 @@ u32 CHW::selectGPU ()
 	if ( isIntelGMA )
 		switch ( ps_r1_SoftwareSkinning ) {
 			case 0 : 
-				Msg( "* Enabling software skinning" );
+				LogInfo( "* Enabling software skinning" );
 				ps_r1_SoftwareSkinning = 1;
 				break;
 			case 1 : 
-				Msg( "* Using software skinning" );
+				LogInfo( "* Using software skinning" );
 				break;
 			case 2 : 
-				Msg( "* WARNING: Using hardware skinning" );
-				Msg( "*   setting 'r1_software_skinning' to '1' may improve performance" );
+				LogInfo( "* WARNING: Using hardware skinning" );
+				LogInfo( "*   setting 'r1_software_skinning' to '1' may improve performance" );
 				break;
 	} else
 		if ( ps_r1_SoftwareSkinning == 1 ) {
-				Msg( "* WARNING: Using software skinning" );
-				Msg( "*   setting 'r1_software_skinning' to '0' should improve performance" );
+				LogInfo( "* WARNING: Using software skinning" );
+				LogInfo( "*   setting 'r1_software_skinning' to '0' should improve performance" );
 		}
 
 #endif // RENDER == R_R1
@@ -682,14 +682,14 @@ void	fill_render_mode_list()
 	vid_quality_token[_cnt-1].name			= NULL;
 
 #ifdef DEBUG
-	Msg("Available render modes[%d]:",_tmp.size());
+	LogInfo("Available render modes[%d]:",_tmp.size());
 #endif // DEBUG
 	for(u32 i=0; i<_tmp.size();++i)
 	{
 		vid_quality_token[i].id				= i;
 		vid_quality_token[i].name			= _tmp[i];
 #ifdef DEBUG
-		Msg							("[%s]",_tmp[i]);
+		LogInfo("[%s]",_tmp[i]);
 #endif // DEBUG
 	}
 }
@@ -736,14 +736,14 @@ void fill_vid_mode_list(CHW* _hw)
 	vid_mode_token[_cnt-1].name		= NULL;
 
 #ifdef DEBUG
-	Msg("Available video modes[%d]:",_tmp.size());
+	LogInfo("Available video modes[%d]:",_tmp.size());
 #endif // DEBUG
 	for(i=0; i<_tmp.size();++i)
 	{
 		vid_mode_token[i].id		= i;
 		vid_mode_token[i].name		= _tmp[i];
 #ifdef DEBUG
-		Msg							("[%s]",_tmp[i]);
+		LogInfo("[%s]",_tmp[i]);
 #endif // DEBUG
 	}
 }

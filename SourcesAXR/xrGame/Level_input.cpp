@@ -1,4 +1,4 @@
-#include "stdafx.h"
+п»ї#include "stdafx.h"
 #include <dinput.h>
 #include "../xrEngine/xr_ioconsole.h"
 #include "entity_alive.h"
@@ -58,7 +58,7 @@ void CLevel::IR_OnMouseWheel( int direction )
 		g_actor->callback(GameObject::eMouseWheel)(direction);
 	/* avo: end */
 
-	if (CurrentGameUI()->IR_UIOnMouseWheel(direction))
+	if (CurrentGameUI() && CurrentGameUI()->IR_UIOnMouseWheel(direction))
 		return;
 
 	if( Device.Paused()
@@ -96,7 +96,7 @@ void CLevel::IR_OnMouseMove( int dx, int dy )
 		g_actor->callback(GameObject::eMouseMove)(dx, dy);
 	/* avo: end */
 
-	if (CurrentGameUI()->IR_UIOnMouseMove(dx,dy))
+	if (CurrentGameUI() && CurrentGameUI()->IR_UIOnMouseMove(dx,dy))
 		return;
 
 	if (Device.Paused() && !IsDemoPlay() 
@@ -111,7 +111,7 @@ void CLevel::IR_OnMouseMove( int dx, int dy )
 	}
 }
 
-// Обработка нажатия клавиш
+// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
 extern bool g_block_pause;
 extern bool g_block_all_except_movement;
 
@@ -305,7 +305,7 @@ void CLevel::IR_OnKeyboardPress	(int key)
 		{
 			if (GameID()!=eGameIDSingle) 
 			{
-				Msg("For this game type Demo Record is disabled.");
+				LogInfo("For this game type Demo Record is disabled.");
 ///				return;
 			};
 			if(!pInput->iGetAsyncKeyState(DIK_LSHIFT))

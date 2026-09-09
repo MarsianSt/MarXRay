@@ -1,4 +1,4 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 #include "game_sv_item_respawner.h"
 #include "game_sv_base.h"
 #include "level.h"
@@ -171,7 +171,7 @@ u32 item_respawn_manager::load_section_items(CInifile & ini, const char* section
 	if (!ini.section_exist(section_name))
 	{
 #ifndef MASTER_GOLD
-		Msg("! ERROR: section %s not exist", section_name);
+		LogInfo("! ERROR: section %s not exist", section_name);
 #endif // #ifndef MASTER_GOLD
 		return 0;
 	}
@@ -189,7 +189,7 @@ u32 item_respawn_manager::load_section_items(CInifile & ini, const char* section
 		xr_strcpy(item_value, ini.r_string(section_name, item_name));
 		if (!parse_string(item_value, xr_strlen(item_value), temp_sect_item))
 		{
-			Msg("! WARNING: failed to parse item [%s] in section [%s]", item_name, section_name);
+			LogInfo("! WARNING: failed to parse item [%s] in section [%s]", item_name, section_name);
 		} else
 		{
 			items->push_back(temp_sect_item);
@@ -218,7 +218,7 @@ item_respawn_manager::respawn_section_iter
 		_GetItem(section_name.c_str(), is, temp_section_name);
 		if (!load_section_items(ini, temp_section_name, tmp_sect_items))
 		{
-			Msg("! WARNING: section [%s] is empty", temp_section_name);
+			LogInfo("! WARNING: section [%s] is empty", temp_section_name);
 		}
 	}
 	std::pair<respawn_section_iter, bool> insert_res = 
@@ -253,7 +253,7 @@ void item_respawn_manager::add_new_rpoint(shared_str profile_sect, RPoint const 
 		if (tmp_resp_sect == m_respawn_sections_cache.end())
 		{
 #ifndef MASTER_GOLD
-			Msg("! ERROR: not found section %s in respawn_items.ltx", profile_sect.c_str());
+			LogInfo("! ERROR: not found section %s in respawn_items.ltx", profile_sect.c_str());
 #endif // #ifndef MASTER_GOLD
 			return;
 		}
@@ -279,7 +279,7 @@ void item_respawn_manager::add_new_rpoint(shared_str profile_sect, RPoint const 
 		} else
 		{
 #ifndef MASTER_GOLD
-			Msg("! ERROR: failed to create entity [%s] with addons [%d]", iter_rsect->section_name.c_str(), iter_rsect->addons);
+			LogInfo("! ERROR: failed to create entity [%s] with addons [%d]", iter_rsect->section_name.c_str(), iter_rsect->addons);
 #endif // #ifndef MASTER_GOLD
 		}
 	}
@@ -332,7 +332,7 @@ u16 item_respawn_manager::respawn_item(CSE_Abstract* item_object)
 	R_ASSERT(item_object);
 	spawn_packet_store.write_start();
 #ifdef DEBUG
-	Msg("--- Respawning item %s - it's time...", item_object->name());
+	LogInfo("--- Respawning item %s - it's time...", item_object->name());
 #endif // #ifdef DEBUG
 	item_object->Spawn_Write(spawn_packet_store, false);
 	u16 skip_header;
@@ -356,7 +356,7 @@ void item_respawn_manager::clear_level_items()
 		if (entity->ID_Parent != u16(-1))
 			continue;
 #ifndef MASTER_GOLD
-		Msg("---Destroying level item [%d] before respawn...", *i);
+		LogInfo("---Destroying level item [%d] before respawn...", *i);
 #endif // #ifndef MASTER_GOLD
 		m_server->Perform_destroy(entity, net_flags(TRUE,TRUE));
 	}

@@ -1,4 +1,4 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 #pragma hdrstop
 
 #pragma warning(disable:4995)
@@ -64,7 +64,7 @@ void		CResourceManager::_DeleteState		(const SState* state)
 {
 	if (0==(state->dwFlags&xr_resource_flagged::RF_REGISTERED))	return;
 	if (reclaim(v_states,state))						return;
-	Msg	("! ERROR: Failed to find compiled stateblock");
+	LogInfo("! ERROR: Failed to find compiled stateblock");
 }
 
 //--------------------------------------------------------------------------------------------------------------
@@ -94,7 +94,7 @@ void		CResourceManager::_DeletePass			(const SPass* P)
 {
 	if (0==(P->dwFlags&xr_resource_flagged::RF_REGISTERED))	return;
 	if (reclaim(v_passes,P))						return;
-	Msg	("! ERROR: Failed to find compiled pass");
+	LogInfo("! ERROR: Failed to find compiled pass");
 }
 
 //--------------------------------------------------------------------------------------------------------------
@@ -130,7 +130,7 @@ void		CResourceManager::_DeleteDecl		(const SDeclaration* dcl)
 {
 	if (0==(dcl->dwFlags&xr_resource_flagged::RF_REGISTERED))	return;
 	if (reclaim(v_declarations,dcl))					return;
-	Msg	("! ERROR: Failed to find compiled vertex-declarator");
+	LogInfo("! ERROR: Failed to find compiled vertex-declarator");
 }
 
 //--------------------------------------------------------------------------------------------------------------
@@ -183,11 +183,11 @@ SVS*	CResourceManager::_CreateVS		(LPCSTR _name)
 		if (strstr(data, "main_vs_1_1"))	{ c_target = "vs_1_1"; c_entry = "main_vs_1_1";	}
 		if (strstr(data, "main_vs_2_0"))	{ c_target = "vs_2_0"; c_entry = "main_vs_2_0";	}
 
-		Msg						( "compiling shader %s", name );
+		LogInfo( "compiling shader %s", name );
 		HRESULT const _hr		= ::Render->shader_compile( name, (DWORD const*)data, size, c_entry, c_target, D3DXSHADER_DEBUG | D3DXSHADER_PACKMATRIX_ROWMAJOR, (void*&)_vs);
 
 		if (FAILED(_hr))
-			FlushLog();
+			xrAsyncLogger::instance().flush();
 
 		CHECK_OR_EXIT			(!FAILED(_hr), make_string("Can't compile shader: %s", _name));
 
@@ -205,7 +205,7 @@ void	CResourceManager::_DeleteVS			(const SVS* vs)
 		m_vs.erase(I);
 		return;
 	}
-	Msg	("! ERROR: Failed to find compiled vertex-shader '%s'",*vs->cName);
+	LogInfo("! ERROR: Failed to find compiled vertex-shader '%s'",*vs->cName);
 }
 
 #ifndef _EDITOR
@@ -249,11 +249,11 @@ SPS*	CResourceManager::_CreatePS			(LPCSTR name)
 		if (strstr(data,"main_ps_1_4"))			{ c_target = "ps_1_4"; c_entry = "main_ps_1_4";	}
 		if (strstr(data,"main_ps_2_0"))			{ c_target = "ps_2_0"; c_entry = "main_ps_2_0";	}
 
-		Msg						( "compiling shader %s", name );
+		LogInfo( "compiling shader %s", name );
 		HRESULT const _hr		= ::Render->shader_compile( name, (DWORD const*)data, size, c_entry, c_target, D3DXSHADER_DEBUG | D3DXSHADER_PACKMATRIX_ROWMAJOR, (void*&)_ps);
 
 		if ( FAILED(_hr) ) {
-			FlushLog();
+			xrAsyncLogger::instance().flush();
 		}
 
 		R_ASSERT3(SUCCEEDED(_hr), "Can't compile shader", name);
@@ -272,7 +272,7 @@ void	CResourceManager::_DeletePS			(const SPS* ps)
 		m_ps.erase(I);
 		return;
 	}
-	Msg	("! ERROR: Failed to find compiled pixel-shader '%s'",*ps->cName);
+	LogInfo("! ERROR: Failed to find compiled pixel-shader '%s'",*ps->cName);
 }
 
 R_constant_table*	CResourceManager::_CreateConstantTable	(R_constant_table& C)
@@ -288,7 +288,7 @@ void				CResourceManager::_DeleteConstantTable	(const R_constant_table* C)
 {
 	if (0==(C->dwFlags&xr_resource_flagged::RF_REGISTERED))	return;
 	if (reclaim(v_constant_tables,C))				return;
-	Msg	("! ERROR: Failed to find compiled constant-table");
+	LogInfo("! ERROR: Failed to find compiled constant-table");
 }
 
 //--------------------------------------------------------------------------------------------------------------
@@ -318,7 +318,7 @@ void	CResourceManager::_DeleteRT		(const CRT* RT)
 		m_rtargets.erase(I);
 		return;
 	}
-	Msg	("! ERROR: Failed to find render-target '%s'",*RT->cName);
+	LogInfo("! ERROR: Failed to find render-target '%s'",*RT->cName);
 }
 
 //	DX10 cut 
@@ -350,7 +350,7 @@ void	CResourceManager::_DeleteRTC		(const CRTC* RT)
 		m_rtargets_c.erase(I);
 		return;
 	}
-	Msg	("! ERROR: Failed to find render-target '%s'",*RT->cName);
+	LogInfo("! ERROR: Failed to find render-target '%s'",*RT->cName);
 }
 */
 //--------------------------------------------------------------------------------------------------------------
@@ -406,7 +406,7 @@ void		CResourceManager::DeleteGeom		(const SGeometry* Geom)
 {
 	if (0==(Geom->dwFlags&xr_resource_flagged::RF_REGISTERED))	return;
 	if (reclaim(v_geoms,Geom))							return;
-	Msg	("! ERROR: Failed to find compiled geometry-declaration");
+	LogInfo("! ERROR: Failed to find compiled geometry-declaration");
 }
 
 //--------------------------------------------------------------------------------------------------------------
@@ -448,7 +448,7 @@ void	CResourceManager::_DeleteTexture		(const CTexture* T)
 		m_textures.erase(I);
 		return;
 	}
-	Msg	("! ERROR: Failed to find texture surface '%s'",*T->cName);
+	LogInfo("! ERROR: Failed to find texture surface '%s'",*T->cName);
 }
 
 #ifdef DEBUG
@@ -493,7 +493,7 @@ void	CResourceManager::_DeleteMatrix		(const CMatrix* M)
 		m_matrices.erase(I);
 		return;
 	}
-	Msg	("! ERROR: Failed to find xform-def '%s'",*M->cName);
+	LogInfo("! ERROR: Failed to find xform-def '%s'",*M->cName);
 }
 void	CResourceManager::ED_UpdateMatrix		(LPCSTR Name, CMatrix* data)
 {
@@ -527,7 +527,7 @@ void	CResourceManager::_DeleteConstant		(const CConstant* C)
 		m_constants.erase(I);
 		return;
 	}
-	Msg	("! ERROR: Failed to find R1-constant-def '%s'",*C->cName);
+	LogInfo("! ERROR: Failed to find R1-constant-def '%s'",*C->cName);
 }
 
 void	CResourceManager::ED_UpdateConstant	(LPCSTR Name, CConstant* data)
@@ -557,7 +557,7 @@ void			CResourceManager::_DeleteTextureList(const STextureList* L)
 {
 	if (0==(L->dwFlags&xr_resource_flagged::RF_REGISTERED))	return;
 	if (reclaim(lst_textures,L))					return;
-	Msg	("! ERROR: Failed to find compiled list of textures");
+	LogInfo("! ERROR: Failed to find compiled list of textures");
 }
 //--------------------------------------------------------------------------------------------------------------
 SMatrixList*	CResourceManager::_CreateMatrixList(SMatrixList& L)
@@ -580,7 +580,7 @@ void			CResourceManager::_DeleteMatrixList ( const SMatrixList* L )
 {
 	if (0==(L->dwFlags&xr_resource_flagged::RF_REGISTERED))	return;
 	if (reclaim(lst_matrices,L))					return;
-	Msg	("! ERROR: Failed to find compiled list of xform-defs");
+	LogInfo("! ERROR: Failed to find compiled list of xform-defs");
 }
 //--------------------------------------------------------------------------------------------------------------
 SConstantList*	CResourceManager::_CreateConstantList(SConstantList& L)
@@ -603,7 +603,7 @@ void			CResourceManager::_DeleteConstantList(const SConstantList* L )
 {
 	if (0==(L->dwFlags&xr_resource_flagged::RF_REGISTERED))	return;
 	if (reclaim(lst_constants,L))					return;
-	Msg	("! ERROR: Failed to find compiled list of r1-constant-defs");
+	LogInfo("! ERROR: Failed to find compiled list of r1-constant-defs");
 }
 
 #ifdef _EDITOR
@@ -714,31 +714,31 @@ SVS*	CResourceManager::_CreateVS		(LPCSTR _name)
 					} 
 					else
 					{
-						Log	("! VS: ", _name);
-						Msg	("! D3DXFindShaderComment hr == 0x%08x", _hr);
+						LogInfo("%s", "! VS: ", _name);
+						LogInfo("! D3DXFindShaderComment hr == 0x%08x", _hr);
 						_hr = E_FAIL;
 					}
 				}
 				else
 				{
-					Log	("! VS: ", _name);
-					Msg	("! CreateVertexShader hr == 0x%08x", _hr);
+					LogInfo("%s", "! VS: ", _name);
+					LogInfo("! CreateVertexShader hr == 0x%08x", _hr);
 				}
 			}
 			else
 			{
-				Log	("! VS: ", _name);
-				Log	("! pShaderBuf == NULL");
+				LogInfo("! VS: %s", _name);
+				LogInfo("! pShaderBuf == NULL");
 				_hr = E_FAIL;
 			}
 		}
 		else
 		{
-			Log("! VS: ", _name);
+			LogInfo("! VS: %s", _name);
 			if(pErrorBuf)
-				Log("! error: ",(LPCSTR)pErrorBuf->GetBufferPointer());
+				LogInfo("! error: %s", (LPCSTR)pErrorBuf->GetBufferPointer());
 			else
-				Msg("Can't compile shader hr=0x%08x", _hr);
+				LogInfo("Can't compile shader hr=0x%08x", _hr);
 		}
 
 		_RELEASE	(pShaderBuf);
@@ -819,31 +819,31 @@ SPS*	CResourceManager::_CreatePS			(LPCSTR name)
 					}
 					else
 					{
-						Log	("! PS: ", name);
-						Msg	("! D3DXFindShaderComment hr == 0x%08x", _hr);
+						LogInfo("%s", "! PS: ", name);
+						LogInfo("! D3DXFindShaderComment hr == 0x%08x", _hr);
 						_hr = E_FAIL;
 					}
 				}
 				else
 				{
-					Log	("! PS: ", name);
-					Msg	("! CreatePixelShader hr == 0x%08x", _hr);
+					LogInfo("%s", "! PS: ", name);
+					LogInfo("! CreatePixelShader hr == 0x%08x", _hr);
 				}
 			}
 			else
 			{
-				Log	("! PS: ", name);
-				Log	("! pShaderBuf == NULL");
+				LogInfo("! PS: %s", name);
+				LogInfo("! pShaderBuf == NULL");
 				_hr = E_FAIL;
 			}
 		}
 		else
 		{
-			Log("! PS: ", name);
+			LogInfo("! PS: %s", name);
 			if(pErrorBuf)
-				Log("! error: ",(LPCSTR)pErrorBuf->GetBufferPointer());
+				LogInfo("! error: %s", (LPCSTR)pErrorBuf->GetBufferPointer());
 			else
-				Msg("Can't compile shader hr=0x%08x", _hr);
+				LogInfo("Can't compile shader hr=0x%08x", _hr);
 		}
 
 		_RELEASE		(pShaderBuf);

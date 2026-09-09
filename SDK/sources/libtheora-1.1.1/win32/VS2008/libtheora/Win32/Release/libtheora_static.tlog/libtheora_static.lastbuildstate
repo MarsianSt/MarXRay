@@ -1,2 +1,2 @@
-PlatformToolSet=v142:VCToolArchitecture=Native32Bit:VCToolsVersion=14.29.30133:VCServicingVersionCrtHeaders=14.29.30136:TargetPlatformVersion=8.1:
-Release|Win32|C:\MFS-Team\Advanced-X-Ray\SDK\sources\libtheora-1.1.1\win32\VS2008\|
+PlatformToolSet=v143:VCToolArchitecture=Native32Bit:VCToolsVersion=14.44.35207:TargetPlatformVersion=10.0.26100.0:
+Release|Win32|E:\XRay-engine\MarXRay\SourcesAXR\|

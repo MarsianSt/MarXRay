@@ -1,4 +1,4 @@
-//////////////////////////////////////////////////////////////////////
+﻿//////////////////////////////////////////////////////////////////////
 //-- UI3dStatic.cpp: класс статического элемента, который рендерит
 //-- 3d объект в себя
 //////////////////////////////////////////////////////////////////////
@@ -51,8 +51,8 @@ void CUI3dStatic::ModelCreate()
             Fbox& box = m_pCurrentVisual->dcast_RenderVisual()->getVisData().box;
             box.getcenter(m_vboxCenter);
             m_fboxRadius = box.getradius();
-            Msg("box center = %f,%f,%f", VPUSH(m_vboxCenter));
-            Msg("box radius = %f", m_fboxRadius);
+            LogInfo("box center = %f,%f,%f", VPUSH(m_vboxCenter));
+            LogInfo("box radius = %f", m_fboxRadius);
         }
         else
             m_sphere = m_pCurrentVisual->dcast_RenderVisual()->getVisData().sphere;

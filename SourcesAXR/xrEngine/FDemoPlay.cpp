@@ -1,4 +1,4 @@
-// CDemoPlay.cpp: implementation of the CDemoPlay class.
+﻿// CDemoPlay.cpp: implementation of the CDemoPlay class.
 //
 //////////////////////////////////////////////////////////////////////
 
@@ -18,7 +18,7 @@
 
 CDemoPlay::CDemoPlay(const char *name, float ms, u32 cycles, float life_time) : CEffectorCam(cefDemo,life_time/*,FALSE*/)
 {
-	Msg					("*** Playing demo: %s",name);
+	LogInfo("*** Playing demo: %s",name);
 	Console->Execute	("hud_weapon 0");
 	if( g_bBenchmark || g_SASH.IsRunning() )
 		Console->Execute	("hud_draw 0");
@@ -58,7 +58,7 @@ CDemoPlay::CDemoPlay(const char *name, float ms, u32 cycles, float life_time) : 
 		m_count			= seq.size();
 		CopyMemory	(&*seq.begin(),fs->pointer(),sz);
 		FS.r_close		(fs);
-		Log				("~ Total key-frames: ",m_count);
+		LogInfo("%s", "~ Total key-frames: ",m_count);
 	}
 	stat_started		= FALSE;
 	Device.PreCache		(50, true, false);
@@ -152,7 +152,7 @@ void CDemoPlay::stat_Stop	()
 	rfps_middlepoint		/= float(stat_table.size()-1);
 	*/
 
-	Msg("* [DEMO] FPS: average[%f], min[%f], max[%f], middle[%f]",rfps_average,rfps_min,rfps_max,rfps_middlepoint);
+	LogInfo("* [DEMO] FPS: average[%f], min[%f], max[%f], middle[%f]",rfps_average,rfps_min,rfps_max,rfps_middlepoint);
 
 	if(g_bBenchmark)
 	{

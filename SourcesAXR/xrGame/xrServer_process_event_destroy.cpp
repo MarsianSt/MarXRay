@@ -1,4 +1,4 @@
-#include "stdafx.h"
+п»ї#include "stdafx.h"
 #include "xrServer.h"
 #include "game_sv_single.h"
 #include "alife_simulator.h"
@@ -28,27 +28,27 @@ void xrServer::Process_event_destroy	(NET_Packet& P, ClientID sender, u32 time, 
 	u16								id_dest	= ID;
 #ifdef DEBUG
 	if( dbg_net_Draw_Flags.test( dbg_destroy ) )
-		Msg								("sv destroy object %s [%d]", ent_name_safe(id_dest).c_str(), Device.dwFrame);
+		LogInfo("sv destroy object %s [%d]", ent_name_safe(id_dest).c_str(), Device.dwFrame);
 #endif
 
-	CSE_Abstract*					e_dest = game->get_entity_from_eid	(id_dest);	// кто должен быть уничтожен
+	CSE_Abstract*					e_dest = game->get_entity_from_eid	(id_dest);	// пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 	if (!e_dest) 
 	{
 #ifndef MASTER_GOLD
-		Msg							("!SV:ge_destroy: [%d] not found on server",id_dest);
+		LogInfo("!SV:ge_destroy: [%d] not found on server",id_dest);
 #endif // #ifndef MASTER_GOLD
 		return;
 	};
 
 	R_ASSERT						(e_dest);
-	xrClientData					*c_dest = e_dest->owner;				// клиент, чей юнит
+	xrClientData					*c_dest = e_dest->owner;				// пїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅ пїЅпїЅпїЅпїЅ
 	R_ASSERT						(c_dest);
-	xrClientData					*c_from = ID_to_client(sender);	// клиент, кто прислал
+	xrClientData					*c_from = ID_to_client(sender);	// пїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 	R_ASSERT						(c_dest == c_from);							// assure client ownership of event
 	u16								parent_id = e_dest->ID_Parent;
 
 #ifdef MP_LOGGING
-	Msg("--- SV: Process destroy: parent [%d] item [%d][%s]", 
+	LogInfo("--- SV: Process destroy: parent [%d] item [%d][%s]", 
 		parent_id, id_dest, e_dest->name());
 #endif //#ifdef MP_LOGGING
 

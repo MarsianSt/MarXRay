@@ -1,4 +1,4 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 #include "Message_Filter.h"
 #include "NET_Queue.h"
 
@@ -99,7 +99,7 @@ void message_filter::dbg_set_message_log_file(string_path const & message_log_fi
 	m_msg_log_file = FS.w_open(message_log_file);
 	if (!m_msg_log_file)
 	{
-		Msg("! ERROR: failed to open demo messages logging file");
+		LogInfo("! ERROR: failed to open demo messages logging file");
 	}
 }
 
@@ -189,7 +189,7 @@ void message_filter::dbg_print_msg(NET_Packet & packet, msg_type_subtype_t const
 		++m_strrepeat_count;
 		return;
 	} 
-	Msg(tmp_string);
+	LogInfo(tmp_string);
 	xr_strcpy(m_last_string, tmp_string);
 	if (m_msg_log_file)
 	{

@@ -1,4 +1,4 @@
-////////////////////////////////////////////////////////////////////////////
+﻿////////////////////////////////////////////////////////////////////////////
 //	Module 		: ai_stalker_events.cpp
 //	Created 	: 26.02.2003
 //  Modified 	: 26.02.2003
@@ -38,7 +38,7 @@ void CAI_Stalker::OnEvent		(NET_Packet& P, u16 type)
 			R_ASSERT	(O);
 
 #ifndef SILENCE
-			Msg("Trying to take - %s (%d)", *O->cName(),O->ID());
+			LogInfo("Trying to take - %s (%d)", *O->cName(),O->ID());
 #endif
 			CGameObject	*_O = smart_cast<CGameObject*>(O);
 			if (inventory().CanTakeItem(smart_cast<CInventoryItem*>(_O))) {
@@ -49,7 +49,7 @@ void CAI_Stalker::OnEvent		(NET_Packet& P, u16 type)
 
 				on_after_take			(_O);
 #ifndef SILENCE
-				Msg("TAKE - %s (%d)", *O->cName(),O->ID());
+				LogInfo("TAKE - %s (%d)", *O->cName(),O->ID());
 #endif
 			}
 			else {
@@ -60,7 +60,7 @@ void CAI_Stalker::OnEvent		(NET_Packet& P, u16 type)
 				u_EventSend				(P);
 
 #ifndef SILENCE
-				Msg("TAKE - can't take! - Dropping for valid server information %s (%d)", *O->cName(),O->ID());
+				LogInfo("TAKE - can't take! - Dropping for valid server information %s (%d)", *O->cName(),O->ID());
 #endif
 			}
 			break;
@@ -122,7 +122,7 @@ void CAI_Stalker::DropItemSendMessage	(CObject *O)
 		return;
 
 #ifndef SILENCE
-	Msg("Dropping item!");
+	LogInfo("Dropping item!");
 #endif
 	// We doesn't have similar weapon - pick up it
 	NET_Packet				P;
@@ -138,7 +138,7 @@ void CAI_Stalker::UpdateAvailableDialogs(CPhraseDialogManager* partner)
 
 void CAI_Stalker::feel_touch_new				(CObject* O)
 {
-//	Msg					("FEEL_TOUCH::NEW : %s",*O->cName());
+//	LogInfo("FEEL_TOUCH::NEW : %s",*O->cName());
 	if (!g_Alive())		return;
 	if (Remote())		return;
 	if ((O->spatial.type | STYPE_VISIBLEFORAI) != O->spatial.type) return;
@@ -148,7 +148,7 @@ void CAI_Stalker::feel_touch_new				(CObject* O)
 
 	if (!wounded() && !critically_wounded() && I && I->useful_for_NPC() && can_take(I)) {
 #ifndef SILENCE
-		Msg("Taking item %s (%d)!",I->object().cName().c_str(),I->object().ID());
+		LogInfo("Taking item %s (%d)!",I->object().cName().c_str(),I->object().ID());
 #endif
 		generate_take_event	( O );
 		return;

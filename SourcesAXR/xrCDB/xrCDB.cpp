@@ -1,4 +1,4 @@
-// xrCDB.cpp : Defines the entry point for the DLL application.
+﻿// xrCDB.cpp : Defines the entry point for the DLL application.
 //
 
 #include "stdafx.h"
@@ -143,7 +143,7 @@ std::uint32_t MODEL::memory()
 {
     if (S_BUILD == status)
     {
-        Msg("! xrCDB: model still isn't ready");
+        LogInfo("! xrCDB: model still isn't ready");
         return 0;
     }
     std::uint32_t V = verts_count * sizeof(Fvector);

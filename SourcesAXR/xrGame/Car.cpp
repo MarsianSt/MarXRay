@@ -1,4 +1,4 @@
-#include "stdafx.h"
+п»ї#include "stdafx.h"
 #include "car.h"
 //#if 0
 
@@ -75,7 +75,7 @@ CCar::CCar()
 	m_exhaust_particles	="vehiclefx\\exhaust_1";
 	m_car_sound			=xr_new<SCarSound>	(this);
 
-	//у машины слотов в инвентаре нет
+	//пїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ
 	m_doors_torque_factor = 2.f;
 	m_power_increment_factor=0.5f;
 	m_rpm_increment_factor=0.5f;
@@ -163,7 +163,7 @@ void CCar::cb_Steer			(CBoneInstance* B)
 #ifdef DEBUG
 	if( !fsimilar(DET(B->mTransform),1.f,DET_CHECK_EPS) ){
 	
-		Log("RotatingZ angle=",C->m_steer_angle);	
+		LogInfo("%s", "RotatingZ angle=",C->m_steer_angle);	
 		VERIFY2(0,"Bones callback returns BAD!!! matrix");
 	}
 #endif
@@ -1463,7 +1463,7 @@ void CCar::Transmission(size_t num)
 		}
 	}
 #ifdef DEBUG
-	//Log("Transmission switch %d",(u32)num);
+	//LogInfo("%s", "Transmission switch %d",(u32)num);
 #endif
 }
 void CCar::CircleSwitchTransmission()
@@ -1860,7 +1860,7 @@ void CCar::OnEvent(NET_Packet& P, u16 type)
 	inherited::OnEvent		(P,type);
 	CExplosive::OnEvent		(P,type);
 
-	//обработка сообщений, нужных для работы с багажником машины
+	//пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
 	switch (type)
 	{
 	case GE_OWNERSHIP_TAKE:

@@ -1,4 +1,4 @@
-#include "StdAfx.h"
+﻿#include "StdAfx.h"
 #include "ServerList.h"
 #include "UIXmlInit.h"
 #include "../string_table.h"
@@ -486,7 +486,7 @@ void CServerList::ConnectToSelected()
 		return;
 	if (!browser().CheckDirectConnection(item->GetInfo()->info.Index))
 	{
-		Msg("! Direct connection to this server is not available -> its behind firewall");
+		LogInfo("! Direct connection to this server is not available -> its behind firewall");
 		return;
 	}
 

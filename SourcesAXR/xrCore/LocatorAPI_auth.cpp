@@ -1,4 +1,4 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 #pragma hdrstop
 
 struct	auth_options	{
@@ -84,7 +84,7 @@ void	CLocatorAPI::auth_runtime		(void*	params)
 					
 #ifdef DEBUG
 					if(strstr(Core.Params,"auth_debug"))
-						Msg("auth %s = 0x%08x",f.name,crc);
+						LogInfo("auth %s = 0x%08x",f.name,crc);
 #endif // DEBUG
 
 					FS.r_close		(r);
@@ -96,7 +96,7 @@ void	CLocatorAPI::auth_runtime		(void*	params)
 				break;
 		}
 #ifdef DEBUG
-		Msg					( "auth_code = %d" , m_auth_code );
+		LogInfo( "auth_code = %d" , m_auth_code );
 #endif // DEBUG
 	}
 #ifdef DEBUG

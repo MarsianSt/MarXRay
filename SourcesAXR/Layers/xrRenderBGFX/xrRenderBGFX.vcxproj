@@ -1,0 +1,364 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{B8B8B8B8-8B8B-8B8B-8B8B-B8B8B8B8B8B8}</ProjectGuid>
+    <RootNamespace>xrRenderBGFX</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <LinkIncremental>true</LinkIncremental>
+    <OutDir>$(SolutionDir)OutputDirectory/Binaries/Debug/</OutDir>
+    <IntDir>$(SolutionDir)Intermediate/Debug/</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <LinkIncremental>false</LinkIncremental>
+    <OutDir>$(SolutionDir)\..\..\game\bin\</OutDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <WarningLevel>Level4</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <ExceptionHandling>Async</ExceptionHandling>
+      <PreprocessorDefinitions>WIN32;DEBUG;_WINDOWS;_USRDLL;XRRENDERBGFX_EXPORTS;__STDC_LIMIT_MACROS;__STDC_FORMAT_MACROS;__STDC_CONSTANT_MACROS;_CRT_SECURE_NO_WARNINGS;BX_CONFIG_DEBUG=1;BGFX_CONFIG_MULTITHREADED=1;BGFX_CONFIG_RENDERER_DIRECT3D11=1;BGFX_CONFIG_RENDERER_DIRECT3D12=0;BGFX_CONFIG_RENDERER_VULKAN=0;BGFX_CONFIG_RENDERER_OPENGL=0;BGFX_CONFIG_RENDERER_METAL=0;BGFX_CONFIG_RENDERER_OPENGLES=0;BGFX_CONFIG_RENDERER_WEBGPU=0;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>.;./bgfx_src;./bx_src;../../../../Othersourse/bx/include;../../../../Othersourse/bx/include/compat/msvc;../../../../Othersourse/bimg/include;../../../../Othersourse/bgfx-master/include;../../../../Othersourse/bgfx-master/3rdparty;../../../../Othersourse/bgfx-master/3rdparty/directx-headers/include/directx;../../../../Othersourse/bgfx-master/3rdparty/khronos;../../../../Othersourse/bgfx-master;../../3rd party/tracy/public;../../3rd party/imgui;E:\XRay-engine\MarXRay\SDK\include\theora;E:\XRay-engine\MarXRay\SDK\include\ogg;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <AdditionalOptions>/EHa /Zc:__cplusplus /Zc:preprocessor /wd4201 /wd4324 %(AdditionalOptions)</AdditionalOptions>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;d3d11.lib;dxgi.lib;d3dcompiler.lib;../../../../Othersourse/bgfx-master/.build/win64_vs2022/bin/bimgRelease.lib;../../../../Othersourse/bgfx-master/.build/win64_vs2022/bin/bimg_decodeRelease.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <WarningLevel>Level4</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;XRRENDERBGFX_EXPORTS;__STDC_LIMIT_MACROS;__STDC_FORMAT_MACROS;__STDC_CONSTANT_MACROS;_CRT_SECURE_NO_WARNINGS;BX_CONFIG_DEBUG=0;BGFX_CONFIG_MULTITHREADED=1;BGFX_CONFIG_RENDERER_DIRECT3D11=1;BGFX_CONFIG_RENDERER_DIRECT3D12=0;BGFX_CONFIG_RENDERER_VULKAN=0;BGFX_CONFIG_RENDERER_OPENGL=0;BGFX_CONFIG_RENDERER_METAL=0;BGFX_CONFIG_RENDERER_OPENGLES=0;BGFX_CONFIG_RENDERER_WEBGPU=0;XRAY_EXCEPTIONS=0;NOMINMAX;_SECURE_SCL=0;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>.;./bgfx_src;./bx_src;../../../../Othersourse/bx/include;../../../../Othersourse/bx/include/compat/msvc;../../../../Othersourse/bimg/include;../../../../Othersourse/bgfx-master/include;../../../../Othersourse/bgfx-master/3rdparty;../../../../Othersourse/bgfx-master/3rdparty/directx-headers/include/directx;../../../../Othersourse/bgfx-master/3rdparty/khronos;../../../../Othersourse/bgfx-master;../../3rd party/tracy/public;../../3rd party/imgui;E:\XRay-engine\MarXRay\SDK\include\theora;E:\XRay-engine\MarXRay\SDK\include\ogg;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <ExceptionHandling />
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <RuntimeTypeInfo>true</RuntimeTypeInfo>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <AdditionalOptions>/Zc:__cplusplus /Zc:preprocessor /wd4201 /wd4324 %(AdditionalOptions)</AdditionalOptions>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;d3d11.lib;dxgi.lib;d3dcompiler.lib;xrAPI.lib;xrCore.lib;xrCDB.lib;AdvancedXRay.lib;imgui.lib;libtheora_static.lib;libogg_static.lib;../../../../Othersourse/bgfx-master/.build/win64_vs2022/bin/bimgRelease.lib;../../../../Othersourse/bgfx-master/.build/win64_vs2022/bin/bimg_decodeRelease.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)..\OutputDirectory\Libraries\Release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClInclude Include="bgfx_src/bgfx_dxgi.h" />
+    <ClInclude Include="bgfx_src/bgfx_p.h" />
+    <ClInclude Include="bgfx_src/charset.h" />
+    <ClInclude Include="bgfx_src/config.h" />
+    <ClInclude Include="bgfx_src/cs_blit_buffer_to_texture.bin.h" />
+    <ClInclude Include="bgfx_src/cs_blit_texture_to_buffer.bin.h" />
+    <ClInclude Include="bgfx_src/cs_mipgen_oddx.bin.h" />
+    <ClInclude Include="bgfx_src/cs_mipgen_oddxy.bin.h" />
+    <ClInclude Include="bgfx_src/cs_mipgen_oddy.bin.h" />
+    <ClInclude Include="bgfx_src/cs_mipgen_pow2.bin.h" />
+    <ClInclude Include="bgfx_src/cs_yuv_to_rgb.bin.h" />
+    <ClInclude Include="bgfx_src/debug_renderdoc.h" />
+    <ClInclude Include="bgfx_src/dxgi.h" />
+    <ClInclude Include="bgfx_src/emscripten.h" />
+    <ClInclude Include="bgfx_src/fs_clear0.bin.h" />
+    <ClInclude Include="bgfx_src/fs_clear1.bin.h" />
+    <ClInclude Include="bgfx_src/fs_clear2.bin.h" />
+    <ClInclude Include="bgfx_src/fs_clear3.bin.h" />
+    <ClInclude Include="bgfx_src/fs_clear4.bin.h" />
+    <ClInclude Include="bgfx_src/fs_clear5.bin.h" />
+    <ClInclude Include="bgfx_src/fs_clear6.bin.h" />
+    <ClInclude Include="bgfx_src/fs_clear7.bin.h" />
+    <ClInclude Include="bgfx_src/fs_debugfont.bin.h" />
+    <ClInclude Include="bgfx_src/glcontext_egl.h" />
+    <ClInclude Include="bgfx_src/glcontext_html5.h" />
+    <ClInclude Include="bgfx_src/glcontext_wgl.h" />
+    <ClInclude Include="bgfx_src/glimports.h" />
+    <ClInclude Include="bgfx_src/nvapi.h" />
+    <ClInclude Include="bgfx_src/renderer.h" />
+    <ClInclude Include="bgfx_src/renderer_d3d.h" />
+    <ClInclude Include="bgfx_src/renderer_d3d11.h" />
+    <ClInclude Include="bgfx_src/renderer_d3d12.h" />
+    <ClInclude Include="bgfx_src/renderer_gl.h" />
+    <ClInclude Include="bgfx_src/renderer_mtl.h" />
+    <ClInclude Include="bgfx_src/renderer_vk.h" />
+    <ClInclude Include="bgfx_src/renderer_webgpu.h" />
+    <ClInclude Include="bgfx_src/shader.h" />
+    <ClInclude Include="bgfx_src/topology.h" />
+    <ClInclude Include="bgfx_src/version.h" />
+    <ClInclude Include="bgfx_src/vertexlayout.h" />
+    <ClInclude Include="bgfx_src/video.h" />
+    <ClInclude Include="bgfx_src/video_d3d11.h" />
+    <ClInclude Include="bgfx_src/video_d3d12.h" />
+    <ClInclude Include="bgfx_src/video_mtl.h" />
+    <ClInclude Include="bgfx_src/video_vk.h" />
+    <ClInclude Include="bgfx_src/vs_clear.bin.h" />
+    <ClInclude Include="bgfx_src/vs_debugfont.bin.h" />
+    <ClInclude Include="stdafx.h" />
+    <ClInclude Include="bgfxRenderDeviceRender.h" />
+    <ClInclude Include="bgfxRenderFactory.h" />
+    <ClInclude Include="bgfxFontRender.h" />
+    <ClInclude Include="bgfxConsoleRender.h" />
+    <ClInclude Include="bgfxDebugRender.h" />
+    <ClInclude Include="bgfxEnvironmentRender.h" />
+    <ClInclude Include="bgfxLensFlareRender.h" />
+    <ClInclude Include="bgfxRainRender.h" />
+    <ClInclude Include="bgfxThunderboltRender.h" />
+    <ClInclude Include="bgfxStatGraphRender.h" />
+    <ClInclude Include="bgfxStatsRender.h" />
+    <ClInclude Include="bgfxWallMarkArray.h" />
+    <ClInclude Include="bgfxUISequenceVideoItem.h" />
+    <ClInclude Include="bgfxUIShader.h" />
+    <ClInclude Include="bgfxObjectSpaceRender.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="stdafx.cpp">
+      <PrecompiledHeader>Create</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="xrRenderBGFX.cpp" />
+    <ClCompile Include="bgfxRenderDeviceRender.cpp" />
+    <ClCompile Include="bgfxRenderFactory.cpp" />
+    <ClCompile Include="bgfxFontRender.cpp" />
+    <ClCompile Include="bgfxConsoleRender.cpp" />
+    <ClCompile Include="bgfxDebugRender.cpp" />
+    <ClCompile Include="bgfxEnvironmentRender.cpp" />
+    <ClCompile Include="bgfxLensFlareRender.cpp" />
+    <ClCompile Include="bgfxRainRender.cpp" />
+    <ClCompile Include="bgfxThunderboltRender.cpp" />
+    <ClCompile Include="bgfxStatGraphRender.cpp" />
+    <ClCompile Include="bgfxStatsRender.cpp" />
+    <ClCompile Include="bgfxWallMarkArray.cpp" />
+    <ClCompile Include="bgfxUISequenceVideoItem.cpp" />
+    <ClCompile Include="bgfxVideoDecoder.cpp" />
+    <ClCompile Include="bgfxUIShader.cpp" />
+    <ClCompile Include="bgfxUIProgram.cpp" />
+    <ClCompile Include="bgfxWorldProgram.cpp" />
+    <ClCompile Include="bgfxObjectSpaceRender.cpp" />
+    <ClCompile Include="port/Animation.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="port/bgfxBackend.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="port/bgfxRenderCompat.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="port/bgfxResourceManager.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="port/bgfxVisualCompat.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="port/FBasicVisual.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="port/FHierrarhyVisual.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="port/FLOD.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="port/FSkinned.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="port/FTreeVisual.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="port/FVisual.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="port/ModelPool.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="port/r_constants.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="port/Shader.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="port/SH_Atomic.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="port/SH_Constant.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="port/SH_Matrix.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="port/SH_RT.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="port/SH_Texture.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="port/SkeletonAnimated.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="port/SkeletonCustom.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="port/SkeletonX.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+
+    <ClCompile Include="port/dxRenderDeviceRender.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+
+    <ClCompile Include="port/FProgressive.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="port/SkeletonRigid.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+
+    <ClCompile Include="bgfx_src/bgfx.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+    </ClCompile>
+    <ClCompile Include="bgfx_src/bgfx_dxgi.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+    </ClCompile>
+    <ClCompile Include="bgfx_src/debug_renderdoc.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+    </ClCompile>
+    <ClCompile Include="bgfx_src/glcontext_egl.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+    </ClCompile>
+    <ClCompile Include="bgfx_src/glcontext_html5.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+    </ClCompile>
+    <ClCompile Include="bgfx_src/glcontext_wgl.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+    </ClCompile>
+    <ClCompile Include="bgfx_src/nvapi.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+    </ClCompile>
+    <ClCompile Include="bgfx_src/renderer_agc.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+    </ClCompile>
+    <ClCompile Include="bgfx_src/renderer_d3d11.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+    </ClCompile>
+    <ClCompile Include="bgfx_src/renderer_d3d12.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+    </ClCompile>
+    <ClCompile Include="bgfx_src/renderer_gl.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+    </ClCompile>
+    <ClCompile Include="bgfx_src/renderer_gnm.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+    </ClCompile>
+    <ClCompile Include="bgfx_src/renderer_mtl.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+    </ClCompile>
+    <ClCompile Include="bgfx_src/renderer_noop.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+    </ClCompile>
+    <ClCompile Include="bgfx_src/renderer_nvn.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+    </ClCompile>
+    <ClCompile Include="bgfx_src/renderer_vk.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+    </ClCompile>
+    <ClCompile Include="bgfx_src/renderer_webgpu.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+    </ClCompile>
+    <ClCompile Include="bgfx_src/shader.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <ObjectFileName>$(IntDir)bgfx_shader.obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="bgfx_src/topology.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+    </ClCompile>
+    <ClCompile Include="bgfx_src/vertexlayout.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+    </ClCompile>
+    <ClCompile Include="bgfx_src/video_d3d11.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+    </ClCompile>
+    <ClCompile Include="bgfx_src/video_d3d12.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+    </ClCompile>
+    <ClCompile Include="bgfx_src/video_mtl.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+    </ClCompile>
+    <ClCompile Include="bgfx_src/video_vk.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+    </ClCompile>
+    <ClCompile Include="bx_src/amalgamated.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <ObjectFileName>$(IntDir)bx_amalgamated.obj</ObjectFileName>
+    </ClCompile>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

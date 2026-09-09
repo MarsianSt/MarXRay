@@ -1,4 +1,4 @@
-// GameSpy Presence and Messaging SDK Stress Test
+﻿// GameSpy Presence and Messaging SDK Stress Test
 // Dan "Mr. Pants" Schoenblum
 // Copyright 2000 GameSpy Industries, Inc
 
@@ -373,7 +373,7 @@ void MessageOther(Profile * profile, GPProfile other)
 #endif
 }
 
-void Log(const char * buffer)
+void LogInfo("%s", const char * buffer)
 {
 	FILE * fp;
 
@@ -510,7 +510,7 @@ void ErrorCallback(GPConnection * connection, GPErrorArg * arg, Profile * profil
 	sprintf(buffer + strlen(buffer), ", RESULT: %s (%d)", resultString, arg->result);
 	sprintf(buffer + strlen(buffer), ", ERROR CODE: %s (0x%X)", errorCodeString, arg->errorCode);
 	sprintf(buffer + strlen(buffer), ", ERROR STRING: %s\n", arg->errorString);
-	Log(buffer);
+	LogInfo("%s", buffer);
 
 	// Disconnect.
 	//////////////
@@ -637,7 +637,7 @@ void ConnectCallback(GPConnection * connection, GPConnectResponseArg * arg, Prof
 			char buffer[4096];
 			gsi_time ms = (current_time() - profile->connectTime);
 			sprintf(buffer, "%d: XXX Connection ProfileID Error (%d != %d) [%d]: %d.%03ds\n", totalConnected, arg->profile, RemoteAuthProfiles[profile->index % 10], (profile->index % 10), ms / 1000, ms % 1000);
-			Log(buffer);
+			LogInfo("%s", buffer);
 		}
 
 #if 1
@@ -646,7 +646,7 @@ void ConnectCallback(GPConnection * connection, GPConnectResponseArg * arg, Prof
 			char buffer[256];
 			gsi_time ms = (current_time() - profile->connectTime);
 			sprintf(buffer, "%sConnected: %d time: %d.%03ds\n", (ms>=1000)?"XX ":"", totalConnected, ms / 1000, ms % 1000);
-			Log(buffer);
+			LogInfo("%s", buffer);
 		}
 #endif
 
@@ -663,7 +663,7 @@ void ConnectCallback(GPConnection * connection, GPConnectResponseArg * arg, Prof
 			char buffer[4096];
 			gsi_time ms = (current_time() - profile->connectTime);
 			sprintf(buffer, "%d: XXX Connection Failed [%d]: %d.%03ds\n", totalConnected, (profile->index % 10), ms / 1000, ms % 1000);
-			Log(buffer);
+			LogInfo("%s", buffer);
 		}
 #endif
 		// Disconnect this profile.
@@ -1039,7 +1039,7 @@ void ProcessProfile(Profile * profile)
 			char buffer[256];
 			gsi_time ms = (current_time() - profile->connectTime);
 			sprintf(buffer, "%04d: XXX Excessive Connect Time: %d.%03ds\n", profile->index, ms / 1000, ms % 1000);
-			Log(buffer);
+			LogInfo("%s", buffer);
 		}
 
 		// Check for disconnect.
@@ -1453,7 +1453,7 @@ void StartShutdown(unsigned long now)
 				// How long has it been waiting?
 				////////////////////////////////
 				sprintf(buffer, "%04d: Waiting %ds for connection attempt\n", profile->index, (current_time() - profile->connectTime) / 1000);
-				Log(buffer);
+				LogInfo("%s", buffer);
 			}
 #endif
 
@@ -1581,12 +1581,12 @@ void Run(void)
 			// Show the connection numbers.
 			///////////////////////////////
 			sprintf(buffer, "INFO: Connections: %d current, %d highest, %d total\n", numConnections, highestConnections, totalConnections);
-			Log(buffer);
+			LogInfo("%s", buffer);
 
 			// Show the connected numbers.
 			//////////////////////////////
 			sprintf(buffer, "INFO: Connected:   %d current, %d highest, %d total\n", numConnected, highestConnected, totalConnected);
-			Log(buffer);
+			LogInfo("%s", buffer);
 
 			// Show that we're shutting down, or when we're shutting down.
 			//////////////////////////////////////////////////////////////
@@ -1601,7 +1601,7 @@ void Run(void)
 				hours = (totalSeconds / 60 / 60);
 				sprintf(buffer, "INFO: Shut down in %d:%02d:%02d\n", hours, minutes, seconds);
 			}
-			Log(buffer);
+			LogInfo(buffer);
 		}
 #endif
 

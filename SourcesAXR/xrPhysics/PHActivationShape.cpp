@@ -1,4 +1,4 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 #include "PHActivationShape.h"
 
 #include "Physics.h"
@@ -33,7 +33,7 @@ static	const float dynamic_erp				= 1.f / 1000.f;//static_erp;//
 */
 
 #ifdef DEBUG
-#define	CHECK_POS(pos,msg,br)			if (!valid_pos(pos,phBoundaries)){Msg("pos:%f,%f,%f",pos.x,pos.y,pos.z);Msg(msg);VERIFY(!br);}
+#define	CHECK_POS(pos,msg,br)			if (!valid_pos(pos,phBoundaries)){LogInfo("pos:%f,%f,%f",pos.x,pos.y,pos.z);LogInfo(msg);VERIFY(!br);}
 
 #else
 #define	CHECK_POS(pos,msg,br)				
@@ -299,7 +299,7 @@ bool	CPHActivationShape::	Activate							(const Fvector need_size,u16 steps,floa
 			attempts--;
 		}while(!ret&&attempts>0);
 #ifdef	DEBUG
-//		Msg("correction attempts %d",10-attempts);
+//		LogInfo("correction attempts %d",10-attempts);
 #endif
 	
 	}

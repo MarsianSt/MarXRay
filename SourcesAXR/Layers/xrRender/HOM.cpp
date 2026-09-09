@@ -1,4 +1,4 @@
-// HOM.cpp: implementation of the CHOM class.
+﻿// HOM.cpp: implementation of the CHOM class.
 //
 //////////////////////////////////////////////////////////////////////
 
@@ -73,10 +73,10 @@ void CHOM::Load			()
 	FS.update_path	(fName,"$level$","level.hom");
 	if (!FS.exist(fName))
 	{
-		Msg		(" WARNING: Occlusion map '%s' not found.",fName);
+		LogInfo(" WARNING: Occlusion map '%s' not found.",fName);
 		return;
 	}
-	Msg	("* Loading HOM: %s",fName);
+	LogInfo("* Loading HOM: %s",fName);
 	
 	IReader* fs				= FS.r_open(fName);
 	IReader* S				= fs->open_chunk(1);
@@ -109,7 +109,7 @@ void CHOM::Load			()
 		rT.flags		= clT.dummy;
 		rT.area			= Area	(v0,v1,v2);
 		if (rT.area<EPS_L)	{
-			Msg	("! Invalid HOM triangle (%f,%f,%f)-(%f,%f,%f)-(%f,%f,%f)",VPUSH(v0),VPUSH(v1),VPUSH(v2));
+			LogInfo("! Invalid HOM triangle (%f,%f,%f)-(%f,%f,%f)-(%f,%f,%f)",VPUSH(v0),VPUSH(v1),VPUSH(v2));
 		}
 		rT.plane.build	(v0,v1,v2);
 		rT.skip			= 0;
@@ -129,13 +129,13 @@ void CHOM::Load			()
 	if (bUseCache && FS.exist(fName) && m_pModel->deserialize(fName, checkCrc32))
 	{
 #ifndef MASTER_GOLD
-		Msg("* Loaded HOM cache (%s)...", fName);
+		LogInfo("* Loaded HOM cache (%s)...", fName);
 #endif
 	}
 	else
 	{
 #ifndef MASTER_GOLD
-		Msg("* HOM cache for '%s' was not loaded. Building the model from scratch..", fName);
+		LogInfo("* HOM cache for '%s' was not loaded. Building the model from scratch..", fName);
 #endif
 		m_pModel->build(CL.getV(), int(CL.getVS()), CL.getT(), int(CL.getTS()), nullptr, nullptr, false);
 

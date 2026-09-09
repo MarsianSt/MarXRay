@@ -1,4 +1,4 @@
-#ifndef NET_PLAYERS_MONITOR
+﻿#ifndef NET_PLAYERS_MONITOR
 #define NET_PLAYERS_MONITOR
 
 #include "net_shared.h"
@@ -44,7 +44,7 @@ public:
 	template<typename ActionFunctor>
 	void ForEachClientDo					(ActionFunctor & functor)
 	{
-		//Msg("-S- Entering to csPlayers [%d]", GetCurrentThreadId());
+		//LogInfo("-S- Entering to csPlayers [%d]", GetCurrentThreadId());
 		csPlayers.Enter();
 		//LogStackTrace(
 		//	make_string("-S- Entered to csPlayers [%d]", GetCurrentThreadId()).c_str());
@@ -59,12 +59,12 @@ public:
 			functor(*i);
 		}
 		now_iterating_in_net_players	=	false;
-		//Msg("-S- Leaving from csPlayers [%d]", GetCurrentThreadId());
+		//LogInfo("-S- Leaving from csPlayers [%d]", GetCurrentThreadId());
 		csPlayers.Leave();
 	}
 	void ForEachClientDo				(fastdelegate::FastDelegate1<IClient*, void> & fast_delegate)
 	{
-		//Msg("-S- Entering to csPlayers [%d]", GetCurrentThreadId());
+		//LogInfo("-S- Entering to csPlayers [%d]", GetCurrentThreadId());
 		csPlayers.Enter();
 		//LogStackTrace(
 		//	make_string("-S- Entered to csPlayers [%d]", GetCurrentThreadId()).c_str());
@@ -79,14 +79,14 @@ public:
 			fast_delegate(*i);
 		}
 		now_iterating_in_net_players	=	false;
-		//Msg("-S- Leaving from csPlayers [%d]", GetCurrentThreadId());
+		//LogInfo("-S- Leaving from csPlayers [%d]", GetCurrentThreadId());
 		csPlayers.Leave();
 	}
 	template<typename SearchPredicate, typename ActionFunctor>
 	u32	ForFoundClientsDo				(SearchPredicate const & predicate,	ActionFunctor & functor)
 	{
 		u32 ret_count = 0;
-		//Msg("-S- Entering to csPlayers [%d]", GetCurrentThreadId());
+		//LogInfo("-S- Entering to csPlayers [%d]", GetCurrentThreadId());
 		csPlayers.Enter();
 		//LogStackTrace(
 		//	make_string("-S- Entered to csPlayers [%d]", GetCurrentThreadId()).c_str());
@@ -107,7 +107,7 @@ public:
 			temp_iter = std::find_if(++temp_iter, players_endi, predicate);
 		}
 		now_iterating_in_net_players	=	false;
-		//Msg("-S- Leaving from csPlayers [%d]", GetCurrentThreadId());
+		//LogInfo("-S- Leaving from csPlayers [%d]", GetCurrentThreadId());
 		csPlayers.Leave();
 		return ret_count;
 	}
@@ -115,7 +115,7 @@ public:
 	template<typename SearchPredicate>
 	IClient*	FindAndEraseClient				(SearchPredicate const & predicate)
 	{
-		//Msg("-S- Entering to csPlayers [%d]", GetCurrentThreadId());
+		//LogInfo("-S- Entering to csPlayers [%d]", GetCurrentThreadId());
 		csPlayers.Enter();
 		//LogStackTrace(
 		//	make_string("-S- Entered to csPlayers [%d]", GetCurrentThreadId()).c_str());
@@ -135,14 +135,14 @@ public:
 			net_Players.erase(client_iter);
 		}
 		now_iterating_in_net_players	=	false;
-		//Msg("-S- Leaving from csPlayers [%d]", GetCurrentThreadId());
+		//LogInfo("-S- Leaving from csPlayers [%d]", GetCurrentThreadId());
 		csPlayers.Leave();
 		return ret_client;
 	}
 	template<typename SearchPredicate>
 	IClient*	GetFoundClient					(SearchPredicate const & predicate)
 	{
-		//Msg("-S- Entering to csPlayers [%d]", GetCurrentThreadId());
+		//LogInfo("-S- Entering to csPlayers [%d]", GetCurrentThreadId());
 		csPlayers.Enter();
 		//LogStackTrace(
 		//	make_string("-S- Entered to csPlayers [%d]", GetCurrentThreadId()).c_str());
@@ -155,26 +155,26 @@ public:
 		{
 			ret_client = *client_iter;
 		}
-		//Msg("-S- Leaving from csPlayers [%d]", GetCurrentThreadId());
+		//LogInfo("-S- Leaving from csPlayers [%d]", GetCurrentThreadId());
 		csPlayers.Leave();
 		return ret_client;
 	}
 	void		AddNewClient					(IClient* new_client)
 	{
-		//Msg("-S- Entering to csPlayers [%d]", GetCurrentThreadId());
+		//LogInfo("-S- Entering to csPlayers [%d]", GetCurrentThreadId());
 		csPlayers.Enter();
 		//LogStackTrace(
 		//	make_string("-S- Entered to csPlayers [%d]", GetCurrentThreadId()).c_str());
 		VERIFY(!now_iterating_in_net_players);
 		net_Players.push_back(new_client);
-		//Msg("-S- Leaving from csPlayers [%d]", GetCurrentThreadId());
+		//LogInfo("-S- Leaving from csPlayers [%d]", GetCurrentThreadId());
 		csPlayers.Leave();
 	}
 
 	/*template<typename ActionFunctor>
 	void		ForEachDisconnectedClientDo		(ActionFunctor & functor)
 	{
-		//Msg("-S- Entering to csPlayers [%d]", GetCurrentThreadId());
+		//LogInfo("-S- Entering to csPlayers [%d]", GetCurrentThreadId());
 		csPlayers.Enter();
 		//LogStackTrace(
 		//	make_string("-S- Entered to csPlayers [%d]", GetCurrentThreadId()).c_str());
@@ -184,13 +184,13 @@ public:
 #endif
 		std::for_each(net_Players_disconnected.begin(), net_Players_disconnected.end(), functor);
 		now_iterating_in_net_players_disconn	=	false;
-		//Msg("-S- Leaving from csPlayers [%d]", GetCurrentThreadId());
+		//LogInfo("-S- Leaving from csPlayers [%d]", GetCurrentThreadId());
 		csPlayers.Leave();
 	}
 	template<typename SearchPredicate>
 	IClient*	FindAndEraseDisconnectedClient	(SearchPredicate const & predicate)
 	{
-		//Msg("-S- Entering to csPlayers [%d]", GetCurrentThreadId());
+		//LogInfo("-S- Entering to csPlayers [%d]", GetCurrentThreadId());
 		csPlayers.Enter();
 		//LogStackTrace(
 		//	make_string("-S- Entered to csPlayers [%d]", GetCurrentThreadId()).c_str());
@@ -210,14 +210,14 @@ public:
 			net_Players_disconnected.erase(client_iter);
 		}
 		now_iterating_in_net_players_disconn	=	false;
-		//Msg("-S- Leaving from csPlayers [%d]", GetCurrentThreadId());
+		//LogInfo("-S- Leaving from csPlayers [%d]", GetCurrentThreadId());
 		csPlayers.Leave();
 		return ret_client;
 	}
 	template<typename SearchPredicate>
 	IClient*	GetFoundDisconnectedClient		(SearchPredicate const & predicate)
 	{
-		//Msg("-S- Entering to csPlayers [%d]", GetCurrentThreadId());
+		//LogInfo("-S- Entering to csPlayers [%d]", GetCurrentThreadId());
 		csPlayers.Enter();
 		//LogStackTrace(
 		//	make_string("-S- Entered to csPlayers [%d]", GetCurrentThreadId()).c_str());
@@ -233,30 +233,30 @@ public:
 		IClient* ret_client = NULL;
 		if (client_iter != net_Players_disconnected.end())
 			ret_client = *client_iter;
-		//Msg("-S- Leaving from csPlayers [%d]", GetCurrentThreadId());
+		//LogInfo("-S- Leaving from csPlayers [%d]", GetCurrentThreadId());
 		csPlayers.Leave();
 		return ret_client;
 	}
 	void		AddNewDisconnectedClient		(IClient* new_client)
 	{
-		//Msg("-S- Entering to csPlayers [%d]", GetCurrentThreadId());
+		//LogInfo("-S- Entering to csPlayers [%d]", GetCurrentThreadId());
 		csPlayers.Enter();
 		//LogStackTrace(
 		//	make_string("-S- Entered to csPlayers [%d]", GetCurrentThreadId()).c_str());
 		VERIFY(!now_iterating_in_net_players_disconn);
 		net_Players_disconnected.push_back(new_client);
-		//Msg("-S- Leaving from csPlayers [%d]", GetCurrentThreadId());
+		//LogInfo("-S- Leaving from csPlayers [%d]", GetCurrentThreadId());
 		csPlayers.Leave();
 	}*/
 
 	u32			ClientsCount					()
 	{
-		//Msg("-S- Entering to csPlayers [%d]", GetCurrentThreadId());
+		//LogInfo("-S- Entering to csPlayers [%d]", GetCurrentThreadId());
 		csPlayers.Enter();
 		//LogStackTrace(
 		//	make_string("-S- Entered to csPlayers [%d]", GetCurrentThreadId()).c_str());
 		u32 ret_count = net_Players.size();
-		//Msg("-S- Leaving from csPlayers [%d]", GetCurrentThreadId());
+		//LogInfo("-S- Leaving from csPlayers [%d]", GetCurrentThreadId());
 		csPlayers.Leave();
 		return ret_count;
 	}

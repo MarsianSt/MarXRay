@@ -260,7 +260,7 @@ DEFINE_VECTOR	(xr_rtoken,RTokenVec,RTokenVecIt);
 #define			xr_pure_interface	__interface
 
 #include "FS.h"
-#include "log.h"
+#include "xrAsyncLogger.h"
 #include "xr_trims.h"
 #include "xr_ini.h"
 #ifdef NO_FS_SCAN

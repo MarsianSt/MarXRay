@@ -275,10 +275,10 @@ float CExplosive::ExplosionEffect(collide::rq_results& storage, CExplosive*exp_o
 		effect+=add_eff;
 		if(ph_dbg_draw_mask.test(phDbgDrawExplosions))
 		{
-			Msg("dist %f,effect R %f",mag,expl_radius);
-			Msg("test pass effect %f",add_eff);
-			Msg("S effect %f",_sqrt(l_S/max_s));
-			Msg("dist/overlap effect, %f",add_eff/_sqrt(l_S/max_s));
+			LogInfo("dist %f,effect R %f",mag,expl_radius);
+			LogInfo("test pass effect %f",add_eff);
+			LogInfo("S effect %f",_sqrt(l_S/max_s));
+			LogInfo("dist/overlap effect, %f",add_eff/_sqrt(l_S/max_s));
 		}
 #else
 		float l_S=effective_volume*(_abs(l_dir.dotproduct(obj_xform.i))/l_d.x+_abs(l_dir.dotproduct(obj_xform.j))/l_d.y+_abs(l_dir.dotproduct(obj_xform.k))/l_d.z);
@@ -289,7 +289,7 @@ float CExplosive::ExplosionEffect(collide::rq_results& storage, CExplosive*exp_o
 #ifdef DEBUG
 	if(ph_dbg_draw_mask.test(phDbgDrawExplosions))
 	{
-			Msg("damage effect %f",effect/TEST_RAYS_PER_OBJECT);
+			LogInfo("damage effect %f",effect/TEST_RAYS_PER_OBJECT);
 	}
 #endif
 	return effect/TEST_RAYS_PER_OBJECT;
@@ -339,7 +339,7 @@ void CExplosive::Explode()
 		DBG_DrawPoint(pos,0.3f,color_xrgb(255,0,0));
 	}
 #endif
-//	Msg("---------CExplosive Explode [%d] frame[%d]",cast_game_object()->ID(), Device.dwFrame);
+//	LogInfo("---------CExplosive Explode [%d] frame[%d]",cast_game_object()->ID(), Device.dwFrame);
 	OnBeforeExplosion();
 	//играем звук взрыва
 
@@ -503,7 +503,7 @@ void CExplosive::UpdateCL()
 		StopLight();
 		
 
-//		Msg("---------CExplosive OnAfterExplosion [%d] frame[%d]",cast_game_object()->ID(), Device.dwFrame);
+//		LogInfo("---------CExplosive OnAfterExplosion [%d] frame[%d]",cast_game_object()->ID(), Device.dwFrame);
 
 	} 
 	else
@@ -546,7 +546,7 @@ void CExplosive::OnAfterExplosion()
 	
 //	NET_Packet			P;
 //	cast_game_object()->u_EventGen			(P,GE_DESTROY,cast_game_object()->ID());
-//	//		Msg					("ge_destroy: [%d] - %s",ID(),*cName());
+//	//		LogInfo("ge_destroy: [%d] - %s",ID(),*cName());
 //	if (cast_game_object()->Local()) cast_game_object()->u_EventSend			(P);
 }
 void CExplosive::OnBeforeExplosion()
@@ -555,7 +555,7 @@ void CExplosive::OnBeforeExplosion()
 	if (m_bHideInExplosion) 
 	{
 		HideExplosive();
-		//	Msg("---------CExplosive OnBeforeExplosion setVisible(false) [%d] frame[%d]",cast_game_object()->ID(), Device.dwFrame);
+		//	LogInfo("---------CExplosive OnBeforeExplosion setVisible(false) [%d] frame[%d]",cast_game_object()->ID(), Device.dwFrame);
 	}
 }
 void CExplosive::HideExplosive()

@@ -1,4 +1,4 @@
-#ifndef FS_internalH
+﻿#ifndef FS_internalH
 #define FS_internalH
 #pragma once
 
@@ -26,13 +26,13 @@ public:
     		int handle	= _sopen(*fName,_O_WRONLY|_O_TRUNC|_O_CREAT|_O_BINARY,SH_DENYWR);
 #ifdef _EDITOR
     		if (handle==-1)
-    			Msg	("!Can't create file: '%s'. Error: '%s'.",*fName,_sys_errlist[errno]);
+    			LogInfo("!Can't create file: '%s'. Error: '%s'.",*fName,_sys_errlist[errno]);
 #endif
     		hf		= _fdopen(handle,"wb");
         }else{
 			hf			= fopen(*fName,"wb");
 			if (hf==0)
-				Msg		("!Can't write file: '%s'. Error: '%s'.",*fName,_sys_errlist[errno]);
+				LogInfo("!Can't write file: '%s'. Error: '%s'.",*fName,_sys_errlist[errno]);
 		}
 	}
 

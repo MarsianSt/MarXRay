@@ -1,4 +1,4 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 #include "control_animation.h"
 #include "BaseMonster/base_monster.h"
 #include "control_manager.h"
@@ -114,7 +114,7 @@ void CControlAnimation::play_part(SAnimationPart &part, PlayCallback callback)
 		pos			= fmod(part.blend->timeCurrent,part.blend->timeTotal)/part.blend->timeTotal;
 #ifdef DEBUG
 	//IKinematicsAnimated * K = m_object->Visual()->dcast_PKinematicsAnimated();
-	//Msg				("%6d Playing animation : %s , %s , Object %s",Device.dwTimeGlobal, K->LL_MotionDefName_dbg(part.motion).first,K->LL_MotionDefName_dbg(part.motion).second, *(m_object->cName()));
+	//LogInfo("%6d Playing animation : %s , %s , Object %s",Device.dwTimeGlobal, K->LL_MotionDefName_dbg(part.motion).first,K->LL_MotionDefName_dbg(part.motion).second, *(m_object->cName()));
 #endif
 	
 	part.blend			= m_skeleton_animated->LL_PlayCycle(bone_or_part,part.get_motion(), TRUE, callback, this);
@@ -122,7 +122,7 @@ void CControlAnimation::play_part(SAnimationPart &part, PlayCallback callback)
 	
 ///////////////////////////////////////////////////////////////////////////////
 //#ifdef _DEBUG	
-//	Msg("Monster[%s] Time[%u] Anim[%s]",*(m_object->cName()), Device.dwTimeGlobal,*(m_object->anim().GetAnimTranslation(part.motion)));
+//	LogInfo("Monster[%s] Time[%u] Anim[%s]",*(m_object->cName()), Device.dwTimeGlobal,*(m_object->anim().GetAnimTranslation(part.motion)));
 //#endif
 ///////////////////////////////////////////////////////////////////////////////
 	

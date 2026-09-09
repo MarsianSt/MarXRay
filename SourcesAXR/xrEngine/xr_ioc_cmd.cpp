@@ -1,5 +1,7 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 #include "igame_level.h"
+#undef LOG_MODULE
+#define LOG_MODULE "Console"
 
 //#include "xr_effgamma.h"
 #include "x_ray.h"
@@ -89,7 +91,7 @@ class CCC_DbgMemCheck : public IConsole_Command
 {
 public:
 	CCC_DbgMemCheck(LPCSTR N) : IConsole_Command(N)  { bEmptyArgsHandled = TRUE; };
-	virtual void Execute(LPCSTR args) { if (Memory.debug_mode){ Memory.dbg_check();}else{Msg("~ Run with -mem_debug options.");} }
+	virtual void Execute(LPCSTR args) { if (Memory.debug_mode){ Memory.dbg_check();}else{LogInfo("~ Run with -mem_debug options.");} }
 };
 #endif // DEBUG_MEMORY_MANAGER
 
@@ -158,7 +160,7 @@ class CCC_Help : public IConsole_Command
 public:
 	CCC_Help(LPCSTR N) : IConsole_Command(N) { bEmptyArgsHandled = TRUE; };
 	virtual void Execute(LPCSTR args) {
-		Log("- --- Command listing: start ---");
+		LogInfo("%s", "- --- Command listing: start ---");
 		CConsole::vecCMD_IT it;
 		for (it=Console->Commands.begin(); it!=Console->Commands.end(); it++)
 		{
@@ -166,27 +168,27 @@ public:
 			TStatus _S; C.Status(_S);
 			TInfo	_I;	C.Info	(_I);
 			
-			Msg("%-20s (%-10s) --- %s",	C.Name(), _S, _I);
+			LogInfo("%-20s (%-10s) --- %s",	C.Name(), _S, _I);
 		}
-		Log("Key: Ctrl + A         === Select all ");
-		Log("Key: Ctrl + C         === Copy to clipboard ");
-		Log("Key: Ctrl + V         === Paste from clipboard ");
-		Log("Key: Ctrl + X         === Cut to clipboard ");
-		Log("Key: Ctrl + Z         === Undo ");
-		Log("Key: Ctrl + Insert    === Copy to clipboard ");
-		Log("Key: Shift + Insert   === Paste from clipboard ");
-		Log("Key: Shift + Delete   === Cut to clipboard ");
-		Log("Key: Insert           === Toggle mode <Insert> ");
-		Log("Key: Back / Delete          === Delete symbol left / right ");
+		LogInfo("%s", "Key: Ctrl + A         === Select all ");
+		LogInfo("%s", "Key: Ctrl + C         === Copy to clipboard ");
+		LogInfo("Key: Ctrl + V         === Paste from clipboard ");
+		LogInfo("Key: Ctrl + X         === Cut to clipboard ");
+		LogInfo("Key: Ctrl + Z         === Undo ");
+		LogInfo("Key: Ctrl + Insert    === Copy to clipboard ");
+		LogInfo("Key: Shift + Insert   === Paste from clipboard ");
+		LogInfo("Key: Shift + Delete   === Cut to clipboard ");
+		LogInfo("Key: Insert           === Toggle mode <Insert> ");
+		LogInfo("Key: Back / Delete          === Delete symbol left / right ");
 
-		Log("Key: Up   / Down            === Prev / Next command in tips list ");
-		Log("Key: Ctrl + Up / Ctrl + Down === Prev / Next executing command ");
-		Log("Key: Left, Right, Home, End {+Shift/+Ctrl}       === Navigation in text ");
-		Log("Key: PageUp / PageDown      === Scrolling history ");
-		Log("Key: Tab  / Shift + Tab     === Next / Prev possible command from list");
-		Log("Key: Enter  / NumEnter      === Execute current command ");
+		LogInfo("Key: Up   / Down            === Prev / Next command in tips list ");
+		LogInfo("Key: Ctrl + Up / Ctrl + Down === Prev / Next executing command ");
+		LogInfo("Key: Left, Right, Home, End {+Shift/+Ctrl}       === Navigation in text ");
+		LogInfo("Key: PageUp / PageDown      === Scrolling history ");
+		LogInfo("Key: Tab  / Shift + Tab     === Next / Prev possible command from list");
+		LogInfo("Key: Enter  / NumEnter      === Execute current command ");
 		
-		Log("- --- Command listing: end ----");
+		LogInfo("- --- Command listing: end ----");
 	}
 };
 
@@ -231,9 +233,9 @@ public:
 				for (it=Console->Commands.begin(); it!=Console->Commands.end(); it++)
 					it->second->Save(F);
 				FS.w_close			(F);
-				Msg("Config-file [%s] saved successfully",cfg_full_name);
+				LogInfo("Config-file [%s] saved successfully",cfg_full_name);
 		}else
-			Msg("!Cannot store config file [%s]", cfg_full_name);
+			LogInfo("!Cannot store config file [%s]", cfg_full_name);
 	}
 };
 CCC_LoadCFG::CCC_LoadCFG(LPCSTR N) : IConsole_Command(N) 
@@ -241,7 +243,7 @@ CCC_LoadCFG::CCC_LoadCFG(LPCSTR N) : IConsole_Command(N)
 
 void CCC_LoadCFG::Execute(LPCSTR args) 
 {
-		Msg("Executing config-script \"%s\"...",args);
+		LogInfo("Executing config-script \"%s\"...",args);
 		string_path						cfg_name;
 
 		xr_strcpy							(cfg_name, args);
@@ -268,9 +270,9 @@ void CCC_LoadCFG::Execute(LPCSTR args)
 					Console->Execute	(str);
 			}
 			FS.r_close(F);
-			Msg("[%s] successfully loaded.",cfg_full_name);
+			LogInfo("[%s] successfully loaded.",cfg_full_name);
 		} else {
-			Msg("! Cannot open script file [%s]",cfg_full_name);
+			LogInfo("! Cannot open script file [%s]",cfg_full_name);
 		}
 }
 
@@ -328,7 +330,7 @@ public:
 	virtual void Execute(LPCSTR args)
 	{
 /*		if (g_pGameLevel)	{
-			Log		("! Please disconnect/unload first");
+			LogInfo("! Please disconnect/unload first");
 			return;
 		}
 */
@@ -343,12 +345,12 @@ public:
 		strlwr( op_server );
 		protect_Name_strlwr( op_client );
 
-		if(!op_client[0] && strstr(op_server,"single"))
+		if(!op_client[0] && strstr(op_server, "single"))
 			xr_strcpy(op_client, "localhost");
 
 		if ((0==xr_strlen(op_client)) && (0 == xr_strlen(op_demo)))
 		{
-			Log("! Can't start game without client. Arguments: '%s'.",args);
+			LogInfo("%s", "! Can't start game without client. Arguments: '%s'.",args);
 			return;
 		}
 		if (g_pGameLevel)
@@ -378,6 +380,7 @@ class CCC_VID_Reset : public IConsole_Command
 public:
 	CCC_VID_Reset(LPCSTR N) : IConsole_Command(N) { bEmptyArgsHandled = TRUE; };
 	virtual void Execute(LPCSTR args) {
+		Engine.External.SwitchRenderer();
 		if (Device.b_is_Ready) {
 			Device.Reset	();
 		}
@@ -395,7 +398,7 @@ public :
 			psCurrentVidMode[0] = _w;
 			psCurrentVidMode[1] = _h;
 		}else{
-			Msg("! Wrong video mode [%s]", args);
+			LogInfo("! Wrong video mode [%s]", args);
 			return;
 		}
 	}
@@ -489,7 +492,7 @@ public:
 		g_DR_LM_Max.x = -1000000.0f;
 		g_DR_LM_Max.z = -1000000.0f;
 
-		Msg("Local BBox (%f, %f) - (%f, %f)", g_DR_LM_Min.x, g_DR_LM_Min.z, g_DR_LM_Max.x, g_DR_LM_Max.z);
+		LogInfo("Local BBox (%f, %f) - (%f, %f)", g_DR_LM_Min.x, g_DR_LM_Min.z, g_DR_LM_Max.x, g_DR_LM_Max.z);
 	}
 };
 
@@ -506,7 +509,7 @@ public:
 		if (g_DR_LM_Max.x < CamPos.x)	g_DR_LM_Max.x = CamPos.x;
 		if (g_DR_LM_Max.z < CamPos.z)	g_DR_LM_Max.z = CamPos.z;
 
-		Msg("Local BBox (%f, %f) - (%f, %f)", g_DR_LM_Min.x, g_DR_LM_Min.z, g_DR_LM_Max.x, g_DR_LM_Max.z);
+		LogInfo("Local BBox (%f, %f) - (%f, %f)", g_DR_LM_Min.x, g_DR_LM_Min.z, g_DR_LM_Max.x, g_DR_LM_Max.z);
 	}
 };
 
@@ -602,7 +605,8 @@ public:
 		//	4 - r3
 		psDeviceFlags.set		(rsR1, renderer_value == 0);
 		psDeviceFlags.set		(rsR2, ((renderer_value>0) && renderer_value<4) );
-		psDeviceFlags.set		(rsR4, (renderer_value>=4) );
+		psDeviceFlags.set		(rsR4, (renderer_value==4 || renderer_value==5 || renderer_value==6) );
+		psDeviceFlags.set		(rsBGFX, (renderer_value==6) );
 
 		r2_sun_static	= (renderer_value<2);
 

@@ -1,4 +1,4 @@
-#include "pch_script.h"
+﻿#include "pch_script.h"
 #include "gamepersistent.h"
 #include "../xrEngine/fmesh.h"
 #include "../xrEngine/xr_ioconsole.h"
@@ -60,6 +60,7 @@
 
 CGamePersistent::CGamePersistent(void)
 {
+	LogInfo("[GP] CGamePersistent() constructor start");
 	ZoneScoped;
 
 	m_bPickableDOF				= false;
@@ -100,7 +101,7 @@ CGamePersistent::CGamePersistent(void)
 		LPCSTR		name	=	strstr(Core.Params,"-demomode ") + 10;
 		sscanf				(name,"%s",fname);
 		R_ASSERT2			(fname[0],"Missing filename for 'demomode'");
-		Msg					("- playing in demo mode '%s'",fname);
+		LogInfo("- playing in demo mode '%s'",fname);
 		pDemoFile			=	FS.r_open	(fname);
 		Device.seqFrame.Add	(this);
 		eDemoStart			=	Engine.Event.Handler_Attach("GAME:demo",this);	
@@ -110,9 +111,15 @@ CGamePersistent::CGamePersistent(void)
 		eDemoStart			=	NULL;
 	}
 
+	LogInfo("[GP] Before Handler_Attach");
 	eQuickLoad				= Engine.Event.Handler_Attach("Game:QuickLoad",this);
+	LogInfo("[GP] Before GetFVectorPtr");
 	Fvector3* DofValue		= Console->GetFVectorPtr("r2_dof");
-	SetBaseDof				(*DofValue);
+	if (DofValue)
+		SetBaseDof			(*DofValue);
+	else
+		SetBaseDof			(Fvector3().set(-1.25f, 1.4f, 10000.f));
+	LogInfo("[GP] CGamePersistent() constructor end");
 }
 
 CGamePersistent::~CGamePersistent(void)
@@ -161,13 +168,19 @@ void CGamePersistent::OnAppStart()
 {
 	ZoneScoped;
 
-	// load game materials
+	LogInfo("[GP] OnAppStart: GMLib.Load");
 	GMLib.Load					();
+	LogInfo("[GP] OnAppStart: init_game_globals");
 	init_game_globals			();
+	LogInfo("[GP] OnAppStart: __super::OnAppStart");
 	__super::OnAppStart			();
+	LogInfo("[GP] OnAppStart: xr_new<ui_core>");
 	m_pUI_core					= xr_new<ui_core>();
+	LogInfo("[GP] OnAppStart: xr_new<CMainMenu>");
 	m_pMainMenu					= xr_new<CMainMenu>();
+	LogInfo("[GP] OnAppStart: GameConstants::LoadConstants");
 	GameConstants::LoadConstants();
+	LogInfo("[GP] OnAppStart: done");
 }
 
 
@@ -340,7 +353,7 @@ void CGamePersistent::WeathersUpdate()
 					VERIFY							(snd._handle());
 					const u32 _length_ms			= iFloor(snd.get_length_sec() * 1000.0f);
 					ambient_sound_next_time[idx]	= Device.dwTimeGlobal + _length_ms + ch.get_rnd_sound_time();
-					//Msg("- Playing ambient sound channel [%s] file[%s]", ch.m_load_section.c_str(), snd._handle()->file_name());
+					//LogInfo("- Playing ambient sound channel [%s] file[%s]", ch.m_load_section.c_str(), snd._handle()->file_name());
 				}
 			}
 
@@ -455,10 +468,12 @@ bool allow_game_intro()
 
 void CGamePersistent::start_logo_intro()
 {
+	LogInfo("[GP] start_logo_intro: allow_intro=%d", allow_intro() ? 1 : 0);
 	if (!allow_intro())
 	{
 		m_intro_event			= nullptr;
 		Console->Show			();
+		LogInfo("[GP] start_logo_intro: executing main_menu on");
 		Console->Execute		("main_menu on");
 		return;
 	}
@@ -471,7 +486,7 @@ void CGamePersistent::start_logo_intro()
 			VERIFY				(NULL==m_intro);
 			m_intro				= xr_new<CUISequencer>();
 			m_intro->Start		("intro_logo");
-			Msg					("intro_start intro_logo");
+			LogInfo("intro_start intro_logo");
 			Console->Hide		();
 		}
 	}
@@ -483,7 +498,7 @@ void CGamePersistent::update_logo_intro()
 	{
 		m_intro_event			= 0;
 		xr_delete				(m_intro);
-		Msg("intro_delete ::update_logo_intro");
+		LogInfo("intro_delete ::update_logo_intro");
 		Console->Execute		("main_menu on");
 	}
 	else if (!m_intro)
@@ -507,7 +522,7 @@ void CGamePersistent::game_loaded()
 			VERIFY				(NULL==m_intro);
 			m_intro				= xr_new<CUISequencer>();
 			m_intro->Start		("game_loaded");
-			Msg					("intro_start game_loaded");
+			LogInfo("intro_start game_loaded");
 			m_intro->m_on_destroy_event.bind(this, &CGamePersistent::update_game_loaded);
 		}
 		m_intro_event			= 0;
@@ -522,7 +537,7 @@ void CGamePersistent::game_loaded()
 void CGamePersistent::update_game_loaded()
 {
 	xr_delete				(m_intro);
-	Msg("intro_delete ::update_game_loaded");
+	LogInfo("intro_delete ::update_game_loaded");
 	start_game_intro		();
 }
 
@@ -542,7 +557,7 @@ void CGamePersistent::start_game_intro		()
 			VERIFY				(NULL==m_intro);
 			m_intro				= xr_new<CUISequencer>();
 			m_intro->Start		("intro_game");
-			Msg("intro_start intro_game");
+			LogInfo("intro_start intro_game");
 		}
 	}
 }
@@ -551,7 +566,7 @@ void CGamePersistent::update_game_intro()
 	if(m_intro && (false==m_intro->IsActive()))
 	{
 		xr_delete				(m_intro);
-		Msg("intro_delete ::update_game_intro");
+		LogInfo("intro_delete ::update_game_intro");
 		m_intro_event			= 0;
 	}
 	else if (!m_intro)

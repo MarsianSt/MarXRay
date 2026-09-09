@@ -1,4 +1,4 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 #include "game_cl_teamdeathmatch.h"
 #include "xrMessages.h"
 #include "level.h"
@@ -144,7 +144,7 @@ void game_cl_TeamDeathmatch::TranslateGameMessage	(u32 msg, NET_Packet& P)
 							CTeamInfo::GetTeam_name(int(Team)));
 			if(CurrentGameUI()) CurrentGameUI()->CommonMessageOut(Text);
 			//---------------------------------------
-			Msg("%s %s %s", PlayerName, *st.translate("mp_joined"),
+			LogInfo("%s %s %s", PlayerName, *st.translate("mp_joined"),
 				CTeamInfo::GetTeam_name(int(Team)));
 		}break;
 
@@ -167,7 +167,7 @@ void game_cl_TeamDeathmatch::TranslateGameMessage	(u32 msg, NET_Packet& P)
 							CTeamInfo::GetTeam_name(int(NewTeam)));
 			if(CurrentGameUI()) CurrentGameUI()->CommonMessageOut(Text);
 			//---------------------------------------
-			Msg("%s *s %s", pPlayer->getName(), *st.translate("mp_switched_to"), CTeamInfo::GetTeam_name(int(NewTeam)));
+			LogInfo("%s *s %s", pPlayer->getName(), *st.translate("mp_switched_to"), CTeamInfo::GetTeam_name(int(NewTeam)));
 		}break;
 
 	default:

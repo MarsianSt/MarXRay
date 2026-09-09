@@ -1,4 +1,4 @@
-////////////////////////////////////////////////////////////////////////////
+﻿////////////////////////////////////////////////////////////////////////////
 //	Module 		: alife_level_registry_inline.h
 //	Created 	: 15.01.2003
 //  Modified 	: 12.05.2004
@@ -27,7 +27,7 @@ IC	void CALifeLevelRegistry::add				(CSE_ALifeDynamicObject *object)
 
 #ifdef DEBUG
 	if (psAI_Flags.test(aiALife)) {
-		Msg				("[LSS] adding object [%s][%d] to current level",object->name_replace(),object->ID);
+		LogInfo("[LSS] adding object [%s][%d] to current level",object->name_replace(),object->ID);
 	}
 #endif
 	inherited::add		(object->ID,object);
@@ -37,7 +37,7 @@ IC	void CALifeLevelRegistry::remove			(CSE_ALifeDynamicObject *object, bool no_a
 {
 #ifdef DEBUG
 	if (psAI_Flags.test(aiALife)) {
-		Msg				("[LSS] removing object [%s][%d] from current level",object->name_replace(),object->ID);
+		LogInfo("[LSS] removing object [%s][%d] from current level",object->name_replace(),object->ID);
 	}
 #endif
 	inherited::remove	(object->ID,no_assert);
@@ -53,7 +53,7 @@ IC	void CALifeLevelRegistry::update			(const _update_predicate &predicate, bool 
 #endif
 #ifdef DEBUG
 	if (psAI_Flags.test(aiALife)) {
-//		Msg				("[LSS][OOS][%d : %d]",object_count, objects().size());
+//		LogInfo("[LSS][OOS][%d : %d]",object_count, objects().size());
 	}
 #endif
 }

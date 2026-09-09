@@ -7,6 +7,7 @@
 class ENGINE_API CGameFont
 {
 	friend class dxFontRender;
+	friend class bgfxFontRender;
 public:
 	enum EAligment{
 		alLeft				= 0,

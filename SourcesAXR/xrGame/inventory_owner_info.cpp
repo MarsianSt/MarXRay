@@ -1,5 +1,5 @@
-//////////////////////////////////////////////////////////////////////
-// inventory_owner_info.h:	для работы с сюжетной информацией
+п»ї//////////////////////////////////////////////////////////////////////
+// inventory_owner_info.h:	пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 //
 //////////////////////////////////////////////////////////////////////
 
@@ -28,9 +28,9 @@ void  CInventoryOwner::OnEvent (NET_Packet& P, u16 type)
 			shared_str		info_id;
 			u8				add_info;
 
-			P.r_u16			(id);				//отправитель
-			P.r_stringZ		(info_id);		//номер полученной информации
-			P.r_u8			(add_info);			//добавление или убирание информации
+			P.r_u16			(id);				//пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
+			P.r_stringZ		(info_id);		//пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
+			P.r_u8			(add_info);			//пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 
 			if(add_info)
 				OnReceiveInfo	(info_id);
@@ -47,7 +47,7 @@ void  CInventoryOwner::OnEvent (NET_Packet& P, u16 type)
 bool CInventoryOwner::OnReceiveInfo(shared_str info_id) const
 {
 	VERIFY( info_id.size() );
-	//добавить запись в реестр
+	//пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
 	KNOWN_INFO_VECTOR& known_info = m_known_info_registry->registry().objects();
 	KNOWN_INFO_VECTOR_IT it = std::find_if(known_info.begin(), known_info.end(), CFindByIDPred(info_id));
 	if( known_info.end() == it)
@@ -57,7 +57,7 @@ bool CInventoryOwner::OnReceiveInfo(shared_str info_id) const
 
 #ifdef DEBUG
 	if(psAI_Flags.test(aiInfoPortion))
-		Msg("[%s] Received Info [%s]", Name(), *info_id);
+		LogInfo("[%s] Received Info [%s]", Name(), *info_id);
 #endif
 
 	return true;
@@ -67,13 +67,13 @@ void CInventoryOwner::DumpInfo() const
 {
 	KNOWN_INFO_VECTOR& known_info = m_known_info_registry->registry().objects();
 
-	Msg("------------------------------------------");	
-	Msg("Start KnownInfo dump for [%s]",Name());	
+	LogInfo("------------------------------------------");	
+	LogInfo("Start KnownInfo dump for [%s]",Name());	
 	KNOWN_INFO_VECTOR_IT it = known_info.begin();
 	for(int i=0;it!=known_info.end();++it,++i){
-		Msg("known info[%d]:%s", i, (*it).info_id.c_str());
+		LogInfo("known info[%d]:%s", i, (*it).info_id.c_str());
 	}
-	Msg("------------------------------------------");	
+	LogInfo("------------------------------------------");	
 
 }
 #endif
@@ -81,11 +81,11 @@ void CInventoryOwner::DumpInfo() const
 void CInventoryOwner::OnDisableInfo(shared_str info_id) const
 {
 	VERIFY( info_id.size() );
-	//удалить запись из реестра
+	//пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 	
 #ifdef DEBUG
 	if(psAI_Flags.test(aiInfoPortion))
-		Msg("[%s] Disabled Info [%s]", Name(), info_id.c_str());
+		LogInfo("[%s] Disabled Info [%s]", Name(), info_id.c_str());
 #endif
 
 	KNOWN_INFO_VECTOR& known_info = m_known_info_registry->registry().objects();
@@ -100,12 +100,12 @@ void CInventoryOwner::TransferInfo(shared_str info_id, bool add_info) const
 	VERIFY( info_id.size() );
 	const CObject* pThisObject = smart_cast<const CObject*>(this); VERIFY(pThisObject);
 
-	//отправляем от нашему PDA пакет информации с номером
+	//пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ PDA пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 	NET_Packet		P;
 	CGameObject::u_EventGen(P, GE_INFO_TRANSFER, pThisObject->ID());
-	P.w_u16			(pThisObject->ID());					//отправитель
-	P.w_stringZ		(info_id);							//сообщение
-	P.w_u8			(add_info?1:0);							//добавить/удалить информацию
+	P.w_u16			(pThisObject->ID());					//пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
+	P.w_stringZ		(info_id);							//пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
+	P.w_u8			(add_info?1:0);							//пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ/пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 	CGameObject::u_EventSend(P);
 
 	CInfoPortion info_portion;

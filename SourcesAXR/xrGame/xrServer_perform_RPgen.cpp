@@ -1,4 +1,4 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 #include "xrserver.h"
 
 BOOL xrServer::PerformRP	(CSE_Abstract* EEE)
@@ -14,7 +14,7 @@ BOOL xrServer::PerformRP	(CSE_Abstract* EEE)
 	case 0xFE:	// Use supplied coords
 		return TRUE;
 	default:	// Use specified RP
-		if (EEE->s_RP>=RP.size())	Msg("! ERROR: Can't spawn entity at RespawnPoint #%d.", u32(EEE->s_RP));
+		if (EEE->s_RP>=RP.size())	LogInfo("! ERROR: Can't spawn entity at RespawnPoint #%d.", u32(EEE->s_RP));
 		selected = u32(EEE->s_RP);
 		break;
 	case 0xFF:	// Search for best RP for this entity

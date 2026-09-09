@@ -1,4 +1,4 @@
-#include "StdAfx.h"
+﻿#include "StdAfx.h"
 #include "GameSpy_QR2.h"
 #include "GameSpy_Base_Defs.h"
 
@@ -10,7 +10,7 @@ CGameSpy_QR2::CGameSpy_QR2()
 	m_hGameSpyDLL = NULL;
 
 	LPCSTR			g_name	= "xrGameSpy.dll";
-	Log				("Loading DLL:",g_name);
+	LogInfo("%s", "Loading DLL:",g_name);
 	m_hGameSpyDLL			= LoadLibrary	(g_name);
 	if (0==m_hGameSpyDLL)	R_CHK			(GetLastError());
 	R_ASSERT2		(m_hGameSpyDLL,"GameSpy DLL raised exception during loading or there is no game DLL at all");
@@ -139,13 +139,13 @@ bool	CGameSpy_QR2::Init		(int PortID, int Public, void* instance)
 		instance
 	);
 #ifndef MASTER_GOLD
-	Msg("xrGS::xrGS_qr2_initA returned code is [%d]", err);
+	LogInfo("xrGS::xrGS_qr2_initA returned code is [%d]", err);
 #endif // #ifndef MASTER_GOLD
 	
 	if (err != e_qrnoerror)
 	{
 		//		_tprintf(_T("Error starting query sockets\n"));
-		Msg("xrGS::QR2 : Failes to Initialize!");
+		LogInfo("xrGS::QR2 : Failes to Initialize!");
 		return false;
 	}
 	
@@ -162,7 +162,7 @@ bool	CGameSpy_QR2::Init		(int PortID, int Public, void* instance)
 	xrGS_qr2_register_denyresponsetoip_callback(NULL, callback_deny_ip);
 
 #ifndef MASTER_GOLD
-	Msg("xrGS::QR2 : Initialized");
+	LogInfo("xrGS::QR2 : Initialized");
 #endif // #ifndef MASTER_GOLD
 	return true;
 };

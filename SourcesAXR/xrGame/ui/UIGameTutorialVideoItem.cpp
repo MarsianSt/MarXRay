@@ -70,10 +70,26 @@ void CUISequenceVideoItem::Load(CUIXml* xml, int idx)
 		m_wnd_bg->SetAutoDelete						(false);
 		CUIXmlInit::InitStatic						(*xml, "background", 0, m_wnd_bg);
 	}
-	m_wnd											= xr_new<CUIStatic>();
-	m_wnd->SetAutoDelete							(false);
-	CUIXmlInit::InitStatic							(*xml, "video_wnd", 0, m_wnd);
-	bool bFullScreen								= (1==xml->ReadAttribInt("video_wnd", 0, "fullscreen", 0));
+    m_wnd											= xr_new<CUIStatic>();
+    m_wnd->SetAutoDelete							(false);
+    CUIXmlInit::InitStatic							(*xml, "video_wnd", 0, m_wnd);
+
+    // Read texture name and open the video file
+    string256 texPath;
+    xr_strcpy(texPath, "video_wnd:texture");
+    LPCSTR texName = xml->Read(texPath, 0, nullptr);
+    if (texName && texName[0])
+    {
+        // Build video path relative to gamedata root: textures\<texName>.ogm
+        string256 vidPath;
+        strconcat(sizeof(vidPath), vidPath, "textures\\", texName);
+        string256 vidPath2;
+        strconcat(sizeof(vidPath2), vidPath2, vidPath, ".ogm");
+        m_texture->Open(vidPath2);
+        LogInfo("[MM] Open video: %s", vidPath2);
+    }
+
+    bool bFullScreen								= (1==xml->ReadAttribInt("video_wnd", 0, "fullscreen", 0));
 	if(!bFullScreen)
 	{
 		m_wnd->SetWndPos								(Fvector2().set(512.0f,384.0f));

@@ -1,4 +1,4 @@
-#include "stdafx.h"
+п»ї#include "stdafx.h"
 #include "game_sv_capture_the_artefact.h"
 #include "xrserver_objects_alife_monsters.h"
 #include "level.h"
@@ -266,7 +266,7 @@ void game_sv_CaptureTheArtefact::SM_SwitchOnNextActivePlayer()
 	};
 	SM_SwitchOnPlayer				(pNewObject);
 #ifndef MASTER_GOLD
-	Msg("---SM Switched on player %s", pNewObject->cName().c_str());
+	LogInfo("---SM Switched on player %s", pNewObject->cName().c_str());
 #endif // #ifndef MASTER_GOLD
 };
 
@@ -444,7 +444,7 @@ void game_sv_CaptureTheArtefact::OnPlayerDisconnect(ClientID id_who, LPSTR Name,
 	CSE_Abstract* actor = m_server->ID_to_entity(GameID);
 	if (!actor)
 	{
-		Msg("! WARNING: actor [%d] not found, on player disconnect", GameID);
+		LogInfo("! WARNING: actor [%d] not found, on player disconnect", GameID);
 		inherited::OnPlayerDisconnect(id_who, Name, GameID);
 		return;
 	}
@@ -508,7 +508,7 @@ void game_sv_CaptureTheArtefact::OnPlayerReady(ClientID id_who)
 		
 #ifndef MASTER_GOLD
 		VERIFY(xrCData->ps);
-		Msg("---Respawning player %s - he's ready", xrCData->ps->getName());
+		LogInfo("---Respawning player %s - he's ready", xrCData->ps->getName());
 #endif // #ifndef MASTER_GOLD
 		RespawnPlayer(id_who, false);
 		pOwner = xrCData->owner;
@@ -562,7 +562,7 @@ void game_sv_CaptureTheArtefact::Create(shared_str &options)
 	teams[etGreenTeam].score = 0;
 	teams[etBlueTeam].score = 0;
 #ifndef MASTER_GOLD
-	Msg("---Starting new round, scores: [ %d : %d ]",
+	LogInfo("---Starting new round, scores: [ %d : %d ]",
 		teams[etGreenTeam].score, teams[etBlueTeam].score);
 #endif // #ifndef MASTER_GOLD
 	m_iMoney_for_BuySpawn	= READ_IF_EXISTS(pSettings, r_s32, "capturetheartefact_gamedata", "spawn_cost", -10000);
@@ -996,7 +996,7 @@ bool game_sv_CaptureTheArtefact::LoadAnomaliesItems(
 	
 	if (!level_ini_file->line_exist(CTA_ANOMALY_SET_BASE_NAME, ini_set_id))
 	{
-		Msg("! Warning: \"permanent\" string not found in [%s]", CTA_ANOMALY_SET_BASE_NAME);
+		LogInfo("! Warning: \"permanent\" string not found in [%s]", CTA_ANOMALY_SET_BASE_NAME);
 		return false;
 	}
 
@@ -1092,7 +1092,7 @@ void game_sv_CaptureTheArtefact::ReStartRandomAnomaly()
 
 	SendAnomalyStates();
 #ifdef DEBUG
-	Msg("Anomaly states updated, started set # %d", to_start);
+	LogInfo("Anomaly states updated, started set # %d", to_start);
 #endif
 }
 
@@ -1224,18 +1224,18 @@ void game_sv_CaptureTheArtefact::LoadSkinsForTeam(const shared_str& caSection, T
 	string256			SkinSingleName;
 	string4096			Skins;
 
-	// Поле strSectionName должно содержать имя секции
+	// пїЅпїЅпїЅпїЅ strSectionName пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
 	VERIFY(xr_strcmp(caSection,""));
 
 	pTeamSkins->clear();
 
-	// Имя поля
+	// пїЅпїЅпїЅ пїЅпїЅпїЅпїЅ
 	if (!pSettings->line_exist(caSection, "skins")) return;
 
-	// Читаем данные этого поля
+	// пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ
 	xr_strcpy(Skins, pSettings->r_string(caSection, "skins"));
 	u32 count	= _GetItemCount(Skins);
-	// теперь для каждое имя оружия, разделенные запятыми, заносим в массив
+	// пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
 	for (u32 i = 0; i < count; ++i)
 	{
 		_GetItem(Skins, i, SkinSingleName);
@@ -1248,18 +1248,18 @@ void game_sv_CaptureTheArtefact::LoadDefItemsForTeam(const shared_str& caSection
 	string256			ItemName;
 	string4096			DefItems;
 
-	// Поле strSectionName должно содержать имя секции
+	// пїЅпїЅпїЅпїЅ strSectionName пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
 	VERIFY(xr_strcmp(caSection,""));
 
 	pDefItems->clear();
 
-	// Имя поля
+	// пїЅпїЅпїЅ пїЅпїЅпїЅпїЅ
 	if (!pSettings->line_exist(caSection, "default_items")) return;
 
-	// Читаем данные этого поля
+	// пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ
 	xr_strcpy(DefItems, pSettings->r_string(caSection, "default_items"));
 	u32 count	= _GetItemCount(DefItems);
-	// теперь для каждое имя оружия, разделенные запятыми, заносим в массив
+	// пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
 	for (u32 i = 0; i < count; ++i)
 	{
 		_GetItem(DefItems, i, ItemName);
@@ -1661,10 +1661,10 @@ BOOL game_sv_CaptureTheArtefact::OnTouch(u16 eid_who, u16 eid_target, BOOL bForc
 		// if it is myne artefact
 		if (artefactOfTeam->first == ps_who->team)
 		{
-			/*Msg("server artefact position (%2.04f,%2.04f,%2.04f), rpoint position (%2.04f,%2.04f,%2.04f)",
+			/*LogInfo("server artefact position (%2.04f,%2.04f,%2.04f), rpoint position (%2.04f,%2.04f,%2.04f)",
 				tempArtefact->o_Position.x, tempArtefact->o_Position.y, tempArtefact->o_Position.z,
 				tempRPoint.P.x, tempRPoint.P.y, tempRPoint.P.z);
-			Msg("server actor position: (%2.04f, %2.04f, %2.04f)",
+			LogInfo("server actor position: (%2.04f, %2.04f, %2.04f)",
 				e_who->o_Position.x, e_who->o_Position.y, e_who->o_Position.z);*/
 			if (!tempArtefact->o_Position.similar(tempRPoint.P, g_sv_cta_artefactsBaseRadius))
 			{
@@ -1869,7 +1869,7 @@ void game_sv_CaptureTheArtefact::FillDeathActorRejectItems(CSE_ActorMP *actor, x
 		if (!item)
 		{
 #ifndef MASTER_GOLD
-			Msg("! ERROR: item from slot %d is NULL", active_slot);
+			LogInfo("! ERROR: item from slot %d is NULL", active_slot);
 #endif // #ifndef MASTER_GOLD
 			return;
 		}
@@ -1878,7 +1878,7 @@ void game_sv_CaptureTheArtefact::FillDeathActorRejectItems(CSE_ActorMP *actor, x
 		if (!server_item)
 		{
 #ifndef MASTER_GOLD
-			Msg("! ERROR: server entity is NULL, object ID[%d]", item->object_id());
+			LogInfo("! ERROR: server entity is NULL, object ID[%d]", item->object_id());
 #endif // #ifndef MASTER_GOLD
 			return;
 		}
@@ -1889,7 +1889,7 @@ void game_sv_CaptureTheArtefact::FillDeathActorRejectItems(CSE_ActorMP *actor, x
 		}
 		//R_ASSERT		(server_item);
 #ifdef MP_LOGGING
-		Msg("--- SV: to_reject [%d]", server_item->ID);
+		LogInfo("--- SV: to_reject [%d]", server_item->ID);
 #endif
 		to_reject.push_back(server_item);
 
@@ -2040,7 +2040,7 @@ void game_sv_CaptureTheArtefact::RespawnClient(xrClientData const * pclient)
 	{
 #ifndef MASTER_GOLD
 		VERIFY(pclient->ps);
-		Msg("---Respawning dead player [%s]", pclient->ps->getName());
+		LogInfo("---Respawning dead player [%s]", pclient->ps->getName());
 #endif // #ifndef MASTER_GOLD
 		RespawnPlayer(pclient->ID, true);
 		VERIFY(pclient->ps);
@@ -2205,7 +2205,7 @@ void game_sv_CaptureTheArtefact::StartNewRound()
 	m_item_respawner.respawn_level_items();
 	VERIFY(TeamList.size() >= 2);
 #ifndef MASTER_GOLD
-	Msg("---Starting new round, scores: [ %d : %d ]",
+	LogInfo("---Starting new round, scores: [ %d : %d ]",
 		teams[etGreenTeam].score, teams[etBlueTeam].score);
 #endif // #ifndef MASTER_GOLD
 }
@@ -2306,7 +2306,7 @@ void game_sv_CaptureTheArtefact::CheckForArtefactDelivering()
 		if (!xrCData)
 		{
 #ifdef MP_LOGGING
-			Msg("! WARNING: bad actor [%d] tries to deliver artefact", tempActor->ID);
+			LogInfo("! WARNING: bad actor [%d] tries to deliver artefact", tempActor->ID);
 #endif //#ifdef MP_LOGGING
 			continue;
 		}

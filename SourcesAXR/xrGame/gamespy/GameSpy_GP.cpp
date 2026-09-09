@@ -1,4 +1,4 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 #include "GameSpy_GP.h"
 #include "account_manager.h"
 #include "login_manager.h"
@@ -58,7 +58,7 @@ bool CGameSpy_GP::Init()
 	VERIFY2(init_res == GP_NO_ERROR, "GameSpy GP: failed to initialize");
 	if (init_res != GP_NO_ERROR)
 	{
-		Msg("! GameSpy GP: failed to initialize, error code: %d", init_res);
+		LogInfo("! GameSpy GP: failed to initialize, error code: %d", init_res);
 		return false;
 	}
 	xrGS_gpSetCallback(&m_GPConnection, GP_ERROR, &CGameSpy_GP::OnGameSpyErrorCb, this);
@@ -69,13 +69,13 @@ void CGameSpy_GP::Think()
 {
 	if (!m_GPConnection)
 	{
-		Msg("! GameSpy GP ERROR: GameSpy GP connection not ititialized");
+		LogInfo("! GameSpy GP ERROR: GameSpy GP connection not ititialized");
 		return;
 	}
 	GPResult process_res = xrGS_gpProcess(&m_GPConnection);
 	if (process_res != GP_NO_ERROR)
 	{
-		Msg("! GameSpy GP ERROR: process failed: %d", process_res);
+		LogInfo("! GameSpy GP ERROR: process failed: %d", process_res);
 	}
 }
 
@@ -230,13 +230,13 @@ void __cdecl CGameSpy_GP::OnGameSpyErrorCb(GPConnection * connection,
 	char const * error_descr = earg->errorString ? earg->errorString : "unknown";
 	if (earg->fatal)
 	{
-		Msg("! GameSpy FATAL GP ERROR: error code: %d, description: %s",
+		LogInfo("! GameSpy FATAL GP ERROR: error code: %d, description: %s",
 			earg->errorCode,
 			error_descr);
 		//MainMenu()->GetLoginMngr()->delete_profile_obj();
 		return;
 	}
-	Msg("! GameSpy GP ERROR: error code: %d, description: %s", 
+	LogInfo("! GameSpy GP ERROR: error code: %d, description: %s", 
 		earg->errorCode,
 		error_descr);
 }

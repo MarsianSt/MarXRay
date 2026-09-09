@@ -1,4 +1,4 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 #pragma hdrstop
 
 #include <process.h>
@@ -95,8 +95,8 @@ void _initialize_cpu(void)
 	else if (CPU::Info.isIntel)
 		vendor = "Intel";
 
-	Msg("* Vendor CPU: %s", *vendor);
-	Msg("* Detected CPU: %s", CPU::Info.modelName);
+	LogInfo("* Vendor CPU: %s", *vendor);
+	LogInfo("* Detected CPU: %s", CPU::Info.modelName);
 
 	string256 features;
 	xr_strcpy(features, sizeof(features), "RDTSC");
@@ -164,8 +164,8 @@ void _initialize_cpu(void)
 	if (CPU::Info.hasFeature(CPUFeature::XFSR))
 		xr_strcat(features, ", XFSR");
 
-	Msg("* CPU features: %s", features);
-	Msg("* CPU cores/threads: %d/%d \n", CPU::Info.n_cores, CPU::Info.n_threads);
+	LogInfo("* CPU features: %s", features);
+	LogInfo("* CPU cores/threads: %d/%d \n", CPU::Info.n_cores, CPU::Info.n_threads);
 
 	// Per second and QPC, lol 
 	CPU::Detect();

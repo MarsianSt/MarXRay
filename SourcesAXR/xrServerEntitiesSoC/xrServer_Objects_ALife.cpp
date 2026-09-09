@@ -1,4 +1,4 @@
-////////////////////////////////////////////////////////////////////////////
+﻿////////////////////////////////////////////////////////////////////////////
 //	Module 		: xrServer_Objects_ALife.cpp
 //	Created 	: 19.09.2002
 //  Modified 	: 04.06.2003
@@ -1187,7 +1187,7 @@ bool CSE_ALifeObjectHangingLamp::validate			()
 	if (flags.test(flR1) || flags.test(flR2))
 		return					(true);
 
-	Msg							("! Render type is not set properly!");
+	LogInfo("! Render type is not set properly!");
 	return						(false);
 }
 

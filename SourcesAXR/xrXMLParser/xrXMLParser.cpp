@@ -1,4 +1,4 @@
-#include "stdafx.h"
+п»ї#include "stdafx.h"
 #pragma hdrstop
 
 #include "xrXMLParser.h"
@@ -67,7 +67,7 @@ bool CXml::Load(LPCSTR path_alias, LPCSTR path, LPCSTR _xml_filename, bool fatal
 	return Load				(path_alias, str, fatal);
 }
 
-//инициализация и загрузка XML файла
+//пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ XML пїЅпїЅпїЅпїЅпїЅ
 bool CXml::Load(LPCSTR path, LPCSTR  xml_filename, bool fatal)
 {
 	// Load and parse xml file
@@ -94,7 +94,7 @@ bool CXml::Load(LPCSTR path, LPCSTR  xml_filename, bool fatal)
 		if (xrGameManager::GetGame() == EGame::COP)
 			R_ASSERT2(false, str);
 		else
-			Msg(str);
+			LogInfo(str);
 	} 
 
 	m_root					= m_Doc.FirstChildElement();
@@ -116,7 +116,7 @@ XML_NODE* CXml::NavigateToNode(XML_NODE* start_node, LPCSTR  path, int node_inde
     char *token;
 	int tmp						= 0;
 
-    //разбить путь на отдельные подпути
+    //пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 	token = strtok( buf_str, seps );
 
 	if( token != NULL )
@@ -293,12 +293,12 @@ LPCSTR CXml::ReadAttrib(XML_NODE* node, LPCSTR attrib, LPCSTR default_str_val)
 	else
 	{
 /*
-		//обязательно делаем ref_str, а то 
-		//не сможем запомнить строку и return вернет левый указатель
+		//пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ ref_str, пїЅ пїЅпїЅ 
+		//пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅ return пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 		shared_str result_str;
 */
 		LPCSTR result_str = NULL;
-		// Кастаем ниже по иерархии
+		// пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 
 		TiXmlElement *el = node->ToElement(); 
 		
@@ -423,7 +423,7 @@ int CXml::GetNodesNum(XML_NODE* node, LPCSTR  tag_name)
 	return result;
 }
 
-//нахождение элемнета по его атрибуту
+//пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 XML_NODE* CXml::SearchForAttribute(LPCSTR path, int index, LPCSTR tag_name, LPCSTR attrib, LPCSTR attrib_value_pattern)
 {
 	XML_NODE* start_node			= NavigateToNode(path, index);

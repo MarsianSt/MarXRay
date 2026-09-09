@@ -1,4 +1,4 @@
-#ifndef _matrix33H_
+﻿#ifndef _matrix33H_
 #define _matrix33H_
 
 template <class T>
@@ -221,7 +221,7 @@ public:
             d.set(b);
             z.set(0,0,0);
         }
-//        Log.Msg("eigen: too many iterations in Jacobi transform (%d).\n", i);
+//        Log.LogInfo("eigen: too many iterations in Jacobi transform (%d).\n", i);
         return i;
     }
 #undef ROT

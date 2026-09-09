@@ -35,6 +35,12 @@
 class CGameMtlLibrary;
 IC CGameMtlLibrary &GMLibrary()
 {
-	VERIFY(PGMLib);
-	return *PGMLib;
+	typedef void *(__cdecl *FnGetGMLib)();
+	static FnGetGMLib fn = 0;
+	if (!fn)
+		fn = (FnGetGMLib)GetProcAddress(GetModuleHandle(NULL), "BGFX_GetGMLib");
+	R_ASSERT2(fn, "BGFX_GetGMLib export not found");
+	CGameMtlLibrary* p = (CGameMtlLibrary*)fn();
+	VERIFY(p);
+	return *p;
 }

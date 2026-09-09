@@ -1,4 +1,4 @@
-#include "stdafx.h"
+п»ї#include "stdafx.h"
 #include "Actor.h"
 #include "ActorEffector.h"
 #include "weapon.h"
@@ -151,7 +151,7 @@ void CActor::PickupModeUpdate()
 	if(!IsGameTypeSingle())			return;
 	if (pda->IsShown())				return;
 
-	//подбирание объекта
+	//пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 	if(	m_pObjectWeLookingAt									&& 
 		m_pObjectWeLookingAt->cast_inventory_item()				&& 
 		m_pObjectWeLookingAt->cast_inventory_item()->Useful()	&&
@@ -179,13 +179,13 @@ void CActor::PickupModeUpdate()
 					return;
 
 #ifdef DEBUG
-				Msg("[ActorFeel::PickupModeUpdate]: Lua function [%s] called from item [%s] by use_precondition.", take_precond.c_str(), inv_item->m_section_id.c_str());
+				LogInfo("[ActorFeel::PickupModeUpdate]: Lua function [%s] called from item [%s] by use_precondition.", take_precond.c_str(), inv_item->m_section_id.c_str());
 #endif
 			}
 #ifdef DEBUG
 			else
 			{
-				Msg("[ActorFeel::PickupModeUpdate]: ERROR: Lua function [%s] called from item [%s] by use_precondition not found!", take_precond.c_str(), inv_item->m_section_id.c_str());
+				LogInfo("[ActorFeel::PickupModeUpdate]: ERROR: Lua function [%s] called from item [%s] by use_precondition not found!", take_precond.c_str(), inv_item->m_section_id.c_str());
 			}
 #endif
 		}
@@ -315,13 +315,13 @@ void	CActor::PickupModeUpdate_COD	()
 					return;
 
 #ifdef DEBUG
-				Msg("[ActorFeel::PickupModeUpdate_COD]: Lua function [%s] called from item [%s] by use_precondition.", take_precond.c_str(), pNearestItem->m_section_id.c_str());
+				LogInfo("[ActorFeel::PickupModeUpdate_COD]: Lua function [%s] called from item [%s] by use_precondition.", take_precond.c_str(), pNearestItem->m_section_id.c_str());
 #endif
 			}
 #ifdef DEBUG
 			else
 			{
-				Msg("[ActorFeel::PickupModeUpdate_COD]: ERROR: Lua function [%s] called from item [%s] by use_precondition not found!", take_precond.c_str(), pNearestItem->m_section_id.c_str());
+				LogInfo("[ActorFeel::PickupModeUpdate_COD]: ERROR: Lua function [%s] called from item [%s] by use_precondition not found!", take_precond.c_str(), pNearestItem->m_section_id.c_str());
 			}
 #endif
 		}
@@ -330,7 +330,7 @@ void	CActor::PickupModeUpdate_COD	()
 		if(pUsableObject && (!m_pUsableObject))
 			pUsableObject->use(this);
 
-		//подбирание объекта
+		//пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 		auto CurMenuMode = CurrentGameUI()->ActorMenu().GetMenuMode();
 		const bool use_pickup_anim = (Position().distance_to(pNearestItem->cast_game_object()->Position()) > 0.2f)
 			&& CurMenuMode != mmDeadBodySearch
@@ -460,7 +460,7 @@ void CActor::Feel_Grenade_Update( float rad )
 		}
 		if ( HUD().AddGrenade_ForMark( grn ) )
 		{
-			//.	Msg("__ __ Add new grenade! id = %d ", grn->ID() );
+			//.	LogInfo("__ __ Add new grenade! id = %d ", grn->ID() );
 		}
 	}// for it
 

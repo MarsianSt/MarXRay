@@ -1,4 +1,4 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 
 #include "interactive_motion.h"
 
@@ -21,7 +21,7 @@ void interactive_motion_diagnostic( LPCSTR message, const MotionID &m, CPhysicsS
 	CPhysicsShellHolder* O = smart_cast<CPhysicsShellHolder*>(s->get_ElementByStoreOrder( 0 )->PhysicsRefObject());
 	VERIFY( O );
 	LPCSTR motion_name = KA->LL_MotionDefName_dbg( m ).first;
-	Msg( "death anims - interactive_motion:- %s, motion: %s, obj: %s, model:  %s ", message, motion_name, O->cName().c_str(), O->cNameVisual().c_str());
+	LogInfo( "death anims - interactive_motion:- %s, motion: %s, obj: %s, model:  %s ", message, motion_name, O->cName().c_str(), O->cNameVisual().c_str());
 #endif
 }
 

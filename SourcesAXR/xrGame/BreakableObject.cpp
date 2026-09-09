@@ -1,4 +1,4 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 #include "BreakableObject.h"
 #include "xrserver_objects_alife.h"
 #include "../xrphysics/IPHStaticGeomShell.h"
@@ -241,7 +241,7 @@ void CBreakableObject::SendDestroy()
 	if (Local())	DestroyObject	();
 //	NET_Packet		P;
 //	u_EventGen		(P,GE_DESTROY,ID());
-//	Msg				("ge_destroy: [%d] - %s",ID(),*cName());
+//	LogInfo("ge_destroy: [%d] - %s",ID(),*cName());
 //	if (Local())	u_EventSend			(P);
 	bRemoved=true;
 }

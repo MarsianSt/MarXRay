@@ -1,4 +1,4 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 #include "phactorcharacter.h"
 #include "Extendedgeom.h"
 #include "PhysicsCommon.h"
@@ -382,7 +382,7 @@ case rtStalkerSmall:
 		//else ch->SetRestrictionType(rtStalker);
 #ifdef DEBUG
 		if(debug_output().ph_dbg_draw_mask1().test(ph_m1_DbgActorRestriction))
-				Msg("restriction ready to change small -> large");
+				LogInfo("restriction ready to change small -> large");
 #endif
 	}
 	break;
@@ -391,7 +391,7 @@ case rtStalker:
 	{
 #ifdef DEBUG
 		if(debug_output().ph_dbg_draw_mask1().test(ph_m1_DbgActorRestriction))
-						Msg("restriction  change large ->  small");
+						LogInfo("restriction  change large ->  small");
 #endif
 		ch->SetRestrictionType(rtStalkerSmall);
 		Enable();

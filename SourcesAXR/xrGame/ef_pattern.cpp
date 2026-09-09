@@ -1,4 +1,4 @@
-////////////////////////////////////////////////////////////////////////////
+﻿////////////////////////////////////////////////////////////////////////////
 //	Module 		: ef_pattern.cpp
 //	Created 	: 25.03.2002
 //  Modified 	: 11.10.2002
@@ -44,7 +44,7 @@ void CPatternFunction::vfLoadEF(LPCSTR caFileName)
 {
 	string_path		caPath;
 	if (!FS.exist(caPath,"$game_ai$",caFileName)) {
-		Msg			("! Evaluation function : File not found \"%s\"",caPath);
+		LogInfo("! Evaluation function : File not found \"%s\"",caPath);
 		R_ASSERT	(false);
 		return;
 	}
@@ -54,7 +54,7 @@ void CPatternFunction::vfLoadEF(LPCSTR caFileName)
 
 	if (EFC_VERSION != m_tEFHeader.dwBuilderVersion) {
 		FS.r_close	(F);
-		Msg			("! Evaluation function (%s) : Not supported version of the Evaluation Function Contructor",caPath);
+		LogInfo("! Evaluation function (%s) : Not supported version of the Evaluation Function Contructor",caPath);
 		R_ASSERT	(false);
 		return;
 	}
@@ -108,7 +108,7 @@ void CPatternFunction::vfLoadEF(LPCSTR caFileName)
 	
 	_splitpath		(caPath,0,0,m_caName,0);
 
-	// Msg			("* Evaluation function \"%s\" is successfully loaded",m_caName);
+	// LogInfo("* Evaluation function \"%s\" is successfully loaded",m_caName);
 }
 
 float CPatternFunction::ffEvaluate()
@@ -136,7 +136,7 @@ float CPatternFunction::ffGetValue()
 			j += xr_sprintf(caString + j, sizeof(caString)-j, " %3d",m_dwaVariableValues[i] + 1);
 		
 		xr_sprintf	(caString + j,sizeof(caString)-j, ") = %7.2f",value);
-		Msg			("- %s",caString);
+		LogInfo("- %s",caString);
 		return		(value);
 	}
 #endif

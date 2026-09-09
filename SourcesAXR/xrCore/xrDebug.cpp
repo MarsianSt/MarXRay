@@ -1,4 +1,4 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 #pragma hdrstop
 
 #ifndef _EDITOR
@@ -77,8 +77,8 @@ void xrDebug::backend(const char* reason, const char* expression, const char *ar
 	// Log
 	string1024			tmp;
 	xr_sprintf				(tmp,"***STOP*** file '%s', line %d.\n***Reason***: %s\n %s",file,line,reason,expression);
-	Msg					(tmp);
-	FlushLog			();
+	LogInfo(tmp);
+	xrAsyncLogger::instance().flush();
 	if (handler)		handler	();
 
 	// Call the dialog
@@ -175,7 +175,7 @@ void __cdecl xrDebug::fatal(const char *file, int line, const char *function, co
 }
 void xrDebug::do_exit	(const std::string &message)
 {
-	FlushLog			();
+	xrAsyncLogger::instance().flush();
     MessageBox			(NULL,message.c_str(),"Error",MB_OK|MB_ICONERROR|MB_SYSTEMMODAL);
     TerminateProcess	(GetCurrentProcess(),1);
 }

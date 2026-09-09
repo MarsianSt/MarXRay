@@ -1,4 +1,4 @@
-#include "stdafx.h"
+п»ї#include "stdafx.h"
 #include "UIWindow.h"
 #include "../UICursor.h"
 #include "../MainMenu.h"
@@ -19,11 +19,11 @@ poolSS< _12b, 128>	ui_allocator;
 	};
 	xr_vector<DBGList>	dbg_list_wnds;
 	void dump_list_wnd(){
-		Msg("------Total  wnds %d",dbg_list_wnds.size());
+		LogInfo("------Total  wnds %d",dbg_list_wnds.size());
 		xr_vector<DBGList>::iterator _it = dbg_list_wnds.begin();
 		for(;_it!=dbg_list_wnds.end();++_it)
 			if(!(*_it).closed)
-				Msg("--leak detected ---- wnd = %d",(*_it).num);
+				LogInfo("--leak detected ---- wnd = %d",(*_it).num);
 	}
 #else
 	void dump_list_wnd(){}
@@ -143,12 +143,12 @@ CUIWindow::~CUIWindow()
 			break;
 		}
 		if( (*_it).num==m_dbg_id && (*_it).closed){
-			Msg("--CUIWindow [%d] already deleted", m_dbg_id);
+			LogInfo("--CUIWindow [%d] already deleted", m_dbg_id);
 			bOK = true;
 		}
 	}
 	if(!bOK)
-		Msg("CUIWindow::~CUIWindow.[%d] cannot find window in list", m_dbg_id);
+		LogInfo("CUIWindow::~CUIWindow.[%d] cannot find window in list", m_dbg_id);
 #endif
 }
 
@@ -255,9 +255,9 @@ void CUIWindow::GetAbsoluteRect(Frect& r)
 	r.bottom		= r.top	+ GetHeight();
 }
 
-//реакция на мышь
-//координаты курсора всегда, кроме начального вызова 
-//задаются относительно текущего окна
+//пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅ
+//пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ 
+//пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ
 
 #define DOUBLE_CLICK_TIME 250
 
@@ -287,14 +287,14 @@ bool CUIWindow::OnMouseAction(float x, float y, EUIMessages mouse_action)
 	{
 		if(!wndRect.in(m_cursor_pos))
             return false;
-		//получить координаты относительно окна
+		//пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ
 		m_cursor_pos.x -= wndRect.left;
 		m_cursor_pos.y -= wndRect.top;
 	}
 
 
-	//если есть дочернее окно,захватившее мышь, то
-	//сообщение направляем ему сразу
+	//пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ,пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ, пїЅпїЅ
+	//пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ
 	if(m_pMouseCapturer)
 	{
 		m_pMouseCapturer->OnMouseAction(m_cursor_pos.x - m_pMouseCapturer->GetWndRect().left,
@@ -323,21 +323,21 @@ bool CUIWindow::OnMouseAction(float x, float y, EUIMessages mouse_action)
             break;
 	}
 
-	//Проверка на попадание мыши в окно,
-	//происходит в обратном порядке, чем рисование окон
-	//(последние в списке имеют высший приоритет)
+	//пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅ,
+	//пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ
+	//(пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ)
 	WINDOW_LIST::reverse_iterator it = m_ChildWndList.rbegin();
 
 	for(int i = m_ChildWndList.size() - 1; it!=m_ChildWndList.rend(); ++it, i--)
 	{
 		CUIWindow* w	= (*it);
 
-		if (i < 0) // Dance Maniac: Костыль от вылета энциклопедии при открытии статьи
+		if (i < 0) // Dance Maniac: пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
 			return false;
 
 		auto sw = smart_cast<CUISimpleWindow*>(w);
 
-		if (sw)	// Dance Maniac: Костыль от вылета энциклопедии при открытии статьи
+		if (sw)	// Dance Maniac: пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
 		{
 			if (sw->GetAlignment() != waNone && sw->GetAlignment() != waLeft && sw->GetAlignment() != waRight && sw->GetAlignment() != waTop && sw->GetAlignment() != waBottom && sw->GetAlignment() != waCenter)
 				return false;
@@ -403,10 +403,10 @@ void CUIWindow::OnFocusLost()
 }
 
 
-//Сообщение, посылаемое дочерним окном,
-//о том, что окно хочет захватить мышь,
-//все сообщения от нее будут направляться только
-//ему в независимости от того где мышь
+//пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ,
+//пїЅ пїЅпїЅпїЅ, пїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ,
+//пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
+//пїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅ
 void CUIWindow::SetCapture(CUIWindow *pChildWindow, bool capture_status)
 {
 	if(GetParent())
@@ -416,7 +416,7 @@ void CUIWindow::SetCapture(CUIWindow *pChildWindow, bool capture_status)
 
 	if(capture_status)
 	{
-		//оповестить дочернее окно о потере фокуса мыши
+		//пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ
 		if(NULL!=m_pMouseCapturer)
 			m_pMouseCapturer->SendMessage(this, WINDOW_MOUSE_CAPTURE_LOST);
 
@@ -429,13 +429,13 @@ void CUIWindow::SetCapture(CUIWindow *pChildWindow, bool capture_status)
 }
 
 
-//реакция на клавиатуру
+//пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 bool CUIWindow::OnKeyboardAction(int dik, EUIMessages keyboard_action)
 {
 	bool result;
 
-	//если есть дочернее окно,захватившее клавиатуру, то
-	//сообщение направляем ему сразу
+	//пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ,пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅ
+	//пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ
 	if(NULL!=m_pKeyboardCapturer)
 	{
 		result = m_pKeyboardCapturer->OnKeyboardAction(dik, keyboard_action);
@@ -491,7 +491,7 @@ void CUIWindow::SetKeyboardCapture(CUIWindow* pChildWindow, bool capture_status)
 
 	if(capture_status)
 	{
-		//оповестить дочернее окно о потере фокуса клавиатуры
+		//пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 		if(NULL!=m_pKeyboardCapturer)
 			m_pKeyboardCapturer->SendMessage(this, WINDOW_KEYBOARD_CAPTURE_LOST);
 			
@@ -502,10 +502,10 @@ void CUIWindow::SetKeyboardCapture(CUIWindow* pChildWindow, bool capture_status)
 }
 
 
-//обработка сообщений 
+//пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ 
 void CUIWindow::SendMessage(CUIWindow *pWnd, s16 msg, void *pData)	  
 {
-	//оповестить дочерние окна
+	//пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ
 	for(int i = 0; i < m_ChildWndList.size(); ++i)
 	{
 		if(m_ChildWndList[i]->IsEnabled())
@@ -542,7 +542,7 @@ CUIWindow* CUIWindow::GetChildMouseHandler(){
     return this;
 }
 
-//для перевода окна и потомков в исходное состояние
+//пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 void CUIWindow::Reset()
 {
 	m_pMouseCapturer = NULL;

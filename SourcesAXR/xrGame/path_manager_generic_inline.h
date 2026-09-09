@@ -1,4 +1,4 @@
-////////////////////////////////////////////////////////////////////////////
+﻿////////////////////////////////////////////////////////////////////////////
 //	Module 		: path_manager_generic_inline.h
 //	Created 	: 21.03.2002
 //  Modified 	: 03.03.2004
@@ -84,7 +84,7 @@ template <typename T>
 IC	void CGenericPathManager::create_path			(T &vertex)
 {
 	VERIFY					(data_storage);
-//		Msg						("Path [IC=xxx][VNC=%d][BV=%f]",data_storage->get_visited_node_count(),data_storage->get_best().f());
+//		LogInfo("Path [IC=xxx][VNC=%d][BV=%f]",data_storage->get_visited_node_count(),data_storage->get_best().f());
 	if (path)
 		data_storage->get_node_path	(*path,&vertex);
 }

@@ -1,4 +1,4 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 #include "entity.h"
 #include "xrserver_objects.h"
 #include "level.h"
@@ -90,7 +90,7 @@ void CLevel::ClientReceive()
 			{
 				if (!bReady) //!m_bGameConfigStarted || 
 				{
-					Msg ("! Unconventional M_SPAWN received : map_data[%s] | bReady[%s] | deny_m_spawn[%s]",
+					LogInfo("! Unconventional M_SPAWN received : map_data[%s] | bReady[%s] | deny_m_spawn[%s]",
 						(map_data.m_map_sync_received) ? "true" : "false",
 						(bReady) ? "true" : "false",
 						deny_m_spawn ? "true" : "false");
@@ -99,7 +99,7 @@ void CLevel::ClientReceive()
 				/*/
 				cl_Process_Spawn(*P);
 				/*/
-				//Msg("--- Client received M_SPAWN message...");
+				//LogInfo("--- Client received M_SPAWN message...");
 				game_events->insert		(*P);
 				if (g_bDebugEvents)		ProcessGameEvents();
 				//*/
@@ -108,10 +108,10 @@ void CLevel::ClientReceive()
 		case M_EVENT:
 			/*if (!game_configured)
 			{
-				Msg("! WARNING: ignoring game event [%d] - game not configured...", m_type);
+				LogInfo("! WARNING: ignoring game event [%d] - game not configured...", m_type);
 				break;
 			}*/
-			//Msg("Client received M_EVENT message...");
+			//LogInfo("Client received M_EVENT message...");
 			game_events->insert		(*P);
 			if (g_bDebugEvents)		ProcessGameEvents();
 			break;
@@ -119,7 +119,7 @@ void CLevel::ClientReceive()
 			{
 				/*if (!game_configured)
 				{
-					Msg("! WARNING: ignoring game event [%d] - game not configured...", m_type);
+					LogInfo("! WARNING: ignoring game event [%d] - game not configured...", m_type);
 					break;
 				}*/
 				NET_Packet	tmpP;
@@ -164,7 +164,7 @@ void CLevel::ClientReceive()
 			{
 				/*if (!game_configured)
 				{
-					Msg("! WARNING: ignoring game event [%d] - game not configured...", m_type);
+					LogInfo("! WARNING: ignoring game event [%d] - game not configured...", m_type);
 					break;
 				}*/
 				if (OnClient()) break;
@@ -184,7 +184,7 @@ void CLevel::ClientReceive()
 				if ((Level().timeServer() + Ping) < P->timeReceive)
 				{
 #ifdef DEBUG
-//					Msg("! TimeServer[%d] < TimeReceive[%d]", Level().timeServer(), P->timeReceive);
+//					LogInfo("! TimeServer[%d] < TimeReceive[%d]", Level().timeServer(), P->timeReceive);
 #endif
 					dTime = Ping;
 				}
@@ -201,7 +201,7 @@ void CLevel::ClientReceive()
 			{
 				/*if (!game_configured)
 				{
-					Msg("! WARNING: ignoring game event [%d] - game not configured...", m_type);
+					LogInfo("! WARNING: ignoring game event [%d] - game not configured...", m_type);
 					break;
 				}*/
 				game_events->insert		(*P);
@@ -212,7 +212,7 @@ void CLevel::ClientReceive()
 			{
 				/*if (!game_configured)
 				{
-					Msg("! WARNING: ignoring game event [%d] - game not configured...", m_type);
+					LogInfo("! WARNING: ignoring game event [%d] - game not configured...", m_type);
 					break;
 				}*/
 				u8 Count = P->r_u8();
@@ -235,7 +235,7 @@ void CLevel::ClientReceive()
 			{
 				/*if (!game_configured)
 				{
-					Msg("! WARNING: ignoring game event [%d] - game not configured...", m_type);
+					LogInfo("! WARNING: ignoring game event [%d] - game not configured...", m_type);
 					break;
 				}*/
 				P->r_u16		(ID);
@@ -245,7 +245,9 @@ void CLevel::ClientReceive()
 			}break;
 		//---------------------------------------------------
 		case M_SV_CONFIG_NEW_CLIENT:
+			LogInfo("--- bgfxport got NEW_CLIENT, game=%p", (void*)game);
 			InitializeClientGame	(*P);
+			LogInfo("--- bgfxport NEW_CLIENT done, game=%p", (void*)game);
 			break;
 		case M_SV_CONFIG_GAME:
 			game->net_import_state(*P);
@@ -254,7 +256,7 @@ void CLevel::ClientReceive()
 			{
 				game_configured			= TRUE;
 	#ifdef DEBUG
-				Msg("- Game configuring : Finished ");
+				LogInfo("- Game configuring : Finished ");
 	#endif // #ifdef DEBUG
 				if (IsDemoPlayStarted() && !m_current_spectator)
 				{
@@ -275,19 +277,19 @@ void CLevel::ClientReceive()
 			{
 				/*if (!game_configured)
 				{
-					Msg("! WARNING: ignoring game event [%d] - game not configured...", m_type);
+					LogInfo("! WARNING: ignoring game event [%d] - game not configured...", m_type);
 					break;
 				}*/
 				char	buffer[256];
 				P->r_stringZ(buffer);
-				Msg		("- %s",buffer);
+				LogInfo("- %s",buffer);
 			}
 			break;
 		case M_GAMEMESSAGE:
 			{
 				/*if (!game_configured)
 				{
-					Msg("! WARNING: ignoring game event [%d] - game not configured...", m_type);
+					LogInfo("! WARNING: ignoring game event [%d] - game not configured...", m_type);
 					break;
 				}*/
 				if (!game) break;
@@ -299,7 +301,7 @@ void CLevel::ClientReceive()
 		case M_CHANGE_LEVEL:
 			{
 #ifdef DEBUG
-				Msg("--- Changing level message received...");
+				LogInfo("--- Changing level message received...");
 #endif // #ifdef DEBUG
 				if(m_type==M_LOAD_GAME)
 				{
@@ -339,7 +341,7 @@ void CLevel::ClientReceive()
 			{
 				/*if (!game_configured)
 				{
-					Msg("! WARNING: ignoring game event [%d] - game not configured...", m_type);
+					LogInfo("! WARNING: ignoring game event [%d] - game not configured...", m_type);
 					break;
 				}*/
 				if (!game) break;
@@ -365,7 +367,7 @@ void CLevel::ClientReceive()
 			}break;
 		case M_CHANGE_LEVEL_GAME:
 			{
-				Msg("- M_CHANGE_LEVEL_GAME Received");
+				LogInfo("- M_CHANGE_LEVEL_GAME Received");
 
 				if (OnClient())
 				{
@@ -439,14 +441,14 @@ void CLevel::ClientReceive()
 			}break;
 		case M_STATISTIC_UPDATE:
 			{
-				Msg("--- CL: On Update Request");
+				LogInfo("--- CL: On Update Request");
 					if (!game) break;
 				game_events->insert		(*P);
 				if (g_bDebugEvents)		ProcessGameEvents();
 			}break;
 		case M_STATISTIC_UPDATE_RESPOND: //deprecated, see  xrServer::OnMessage
 			{
-				/*Msg("--- CL: On Update Respond");
+				/*LogInfo("--- CL: On Update Respond");
 				if (!game) break;
 				if (GameID() != eGameIDSingle)
 					Game().m_WeaponUsageStatistic->OnUpdateRespond(P);*/

@@ -1,4 +1,4 @@
-#include "stdafx.h"
+п»ї#include "stdafx.h"
 #include "ParticlesObject.h"
 #include "../xrEngine/gamemtllib.h"
 #include "level.h"
@@ -146,7 +146,7 @@ public:
 	}
 	virtual void 			run								()
 	{
-		//добавить отметку на материале
+		//пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 		::Render->add_StaticWallmark(pWallmarkShader,pos, 
 			0.09f, T,
 			Level().ObjectSpace.GetStaticVerts());
@@ -166,10 +166,10 @@ static void play_object( dxGeomUserData* data, SGameMtlPair* mtl_pair, const dCo
 							sp=data->ph_ref_object->ObjectPhSoundPlayer();
 						}
 						__except(EXCEPTION_EXECUTE_HANDLER){
-							Msg( "data->ph_ref_object: %p ", data->ph_ref_object );
-							Msg( "data: %p ", data );
-							Msg( "materials: %s ", mtl_pair->dbg_Name() );
-							FlushLog();
+							LogInfo( "data->ph_ref_object: %p ", data->ph_ref_object );
+							LogInfo( "data: %p ", data );
+							LogInfo( "materials: %s ", mtl_pair->dbg_Name() );
+							xrAsyncLogger::instance().flush();
 							FATAL( "bad data->ph_ref_object" );
 						}
 #else

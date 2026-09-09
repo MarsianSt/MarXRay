@@ -1,4 +1,4 @@
-////////////////////////////////////////////////////////////////////////////
+﻿////////////////////////////////////////////////////////////////////////////
 //	Module 		: alife_simulator_base2.cpp
 //	Created 	: 25.12.2002
 //  Modified 	: 12.05.2004
@@ -41,7 +41,7 @@ void CALifeSimulatorBase::register_object	(CSE_ALifeDynamicObject *object, bool 
 
 #ifdef DEBUG
 		if (std::find(II->children.begin(),II->children.end(),item->base()->ID) != II->children.end()) {
-			Msg							("[LSS] Specified item [%s][%d] is already attached to the specified object [%s][%d]",item->base()->name_replace(),item->base()->ID,II->name_replace(),II->ID);
+			LogInfo("[LSS] Specified item [%s][%d] is already attached to the specified object [%s][%d]",item->base()->name_replace(),item->base()->ID,II->name_replace(),II->ID);
 			FATAL						("[LSS] Cannot recover from the previous error!");
 		}
 #endif

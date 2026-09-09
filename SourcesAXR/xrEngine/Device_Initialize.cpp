@@ -1,4 +1,4 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 #include "resource.h"
 
 #ifdef INGAME_EDITOR
@@ -13,7 +13,7 @@ void CRenderDevice::initialize_editor	()
 {
 	m_editor_module		= LoadLibrary("editor.dll");
 	if (!m_editor_module) {
-		Msg				("! cannot load library \"editor.dll\"");
+		LogInfo("! cannot load library \"editor.dll\"");
 		return;
 	}
 
@@ -36,7 +36,7 @@ void CRenderDevice::Initialize()
 {
 	ZoneScoped;
 
-	Log("Initializing Engine...");
+	LogInfo("%s", "Initializing Engine...");
 	TimerGlobal.Start();
 	TimerMM.Start();
 

@@ -143,7 +143,7 @@ namespace CDB
         {
             if (S_READY != status)
             {
-                Log("! WARNING: syncronized CDB::query");
+                LogInfo("! WARNING: syncronized CDB::query");
                 cs.lock();
                 cs.unlock();
             }

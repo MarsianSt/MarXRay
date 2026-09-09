@@ -1,4 +1,4 @@
-////////////////////////////////////////////////////////////////////////////
+﻿////////////////////////////////////////////////////////////////////////////
 //	Module 		: inventory_upgrade_group.cpp
 //	Created 	: 22.10.2007
 //  Modified 	: 27.11.2007
@@ -59,7 +59,7 @@ void Group::log_hierarchy( LPCSTR nest )
 	PSTR	nest2 = (PSTR)_alloca( sz );
 	xr_strcpy( nest2, sz, nest );
 	xr_strcat( nest2, sz, "   " );
-	Msg( "%s(g) %s", nest2, m_id.c_str() );
+	LogInfo( "%s(g) %s", nest2, m_id.c_str() );
 
 	Upgrades_type::iterator ib = m_included_upgrades.begin();
 	Upgrades_type::iterator ie = m_included_upgrades.end();

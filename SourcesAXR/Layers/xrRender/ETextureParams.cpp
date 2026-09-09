@@ -1,4 +1,4 @@
-#include "stdafx.h"
+п»ї#include "stdafx.h"
 #pragma hdrstop          
 
 #include "ETextureParams.h"
@@ -94,7 +94,7 @@ void STextureParams::Load(IReader& F, string128 tex_name)
 	    bump_virtual_height	= F.r_float				();
 	    bump_mode			= (ETBumpMode)F.r_u32	();
         if (bump_mode<STextureParams::tbmNone){
-        	bump_mode		= STextureParams::tbmNone; //.. временно (до полного убирания Autogen)
+        	bump_mode		= STextureParams::tbmNone; //.. пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ (пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ Autogen)
         }
     	F.r_stringZ			(bump_name);
     }
@@ -386,7 +386,7 @@ BOOL STextureParams::similar(STextureParams& tp1, xr_vector<AnsiString>& sel_par
         {
         	res = ( fsimilar(bump_virtual_height,tp1.bump_virtual_height));
         }else
-        	Msg("! unknown filter [%s]", par_name.c_str());
+        	LogInfo("! unknown filter [%s]", par_name.c_str());
        if(!res)
        	break;
     }
