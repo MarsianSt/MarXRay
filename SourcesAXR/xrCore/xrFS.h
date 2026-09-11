@@ -85,6 +85,7 @@ public:
     std::vector<std::string> list_virtual_files() const;
 
     static xrFS& instance();
+    // Only effective before the first instance() call (call_once lazy init).
     static void set_instance(std::unique_ptr<xrFS> new_fs);
 
     virtual ~xrFS();

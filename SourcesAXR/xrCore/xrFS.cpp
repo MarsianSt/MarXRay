@@ -17,13 +17,19 @@
 std::unique_ptr<xrFS> xrFS::s_instance;
 
 xrFS& xrFS::instance() {
-    if (!s_instance) {
-        s_instance = std::make_unique<xrFS>();
-    }
+    // Thread-safe lazy init via call_once. Kept as a file-scope global (not a
+    // function-local static): other function-local statics (xrAsyncLogger etc.)
+    // may call fs() from their destructors during DLL detach, and globals are
+    // destroyed after function-locals, so the xrFS instance stays alive longest.
+    static std::once_flag once;
+    std::call_once(once, [] {
+        if (!s_instance) s_instance = std::make_unique<xrFS>();
+    });
     return *s_instance;
 }
 
 void xrFS::set_instance(std::unique_ptr<xrFS> new_fs) {
+    // Only effective before the first instance() call.
     s_instance = std::move(new_fs);
 }
 
