@@ -324,13 +324,13 @@ size_t xrFS::mounted_count() const {
 bool xrFS::virtual_exists(const std::string& vpath) const
 {
     std::string droot, vroot;
-    std::vector<const MountedArchive*> arcs;
+    std::vector<std::shared_ptr<MountedArchive>> arcs;
     {
         std::lock_guard<std::mutex> lock(m_mtx);
         droot = m_data_root;
         vroot = m_virtual_root;
         arcs.reserve(m_archives.size());
-        for (const auto& a : m_archives) arcs.push_back(a.get());
+        for (const auto& a : m_archives) arcs.push_back(a);
     }
     const std::string key = vfs_resolve(vpath, vroot);
     if (!droot.empty()) {
@@ -338,7 +338,7 @@ bool xrFS::virtual_exists(const std::string& vpath) const
         if (std::filesystem::is_regular_file(vfs_disk_path(droot, key), ec) && !ec)
             return true;
     }
-    for (const auto* a : arcs)
+    for (const auto& a : arcs)
         if (a->find(key) != nullptr) return true;
     return false;
 }
@@ -346,13 +346,13 @@ bool xrFS::virtual_exists(const std::string& vpath) const
 uint64_t xrFS::virtual_file_size(const std::string& vpath) const
 {
     std::string droot, vroot;
-    std::vector<const MountedArchive*> arcs;
+    std::vector<std::shared_ptr<MountedArchive>> arcs;
     {
         std::lock_guard<std::mutex> lock(m_mtx);
         droot = m_data_root;
         vroot = m_virtual_root;
         arcs.reserve(m_archives.size());
-        for (const auto& a : m_archives) arcs.push_back(a.get());
+        for (const auto& a : m_archives) arcs.push_back(a);
     }
     const std::string key = vfs_resolve(vpath, vroot);
     if (!droot.empty()) {
@@ -361,7 +361,7 @@ uint64_t xrFS::virtual_file_size(const std::string& vpath) const
         if (std::filesystem::is_regular_file(dp, ec) && !ec)
             return std::filesystem::file_size(dp, ec);
     }
-    for (const auto* a : arcs) {
+    for (const auto& a : arcs) {
         const auto e = a->find(key);
         if (e) return e->uncompSize;
     }
@@ -371,15 +371,15 @@ uint64_t xrFS::virtual_file_size(const std::string& vpath) const
 uint32_t xrFS::virtual_crc(const std::string& vpath) const
 {
     std::string vroot;
-    std::vector<const MountedArchive*> arcs;
+    std::vector<std::shared_ptr<MountedArchive>> arcs;
     {
         std::lock_guard<std::mutex> lock(m_mtx);
         vroot = m_virtual_root;
         arcs.reserve(m_archives.size());
-        for (const auto& a : m_archives) arcs.push_back(a.get());
+        for (const auto& a : m_archives) arcs.push_back(a);
     }
     const std::string key = vfs_resolve(vpath, vroot);
-    for (const auto* a : arcs) {
+    for (const auto& a : arcs) {
         const auto e = a->find(key);
         if (e) return e->crc;
     }
@@ -389,13 +389,13 @@ uint32_t xrFS::virtual_crc(const std::string& vpath) const
 bool xrFS::read_virtual(const std::string& vpath, std::vector<char>& out) const
 {
     std::string droot, vroot;
-    std::vector<const MountedArchive*> arcs;
+    std::vector<std::shared_ptr<MountedArchive>> arcs;
     {
         std::lock_guard<std::mutex> lock(m_mtx);
         droot = m_data_root;
         vroot = m_virtual_root;
         arcs.reserve(m_archives.size());
-        for (const auto& a : m_archives) arcs.push_back(a.get());
+        for (const auto& a : m_archives) arcs.push_back(a);
     }
     const std::string key = vfs_resolve(vpath, vroot);
     if (!droot.empty()) {
@@ -404,7 +404,7 @@ bool xrFS::read_virtual(const std::string& vpath, std::vector<char>& out) const
         if (std::filesystem::is_regular_file(dp, ec) && !ec)
             return read_file(dp.string(), out);
     }
-    for (const auto* a : arcs) {
+    for (const auto& a : arcs) {
         const auto e = a->find(key);
         if (e) return a->extract(*e, out);
     }
@@ -417,12 +417,12 @@ std::vector<std::string> xrFS::list_virtual_files() const
     std::set<std::string> keys;
 
     std::string droot;
-    std::vector<const MountedArchive*> arcs;
+    std::vector<std::shared_ptr<MountedArchive>> arcs;
     {
         std::lock_guard<std::mutex> lock(m_mtx);
         droot = m_data_root;
         arcs.reserve(m_archives.size());
-        for (const auto& a : m_archives) arcs.push_back(a.get());
+        for (const auto& a : m_archives) arcs.push_back(a);
     }
     if (!droot.empty()) {
         std::error_code ec;
@@ -437,7 +437,7 @@ std::vector<std::string> xrFS::list_virtual_files() const
             keys.insert(vfs_key(rel.string()));
         }
     }
-    for (const auto* a : arcs) {
+    for (const auto& a : arcs) {
         for (const auto& kv : a->index) keys.insert(kv.first);
     }
     return std::vector<std::string>(keys.begin(), keys.end());
@@ -446,13 +446,13 @@ std::vector<std::string> xrFS::list_virtual_files() const
 std::vector<std::string> xrFS::list_archive_files() const
 {
     std::set<std::string> keys;
-    std::vector<const MountedArchive*> arcs;
+    std::vector<std::shared_ptr<MountedArchive>> arcs;
     {
         std::lock_guard<std::mutex> lock(m_mtx);
         arcs.reserve(m_archives.size());
-        for (const auto& a : m_archives) arcs.push_back(a.get());
+        for (const auto& a : m_archives) arcs.push_back(a);
     }
-    for (const auto* a : arcs) {
+    for (const auto& a : arcs) {
         for (const auto& kv : a->index) keys.insert(kv.first);
     }
     return std::vector<std::string>(keys.begin(), keys.end());
@@ -461,10 +461,10 @@ std::vector<std::string> xrFS::list_archive_files() const
 std::vector<std::string> xrFS::list_last_archive_files() const
 {
     std::vector<std::string> out;
-    const MountedArchive* last = nullptr;
+    std::shared_ptr<MountedArchive> last;
     {
         std::lock_guard<std::mutex> lock(m_mtx);
-        if (!m_archives.empty()) last = m_archives.back().get();
+        if (!m_archives.empty()) last = m_archives.back();
     }
     if (last) {
         out.reserve(last->index.size());
@@ -498,13 +498,13 @@ std::vector<std::string> xrFS::list_disk_files() const
 
 bool xrFS::archive_meta(const std::string& key, uint32_t& uncompSize, uint32_t& crc) const
 {
-    std::vector<const MountedArchive*> arcs;
+    std::vector<std::shared_ptr<MountedArchive>> arcs;
     {
         std::lock_guard<std::mutex> lock(m_mtx);
         arcs.reserve(m_archives.size());
-        for (const auto& a : m_archives) arcs.push_back(a.get());
+        for (const auto& a : m_archives) arcs.push_back(a);
     }
-    for (const auto* a : arcs) {
+    for (const auto& a : arcs) {
         const auto e = a->find(key);
         if (!e) continue;
         uncompSize = e->uncompSize;
