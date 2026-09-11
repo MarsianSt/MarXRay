@@ -3,8 +3,17 @@
 #include <vector>
 #include <cstdint>
 #include <memory>
+#include <mutex>
 
-class xrFS {
+#if !defined(XRCORE_API)
+#	if defined(XRCORE_EXPORTS)
+#		define XRCORE_API __declspec(dllexport)
+#	else
+#		define XRCORE_API __declspec(dllimport)
+#	endif
+#endif
+
+class XRCORE_API xrFS {
 public:
     virtual bool exists(const std::string& path) const;
     virtual uint64_t file_size(const std::string& path) const;
@@ -22,12 +31,75 @@ public:
         const std::vector<std::string>& paths,
         std::vector<std::vector<char>>& results) const;
 
+    // Recursively pack an entire directory tree into a zdb archive
+    // (ZIP-контейнер + zstd, читается 7-Zip 21+). Uses xrArchiver::pack_zdb.
+    // Archive member names are relative to base_dir ('/' separators).
+    bool pack_zdb_tree(
+        const std::string& output_dir,
+        const std::string& archive_name,
+        const std::string& base_dir,
+        int compression_level = 3) const;
+
+    // ---- Virtual file system ----
+    //
+    // A mounted zdb archive (pack_zdb_tree output) makes its entries addressable
+    // by relative names ('configs/system.ltx', case-insensitive, '/' or '\').
+    // Files physically present under the real data tree (set_data_root) take
+    // precedence and "virtually override" archive entries on every lookup.
+    //
+    // Resolve order in virtual_exists / virtual_file_size / read_virtual:
+    //   1. real data tree file  -> read from disk
+    //   2. mounted archive      -> decompressed (zstd) on the fly
+    //   3. otherwise not found
+
+    // Real (unpacked) data tree whose files override the archive.
+    void set_data_root(const std::string& real_dir);
+    void clear_data_root();
+
+    // Mount a zdb archive, appending it to the set of mounted archives.
+    // Entry lookups and reads are thread-safe (read-only after mount;
+    // mmap-backed, lazy decompression). The same virtual key may resolve in
+    // any mounted archive; the first archive whose index contains it wins.
+    // virtual_root (e.g. "E:\\...\\gamedata") lets absolute paths be passed to
+    // virtual_exists/read_virtual: anything under that prefix is stripped to the
+    // archive's relative name before lookup.
+    bool mount_zdb(const std::string& archive_path, const std::string& virtual_root = "");
+    void unmount_zdb();
+    bool is_mounted() const;
+    size_t mounted_count() const;
+
+    bool virtual_exists(const std::string& vpath) const;
+    uint64_t virtual_file_size(const std::string& vpath) const;
+    uint32_t virtual_crc(const std::string& vpath) const;
+    bool read_virtual(const std::string& vpath, std::vector<char>& out) const;
+
+    // Index-only accessors (no disk stat). Used by the locator for fast,
+    // parallel registration of mounted archive entries.
+    std::vector<std::string> list_archive_files() const;
+    // Only the entries of the most recently mounted archive (empty if none).
+    std::vector<std::string> list_last_archive_files() const;
+    std::vector<std::string> list_disk_files() const;
+    bool archive_meta(const std::string& key, uint32_t& uncompSize, uint32_t& crc) const;
+
+    // Combined listing: real data tree files (normalized) + archive entry names.
+    std::vector<std::string> list_virtual_files() const;
+
     static xrFS& instance();
     static void set_instance(std::unique_ptr<xrFS> new_fs);
 
-    virtual ~xrFS() = default;
+    virtual ~xrFS();
 
 private:
+    struct MountedArchive;
+    std::string m_data_root;
+    std::string m_virtual_root;
+    std::vector<std::shared_ptr<MountedArchive>> m_archives;
+    mutable std::mutex m_mtx;
+
+    static std::string vfs_key(const std::string& path);   // normalize + lowercase, '/'
+    static std::string vfs_disk_path(const std::string& root, const std::string& key);
+    static std::string vfs_resolve(const std::string& vpath, const std::string& vroot);
+
     static std::unique_ptr<xrFS> s_instance;
 };
 
