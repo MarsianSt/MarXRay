@@ -15,6 +15,9 @@
 #include "stream_reader.h"
 #include "file_stream_reader.h"
 #include "Crypto/trivial_encryptor.h"
+#include "xrFS.h"
+#include <filesystem>
+#include <algorithm>
 
 const u32 BIG_FILE_READER_WINDOW_SIZE	= 1024*1024;
 
@@ -476,6 +479,134 @@ void CLocatorAPI::ProcessArchive(LPCSTR _path)
 		A.close					();
 }
 
+void CLocatorAPI::MountZDB()
+{
+	ZoneScoped;
+
+	PathPairIt pArchIt		= pathes.find("$arch_dir$");
+	PathPairIt pDataIt		= pathes.find("$game_data$");
+	if (pArchIt == pathes.end() || pDataIt == pathes.end())
+		return;
+
+	// zdb archives live under the fs root: <root>\zdb\*.zdb
+	string_path		zdb_dir;
+	strconcat		(sizeof(zdb_dir), zdb_dir, pArchIt->second->m_Path, "zdb\\");
+
+	// Virtual FS: gamedata is both the disk override root (real files win)
+	// and the prefix to strip from absolute paths before archive lookup.
+	xrFS&			vfs		= xrFS::instance();
+	vfs.set_data_root		(pDataIt->second->m_Path);
+
+	// VFS virtual root (no trailing separator): prefix stripped by vfs_resolve
+	string_path		vroot;
+	xr_strcpy		(vroot, sizeof(vroot), pDataIt->second->m_Path);
+	{
+		size_t len	= xr_strlen(vroot);
+		if (len && vroot[len-1]=='\\')
+			vroot[len-1] = 0;
+	}
+	xr_strlwr		(vroot);
+	std::string		virtual_root = vroot;
+
+	// Locator key prefix (with trailing separator, lowercased)
+	string_path		game_data_root;
+	xr_strcpy		(game_data_root, sizeof(game_data_root), pDataIt->second->m_Path);
+	xr_strlwr		(game_data_root);
+	{
+		size_t len	= xr_strlen(game_data_root);
+		if (!len || game_data_root[len-1] != '\\')
+			xr_strcat(game_data_root, sizeof(game_data_root), "\\");
+	}
+	size_t			gd_len = xr_strlen(game_data_root);
+
+	std::vector<std::string>	archives;
+	std::error_code			ec;
+	std::filesystem::recursive_directory_iterator dir_it(
+		std::filesystem::path(zdb_dir),
+		std::filesystem::directory_options::skip_permission_denied,
+		ec), dir_end;
+	for (; dir_it != dir_end; dir_it.increment(ec))
+	{
+		if (ec)
+		{
+			ec.clear();
+			continue;
+		}
+		if (!dir_it->is_regular_file(ec))
+			continue;
+		if (ec)
+		{
+			ec.clear();
+			continue;
+		}
+		const std::string	name = dir_it->path().filename().string();
+		if (select_zdb_archive(name.c_str()))
+			archives.push_back(dir_it->path().string());
+	}
+	std::sort(archives.begin(), archives.end());
+
+	if (archives.empty())
+	{
+		LogInfo("VFS: no zdb archives in [%s]", zdb_dir);
+		return;
+	}
+
+	u32				mounted = 0, registered = 0;
+	for (const std::string& arc : archives)
+	{
+		u32				arc_time = 0;
+		{
+			std::error_code fm_ec;
+			const auto	fst = std::filesystem::last_write_time(std::filesystem::path(arc), fm_ec);
+			if (!fm_ec)
+				arc_time = (u32)std::chrono::duration_cast<std::chrono::seconds>(
+					fst.time_since_epoch()).count();
+		}
+
+		if (!vfs.mount_zdb(arc, virtual_root))
+		{
+			LogInfo("VFS: cannot mount [%s]", arc.c_str());
+			continue;
+		}
+		++mounted;
+
+		const std::vector<std::string> names = vfs.list_last_archive_files();
+		for (const std::string& rel : names)
+		{
+			// locator key: gamedata root + relative entry name, '\' separators
+			string_path	key;
+			strconcat	(sizeof(key), key, game_data_root, rel.c_str());
+			for (char* c = key + gd_len; *c; ++c)
+				if (*c == '/') *c = '\\';
+
+			// real files (and addons) virtually override the archive entries
+			if (file_find_it(key) != m_files.end())
+				continue;
+
+			u32			size = 0, crc = 0;
+			vfs.archive_meta(rel, size, crc);
+
+			Register	(key, ZDB_VFS, crc, 0, size, size, arc_time);
+			++registered;
+
+			if (strstr(rel.c_str(), "prefetch/prefetch.ltx"))
+				LogInfo("VFS-DBG registered key: [%s] size=%u", key, size);
+		}
+	}
+
+	LogInfo("VFS: mounted %d zdb archive(s), %d virtual file(s) registered", mounted, registered);
+}
+
+bool CLocatorAPI::select_zdb_archive(LPCSTR filename) const
+{
+	LPCSTR ext = strrchr(filename, '.');
+	if (!ext)
+		return false;
+	if (0 != stricmp(ext, ".zdb"))
+		return false;
+	return true;
+}
+
 void CLocatorAPI::unload_archive(CLocatorAPI::archive& A)
 {
 	files_it	I 	= m_files.begin();
@@ -848,6 +979,8 @@ void CLocatorAPI::_initialize	(u32 flags, LPCSTR target_folder, LPCSTR fs_name)
 	strconcat(sizeof(base_path), base_path, FS.get_path("$fs_root$")->m_Path, "gamedata");
 	ProcessExternalAddons(base_path);
 
+	MountZDB();
+
 	u32	M2			= Memory.mem_usage();
 	LogInfo("FS: %d files cached %d archives, %dKb memory used.",m_files.size(),m_archives.size(), (M2-M1)/1024);
 
@@ -881,6 +1014,10 @@ void CLocatorAPI::_initialize	(u32 flags, LPCSTR target_folder, LPCSTR fs_name)
 void CLocatorAPI::_destroy		()
 {
 	ZoneScoped;
+
+	for (void* h : m_zdb_stream_maps)
+		if (h) CloseHandle((HANDLE)h);
+	m_zdb_stream_maps.clear();
 
 	xrAsyncLogger::instance().stop();
 
@@ -1160,6 +1297,21 @@ void CLocatorAPI::file_from_cache	(T *&R, LPCSTR fname, const u32 &fname_size, c
 
 void CLocatorAPI::file_from_archive	(IReader *&R, LPCSTR fname, const file &desc)
 {
+	// zdb virtual FS entry: decompress on the fly via xrFS
+	if (desc.vfs == ZDB_VFS)
+	{
+		std::vector<char> data;
+		if (!xrFS::instance().read_virtual(fname, data))
+		{
+			R = 0;
+			return;
+		}
+		u8* dest				= xr_alloc<u8>(data.size());
+		memcpy					(dest, data.data(), data.size());
+		R						= xr_new<CTempReader>(dest, (int)data.size(), 0);
+		return;
+	}
+
 	// Archived one
 	archive& A					= m_archives[desc.vfs];
 	u32 start					= (desc.ptr/dwAllocGranularity)*dwAllocGranularity;
@@ -1196,6 +1348,28 @@ void CLocatorAPI::file_from_archive	(IReader *&R, LPCSTR fname, const file &desc
 
 void CLocatorAPI::file_from_archive	(CStreamReader *&R, LPCSTR fname, const file &desc)
 {
+	// zdb virtual FS entry: decompress fully, serve from a page-file backed
+	// mapping (CStreamReader only unmaps views; handle closed in _destroy)
+	if (desc.vfs == ZDB_VFS)
+	{
+		std::vector<char> data;
+		if (!xrFS::instance().read_virtual(fname, data))
+		{
+			R = 0;
+			return;
+		}
+		HANDLE hMap				= CreateFileMappingW(INVALID_HANDLE_VALUE, nullptr, PAGE_READWRITE, 0, (DWORD)data.size(), nullptr);
+		R_ASSERT				(hMap);
+		u8* pv					= (u8*)MapViewOfFile(hMap, FILE_MAP_WRITE, 0, 0, 0);
+		R_ASSERT				(pv);
+		memcpy					(pv, data.data(), data.size());
+		UnmapViewOfFile			(pv);
+		R						= xr_new<CStreamReader>();
+		R->construct			(hMap, 0, (u32)data.size(), (u32)data.size(), BIG_FILE_READER_WINDOW_SIZE);
+		m_zdb_stream_maps.push_back(reinterpret_cast<void*>(hMap));
+		return;
+	}
+
 	archive						&A = m_archives[desc.vfs];
 	R_ASSERT2					(
 		desc.size_compressed == desc.size_real,
@@ -1320,7 +1494,11 @@ bool CLocatorAPI::check_for_file	(LPCSTR path, LPCSTR _fname, string_path& fname
 
 	files_it				I = m_files.find(desc_f);
 	if (I == m_files.end())
+	{
+		if (strstr(fname_result, "prefetch"))
+			LogInfo("VFS-DBG lookup MISS: [%s] (vfs=%u)", fname_result, desc ? desc->vfs : u32(-1));
 		return				(false);
+	}
 
 	++dwOpenCounter;
 	desc					= &*I;

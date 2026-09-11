@@ -12,28 +12,18 @@
 
 #if defined(_WIN32)
 #include <Windows.h>
-#else
-#include <fcntl.h>
-#include <unistd.h>
-#include <sys/mman.h>
 #endif
 
 std::unique_ptr<xrFS> xrFS::s_instance;
 
 xrFS& xrFS::instance() {
-    // Thread-safe lazy init via call_once. Kept as a file-scope global (not a
-    // function-local static): other function-local statics (xrAsyncLogger etc.)
-    // may call fs() from their destructors during DLL detach, and globals are
-    // destroyed after function-locals, so the xrFS instance stays alive longest.
-    static std::once_flag once;
-    std::call_once(once, [] {
-        if (!s_instance) s_instance = std::make_unique<xrFS>();
-    });
+    if (!s_instance) {
+        s_instance = std::make_unique<xrFS>();
+    }
     return *s_instance;
 }
 
 void xrFS::set_instance(std::unique_ptr<xrFS> new_fs) {
-    // Only effective before the first instance() call.
     s_instance = std::move(new_fs);
 }
 
@@ -74,70 +64,22 @@ std::string xrFS::vfs_resolve(const std::string& vpath, const std::string& vroot
                 if (c == '\\') c = '/';
                 else c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
             }
-            while (!vr.empty() && vr.front() == '/') vr.erase(0, 1);
             while (!vr.empty() && vr.back() == '/') vr.pop_back();
-            while (!s.empty() && s.front() == '/') s.erase(0, 1);
-            if (!vr.empty() && s.size() > vr.size() &&
-                s.compare(0, vr.size(), vr) == 0 && s[vr.size()] == '/')
+            if (s.size() > vr.size() && s.compare(0, vr.size(), vr) == 0 && s[vr.size()] == '/')
                 s.erase(0, vr.size());
         }
     }
     if (s.size() >= 2 && s[0] == '.' && s[1] == '/') s.erase(0, 2);
     while (!s.empty() && s.front() == '/') s.erase(0, 1);
     while (!s.empty() && s.back() == '/') s.pop_back();
-
-    {
-        // Collapse '.' and '..' components (defends against path traversal).
-        std::string t = s;
-        if (t.empty() || t.back() != '/') t += '/';
-        std::vector<std::string> comps;
-        size_t b = 0;
-        while (b < t.size()) {
-            size_t e = t.find('/', b);
-            if (e == std::string::npos) break;
-            std::string comp = t.substr(b, e - b);
-            if (comp == "..") {
-                if (!comps.empty()) comps.pop_back();
-            } else if (!comp.empty() && comp != ".") {
-                comps.push_back(comp);
-            }
-            b = e + 1;
-        }
-        s.clear();
-        for (size_t i = 0; i < comps.size(); ++i) {
-            if (i) s += '/';
-            s += comps[i];
-        }
-    }
     return s;
 }
 
 std::string xrFS::vfs_disk_path(const std::string& root, const std::string& key) {
-    if (root.empty()) return {};
-
-    std::error_code ec;
-    std::filesystem::path base = std::filesystem::weakly_canonical(root, ec);
-    if (ec) base = std::filesystem::path(root);
-
-    std::filesystem::path p = base;
-    if (!key.empty()) {
-        size_t b = 0;
-        while (b <= key.size()) {
-            size_t e = key.find('/', b);
-            if (e == std::string::npos) e = key.size();
-            if (e > b) p /= key.substr(b, e - b);
-            if (e == key.size()) break;
-            b = e + 1;
-        }
-    }
-
-    // Ensure the resolved disk path stays inside root (path traversal guard).
-    std::filesystem::path canon = std::filesystem::weakly_canonical(p, ec);
-    if (ec) canon = p.lexically_normal();
-    std::error_code ec2;
-    std::filesystem::path rel = std::filesystem::relative(canon, base, ec2);
-    if (ec2) return {};
-    return canon.string();
+    std::string p = root;
+    if (!p.empty() && p.back() != '\\' && p.back() != '/') p += '\\';
+    for (char c : key) p += (c == '/') ? '\\' : c;
+    return p;
 }
 
 void xrFS::set_data_root(const std::string& real_dir) {
@@ -171,18 +113,7 @@ struct xrFS::MountedArchive {
 
     bool open(const std::string& p) {
 #if !defined(_WIN32)
-        path = p;
-        std::error_code ec;
-        uint64_t size = std::filesystem::file_size(p, ec);
-        if (ec || size < 22) return false;
-        const int fd = ::open(p.c_str(), O_RDONLY);
-        if (fd < 0) return false;
-        void* addr = ::mmap(nullptr, static_cast<size_t>(size), PROT_READ, MAP_PRIVATE, fd, 0);
-        ::close(fd);
-        if (addr == MAP_FAILED) return false;
-        view = static_cast<const uint8_t*>(addr);
-        viewSize = size;
-        return true;
+        (void)p; return false;
 #else
         path = p;
         std::error_code ec;
@@ -213,10 +144,6 @@ struct xrFS::MountedArchive {
         hMap = nullptr;
         if (hFile) CloseHandle(hFile);
         hFile = nullptr;
-#else
-        if (view) ::munmap(const_cast<uint8_t*>(view), static_cast<size_t>(viewSize));
-        view = nullptr;
-        viewSize = 0;
 #endif
     }
     ~MountedArchive() { close(); }
@@ -227,12 +154,11 @@ struct xrFS::MountedArchive {
         uint64_t start = viewSize - 22;
         uint64_t limit = viewSize > 22 + 65535 ? viewSize - (22 + 65535) : 0;
         uint64_t eocd = 0;
-        bool found = false;
         for (uint64_t pos = start; pos >= limit && pos + 22 <= viewSize; --pos) {
-            if (rdU32(view + pos) == 0x06054b50u) { eocd = pos; found = true; break; }
+            if (rdU32(view + pos) == 0x06054b50u) { eocd = pos; break; }
             if (pos == 0) break;
         }
-        if (!found) return false;
+        if (!eocd) return false;
         uint16_t total = rdU16(view + eocd + 10);
         uint32_t cdSize = rdU32(view + eocd + 12);
         uint32_t cdOffset = rdU32(view + eocd + 16);
@@ -257,7 +183,7 @@ struct xrFS::MountedArchive {
                           ZEntry{ localOff, compSize, uncompSize, crc, method });
             p += 46 + nlen + elen + clen;
         }
-        return true;
+        return !index.empty();
     }
 
     const ZEntry* find(const std::string& key) const {
@@ -268,12 +194,11 @@ struct xrFS::MountedArchive {
     // Decompress entry e into `out`; verifies CRC of the extracted content.
     bool extract(const ZEntry& e, std::vector<char>& out) const {
         if (!view) return false;
-        const uint64_t lo = static_cast<uint64_t>(e.localOff);
-        if (lo + 30 > viewSize) return false;
-        if (rdU32(view + lo) != 0x04034b50u) return false;
-        const uint16_t nlen = rdU16(view + lo + 26);
-        const uint16_t elen = rdU16(view + lo + 28);
-        const uint64_t off = lo + 30 + nlen + elen;
+        if (e.localOff >= viewSize || e.localOff + 30 > viewSize) return false;
+        if (rdU32(view + e.localOff) != 0x04034b50u) return false;
+        uint16_t nlen = rdU16(view + e.localOff + 26);
+        uint16_t elen = rdU16(view + e.localOff + 28);
+        uint64_t off = (uint64_t)e.localOff + 30 + nlen + elen;
         if (off + e.compSize > viewSize) return false;
 
         static const size_t CSIZE_MAX = (size_t)0x7FFFFFFF;
@@ -399,13 +324,13 @@ size_t xrFS::mounted_count() const {
 bool xrFS::virtual_exists(const std::string& vpath) const
 {
     std::string droot, vroot;
-    std::vector<std::shared_ptr<MountedArchive>> arcs;
+    std::vector<const MountedArchive*> arcs;
     {
         std::lock_guard<std::mutex> lock(m_mtx);
         droot = m_data_root;
         vroot = m_virtual_root;
         arcs.reserve(m_archives.size());
-        for (const auto& a : m_archives) arcs.push_back(a);
+        for (const auto& a : m_archives) arcs.push_back(a.get());
     }
     const std::string key = vfs_resolve(vpath, vroot);
     if (!droot.empty()) {
@@ -413,7 +338,7 @@ bool xrFS::virtual_exists(const std::string& vpath) const
         if (std::filesystem::is_regular_file(vfs_disk_path(droot, key), ec) && !ec)
             return true;
     }
-    for (const auto& a : arcs)
+    for (const auto* a : arcs)
         if (a->find(key) != nullptr) return true;
     return false;
 }
@@ -421,13 +346,13 @@ bool xrFS::virtual_exists(const std::string& vpath) const
 uint64_t xrFS::virtual_file_size(const std::string& vpath) const
 {
     std::string droot, vroot;
-    std::vector<std::shared_ptr<MountedArchive>> arcs;
+    std::vector<const MountedArchive*> arcs;
     {
         std::lock_guard<std::mutex> lock(m_mtx);
         droot = m_data_root;
         vroot = m_virtual_root;
         arcs.reserve(m_archives.size());
-        for (const auto& a : m_archives) arcs.push_back(a);
+        for (const auto& a : m_archives) arcs.push_back(a.get());
     }
     const std::string key = vfs_resolve(vpath, vroot);
     if (!droot.empty()) {
@@ -436,7 +361,7 @@ uint64_t xrFS::virtual_file_size(const std::string& vpath) const
         if (std::filesystem::is_regular_file(dp, ec) && !ec)
             return std::filesystem::file_size(dp, ec);
     }
-    for (const auto& a : arcs) {
+    for (const auto* a : arcs) {
         const auto e = a->find(key);
         if (e) return e->uncompSize;
     }
@@ -445,26 +370,16 @@ uint64_t xrFS::virtual_file_size(const std::string& vpath) const
 
 uint32_t xrFS::virtual_crc(const std::string& vpath) const
 {
-    std::string droot, vroot;
-    std::vector<std::shared_ptr<MountedArchive>> arcs;
+    std::string vroot;
+    std::vector<const MountedArchive*> arcs;
     {
         std::lock_guard<std::mutex> lock(m_mtx);
-        droot = m_data_root;
         vroot = m_virtual_root;
         arcs.reserve(m_archives.size());
-        for (const auto& a : m_archives) arcs.push_back(a);
+        for (const auto& a : m_archives) arcs.push_back(a.get());
     }
     const std::string key = vfs_resolve(vpath, vroot);
-    if (!droot.empty()) {
-        std::error_code ec;
-        std::filesystem::path dp = vfs_disk_path(droot, key);
-        if (std::filesystem::is_regular_file(dp, ec) && !ec) {
-            std::vector<char> buf;
-            if (read_file(dp.string(), buf))
-                return xrArchiver::crc32(buf.data(), buf.size());
-        }
-    }
-    for (const auto& a : arcs) {
+    for (const auto* a : arcs) {
         const auto e = a->find(key);
         if (e) return e->crc;
     }
@@ -474,13 +389,13 @@ uint32_t xrFS::virtual_crc(const std::string& vpath) const
 bool xrFS::read_virtual(const std::string& vpath, std::vector<char>& out) const
 {
     std::string droot, vroot;
-    std::vector<std::shared_ptr<MountedArchive>> arcs;
+    std::vector<const MountedArchive*> arcs;
     {
         std::lock_guard<std::mutex> lock(m_mtx);
         droot = m_data_root;
         vroot = m_virtual_root;
         arcs.reserve(m_archives.size());
-        for (const auto& a : m_archives) arcs.push_back(a);
+        for (const auto& a : m_archives) arcs.push_back(a.get());
     }
     const std::string key = vfs_resolve(vpath, vroot);
     if (!droot.empty()) {
@@ -489,7 +404,7 @@ bool xrFS::read_virtual(const std::string& vpath, std::vector<char>& out) const
         if (std::filesystem::is_regular_file(dp, ec) && !ec)
             return read_file(dp.string(), out);
     }
-    for (const auto& a : arcs) {
+    for (const auto* a : arcs) {
         const auto e = a->find(key);
         if (e) return a->extract(*e, out);
     }
@@ -502,12 +417,12 @@ std::vector<std::string> xrFS::list_virtual_files() const
     std::set<std::string> keys;
 
     std::string droot;
-    std::vector<std::shared_ptr<MountedArchive>> arcs;
+    std::vector<const MountedArchive*> arcs;
     {
         std::lock_guard<std::mutex> lock(m_mtx);
         droot = m_data_root;
         arcs.reserve(m_archives.size());
-        for (const auto& a : m_archives) arcs.push_back(a);
+        for (const auto& a : m_archives) arcs.push_back(a.get());
     }
     if (!droot.empty()) {
         std::error_code ec;
@@ -522,7 +437,7 @@ std::vector<std::string> xrFS::list_virtual_files() const
             keys.insert(vfs_key(rel.string()));
         }
     }
-    for (const auto& a : arcs) {
+    for (const auto* a : arcs) {
         for (const auto& kv : a->index) keys.insert(kv.first);
     }
     return std::vector<std::string>(keys.begin(), keys.end());
@@ -531,13 +446,13 @@ std::vector<std::string> xrFS::list_virtual_files() const
 std::vector<std::string> xrFS::list_archive_files() const
 {
     std::set<std::string> keys;
-    std::vector<std::shared_ptr<MountedArchive>> arcs;
+    std::vector<const MountedArchive*> arcs;
     {
         std::lock_guard<std::mutex> lock(m_mtx);
         arcs.reserve(m_archives.size());
-        for (const auto& a : m_archives) arcs.push_back(a);
+        for (const auto& a : m_archives) arcs.push_back(a.get());
     }
-    for (const auto& a : arcs) {
+    for (const auto* a : arcs) {
         for (const auto& kv : a->index) keys.insert(kv.first);
     }
     return std::vector<std::string>(keys.begin(), keys.end());
@@ -546,10 +461,10 @@ std::vector<std::string> xrFS::list_archive_files() const
 std::vector<std::string> xrFS::list_last_archive_files() const
 {
     std::vector<std::string> out;
-    std::shared_ptr<MountedArchive> last;
+    const MountedArchive* last = nullptr;
     {
         std::lock_guard<std::mutex> lock(m_mtx);
-        if (!m_archives.empty()) last = m_archives.back();
+        if (!m_archives.empty()) last = m_archives.back().get();
     }
     if (last) {
         out.reserve(last->index.size());
@@ -583,13 +498,13 @@ std::vector<std::string> xrFS::list_disk_files() const
 
 bool xrFS::archive_meta(const std::string& key, uint32_t& uncompSize, uint32_t& crc) const
 {
-    std::vector<std::shared_ptr<MountedArchive>> arcs;
+    std::vector<const MountedArchive*> arcs;
     {
         std::lock_guard<std::mutex> lock(m_mtx);
         arcs.reserve(m_archives.size());
-        for (const auto& a : m_archives) arcs.push_back(a);
+        for (const auto& a : m_archives) arcs.push_back(a.get());
     }
-    for (const auto& a : arcs) {
+    for (const auto* a : arcs) {
         const auto e = a->find(key);
         if (!e) continue;
         uncompSize = e->uncompSize;
@@ -615,13 +530,10 @@ uint64_t xrFS::file_size(const std::string& path) const {
 bool xrFS::read_file(const std::string& path, std::vector<char>& out) const {
     std::ifstream f(path, std::ios::binary | std::ios::ate);
     if (!f) return false;
-    std::streampos pos = f.tellg();
-    if (pos < 0) return false;
-    size_t size = static_cast<size_t>(pos);
+    size_t size = f.tellg();
     out.resize(size);
     f.seekg(0);
-    if (size > 0)
-        f.read(out.data(), size);
+    f.read(out.data(), size);
     return f.good();
 }
 
@@ -681,9 +593,6 @@ bool xrFS::read_files_parallel(
 
     results.resize(count);
     std::atomic<bool> allOk{true};
-
-    if (!CTaskManager::IsRunning())
-        CTaskManager::Initialize();
 
     CTaskManager::AddTaskRange(
         [&](u32 start, u32 end, u32) {

@@ -223,7 +223,6 @@ void CTaskManager::AddTaskWithCompletion(TaskFunc func, CompletionCallback onCom
     cbTask->dep.SetDependency(mainTask, cbTask);
     
     g_Scheduler.AddTaskSetToPipe(mainTask);
-    g_Scheduler.AddTaskSetToPipe(cbTask);
 }
 
 bool CTaskManager::IsRunning()
@@ -267,7 +266,6 @@ void CTaskManager::AddTaskRange(TaskRangeFunc func, uint32_t setSize, uint32_t m
     fst->dep.SetDependency(task, fst);
 
     g_Scheduler.AddTaskSetToPipe(task);
-    g_Scheduler.AddTaskSetToPipe(fst);
 }
 
 void CTaskManager::WaitAll()

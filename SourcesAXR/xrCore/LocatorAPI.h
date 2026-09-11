@@ -93,9 +93,19 @@ private:
 
 	void						Register		(LPCSTR name, u32 vfs, u32 crc, u32 ptr, u32 size_real, u32 size_compressed, u32 modif);
 	void						ProcessArchive	(LPCSTR path);
+	void						MountZDB		();
+	bool						select_zdb_archive(LPCSTR filename) const;
 	void						ProcessExternalAddons(LPCSTR base_path);
 	void						ProcessOne		(LPCSTR path, void* F, bool bNoRecurse);
 	bool						Recurse			(LPCSTR path, bool bNoRecurse);
+
+	// Sentinel vfs index for files served from the zdb virtual FS (xrFS).
+	// 0xffffffff means a real disk file; anything else indexes m_archives.
+	static constexpr u32		ZDB_VFS	= 0xFFFFFFFE;
+
+	// Page-file backed mappings handed to CStreamReader for zdb entries;
+	// closed in _destroy (CStreamReader only unmaps, it does not own handles).
+	xr_vector<void*>			m_zdb_stream_maps;
 
 	files_it					file_find_it	(LPCSTR n);
 

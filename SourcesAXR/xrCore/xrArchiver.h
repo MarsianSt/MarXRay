@@ -4,7 +4,15 @@
 #include <cstdint>
 #include <ostream>
 
-class xrArchiver {
+#if !defined(XRCORE_API)
+#	if defined(XRCORE_EXPORTS)
+#		define XRCORE_API __declspec(dllexport)
+#	else
+#		define XRCORE_API __declspec(dllimport)
+#	endif
+#endif
+
+class XRCORE_API xrArchiver {
 public:
     // Сжать файлы в один архив.
     // output_dir – путь к папке (например, "D:/logs/archives")
@@ -23,6 +31,23 @@ public:
         const std::string& output_dir,
         const std::string& archive_name,
         const std::vector<std::string>& file_paths,
+        int compression_level);
+
+    static uint32_t crc32(const void* data, size_t size);
+
+    static bool pack_db(
+        const std::string& output_dir,
+        const std::string& archive_name,
+        const std::vector<std::string>& file_paths,
+        const std::string& base_dir,
+        const std::string& entry_point,
+        bool auto_load);
+
+    static bool pack_zdb(
+        const std::string& output_dir,
+        const std::string& archive_name,
+        const std::vector<std::string>& file_paths,
+        const std::string& base_dir,
         int compression_level);
 
 private:
