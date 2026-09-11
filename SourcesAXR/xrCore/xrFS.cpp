@@ -64,8 +64,11 @@ std::string xrFS::vfs_resolve(const std::string& vpath, const std::string& vroot
                 if (c == '\\') c = '/';
                 else c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
             }
+            while (!vr.empty() && vr.front() == '/') vr.erase(0, 1);
             while (!vr.empty() && vr.back() == '/') vr.pop_back();
-            if (s.size() > vr.size() && s.compare(0, vr.size(), vr) == 0 && s[vr.size()] == '/')
+            while (!s.empty() && s.front() == '/') s.erase(0, 1);
+            if (!vr.empty() && s.size() > vr.size() &&
+                s.compare(0, vr.size(), vr) == 0 && s[vr.size()] == '/')
                 s.erase(0, vr.size());
         }
     }
