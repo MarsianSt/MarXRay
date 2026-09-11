@@ -632,6 +632,9 @@ bool xrFS::read_files_parallel(
     results.resize(count);
     std::atomic<bool> allOk{true};
 
+    if (!CTaskManager::IsRunning())
+        CTaskManager::Initialize();
+
     CTaskManager::AddTaskRange(
         [&](u32 start, u32 end, u32) {
             for (u32 i = start; i < end; ++i) {
