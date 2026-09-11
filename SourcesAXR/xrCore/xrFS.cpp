@@ -12,6 +12,10 @@
 
 #if defined(_WIN32)
 #include <Windows.h>
+#else
+#include <fcntl.h>
+#include <unistd.h>
+#include <sys/mman.h>
 #endif
 
 std::unique_ptr<xrFS> xrFS::s_instance;
@@ -167,7 +171,18 @@ struct xrFS::MountedArchive {
 
     bool open(const std::string& p) {
 #if !defined(_WIN32)
-        (void)p; return false;
+        path = p;
+        std::error_code ec;
+        uint64_t size = std::filesystem::file_size(p, ec);
+        if (ec || size < 22) return false;
+        const int fd = ::open(p.c_str(), O_RDONLY);
+        if (fd < 0) return false;
+        void* addr = ::mmap(nullptr, static_cast<size_t>(size), PROT_READ, MAP_PRIVATE, fd, 0);
+        ::close(fd);
+        if (addr == MAP_FAILED) return false;
+        view = static_cast<const uint8_t*>(addr);
+        viewSize = size;
+        return true;
 #else
         path = p;
         std::error_code ec;
@@ -198,6 +213,10 @@ struct xrFS::MountedArchive {
         hMap = nullptr;
         if (hFile) CloseHandle(hFile);
         hFile = nullptr;
+#else
+        if (view) ::munmap(const_cast<uint8_t*>(view), static_cast<size_t>(viewSize));
+        view = nullptr;
+        viewSize = 0;
 #endif
     }
     ~MountedArchive() { close(); }
@@ -208,11 +227,12 @@ struct xrFS::MountedArchive {
         uint64_t start = viewSize - 22;
         uint64_t limit = viewSize > 22 + 65535 ? viewSize - (22 + 65535) : 0;
         uint64_t eocd = 0;
+        bool found = false;
         for (uint64_t pos = start; pos >= limit && pos + 22 <= viewSize; --pos) {
-            if (rdU32(view + pos) == 0x06054b50u) { eocd = pos; break; }
+            if (rdU32(view + pos) == 0x06054b50u) { eocd = pos; found = true; break; }
             if (pos == 0) break;
         }
-        if (!eocd) return false;
+        if (!found) return false;
         uint16_t total = rdU16(view + eocd + 10);
         uint32_t cdSize = rdU32(view + eocd + 12);
         uint32_t cdOffset = rdU32(view + eocd + 16);
@@ -237,7 +257,7 @@ struct xrFS::MountedArchive {
                           ZEntry{ localOff, compSize, uncompSize, crc, method });
             p += 46 + nlen + elen + clen;
         }
-        return !index.empty();
+        return true;
     }
 
     const ZEntry* find(const std::string& key) const {
@@ -595,10 +615,13 @@ uint64_t xrFS::file_size(const std::string& path) const {
 bool xrFS::read_file(const std::string& path, std::vector<char>& out) const {
     std::ifstream f(path, std::ios::binary | std::ios::ate);
     if (!f) return false;
-    size_t size = f.tellg();
+    std::streampos pos = f.tellg();
+    if (pos < 0) return false;
+    size_t size = static_cast<size_t>(pos);
     out.resize(size);
     f.seekg(0);
-    f.read(out.data(), size);
+    if (size > 0)
+        f.read(out.data(), size);
     return f.good();
 }
 
