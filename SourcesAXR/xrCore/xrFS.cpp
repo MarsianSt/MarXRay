@@ -106,13 +106,21 @@ std::string xrFS::vfs_disk_path(const std::string& root, const std::string& key)
     std::filesystem::path base = std::filesystem::weakly_canonical(root, ec);
     if (ec) base = std::filesystem::path(root);
 
-    std::string p = root;
-    if (!p.empty() && p.back() != '\\' && p.back() != '/') p += '\\';
-    for (char c : key) p += (c == '/') ? '\\' : c;
+    std::filesystem::path p = base;
+    if (!key.empty()) {
+        size_t b = 0;
+        while (b <= key.size()) {
+            size_t e = key.find('/', b);
+            if (e == std::string::npos) e = key.size();
+            if (e > b) p /= key.substr(b, e - b);
+            if (e == key.size()) break;
+            b = e + 1;
+        }
+    }
 
     // Ensure the resolved disk path stays inside root (path traversal guard).
     std::filesystem::path canon = std::filesystem::weakly_canonical(p, ec);
-    if (ec) canon = std::filesystem::path(p).lexically_normal();
+    if (ec) canon = p.lexically_normal();
     std::error_code ec2;
     std::filesystem::path rel = std::filesystem::relative(canon, base, ec2);
     if (ec2) return {};
