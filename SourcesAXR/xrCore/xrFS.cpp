@@ -194,11 +194,12 @@ struct xrFS::MountedArchive {
     // Decompress entry e into `out`; verifies CRC of the extracted content.
     bool extract(const ZEntry& e, std::vector<char>& out) const {
         if (!view) return false;
-        if (e.localOff >= viewSize || e.localOff + 30 > viewSize) return false;
-        if (rdU32(view + e.localOff) != 0x04034b50u) return false;
-        uint16_t nlen = rdU16(view + e.localOff + 26);
-        uint16_t elen = rdU16(view + e.localOff + 28);
-        uint64_t off = (uint64_t)e.localOff + 30 + nlen + elen;
+        const uint64_t lo = static_cast<uint64_t>(e.localOff);
+        if (lo + 30 > viewSize) return false;
+        if (rdU32(view + lo) != 0x04034b50u) return false;
+        const uint16_t nlen = rdU16(view + lo + 26);
+        const uint16_t elen = rdU16(view + lo + 28);
+        const uint64_t off = lo + 30 + nlen + elen;
         if (off + e.compSize > viewSize) return false;
 
         static const size_t CSIZE_MAX = (size_t)0x7FFFFFFF;
