@@ -72,14 +72,51 @@ std::string xrFS::vfs_resolve(const std::string& vpath, const std::string& vroot
     if (s.size() >= 2 && s[0] == '.' && s[1] == '/') s.erase(0, 2);
     while (!s.empty() && s.front() == '/') s.erase(0, 1);
     while (!s.empty() && s.back() == '/') s.pop_back();
+
+    {
+        // Collapse '.' and '..' components (defends against path traversal).
+        std::string t = s;
+        if (t.empty() || t.back() != '/') t += '/';
+        std::vector<std::string> comps;
+        size_t b = 0;
+        while (b < t.size()) {
+            size_t e = t.find('/', b);
+            if (e == std::string::npos) break;
+            std::string comp = t.substr(b, e - b);
+            if (comp == "..") {
+                if (!comps.empty()) comps.pop_back();
+            } else if (!comp.empty() && comp != ".") {
+                comps.push_back(comp);
+            }
+            b = e + 1;
+        }
+        s.clear();
+        for (size_t i = 0; i < comps.size(); ++i) {
+            if (i) s += '/';
+            s += comps[i];
+        }
+    }
     return s;
 }
 
 std::string xrFS::vfs_disk_path(const std::string& root, const std::string& key) {
+    if (root.empty()) return {};
+
+    std::error_code ec;
+    std::filesystem::path base = std::filesystem::weakly_canonical(root, ec);
+    if (ec) base = std::filesystem::path(root);
+
     std::string p = root;
     if (!p.empty() && p.back() != '\\' && p.back() != '/') p += '\\';
     for (char c : key) p += (c == '/') ? '\\' : c;
-    return p;
+
+    // Ensure the resolved disk path stays inside root (path traversal guard).
+    std::filesystem::path canon = std::filesystem::weakly_canonical(p, ec);
+    if (ec) canon = std::filesystem::path(p).lexically_normal();
+    std::error_code ec2;
+    std::filesystem::path rel = std::filesystem::relative(canon, base, ec2);
+    if (ec2) return {};
+    return canon.string();
 }
 
 void xrFS::set_data_root(const std::string& real_dir) {
