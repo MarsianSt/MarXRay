@@ -419,15 +419,25 @@ uint64_t xrFS::virtual_file_size(const std::string& vpath) const
 
 uint32_t xrFS::virtual_crc(const std::string& vpath) const
 {
-    std::string vroot;
+    std::string droot, vroot;
     std::vector<std::shared_ptr<MountedArchive>> arcs;
     {
         std::lock_guard<std::mutex> lock(m_mtx);
+        droot = m_data_root;
         vroot = m_virtual_root;
         arcs.reserve(m_archives.size());
         for (const auto& a : m_archives) arcs.push_back(a);
     }
     const std::string key = vfs_resolve(vpath, vroot);
+    if (!droot.empty()) {
+        std::error_code ec;
+        std::filesystem::path dp = vfs_disk_path(droot, key);
+        if (std::filesystem::is_regular_file(dp, ec) && !ec) {
+            std::vector<char> buf;
+            if (read_file(dp.string(), buf))
+                return xrArchiver::crc32(buf.data(), buf.size());
+        }
+    }
     for (const auto& a : arcs) {
         const auto e = a->find(key);
         if (e) return e->crc;
