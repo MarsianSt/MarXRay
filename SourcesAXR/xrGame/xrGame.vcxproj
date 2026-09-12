@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -3297,7 +3297,7 @@
       <PrecompiledHeaderOutputFile Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)$(ProjectName)_script.pch</PrecompiledHeaderOutputFile>
       <PrecompiledHeaderOutputFile Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)$(ProjectName)_script.pch</PrecompiledHeaderOutputFile>
     </ClCompile>
-    <ClCompile Include="Actor_Sleep.cpp" />
+    
     <ClCompile Include="actor_statistic_mgr.cpp" />
     <ClCompile Include="Actor_Weapon.cpp" />
     <ClCompile Include="AdvancedDetector.cpp" />
@@ -3578,7 +3578,7 @@
     <ClCompile Include="ai\Monsters\Controller\controller_animation.cpp" />
     <ClCompile Include="ai\Monsters\Controller\controller_direction.cpp" />
     <ClCompile Include="ai\Monsters\Controller\controller_psy_hit.cpp" />
-    <ClCompile Include="ai\Monsters\Controller\controller_psy_hit_effector.cpp" />
+    
     <ClCompile Include="ai\Monsters\Controller\controller_script.cpp">
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">pch_script.h</PrecompiledHeaderFile>
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">pch_script.h</PrecompiledHeaderFile>
@@ -3738,7 +3738,7 @@
     <ClCompile Include="ai\Monsters\Poltergeist\poltergeist_state_manager.cpp" />
     <ClCompile Include="ai\Monsters\Poltergeist\poltergeist_telekinesis.cpp" />
     <ClCompile Include="ai\Monsters\Pseudodog\pseudodog.cpp" />
-    <ClCompile Include="ai\Monsters\Pseudodog\pseudodog_psi_effector.cpp" />
+    
     <ClCompile Include="ai\Monsters\Pseudodog\pseudodog_script.cpp">
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">pch_script.h</PrecompiledHeaderFile>
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">pch_script.h</PrecompiledHeaderFile>
@@ -3913,7 +3913,7 @@
       <PrecompiledHeaderOutputFile Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)$(ProjectName)_script.pch</PrecompiledHeaderOutputFile>
     </ClCompile>
     <ClCompile Include="ai\Monsters\Snork\snork.cpp" />
-    <ClCompile Include="ai\Monsters\Snork\snork_jump.cpp" />
+    
     <ClCompile Include="ai\Monsters\Snork\snork_script.cpp">
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">pch_script.h</PrecompiledHeaderFile>
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">pch_script.h</PrecompiledHeaderFile>
@@ -4482,7 +4482,7 @@
     <ClCompile Include="bone_groups.cpp" />
     <ClCompile Include="BottleItem.cpp" />
     <ClCompile Include="BreakableObject.cpp" />
-    <ClCompile Include="CameraEffector.cpp" />
+    
     <ClCompile Include="CameraFirstEye.cpp" />
     <ClCompile Include="cameralook.cpp" />
     <ClCompile Include="Car.cpp" />
@@ -4741,7 +4741,7 @@
     <ClCompile Include="EffectorBobbing.cpp" />
     <ClCompile Include="EffectorFall.cpp" />
     <ClCompile Include="EffectorShot.cpp" />
-    <ClCompile Include="EffectorShotX.cpp" />
+    
     <ClCompile Include="EffectorZoomInertion.cpp" />
     <ClCompile Include="ef_pattern.cpp" />
     <ClCompile Include="ef_primary.cpp" />
@@ -5147,7 +5147,7 @@
     <ClCompile Include="game_sv_artefacthunt.cpp" />
     <ClCompile Include="game_sv_artefacthunt_process_event.cpp" />
     <ClCompile Include="game_sv_base.cpp" />
-    <ClCompile Include="game_sv_base_console_vars.cpp" />
+    
     <ClCompile Include="game_sv_capture_the_artefact.cpp" />
     <ClCompile Include="game_sv_capture_the_artefact_buy_event.cpp" />
     <ClCompile Include="game_sv_capture_the_artefact_myteam_impl.cpp" />
@@ -5687,12 +5687,7 @@
     <ClCompile Include="level_graph_vertex.cpp" />
     <ClCompile Include="Level_input.cpp" />
     <ClCompile Include="Level_load.cpp" />
-    <ClCompile Include="level_map_locations.cpp">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Mixed|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Mixed|x64'">true</ExcludedFromBuild>
-    </ClCompile>
+    
     <ClCompile Include="Level_network.cpp">
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">pch_script.h</PrecompiledHeaderFile>
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">pch_script.h</PrecompiledHeaderFile>
@@ -8333,29 +8328,12 @@
     <ClCompile Include="UITeamState.cpp" />
     <ClCompile Include="UIZoneMap.cpp" />
     <ClCompile Include="ui\ArtefactDetectorUI.cpp" />
-    <ClCompile Include="ui\FactionState.cpp">
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">pch_script.h</PrecompiledHeaderFile>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">pch_script.h</PrecompiledHeaderFile>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Mixed|Win32'">pch_script.h</PrecompiledHeaderFile>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Mixed|x64'">pch_script.h</PrecompiledHeaderFile>
-      <PrecompiledHeaderOutputFile Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)$(ProjectName)_script.pch</PrecompiledHeaderOutputFile>
-      <PrecompiledHeaderOutputFile Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)$(ProjectName)_script.pch</PrecompiledHeaderOutputFile>
-      <PrecompiledHeaderOutputFile Condition="'$(Configuration)|$(Platform)'=='Mixed|Win32'">$(IntDir)$(ProjectName)_script.pch</PrecompiledHeaderOutputFile>
-      <PrecompiledHeaderOutputFile Condition="'$(Configuration)|$(Platform)'=='Mixed|x64'">$(IntDir)$(ProjectName)_script.pch</PrecompiledHeaderOutputFile>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Mixed|Win32'">pch_script.h</PrecompiledHeaderFile>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Mixed|x64'">pch_script.h</PrecompiledHeaderFile>
-      <PrecompiledHeaderOutputFile Condition="'$(Configuration)|$(Platform)'=='Mixed|Win32'">$(IntDir)$(ProjectName)_script.pch</PrecompiledHeaderOutputFile>
-      <PrecompiledHeaderOutputFile Condition="'$(Configuration)|$(Platform)'=='Mixed|x64'">$(IntDir)$(ProjectName)_script.pch</PrecompiledHeaderOutputFile>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">pch_script.h</PrecompiledHeaderFile>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|x64'">pch_script.h</PrecompiledHeaderFile>
-      <PrecompiledHeaderOutputFile Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)$(ProjectName)_script.pch</PrecompiledHeaderOutputFile>
-      <PrecompiledHeaderOutputFile Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)$(ProjectName)_script.pch</PrecompiledHeaderOutputFile>
-    </ClCompile>
+    
     <ClCompile Include="ui\map_hint.cpp" />
     <ClCompile Include="ui\MMSound.cpp" />
     <ClCompile Include="ui\Restrictions.cpp" />
     <ClCompile Include="ui\ServerList.cpp" />
-    <ClCompile Include="ui\ServerList_GameSpy_func.cpp" />
+    
     <ClCompile Include="ui\TeamInfo.cpp" />
     <ClCompile Include="ui\UI3dStatic.cpp" />
     <ClCompile Include="ui\UI3tButton.cpp" />
@@ -8462,7 +8440,7 @@
     </ClCompile>
     <ClCompile Include="ui\UIBuyWeaponTab.cpp" />
     <ClCompile Include="ui\UIBuyWndShared.cpp" />
-    <ClCompile Include="ui\UICarPanel.cpp" />
+    
     <ClCompile Include="ui\UICDkey.cpp" />
     <ClCompile Include="ui\UICellCustomItems.cpp" />
     <ClCompile Include="ui\UICellItem.cpp" />
@@ -8524,24 +8502,7 @@
     <ClCompile Include="ui\UIEditKeyBind.cpp" />
     <ClCompile Include="ui\UIEncyclopediaArticleWnd.cpp" />
     <ClCompile Include="ui\UIEncyclopediaWnd.cpp" />
-    <ClCompile Include="ui\UIFactionWarWnd.cpp">
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">pch_script.h</PrecompiledHeaderFile>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">pch_script.h</PrecompiledHeaderFile>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Mixed|Win32'">pch_script.h</PrecompiledHeaderFile>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Mixed|x64'">pch_script.h</PrecompiledHeaderFile>
-      <PrecompiledHeaderOutputFile Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)$(ProjectName)_script.pch</PrecompiledHeaderOutputFile>
-      <PrecompiledHeaderOutputFile Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)$(ProjectName)_script.pch</PrecompiledHeaderOutputFile>
-      <PrecompiledHeaderOutputFile Condition="'$(Configuration)|$(Platform)'=='Mixed|Win32'">$(IntDir)$(ProjectName)_script.pch</PrecompiledHeaderOutputFile>
-      <PrecompiledHeaderOutputFile Condition="'$(Configuration)|$(Platform)'=='Mixed|x64'">$(IntDir)$(ProjectName)_script.pch</PrecompiledHeaderOutputFile>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Mixed|Win32'">pch_script.h</PrecompiledHeaderFile>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Mixed|x64'">pch_script.h</PrecompiledHeaderFile>
-      <PrecompiledHeaderOutputFile Condition="'$(Configuration)|$(Platform)'=='Mixed|Win32'">$(IntDir)$(ProjectName)_script.pch</PrecompiledHeaderOutputFile>
-      <PrecompiledHeaderOutputFile Condition="'$(Configuration)|$(Platform)'=='Mixed|x64'">$(IntDir)$(ProjectName)_script.pch</PrecompiledHeaderOutputFile>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">pch_script.h</PrecompiledHeaderFile>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|x64'">pch_script.h</PrecompiledHeaderFile>
-      <PrecompiledHeaderOutputFile Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)$(ProjectName)_script.pch</PrecompiledHeaderOutputFile>
-      <PrecompiledHeaderOutputFile Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)$(ProjectName)_script.pch</PrecompiledHeaderOutputFile>
-    </ClCompile>
+    
     <ClCompile Include="ui\UIFixedScrollBar.cpp" />
     <ClCompile Include="ui\UIFrameLineWnd.cpp" />
     <ClCompile Include="ui\UIFrameWindow.cpp" />
@@ -9051,14 +9012,14 @@
     <ClCompile Include="ui\UITalkWnd.cpp" />
     <ClCompile Include="ui\UITaskWnd.cpp" />
     <ClCompile Include="ui\UITextureMaster.cpp" />
-    <ClCompile Include="ui\UITextVote.cpp" />
+    
     <ClCompile Include="ui\UITrackBar.cpp" />
-    <ClCompile Include="ui\UITrackButton.cpp" />
+    
     <ClCompile Include="ui\UITreeViewItem.cpp" />
     <ClCompile Include="ui\UIVote.cpp" />
     <ClCompile Include="ui\UIVoteStatusWnd.cpp" />
     <ClCompile Include="ui\UIVotingCategory.cpp" />
-    <ClCompile Include="ui\UIWarState.cpp" />
+    
     <ClCompile Include="ui\UIWindow.cpp" />
     <ClCompile Include="ui\UIWindow_script.cpp">
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">pch_script.h</PrecompiledHeaderFile>
@@ -9618,7 +9579,7 @@
     <ClCompile Include="xrClientsPool.cpp" />
     <ClCompile Include="xrGame.cpp" />
     <ClCompile Include="xrGameSpyServer.cpp" />
-    <ClCompile Include="xrGameSpyServer_callbacks.cpp" />
+    
     <ClCompile Include="xrGameSpy_GameSpyFuncs.cpp" />
     <ClCompile Include="xrgame_dll_detach.cpp">
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">pch_script.h</PrecompiledHeaderFile>

@@ -69,17 +69,6 @@ BOOL CBulletManager::test_callback(const collide::ray_defs& rd, CObject* object,
 							float hpf				= 1.f;
 							float ahp				= actor->HitProbability();
 #if 1
-#	if 0
-							CObject					*weapon_object = Level().Objects.net_Find	(bullet->weapon_id);
-							if (weapon_object) {
-								CWeapon				*weapon = smart_cast<CWeapon*>(weapon_object);
-								if (weapon) {
-									float fly_dist		= bullet->fly_dist+dist;
-									float dist_factor	= _min(1.f,fly_dist/Level().BulletManager().m_fHPMaxDist);
-									ahp					= dist_factor*weapon->hit_probability() + (1.f-dist_factor)*1.f;
-								}
-							}
-#	else
 							float					game_difficulty_hit_probability = actor->HitProbability();
 							CAI_Stalker				*stalker = smart_cast<CAI_Stalker*>(initiator);
 							if (stalker)
@@ -97,7 +86,6 @@ BOOL CBulletManager::test_callback(const collide::ray_defs& rd, CObject* object,
 							}
 
 							ahp						= dist_factor*game_difficulty_hit_probability + (1.f-dist_factor)*1.f;
-#	endif
 #else
 							CAI_Stalker* i_stalker	= smart_cast<CAI_Stalker*>(initiator);
 							// ���� ������� �������, ��������� - hit_probability_factor �������a ����� - 1.0

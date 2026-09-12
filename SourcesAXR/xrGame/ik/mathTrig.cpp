@@ -46,32 +46,6 @@
 //    return x;
 //}
 
-#if 0  
-//
-// Return the distance between two angles measured either
-// clockwise or anticlockwise depending on which gives
-// a lower magnitude. Assumes that angles are in the 
-// range -Pi .. Pi
-//
-float angle_distance(float x, float y)
-{
-    unsigned int signx = x > 0.0;
-    unsigned int signy = y > 0.0;
-    float dist; 
-
-    dist = _abs(x-y);
-
-    // If angles are of opposite signs check whether clockwise
-    // or anticlockwise distances are closer 
-    if (signx != signy)
-    {
-        float temp = (2*M_PI) - dist;
-        if (temp < dist)
-            dist = temp;
-    }
-    return dist;
-}
-#endif
 
 //
 // Solve a*cos(theta) + b*sin(theta) = c

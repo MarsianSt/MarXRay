@@ -57,16 +57,6 @@ void base::aim_at_position		(
 		Fmatrix& result
 	)
 {
-#if 0
-	LogInfo(
-		"[%d][%s] bone_position[%f][%f][%f] object_position[%f][%f][%f] object_direction[%f][%f][%f]",
-		Device.dwFrame,
-		m_animated.LL_MotionDefName_dbg(m_animation_id).first,
-		VPUSH(bone_position),
-		VPUSH(object_position),
-		VPUSH(object_direction)
-	);
-#endif // #if 0
 
 	VERIFY2							(
 		_valid(bone_position),

@@ -519,13 +519,6 @@ int AngleIntIterator::Next(float &a)
 
 static void aint_intersect_aux(const AngleInt &a, const AngleInt &b, AngleIntList &c)
 {
-#if 0
-    // Degenerate cases of null intersection at 0/2pi boundary
-    if (iszero(a.Low()) && istwopi(b.High()) && a.High() < b.Low())
-	return;
-    if (iszero(b.Low()) && istwopi(a.High()) && b.High() < a.Low())
-	return;
-#endif
     
     const float eps = AINT_EPSILON;
 

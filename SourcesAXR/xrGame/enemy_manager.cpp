@@ -330,10 +330,6 @@ void CEnemyManager::process_wounded			(bool &only_wounded)
 	}
 
 	if (only_wounded) {
-#if 0//def _DEBUG
-		if (g_enemy_manager_second_update)
-			LogInfo("%6d ONLY WOUNDED LEFT %s",Device.dwTimeGlobal,*m_object->cName());
-#endif // _DEBUG
 		return;
 	}
 
@@ -423,10 +419,6 @@ void CEnemyManager::update					()
 		Level().autosave_manager().inc_not_ready();
 	}
 
-#if 0//def _DEBUG
-	if (g_enemy_manager_second_update && selected() && smart_cast<const CAI_Stalker*>(selected()) && smart_cast<const CAI_Stalker*>(selected())->wounded())
-		LogInfo("%6d WOUNDED CHOOSED %s",Device.dwTimeGlobal,*m_object->cName());
-#endif // _DEBUG
 
 	STOP_PROFILE
 }

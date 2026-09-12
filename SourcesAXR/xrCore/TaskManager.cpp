@@ -202,6 +202,10 @@ struct SimpleTask;
 struct RangeTask;
 struct FreeSlotTask;
 
+// Depth counter for IsInsideTask(): incremented while a task's callback runs.
+// Declared before the task structs so inline ExecuteRange bodies can see it.
+static thread_local uint32_t g_taskDepth = 0;
+
 // Task objects serve two purposes: they are enki::ITaskSet implementations
 // (executed by the scheduler) and intrusive recycle-queue nodes
 // (RecyclableTask), published by themselves once their ExecuteRange has run.
@@ -243,7 +247,9 @@ struct RangeTask : public enki::ITaskSet, public RecyclableTask
 
     void ExecuteRange(enki::TaskSetPartition range, uint32_t threadnum) override
     {
+        ++g_taskDepth;
         if (func) func(range.start, range.end, threadnum);
+        --g_taskDepth;
     }
     void Recycle() override;
 };
@@ -259,7 +265,9 @@ static FreeListPool<FreeSlotTask, FREE_SLOT_POOL_SIZE>  g_FreeSlotPool;
 
 void SimpleTask::ExecuteRange(enki::TaskSetPartition /*range*/, uint32_t /*threadnum*/)
 {
+    ++g_taskDepth;
     if (func) func();
+    --g_taskDepth;
     // The scheduler still touches this object after ExecuteRange returns (the
     // final m_RunningCount.fetch_sub and possibly TaskComplete), so never
     // reclaim here - publish the node and let WaitAll()/Destroy() do it.
@@ -448,6 +456,11 @@ void CTaskManager::AddTaskWithCompletion(TaskFunc func, CompletionCallback onCom
 bool CTaskManager::IsRunning()
 {
     return g_Scheduler.GetIsRunning();
+}
+
+bool CTaskManager::IsInsideTask()
+{
+    return g_taskDepth > 0;
 }
 
 void CTaskManager::AddTaskRange(TaskRangeFunc func, uint32_t setSize, uint32_t minRange)

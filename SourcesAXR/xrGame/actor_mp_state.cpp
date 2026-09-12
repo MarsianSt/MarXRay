@@ -24,14 +24,6 @@ enum {
 #endif // USE_LOGIC_ACCELERATION
 };
 
-#if 0
-enum {
-	is_acceleration_null				= u32(1) << 0,
-	is_roll_null						= u32(1) << 1,
-	is_camera_yaw_the_same_as_model_yaw	= u32(1) << 2,
-	is_physics_state_enabled			= u32(1) << 3,
-};
-#endif // 0
 
 enum {
 	inventory_active_slot_bits			= u32(4),

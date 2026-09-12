@@ -1762,35 +1762,6 @@ void CActor::OnHUDDraw	(CCustomHUD*)
 		g_player_hud->render_hud		();
 
 
-#if 0//ndef NDEBUG
-	if (Level().CurrentControlEntity() == this && g_ShowAnimationInfo)
-	{
-		string128 buf;
-		UI().Font().pFontStat->SetColor	(0xffffffff);
-		UI().Font().pFontStat->OutSet		(170,530);
-		UI().Font().pFontStat->OutNext	("Position:      [%3.2f, %3.2f, %3.2f]",VPUSH(Position()));
-		UI().Font().pFontStat->OutNext	("Velocity:      [%3.2f, %3.2f, %3.2f]",VPUSH(m_PhysicMovementControl->GetVelocity()));
-		UI().Font().pFontStat->OutNext	("Vel Magnitude: [%3.2f]",m_PhysicMovementControl->GetVelocityMagnitude());
-		UI().Font().pFontStat->OutNext	("Vel Actual:    [%3.2f]",m_PhysicMovementControl->GetVelocityActual());
-		switch (m_PhysicMovementControl->Environment())
-		{
-		case CPHMovementControl::peOnGround:	xr_strcpy(buf,"ground");			break;
-		case CPHMovementControl::peInAir:		xr_strcpy(buf,"air");				break;
-		case CPHMovementControl::peAtWall:		xr_strcpy(buf,"wall");				break;
-		}
-		UI().Font().pFontStat->OutNext	(buf);
-
-		if (IReceived != 0)
-		{
-			float Size = 0;
-			Size = UI().Font().pFontStat->GetSize();
-			UI().Font().pFontStat->SetSize(Size*2);
-			UI().Font().pFontStat->SetColor	(0xffff0000);
-			UI().Font().pFontStat->OutNext ("Input :		[%3.2f]", ICoincidenced/IReceived * 100.0f);
-			UI().Font().pFontStat->SetSize(Size);
-		};
-	};
-#endif
 }
 
 void CActor::RenderIndicator			(Fvector dpos, float r1, float r2, const ui_shader &IndShader)

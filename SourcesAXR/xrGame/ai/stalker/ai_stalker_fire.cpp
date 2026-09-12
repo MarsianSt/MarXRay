@@ -1008,9 +1008,6 @@ void CAI_Stalker::update_throw_params		()
 	m_computed_object_position	= Position();
 	m_computed_object_direction	= Direction();
 
-#if 0
-	m_throw_position		= eye_matrix.c;
-#else
 	m_throw_position		= Position();
 
 	CMissile* const pMissile = dynamic_cast<CMissile*>(inventory().ActiveItem());
@@ -1029,7 +1026,6 @@ void CAI_Stalker::update_throw_params		()
 		else
 			m_throw_position.add( pSettings->r_fvector3(pMissile->cNameSect(), third_person_offset_id) );
 	}
-#endif
 
 	static float const distances[] = {
 		30.f, 40.f, 50.f, 60.f

@@ -42,37 +42,6 @@
 // we compare them within an epsilon of tolerance
 //
 
-#if 0
-int inline equal(float x, float y, float eps = 1e-6)
-{
-    return (fabs(x-y) < eps); 
-} 
-
-int inline iszero(float x, float eps = 1e-6) 
-{
-    return fabs(x) < eps;
-}
-
-int inline greater_equal(float x, float y)
-{
-    return (x > y) || equal(x,y);
-}
-
-int inline less_equal(float x, float y)
-{
-    return (x < y) || equal(x,y);
-}
-
-int inline greater(float x, float y)
-{
-    return x > y && !equal(x,y);
-}
-
-int inline less(float x, float y)
-{
-    return x < y && !equal(x,y);
-}
-#endif
 
 
 void SimpleJtLimit::init(int jt_type, 
@@ -197,22 +166,6 @@ int SimpleJtLimit::Discontinuity(int family, float x[2]) const
     return n;
 }
 
-#if 0
-void sort(int m, float *temp)
-{
-    int i, j;
-
-    // sort the points
-    for (i = 0; i < m - 1; i++)
-	for (j = i+1; j < m; j++)
-	    if (temp[i] > temp[j])
-	    {
-		float t = temp[i];
-		temp[i] = temp[j];
-		temp[j] = t;
-	    }
-}
-#else
 
 void sort(int up, float a[])
 {
@@ -235,7 +188,6 @@ void sort(int up, float a[])
     }
 }
 
-#endif
 
 int sort_intersections(int m, float *temp, float psi0, float psi1)
 {
@@ -335,14 +287,9 @@ void SimpleJtLimit::PsiLimits(AngleIntList &psi1,
 	{
 	    for (int i = 0; i < (n-1); i++)
 	    {
-#if 0
-		if (iszero(y[i]-y[i+1], eps))
-		    continue; 
-#else
 		// Points are closer than 2 eps then interval is nonexistent
 		if (_abs(y[i]-y[i+1]) < 2*eps)
 		    continue; 
-#endif
 
 		clip(1, y[i]+eps, y[i+1]-eps, limits.Low(), 2*M_PI, psi1);
 		clip(1, y[i]+eps, y[i+1]-eps, 0, limits.High(), psi1);
@@ -354,14 +301,9 @@ void SimpleJtLimit::PsiLimits(AngleIntList &psi1,
 	{
 	    for (int i = 0; i < (n-1); i++)
 	    {
-#if 0
-		if (iszero(y[i]-y[i+1], eps))
-		    continue; 
-#else
 		// Points are closer than 2 eps then interval is nonexistent
 		if (_abs(y[i]-y[i+1]) < 2*eps)
 		    continue; 
-#endif
 		clip(1, y[i]+eps, y[i+1]-eps, limits.Low(), limits.High(), psi1);
 	    }
 

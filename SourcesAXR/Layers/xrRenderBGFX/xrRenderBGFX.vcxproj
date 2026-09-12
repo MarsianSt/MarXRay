@@ -53,15 +53,15 @@
       <WarningLevel>Level4</WarningLevel>
       <Optimization>Disabled</Optimization>
       <ExceptionHandling>Async</ExceptionHandling>
-      <PreprocessorDefinitions>WIN32;DEBUG;_WINDOWS;_USRDLL;XRRENDERBGFX_EXPORTS;__STDC_LIMIT_MACROS;__STDC_FORMAT_MACROS;__STDC_CONSTANT_MACROS;_CRT_SECURE_NO_WARNINGS;BX_CONFIG_DEBUG=1;BGFX_CONFIG_MULTITHREADED=1;BGFX_CONFIG_RENDERER_DIRECT3D11=1;BGFX_CONFIG_RENDERER_DIRECT3D12=0;BGFX_CONFIG_RENDERER_VULKAN=0;BGFX_CONFIG_RENDERER_OPENGL=0;BGFX_CONFIG_RENDERER_METAL=0;BGFX_CONFIG_RENDERER_OPENGLES=0;BGFX_CONFIG_RENDERER_WEBGPU=0;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>.;./bgfx_src;./bx_src;../../../../Othersourse/bx/include;../../../../Othersourse/bx/include/compat/msvc;../../../../Othersourse/bimg/include;../../../../Othersourse/bgfx-master/include;../../../../Othersourse/bgfx-master/3rdparty;../../../../Othersourse/bgfx-master/3rdparty/directx-headers/include/directx;../../../../Othersourse/bgfx-master/3rdparty/khronos;../../../../Othersourse/bgfx-master;../../3rd party/tracy/public;../../3rd party/imgui;E:\XRay-engine\MarXRay\SDK\include\theora;E:\XRay-engine\MarXRay\SDK\include\ogg;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <LanguageStandard>stdcpp20</LanguageStandard>
+      <PreprocessorDefinitions>WIN32;DEBUG;_WINDOWS;_USRDLL;XRRENDERBGFX_EXPORTS;__STDC_LIMIT_MACROS;__STDC_FORMAT_MACROS;__STDC_CONSTANT_MACROS;_CRT_SECURE_NO_WARNINGS;BX_CONFIG_DEBUG=1;BGFX_CONFIG_MULTITHREADED=1;BGFX_CONFIG_RENDERER_DIRECT3D11=1;BGFX_CONFIG_RENDERER_DIRECT3D12=1;BGFX_CONFIG_RENDERER_VULKAN=1;BGFX_CONFIG_RENDERER_OPENGL=43;BGFX_CONFIG_RENDERER_METAL=0;BGFX_CONFIG_RENDERER_OPENGLES=0;BGFX_CONFIG_RENDERER_WEBGPU=0;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>.;./bgfx_src;./bx_src;../../../../Othersourse/bx/include;../../../../Othersourse/bx/include/compat/msvc;../../../../Othersourse/bimg/include;../../../../Othersourse/bgfx-master/include;../../../../Othersourse/bgfx-master/3rdparty;../../../../Othersourse/bgfx-master/3rdparty/directx-headers/include/directx;../../../../Othersourse/bgfx-master/3rdparty/khronos;../../../../Othersourse/bgfx-master;../../3rd party/tracy/public;../../3rd party/imgui;E:\XRay-engine\MarXRay\SDK\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp17</LanguageStandard>
       <AdditionalOptions>/EHa /Zc:__cplusplus /Zc:preprocessor /wd4201 /wd4324 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;d3d11.lib;dxgi.lib;d3dcompiler.lib;../../../../Othersourse/bgfx-master/.build/win64_vs2022/bin/bimgRelease.lib;../../../../Othersourse/bgfx-master/.build/win64_vs2022/bin/bimg_decodeRelease.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;d3d11.lib;dxgi.lib;d3dcompiler.lib;../../../../Othersourse/bgfx-master/.build/win64_vs2022/bin/bimgDebug.lib;../../../../Othersourse/bgfx-master/.build/win64_vs2022/bin/bimg_decodeDebug.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -70,13 +70,13 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;XRRENDERBGFX_EXPORTS;__STDC_LIMIT_MACROS;__STDC_FORMAT_MACROS;__STDC_CONSTANT_MACROS;_CRT_SECURE_NO_WARNINGS;BX_CONFIG_DEBUG=0;BGFX_CONFIG_MULTITHREADED=1;BGFX_CONFIG_RENDERER_DIRECT3D11=1;BGFX_CONFIG_RENDERER_DIRECT3D12=0;BGFX_CONFIG_RENDERER_VULKAN=0;BGFX_CONFIG_RENDERER_OPENGL=0;BGFX_CONFIG_RENDERER_METAL=0;BGFX_CONFIG_RENDERER_OPENGLES=0;BGFX_CONFIG_RENDERER_WEBGPU=0;XRAY_EXCEPTIONS=0;NOMINMAX;_SECURE_SCL=0;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>.;./bgfx_src;./bx_src;../../../../Othersourse/bx/include;../../../../Othersourse/bx/include/compat/msvc;../../../../Othersourse/bimg/include;../../../../Othersourse/bgfx-master/include;../../../../Othersourse/bgfx-master/3rdparty;../../../../Othersourse/bgfx-master/3rdparty/directx-headers/include/directx;../../../../Othersourse/bgfx-master/3rdparty/khronos;../../../../Othersourse/bgfx-master;../../3rd party/tracy/public;../../3rd party/imgui;E:\XRay-engine\MarXRay\SDK\include\theora;E:\XRay-engine\MarXRay\SDK\include\ogg;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;XRRENDERBGFX_EXPORTS;__STDC_LIMIT_MACROS;__STDC_FORMAT_MACROS;__STDC_CONSTANT_MACROS;_CRT_SECURE_NO_WARNINGS;BX_CONFIG_DEBUG=0;BGFX_CONFIG_MULTITHREADED=1;BGFX_CONFIG_RENDERER_DIRECT3D11=1;BGFX_CONFIG_RENDERER_DIRECT3D12=1;BGFX_CONFIG_RENDERER_VULKAN=1;BGFX_CONFIG_RENDERER_OPENGL=43;BGFX_CONFIG_RENDERER_METAL=0;BGFX_CONFIG_RENDERER_OPENGLES=0;BGFX_CONFIG_RENDERER_WEBGPU=0;XRAY_EXCEPTIONS=0;NOMINMAX;_SECURE_SCL=0;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>.;./bgfx_src;./bx_src;../../../../Othersourse/bx/include;../../../../Othersourse/bx/include/compat/msvc;../../../../Othersourse/bimg/include;../../../../Othersourse/bgfx-master/include;../../../../Othersourse/bgfx-master/3rdparty;../../../../Othersourse/bgfx-master/3rdparty/directx-headers/include/directx;../../../../Othersourse/bgfx-master/3rdparty/khronos;../../../../Othersourse/bgfx-master;../../3rd party/tracy/public;../../3rd party/imgui;E:\XRay-engine\MarXRay\SDK\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <ExceptionHandling />
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <AdditionalOptions>/Zc:__cplusplus /Zc:preprocessor /wd4201 /wd4324 %(AdditionalOptions)</AdditionalOptions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
@@ -137,6 +137,52 @@
     <ClInclude Include="bgfx_src/video_vk.h" />
     <ClInclude Include="bgfx_src/vs_clear.bin.h" />
     <ClInclude Include="bgfx_src/vs_debugfont.bin.h" />
+    <ClInclude Include="port\Animation.h" />
+    <ClInclude Include="port\AnimationKeyCalculate.h" />
+    <ClInclude Include="port\bgfxD3DX.h" />
+    <ClInclude Include="port\bgfxGpuCompat.h" />
+    <ClInclude Include="port\bgfxModelBridge.h" />
+    <ClInclude Include="port\bgfxRenderCompat.h" />
+    <ClInclude Include="port\bgfxResourceManager.h" />
+    <ClInclude Include="port\bgfxStubParticles.h" />
+    <ClInclude Include="port\bgfxVBMacros.h" />
+    <ClInclude Include="port\bgfxVisualCompat.h" />
+    <ClInclude Include="port\bgfxVisualTypes.h" />
+    <ClInclude Include="port\cl_intersect.h" />
+    <ClInclude Include="port\dxParticleCustom.h" />
+    <ClInclude Include="port\dxRenderDeviceRender.h" />
+    <ClInclude Include="port\FBasicVisual.h" />
+    <ClInclude Include="port\FHierrarhyVisual.h" />
+    <ClInclude Include="port\FLOD.h" />
+    <ClInclude Include="port\FProgressive.h" />
+    <ClInclude Include="port\FSkinned.h" />
+    <ClInclude Include="port\FTreeVisual.h" />
+    <ClInclude Include="port\FVF.h" />
+    <ClInclude Include="port\FVisual.h" />
+    <ClInclude Include="port\KinematicAnimatedDefs.h" />
+    <ClInclude Include="port\ModelPool.h" />
+    <ClInclude Include="port\ParticleEffect.h" />
+    <ClInclude Include="port\ParticleEffectDef.h" />
+    <ClInclude Include="port\ParticleGroup.h" />
+    <ClInclude Include="port\R_Backend.h" />
+    <ClInclude Include="port\r_constants.h" />
+    <ClInclude Include="port\r_constants_cache.h" />
+    <ClInclude Include="port\r__dsgraph_structure.h" />
+    <ClInclude Include="port\Shader.h" />
+    <ClInclude Include="port\ShaderResourceTraits.h" />
+    <ClInclude Include="port\SH_Atomic.h" />
+    <ClInclude Include="port\SH_Constant.h" />
+    <ClInclude Include="port\SH_Matrix.h" />
+    <ClInclude Include="port\SH_RT.h" />
+    <ClInclude Include="port\SH_Texture.h" />
+    <ClInclude Include="port\SkeletonAnimated.h" />
+    <ClInclude Include="port\SkeletonCustom.h" />
+    <ClInclude Include="port\SkeletonX.h" />
+    <ClInclude Include="port\SkeletonXVertRender.h" />
+    <ClInclude Include="port\stdafx.h" />
+    <ClInclude Include="port\tss.h" />
+    <ClInclude Include="port\tss_def.h" />
+    <ClInclude Include="port\xrD3DDefs.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="bgfxRenderDeviceRender.h" />
     <ClInclude Include="bgfxRenderFactory.h" />
@@ -152,11 +198,14 @@
     <ClInclude Include="bgfxWallMarkArray.h" />
     <ClInclude Include="bgfxUISequenceVideoItem.h" />
     <ClInclude Include="bgfxUIShader.h" />
+    <ClInclude Include="bgfxShaderCompiler.h" />
     <ClInclude Include="bgfxObjectSpaceRender.h" />
+    <ClInclude Include="bgfxImGuiRender.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="port\bgfxModelBridge.cpp" />
     <ClCompile Include="stdafx.cpp">
-      <PrecompiledHeader>Create</PrecompiledHeader>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="xrRenderBGFX.cpp" />
     <ClCompile Include="bgfxRenderDeviceRender.cpp" />
@@ -174,8 +223,10 @@
     <ClCompile Include="bgfxUISequenceVideoItem.cpp" />
     <ClCompile Include="bgfxVideoDecoder.cpp" />
     <ClCompile Include="bgfxUIShader.cpp" />
+    <ClCompile Include="bgfxShaderCompiler.cpp" />
     <ClCompile Include="bgfxUIProgram.cpp" />
     <ClCompile Include="bgfxWorldProgram.cpp" />
+    <ClCompile Include="bgfxImGuiRender.cpp" />
     <ClCompile Include="bgfxObjectSpaceRender.cpp" />
     <ClCompile Include="port/Animation.cpp">
       <PrecompiledHeader>NotUsing</PrecompiledHeader>

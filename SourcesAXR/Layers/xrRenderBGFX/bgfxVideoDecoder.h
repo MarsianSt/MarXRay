@@ -2,8 +2,8 @@
 
 #include "bgfx_capi.h"
 
-#include "ogg_theora/ogg.h"
-#include "ogg_theora/theoradec.h"
+#include <ogg/ogg.h>
+#include <theora/theoradec.h>
 
 #include <string>
 #include <vector>

@@ -2,15 +2,12 @@
 #include "../xrCDB/frustum.h"
 
 #pragma warning(disable:4995)
-// mmsystem.h
 #define MMNOSOUND
 #define MMNOMIDI
 #define MMNOAUX
 #define MMNOMIXER
 #define MMNOJOY
 #include <mmsystem.h>
-// d3dx9.h
-#include <d3dx9.h>
 #pragma warning(default:4995)
 
 #include "x_ray.h"
@@ -29,12 +26,8 @@
 #include "xrSash.h"
 #include "igame_persistent.h"
 
-#pragma comment( lib, "d3dx9.lib"		)
-
 #include "../build_config_defines.h"
 
-#include "backends\imgui_impl_dx11.h"
-#include "backends\imgui_impl_dx9.h"
 #include "backends\imgui_impl_win32.h"
 #include <imgui.h>
 //#include <addons/ImGuizmo/ImGuizmo.h>
@@ -43,7 +36,6 @@
 ENGINE_API CRenderDevice Device;
 ENGINE_API CLoadScreenRenderer load_screen_renderer;
 ENGINE_API bool prefetching_in_progress = false;
-extern ENGINE_API int g_current_renderer;
 
 ENGINE_API BOOL g_bRendering = FALSE; 
 
@@ -149,13 +141,7 @@ void CRenderDevice::End		(void)
 
 	extern BOOL g_appLoaded;
 	if (g_appLoaded)
-	{
 		ImGui::Render();
-		if(g_current_renderer >= 4)
-			ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
-		else
-			ImGui_ImplDX9_RenderDrawData(ImGui::GetDrawData());
-	}
 
 	m_pRender->End();
 	//RCache.OnFrameEnd	();
@@ -280,10 +266,6 @@ void ImGui_NewFrame()
 	//	SetCursor(NULL);
 
 	// Start the frame
-	if(g_current_renderer >= 4)
-		ImGui_ImplDX11_NewFrame();
-	else
-		ImGui_ImplDX9_NewFrame();
 	ImGui_ImplWin32_NewFrame();
 
 	g_pGamePersistent->EditorOnFrame();
@@ -414,8 +396,6 @@ void CRenderDevice::on_idle		()
 		//// Matrices
 		//mFullTransform.mul(mProject, mView);
 		//m_pRender->SetCacheXform(mView, mProject);
-		//D3DXMatrixInverse((D3DXMATRIX*)&mInvFullTransform, 0, (D3DXMATRIX*)&mFullTransform);
-		D3DXMatrixInverse((D3DXMATRIX*)&mInvFullTransform, 0, (D3DXMATRIX*)&mFullTransform);
 
 		if (Render->currentViewPort == MAIN_VIEWPORT) // need to save main vp stuff for next frame
 		{

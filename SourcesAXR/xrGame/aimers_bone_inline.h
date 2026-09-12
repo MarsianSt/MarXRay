@@ -87,17 +87,7 @@ void BONE::compute_bone				(u32 const bone_id)
 		return;
 	}
 
-#if 0
-	Fmatrix const& bone					= m_bones[bone_id];
-	Fvector const& current_direction	= bone.k;
-	Fvector const target_direction		= Fvector().sub( m_target, bone.c ).normalize();
-	Fvector	cross_product				= Fvector().crossproduct(current_direction, target_direction);
-	float const sin_alpha				= cross_product.magnitude();
-	float const cos_alpha				= current_direction.dotproduct(target_direction);
-	m_result[bone_id].rotation			(cross_product.normalize(), atan2f(sin_alpha, cos_alpha));
-#else // #if 0
 	m_result[bone_id]					= Fidentity;
-#endif // #if 0
 }
 
 #undef BONE

@@ -20,11 +20,7 @@
 #include <malloc.h>
 #pragma warning(pop)
 
-#if 0
-#	define MSG(...) LogInfo(__VA_ARGS__)
-#else
 #	define MSG(...)
-#endif
 
 IC	MagicBox3 &moving_objects::continuous_box	(moving_object *object, const Fvector &position, MagicBox3 &result, const bool &use_box_enlargement) const
 {
@@ -164,36 +160,6 @@ void moving_objects::resolve_collision_previous	(boxes &current, moving_object *
 
 void moving_objects::resolve_collision			(boxes &current, moving_object *object0, const Fvector &position0, moving_object *object1, const Fvector &position1, possible_actions &action) const
 {
-#if 0
-	if (object0->action_frame() == Device.dwFrame) {
-		LogInfo("%6d Oooooooops",Device.dwFrame);
-		{
-			LogInfo("  visited emitters[%d]",m_visited_emitters.size());
-			NEAREST_MOVING::const_iterator	I = m_visited_emitters.begin();
-			NEAREST_MOVING::const_iterator	E = m_visited_emitters.end();
-			for ( ; I != E; ++I) {
-				LogInfo("    %s",(*I)->object().cName().c_str());
-			}
-		}
-		{
-			LogInfo("  collision emitters[%d]",m_collision_emitters.size());
-			NEAREST_MOVING::const_iterator	I = m_collision_emitters.begin();
-			NEAREST_MOVING::const_iterator	E = m_collision_emitters.end();
-			for ( ; I != E; ++I) {
-				LogInfo("    %s",(*I)->object().cName().c_str());
-			}
-		}
-		{
-			LogInfo("  nearest moving[%d]",m_nearest_moving.size());
-			NEAREST_MOVING::const_iterator	I = m_nearest_moving.begin();
-			NEAREST_MOVING::const_iterator	E = m_nearest_moving.end();
-			for ( ; I != E; ++I) {
-				LogInfo("    %s",(*I)->object().cName().c_str());
-			}
-		}
-		LogInfo("%6d Eng of \"Oooooooops\"",Device.dwFrame);
-	}
-#endif // 0
 	VERIFY2						(object0->action_frame() != Device.dwFrame, make_string("%d %s",Device.dwFrame,*object0->object().cName()));
 	VERIFY2						(object0->action_frame() < Device.dwFrame, make_string("%d %s",Device.dwFrame,*object0->object().cName()));
 

@@ -43,6 +43,24 @@ void CStringTable::Init		()
 	string_path			files_mask;
 	xr_sprintf			(files_mask, "text\\%s\\*.xml", pData->m_sLanguage.c_str());
 	FS.file_list		(fset, "$game_config$", FS_ListFiles, files_mask);
+
+	// Parallel warm-up: decode all localization .xml into the VFS cache before
+	// the serial per-file CUIXml::Load loop below.
+	{
+		xr_vector<shared_str> xml_paths;
+		xml_paths.reserve(fset.size());
+		for (FS_FileSetIt it2 = fset.begin(); it2 != fset.end(); ++it2)
+		{
+			string_path		fn2, ext2, rel, full;
+			_splitpath		(it2->name.c_str(), 0, 0, fn2, ext2);
+			xr_strcat		(fn2, ext2);
+			strconcat		(sizeof(rel), rel, "text\\", pData->m_sLanguage.c_str(), "\\", fn2);
+			FS.update_path	(full, "$game_config$", rel);
+			xml_paths.push_back(shared_str(full));
+		}
+		FS.prefetch_zdb(xml_paths);
+	}
+
 	FS_FileSetIt fit	= fset.begin();
 	FS_FileSetIt fit_e	= fset.end();
 

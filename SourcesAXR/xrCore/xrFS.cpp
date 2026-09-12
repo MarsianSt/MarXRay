@@ -247,20 +247,27 @@ struct xrFS::MountedArchive {
                     bool okDec = false;
                     if (known && total == e.uncompSize && e.uncompSize <= out.size()) {
                         std::atomic<bool> allOk{true};
-                        if (!CTaskManager::IsRunning())
-                            CTaskManager::Initialize();
-                        CTaskManager::AddTaskRange(
-                            [&](uint32_t a, uint32_t b, uint32_t) {
-                                for (uint32_t i = a; i < b; ++i) {
-                                    const size_t got = ZSTD_decompress(
-                                        out.data() + outPos[i], chunkSizes[i],
-                                        comp + frameOffs[i], frameSizes[i]);
-                                    if (ZSTD_isError(got) || got != chunkSizes[i])
-                                        allOk.store(false, std::memory_order_relaxed);
-                                }
-                            },
-                            static_cast<uint32_t>(frameOffs.size()), 4);
-                        CTaskManager::WaitAll();
+                        auto decompressRange = [&](size_t a, size_t b) {
+                            for (size_t i = a; i < b; ++i) {
+                                const size_t got = ZSTD_decompress(
+                                    out.data() + outPos[i], chunkSizes[i],
+                                    comp + frameOffs[i], frameSizes[i]);
+                                if (ZSTD_isError(got) || got != chunkSizes[i])
+                                    allOk.store(false, std::memory_order_relaxed);
+                            }
+                        };
+                        if (CTaskManager::IsInsideTask()) {
+                            // Nested call (inside a worker task): run the frames
+                            // on this thread to avoid waiting on the busy pool.
+                            decompressRange(0, outPos.size());
+                        } else {
+                            CTaskManager::AddTaskRange(
+                                [&](uint32_t a, uint32_t b, uint32_t) {
+                                    decompressRange(a, b);
+                                },
+                                static_cast<uint32_t>(frameOffs.size()), 4);
+                            CTaskManager::WaitAll();
+                        }
                         okDec = allOk.load(std::memory_order_relaxed);
                     }
 
@@ -294,21 +301,100 @@ struct xrFS::MountedArchive {
     }
 };
 
+// Combined lookup index across all mounted archives. Shallow-immutable once
+// published: readers grab the shared_ptr and can use it lock-free.
+struct xrFS::FlatIndex {
+    struct Rec {
+        uint16_t owner;   // index into owners
+        uint32_t mtime;   // archive file last_write_time (seconds), for locator
+        MountedArchive::ZEntry e;
+    };
+    std::vector<std::shared_ptr<MountedArchive>> owners; // keep mapped views alive
+    std::unordered_map<std::string, Rec> map;
+
+    const Rec* find(const std::string& key) const {
+        auto it = map.find(key);
+        return it == map.end() ? nullptr : &it->second;
+    }
+    const MountedArchive* archive_of(const Rec& r) const {
+        return owners[r.owner].get();
+    }
+};
+
+void xrFS::rebuild_flat_locked()
+{
+    auto flat = std::make_shared<FlatIndex>();
+    flat->owners.reserve(m_archives.size());
+    size_t oi = 0;
+    for (const auto& arc : m_archives)
+    {
+        uint32_t mt = 0;
+        std::error_code ec;
+        const auto fst = std::filesystem::last_write_time(arc->path, ec);
+        if (!ec)
+            mt = (uint32_t)std::chrono::duration_cast<std::chrono::seconds>(
+                fst.time_since_epoch()).count();
+        const uint16_t owner = (uint16_t)oi;
+        // First-wins: the archive mounted first owns the key, mirroring the old
+        // per-archive scan order.
+        for (const auto& kv : arc->index)
+            flat->map.emplace(kv.first, FlatIndex::Rec{ owner, mt, kv.second });
+        flat->owners.push_back(arc);
+        ++oi;
+    }
+    m_flat = std::move(flat);
+}
+
 bool xrFS::mount_zdb(const std::string& archive_path, const std::string& virtual_root)
 {
-    auto arc = std::make_shared<MountedArchive>();
-    if (!arc->open(archive_path)) return false;
-    if (!arc->parse_index()) return false;
-    std::lock_guard<std::mutex> lock(m_mtx);
-    m_archives.push_back(std::move(arc));
-    m_virtual_root = virtual_root;
-    return true;
+    return mount_zdb_many(std::vector<std::string>{ archive_path }, virtual_root) > 0;
+}
+
+size_t xrFS::mount_zdb_many(const std::vector<std::string>& archive_paths,
+                            const std::string& virtual_root)
+{
+    const uint32_t N = (uint32_t)archive_paths.size();
+    if (N == 0) return 0;
+
+    // Step 1 (parallel): mmap + parse the central directory of every archive.
+    // Each task owns its own MountedArchive, so nothing is shared yet; input
+    // order is preserved by slotting results into `ready[i]`.
+    std::vector<std::shared_ptr<MountedArchive>> ready(N);
+    CTaskManager::AddTaskRange(
+        [&](uint32_t a, uint32_t b, uint32_t)
+        {
+            for (uint32_t i = a; i < b; ++i)
+            {
+                auto arc = std::make_shared<MountedArchive>();
+                if (arc->open(archive_paths[i]) && arc->parse_index())
+                    ready[i] = std::move(arc);
+            }
+        }, N, 1);
+    CTaskManager::WaitAll();
+
+    // Step 2 (serial): commit the parsed archives and publish the flat index.
+    size_t mounted = 0;
+    {
+        std::lock_guard<std::mutex> lock(m_mtx);
+        m_virtual_root = virtual_root;
+        for (auto& arc : ready)
+        {
+            if (!arc) continue;
+            m_archives.push_back(std::move(arc));
+            ++mounted;
+        }
+        if (mounted) rebuild_flat_locked();
+    }
+    return mounted;
 }
 
 void xrFS::unmount_zdb() {
     std::lock_guard<std::mutex> lock(m_mtx);
     m_archives.clear();
     m_virtual_root.clear();
+    m_flat.reset();
+    std::lock_guard<std::mutex> cm(m_cacheMtx);
+    m_cache.clear();
 }
 
 bool xrFS::is_mounted() const {
@@ -324,13 +410,12 @@ size_t xrFS::mounted_count() const {
 bool xrFS::virtual_exists(const std::string& vpath) const
 {
     std::string droot, vroot;
-    std::vector<const MountedArchive*> arcs;
+    std::shared_ptr<const FlatIndex> flat;
     {
         std::lock_guard<std::mutex> lock(m_mtx);
         droot = m_data_root;
         vroot = m_virtual_root;
-        arcs.reserve(m_archives.size());
-        for (const auto& a : m_archives) arcs.push_back(a.get());
+        flat = m_flat;
     }
     const std::string key = vfs_resolve(vpath, vroot);
     if (!droot.empty()) {
@@ -338,21 +423,18 @@ bool xrFS::virtual_exists(const std::string& vpath) const
         if (std::filesystem::is_regular_file(vfs_disk_path(droot, key), ec) && !ec)
             return true;
     }
-    for (const auto* a : arcs)
-        if (a->find(key) != nullptr) return true;
-    return false;
+    return flat && flat->find(key) != nullptr;
 }
 
 uint64_t xrFS::virtual_file_size(const std::string& vpath) const
 {
     std::string droot, vroot;
-    std::vector<const MountedArchive*> arcs;
+    std::shared_ptr<const FlatIndex> flat;
     {
         std::lock_guard<std::mutex> lock(m_mtx);
         droot = m_data_root;
         vroot = m_virtual_root;
-        arcs.reserve(m_archives.size());
-        for (const auto& a : m_archives) arcs.push_back(a.get());
+        flat = m_flat;
     }
     const std::string key = vfs_resolve(vpath, vroot);
     if (!droot.empty()) {
@@ -361,41 +443,33 @@ uint64_t xrFS::virtual_file_size(const std::string& vpath) const
         if (std::filesystem::is_regular_file(dp, ec) && !ec)
             return std::filesystem::file_size(dp, ec);
     }
-    for (const auto* a : arcs) {
-        const auto e = a->find(key);
-        if (e) return e->uncompSize;
-    }
-    return 0;
+    const FlatIndex::Rec* r = flat ? flat->find(key) : nullptr;
+    return r ? r->e.uncompSize : 0;
 }
 
 uint32_t xrFS::virtual_crc(const std::string& vpath) const
 {
     std::string vroot;
-    std::vector<const MountedArchive*> arcs;
+    std::shared_ptr<const FlatIndex> flat;
     {
         std::lock_guard<std::mutex> lock(m_mtx);
         vroot = m_virtual_root;
-        arcs.reserve(m_archives.size());
-        for (const auto& a : m_archives) arcs.push_back(a.get());
+        flat = m_flat;
     }
     const std::string key = vfs_resolve(vpath, vroot);
-    for (const auto* a : arcs) {
-        const auto e = a->find(key);
-        if (e) return e->crc;
-    }
-    return 0;
+    const FlatIndex::Rec* r = flat ? flat->find(key) : nullptr;
+    return r ? r->e.crc : 0;
 }
 
 bool xrFS::read_virtual(const std::string& vpath, std::vector<char>& out) const
 {
     std::string droot, vroot;
-    std::vector<const MountedArchive*> arcs;
+    std::shared_ptr<const FlatIndex> flat;
     {
         std::lock_guard<std::mutex> lock(m_mtx);
         droot = m_data_root;
         vroot = m_virtual_root;
-        arcs.reserve(m_archives.size());
-        for (const auto& a : m_archives) arcs.push_back(a.get());
+        flat = m_flat;
     }
     const std::string key = vfs_resolve(vpath, vroot);
     if (!droot.empty()) {
@@ -404,12 +478,129 @@ bool xrFS::read_virtual(const std::string& vpath, std::vector<char>& out) const
         if (std::filesystem::is_regular_file(dp, ec) && !ec)
             return read_file(dp.string(), out);
     }
-    for (const auto* a : arcs) {
-        const auto e = a->find(key);
-        if (e) return a->extract(*e, out);
+    const FlatIndex::Rec* r = flat ? flat->find(key) : nullptr;
+    if (!r) { out.clear(); return false; }
+    {
+        // Prefetched entry: serve straight from memory.
+        std::lock_guard<std::mutex> cm(m_cacheMtx);
+        auto cit = m_cache.find(key);
+        if (cit != m_cache.end()) { out = cit->second; return true; }
     }
-    out.clear();
-    return false;
+    return flat->archive_of(*r)->extract(r->e, out);
+}
+
+void xrFS::prefetch_virtual(const std::vector<std::string>& vpaths) const
+{
+    std::string droot, vroot;
+    std::shared_ptr<const FlatIndex> flat;
+    {
+        std::lock_guard<std::mutex> lock(m_mtx);
+        droot = m_data_root;
+        vroot = m_virtual_root;
+        flat = m_flat;
+    }
+    if (!flat || vpaths.empty()) return;
+
+    // Select cacheable archive entries (no disk override) and size the batch.
+    static const uint64_t kCacheCap = 512ull * 1024 * 1024; // total uncompressed bytes
+    std::vector<std::string> keys;
+    keys.reserve(vpaths.size());
+    uint64_t total = 0;
+    for (const std::string& vp : vpaths)
+    {
+        const std::string key = vfs_resolve(vp, vroot);
+        if (!droot.empty())
+        {
+            std::error_code ec;
+            if (std::filesystem::is_regular_file(vfs_disk_path(droot, key), ec) && !ec)
+                continue; // real file overrides; the serial loop reads it from disk
+        }
+        const FlatIndex::Rec* r = flat->find(key);
+        if (!r) continue;
+        total += r->e.uncompSize;
+        if (total > kCacheCap) return; // too big to cache, leave the normal path
+        keys.push_back(key);
+    }
+    const u32 n = (u32)keys.size();
+    if (n == 0) return;
+
+    // Parallel decode (mmap views are read-only; per-slot buffers are private).
+    std::vector<std::vector<char>> slots(n);
+    std::atomic<bool> allOk{true};
+    CTaskManager::AddTaskRange(
+        [&](u32 start, u32 end, u32)
+        {
+            for (u32 i = start; i < end; ++i)
+            {
+                const FlatIndex::Rec* r = flat->find(keys[i]);
+                if (r && !flat->archive_of(*r)->extract(r->e, slots[i]))
+                    allOk.store(false, std::memory_order_relaxed);
+            }
+        }, n, 1);
+    CTaskManager::WaitAll();
+    if (!allOk.load(std::memory_order_relaxed)) return;
+
+    std::lock_guard<std::mutex> cm(m_cacheMtx);
+    for (u32 i = 0; i < n; ++i)
+        m_cache.emplace(keys[i], std::move(slots[i]));
+}
+
+bool xrFS::read_virtual_many(const std::vector<std::string>& vpaths,
+                             std::vector<std::vector<char>>& results) const
+{
+    const u32 count = (u32)vpaths.size();
+    if (count == 0) { results.clear(); return true; }
+
+    std::string droot, vroot;
+    std::shared_ptr<const FlatIndex> flat;
+    {
+        std::lock_guard<std::mutex> lock(m_mtx);
+        droot = m_data_root;
+        vroot = m_virtual_root;
+        flat = m_flat;
+    }
+
+    results.assign(count, {});
+    // Pre-resolve keys once (single flat-index snapshot, lock-free afterwards).
+    std::vector<std::string> keys(count);
+    for (u32 i = 0; i < count; ++i)
+        keys[i] = vfs_resolve(vpaths[i], vroot);
+
+    std::atomic<bool> allOk{true};
+    // Same per-element semantics as read_virtual: a real file under the data
+    // root overrides the archive entry. Multi-frame entries nested-extract
+    // sequentially via the IsInsideTask() guard, so no scheduler deadlock.
+    CTaskManager::AddTaskRange(
+        [&](u32 start, u32 end, u32)
+        {
+            for (u32 i = start; i < end; ++i)
+            {
+                const std::string& key = keys[i];
+                if (!droot.empty())
+                {
+                    std::error_code ec;
+                    std::filesystem::path dp = vfs_disk_path(droot, key);
+                    if (std::filesystem::is_regular_file(dp, ec) && !ec)
+                    {
+                        if (read_file(dp.string(), results[i])) continue;
+                        allOk.store(false, std::memory_order_relaxed);
+                        continue;
+                    }
+                }
+                const FlatIndex::Rec* r = flat ? flat->find(key) : nullptr;
+                if (r)
+                {
+                    if (!flat->archive_of(*r)->extract(r->e, results[i]))
+                        allOk.store(false, std::memory_order_relaxed);
+                }
+                else
+                {
+                    allOk.store(false, std::memory_order_relaxed);
+                }
+            }
+        }, count, 1);
+    CTaskManager::WaitAll();
+    return allOk.load(std::memory_order_relaxed);
 }
 
 std::vector<std::string> xrFS::list_virtual_files() const
@@ -496,22 +687,20 @@ std::vector<std::string> xrFS::list_disk_files() const
     return keys;
 }
 
-bool xrFS::archive_meta(const std::string& key, uint32_t& uncompSize, uint32_t& crc) const
+bool xrFS::archive_meta(const std::string& key, uint32_t& uncompSize, uint32_t& crc,
+                        uint32_t* mtime) const
 {
-    std::vector<const MountedArchive*> arcs;
+    std::shared_ptr<const FlatIndex> flat;
     {
         std::lock_guard<std::mutex> lock(m_mtx);
-        arcs.reserve(m_archives.size());
-        for (const auto& a : m_archives) arcs.push_back(a.get());
+        flat = m_flat;
     }
-    for (const auto* a : arcs) {
-        const auto e = a->find(key);
-        if (!e) continue;
-        uncompSize = e->uncompSize;
-        crc = e->crc;
-        return true;
-    }
-    return false;
+    const FlatIndex::Rec* r = flat ? flat->find(key) : nullptr;
+    if (!r) return false;
+    uncompSize = r->e.uncompSize;
+    crc = r->e.crc;
+    if (mtime) *mtime = r->mtime;
+    return true;
 }
 
 xrFS::~xrFS() = default;

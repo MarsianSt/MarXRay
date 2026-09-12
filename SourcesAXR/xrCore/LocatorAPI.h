@@ -179,6 +179,12 @@ public:
 	IC IWriter*					w_open_ex			(LPCSTR N){return w_open_ex(0,N);}
 	void						w_close				(IWriter* &S);
 
+	// Parallel warm-up for zdb-backed files: decodes the listed names via the
+	// VFS cache so subsequent r_open()/read_virtual() calls become memcpy.
+	// Entries not present in the archives (or overridden by real files) are
+	// ignored. Call sites pass the same full paths they use with r_open().
+	void						prefetch_zdb		(const xr_vector<shared_str>& names);
+
 	const file*					exist				(LPCSTR N);
 	const file*					exist				(LPCSTR path, LPCSTR name);
 	const file*					exist				(string_path& fn, LPCSTR path, LPCSTR name);

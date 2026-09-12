@@ -1111,9 +1111,6 @@ void CAI_Stalker::shedule_Update		( u32 DT )
 #endif // USE_SCHEDULER_IN_AGENT_MANAGER
 
 //		bool			check = !!get_memory().get_enemy().selected();
-#if 0//def DEBUG
-		get_memory().visual().check_visibles();
-#endif
 		if ( g_mt_config.test(mtAiVision) )
 			Device.seqParallel.push_back(fastdelegate::FastDelegate0<>(this,&CCustomMonster::Exec_Visibility));
 		else {
@@ -1265,26 +1262,6 @@ void CAI_Stalker::Think			()
 //	try {
 		get_movement().update		(update_delta);
 //	}
-#if 0//def DEBUG
-	catch (luabind::cast_failed &message) {
-		LogInfo("! Expression \"%s\" from luabind::object to %s",message.what(),message.info()->name());
-		get_movement().initialize	();
-		get_movement().update		(update_delta);
-		throw;
-	}
-	catch (std::exception &message) {
-		LogInfo("! Expression \"%s\"",message.what());
-		get_movement().initialize	();
-		get_movement().update		(update_delta);
-		throw;
-	}
-	catch (...) {
-		LogInfo("! unknown exception occured");
-		get_movement().initialize	();
-		get_movement().update		(update_delta);
-		throw;
-	}
-#endif // DEBUG
 
 	STOP_PROFILE
 	STOP_PROFILE

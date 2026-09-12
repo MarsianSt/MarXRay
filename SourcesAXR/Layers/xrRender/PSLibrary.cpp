@@ -140,6 +140,20 @@ bool CPSLibrary::Load2()
 
 	FS.file_list				(files, _path, FS_ListFiles, "*.pe,*.pg");
 
+	// Parallel warm-up: decode all particle bodies into the VFS cache before
+	// the serial CInifile parse loop below.
+	{
+		xr_vector<shared_str> pe_paths;
+		pe_paths.reserve(files.size());
+		for (FS_FileSet::iterator it = files.begin(); it != files.end(); ++it)
+		{
+			string_path pe_fn;
+			FS.update_path(pe_fn, "$game_particles$", it->name.c_str());
+			pe_paths.push_back(shared_str(pe_fn));
+		}
+		FS.prefetch_zdb(pe_paths);
+	}
+
 #ifdef _EDITOR
 	SPBItem* pb = NULL;
 	if(UI->m_bReady)

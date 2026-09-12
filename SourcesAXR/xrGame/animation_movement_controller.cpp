@@ -379,9 +379,6 @@ void animation_movement_controller::RootBoneCallback( CBoneInstance* B )
 	B->mTransform.set( Fidentity );
 
 
-#if 0
-	VERIFY( cmp_matrix( O->DBG_previous_position, O->m_pObjXForm, 1.f, 1.f ) );
-#endif
 	R_ASSERT2( _valid( B->mTransform ), "animation_movement_controller::RootBoneCallback" );
 }
 

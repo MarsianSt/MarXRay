@@ -1120,6 +1120,20 @@ void CEnvironment::load_weathers		()
 	{
 		auto file_list = FS.file_list_open("$game_weathers$", "");
 
+		// Parallel warm-up: decode all weather .ltx into the VFS cache before
+		// the serial CInifile parse loop below.
+		{
+			xr_vector<shared_str> weather_paths;
+			weather_paths.reserve(file_list->size());
+			for (const char* file : *file_list)
+			{
+				string_path wf;
+				FS.update_path(wf, "$game_weathers$", file);
+				weather_paths.push_back(shared_str(wf));
+			}
+			FS.prefetch_zdb(weather_paths);
+		}
+
 		for (const char* file : *file_list)
 		{
 			const size_t length = strlen(file);
@@ -1188,6 +1202,21 @@ void CEnvironment::load_weather_effects	()
 		typedef xr_vector<LPSTR>		file_list_type;
 		file_list_type*					file_list = FS.file_list_open("$game_weather_effects$","");
 		VERIFY							(file_list);
+
+		// Parallel warm-up: decode all weather-effects .ltx into the VFS cache
+		// before the serial CInifile parse loop below.
+		{
+			xr_vector<shared_str> wfx_paths;
+			wfx_paths.reserve(file_list->size());
+			for (file_list_type::iterator i2 = file_list->begin(); i2 != file_list->end(); ++i2)
+			{
+				string_path wfx_fn;
+				FS.update_path(wfx_fn, "$game_weather_effects$", *i2);
+				xr_strcat(wfx_fn, ".ltx");
+				wfx_paths.push_back(shared_str(wfx_fn));
+			}
+			FS.prefetch_zdb(wfx_paths);
+		}
 
 		file_list_type::const_iterator	i = file_list->begin();
 		file_list_type::const_iterator	e = file_list->end();

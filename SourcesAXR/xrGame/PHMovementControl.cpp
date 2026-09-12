@@ -1723,10 +1723,6 @@ void		CPHMovementControl::		GetCharacterVelocity		(Fvector& velocity )
 
 #ifdef DEBUG
 	void		CPHMovementControl::		dbg_Draw(){
-#if 0
-		if(m_character)
-			m_character->OnRender();
-#endif
 	};
 #endif
 

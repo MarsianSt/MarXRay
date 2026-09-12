@@ -1,4 +1,6 @@
 *.VC.db
+# Game data / build output (too large for GitHub, and not sources)
+/Game/
 /intermediate
 *.VC.VC.opendb
 *.cache

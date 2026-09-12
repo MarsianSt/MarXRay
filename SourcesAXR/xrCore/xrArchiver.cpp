@@ -6,6 +6,8 @@
 #include <filesystem>
 #include <mutex>
 #include <algorithm>
+#include <atomic>
+#include <map>
 #include "zstd/zstd.h"
 #include "_types.h"
 #include "rt_compressor.h"
@@ -167,11 +169,13 @@ namespace
     }
 }
 
-static size_t write_zip_local(std::vector<char>& out, const std::string& name,
-    const std::vector<char>& compData, uint64_t uncompSize, uint32_t crc) {
+// Appends a ZIP local file header (+ optional ZIP64 extra field) and returns
+// the header block size. The caller owns the payload, so a whole entry can be
+// streamed to disk (header + payload) without copying the compressed data.
+static size_t append_zip_local_header(std::vector<char>& out, const std::string& name,
+    uint64_t compSize, uint64_t uncompSize, uint32_t crc) {
     ZipLocalHeader hdr;
     hdr.crc32 = crc;
-    const uint64_t compSize = uint64_t(compData.size());
     const bool needComp = compSize > 0xFFFFFFFE;
     const bool needUncomp = uncompSize > 0xFFFFFFFE;
     const bool zip64 = needComp || needUncomp;
@@ -193,8 +197,14 @@ static size_t write_zip_local(std::vector<char>& out, const std::string& name,
     out.insert(out.end(), (char*)&hdr, (char*)&hdr + sizeof(hdr));
     out.insert(out.end(), name.begin(), name.end());
     out.insert(out.end(), extra.begin(), extra.end());
+    return sizeof(ZipLocalHeader) + name.size() + extra.size();
+}
+
+static size_t write_zip_local(std::vector<char>& out, const std::string& name,
+    const std::vector<char>& compData, uint64_t uncompSize, uint32_t crc) {
+    const size_t headSize = append_zip_local_header(out, name, compData.size(), uncompSize, crc);
     out.insert(out.end(), compData.begin(), compData.end());
-    return sizeof(ZipLocalHeader) + name.size() + extra.size() + compData.size();
+    return headSize + compData.size();
 }
 
 static void write_zip_central(std::vector<char>& out, const std::string& name,
@@ -371,7 +381,16 @@ bool xrArchiver::pack_zdb(
 {
     if (file_paths.empty()) return false;
 
-    std::vector<char> zipData;
+    // Streaming mode: each compressed entry is flushed to disk right after its
+    // file is processed, so peak memory stays proportional to the largest few
+    // files instead of the whole archive. Only the small central directory is
+    // (re)assembled in memory at the very end.
+    const std::string fullPath = fs().join_path(output_dir, archive_name);
+    std::error_code ec;
+    std::filesystem::create_directories(std::filesystem::path(fullPath).parent_path(), ec);
+    std::ofstream out(fullPath, std::ios::binary | std::ios::trunc);
+    if (!out) return false;
+
     struct FileEntry {
         std::string name;
         uint64_t compSize;
@@ -380,26 +399,31 @@ bool xrArchiver::pack_zdb(
         uint32_t crc;
     };
 
-    std::vector<FileEntry> entries;
+    const size_t count = file_paths.size();
+    std::vector<FileEntry> entries(count);
+    std::atomic<bool> allOk{true};
+    std::mutex writeMutex;
     uint64_t currentOffset = 0;
 
-    for (const auto& path : file_paths) {
+    // One file: load -> CRC -> zstd compress -> stream the entry to disk under
+    // the write mutex. Used both by the direct loop and the task range.
+    auto processFile = [&](uint32_t i) {
         std::vector<char> raw;
-        if (!fs().read_file(path, raw)) return false;
+        if (!fs().read_file(file_paths[i], raw)) {
+            allOk.store(false, std::memory_order_relaxed);
+            return;
+        }
 
-        uint64_t uncompSize = static_cast<uint64_t>(raw.size());
-        uint32_t crc = crc32_compute(raw.data(), raw.size());
+        const uint64_t uncompSize = static_cast<uint64_t>(raw.size());
+        const uint32_t crc = crc32_compute(raw.data(), raw.size());
 
         std::vector<char> compressed;
-        if (raw.empty()) {
-            compressed.clear();
-        } else {
+        if (!raw.empty()) {
             // Entries larger than a chunk are stored as a sequence of
             // independent zstd frames (concatenated). Method 93 stays the
             // same, 7-Zip's zstd decoder reads concatenated frames fine,
             // and the VFS can decompress such entries in parallel.
             static const size_t kChunkSize = 8 * 1024 * 1024;
-            compressed.reserve(ZSTD_compressBound(raw.size()));
             size_t rawOff = 0;
             while (rawOff < raw.size()) {
                 const size_t chunk = std::min(kChunkSize, raw.size() - rawOff);
@@ -408,40 +432,247 @@ bool xrArchiver::pack_zdb(
                 compressed.resize(oldSize + bound);
                 const size_t cs = ZSTD_compress(compressed.data() + oldSize, bound,
                     raw.data() + rawOff, chunk, compression_level);
-                if (ZSTD_isError(cs)) return false;
+                if (ZSTD_isError(cs)) {
+                    allOk.store(false, std::memory_order_relaxed);
+                    break;
+                }
                 compressed.resize(oldSize + cs);
                 rawOff += chunk;
             }
         }
 
-        std::string name = zip_entry_name(base_dir, path);
-        if (name.size() > UINT16_MAX) return false;
+        const std::string name = zip_entry_name(base_dir, file_paths[i]);
+        if (name.size() > UINT16_MAX) {
+            allOk.store(false, std::memory_order_relaxed);
+            return;
+        }
 
-        entries.push_back({ name, uint64_t(compressed.size()), uncompSize, currentOffset, crc });
-        currentOffset += uint64_t(write_zip_local(zipData, name, compressed, uncompSize, crc));
+        std::vector<char> header;
+        const size_t headerSize = append_zip_local_header(header, name,
+            static_cast<uint64_t>(compressed.size()), uncompSize, crc);
+
+        std::lock_guard<std::mutex> lock(writeMutex);
+        entries[i] = { name, uint64_t(compressed.size()), uncompSize, currentOffset, crc };
+        if (out)
+        {
+            out.write(header.data(), header.size());
+            if (!compressed.empty()) out.write(compressed.data(), compressed.size());
+            currentOffset += headerSize + compressed.size();
+        }
+        else
+        {
+            allOk.store(false, std::memory_order_relaxed);
+        }
+    };
+
+    if (CTaskManager::IsInsideTask()) {
+        // Nested call (e.g. pack_zdb_smart packing jobs through task workers):
+        // running AddTaskRange + WaitAll here would make worker threads wait on
+        // tasks only they themselves could run - deadlock. Fall back to the
+        // sequential loop; parallelism is provided by the outer task layer.
+        for (uint32_t i = 0; i < count; ++i)
+            processFile(i);
+    }
+    else {
+        // Top-level call: parallel per-file I/O + CRC + compression via
+        // CTaskManager. Each finished entry is streamed to disk under the write
+        // mutex; archive offsets are derived from the running byte counter, so
+        // entry order in the ZIP file may be arbitrary while the central
+        // directory stays correct.
+        CTaskManager::AddTaskRange(
+            [&](uint32_t a, uint32_t b, uint32_t) {
+                for (uint32_t i = a; i < b; ++i) processFile(i);
+            },
+            static_cast<uint32_t>(count), 1
+        );
+        CTaskManager::WaitAll();
     }
 
-    uint64_t cdOffset = uint64_t(zipData.size());
+    if (!allOk.load(std::memory_order_relaxed)) {
+        out.close();
+        std::error_code rmEc;
+        std::filesystem::remove(fullPath, rmEc);
+        return false;
+    }
+
+    // Central directory + ZIP64/EOCD tail (small, assembled in memory).
+    const uint64_t cdOffset = currentOffset;
     uint64_t cdSize = 0;
+    std::vector<char> tail;
     for (const auto& e : entries) {
-        const size_t cdStart = zipData.size();
-        write_zip_central(zipData, e.name, e.compSize, e.uncompSize, e.localOffset, e.crc);
-        cdSize += uint64_t(zipData.size() - cdStart);
+        const size_t cdStart = tail.size();
+        write_zip_central(tail, e.name, e.compSize, e.uncompSize, e.localOffset, e.crc);
+        cdSize += uint64_t(tail.size() - cdStart);
     }
 
-    const bool zip64 = entries.size() > 0xFFFE || cdOffset > 0xFFFFFFFE || cdSize > 0xFFFFFFFE;
+    const bool zip64 = count > 0xFFFE || cdOffset > 0xFFFFFFFE || cdSize > 0xFFFFFFFE;
     if (zip64) {
-        append_zip64_eocd(zipData, entries.size(), cdOffset, cdSize);
-        append_zip64_eocd_locator(zipData, cdOffset + cdSize);
+        append_zip64_eocd(tail, count, cdOffset, cdSize);
+        append_zip64_eocd_locator(tail, cdOffset + cdSize);
     }
 
     ZipEndRecord eocd;
-    eocd.totalEntriesDisk = static_cast<uint16_t>(entries.size() > 0xFFFE ? 0xFFFF : entries.size());
+    eocd.totalEntriesDisk = static_cast<uint16_t>(count > 0xFFFE ? 0xFFFF : count);
     eocd.totalEntries = eocd.totalEntriesDisk;
     eocd.centralDirSize = cdSize > 0xFFFFFFFE ? 0xFFFFFFFF : static_cast<uint32_t>(cdSize);
     eocd.centralDirOffset = cdOffset > 0xFFFFFFFE ? 0xFFFFFFFF : static_cast<uint32_t>(cdOffset);
-    zipData.insert(zipData.end(), (char*)&eocd, (char*)&eocd + sizeof(eocd));
+    tail.insert(tail.end(), (char*)&eocd, (char*)&eocd + sizeof(eocd));
 
-    const std::string fullPath = fs().join_path(output_dir, archive_name);
-    return fs().write_file(fullPath, zipData);
+    out.write(tail.data(), tail.size());
+    bool ok = (bool)out;
+    out.close();
+    if (!ok) {
+        std::error_code rmEc;
+        std::filesystem::remove(fullPath, rmEc);
+    }
+    return ok;
+}
+
+struct SmartGroup {
+    std::string folder;
+    std::string archive;
+    std::vector<std::string> files;
+};
+
+// Recursively collect regular files under base_dir into `files`.
+static void pack_tree_collect(const std::string& base_dir, std::vector<std::string>& files)
+{
+    std::error_code ec;
+    std::filesystem::recursive_directory_iterator it(
+        base_dir, std::filesystem::directory_options::skip_permission_denied, ec), end;
+    for (; it != end; it.increment(ec))
+    {
+        if (ec) { ec.clear(); continue; }
+        if (!it->is_regular_file(ec)) continue;
+        if (ec) { ec.clear(); continue; }
+
+        const std::filesystem::path full = it->path();
+        const std::filesystem::path rel = std::filesystem::relative(full, base_dir, ec);
+        if (ec) { ec.clear(); continue; }
+        if (rel.is_absolute()) continue;
+
+        std::string name = rel.string();
+        for (char& c : name) if (c == '\\') c = '/';
+        if (name.size() > UINT16_MAX) continue;
+
+        files.push_back(full.string());
+    }
+}
+
+// Relative path from base to full with '/' separators (archive member key).
+static std::string pack_rel_key(const std::string& base, const std::string& full)
+{
+    std::error_code ec;
+    std::string r = std::filesystem::relative(full, base, ec).string();
+    if (ec) r = full;
+    for (char& c : r) if (c == '\\') c = '/';
+    return r;
+}
+
+bool xrArchiver::pack_zdb_smart(
+    const std::string& base_dir,
+    const std::string& output_root,
+    std::vector<ZdbResult>* results,
+    unsigned int resource_bins,
+    int compression_level)
+{
+    if (resource_bins == 0) resource_bins = 1;
+
+    std::vector<std::string> all;
+    pack_tree_collect(base_dir, all);
+    if (all.empty()) return false;
+
+    // ---- partition ----
+    std::map<std::string, SmartGroup> levelGroups;   // SP levels
+    std::map<std::string, SmartGroup> mpGroups;      // MP levels
+    std::vector<std::string> configsScripts;
+    std::vector<std::pair<std::string, unsigned long long>> resourcePool;
+
+    for (const auto& full : all)
+    {
+        const std::string key = pack_rel_key(base_dir, full);
+        const unsigned long long sz = (unsigned long long)fs().file_size(full);
+
+        if (key.rfind("levels/", 0) == 0)
+        {
+            const std::string rest = key.substr(7);
+            const auto slash = rest.find('/');
+            const std::string lv = (slash == std::string::npos) ? rest : rest.substr(0, slash);
+            if (!lv.empty())
+            {
+                const bool isMp = lv.rfind("mp_", 0) == 0;
+                auto& m = isMp ? mpGroups : levelGroups;
+                auto& g = m[lv];
+                g.folder = isMp ? "mp" : "levels";
+                g.archive = lv + ".zdb";
+                g.files.push_back(full);
+                continue;
+            }
+        }
+        if (key.rfind("configs/", 0) == 0 || key.rfind("scripts/", 0) == 0)
+        {
+            configsScripts.push_back(full);
+            continue;
+        }
+        resourcePool.emplace_back(full, sz);
+    }
+
+    // ---- balance resource pool into resource_bins bins (greedy: largest -> lightest bin) ----
+    std::sort(resourcePool.begin(), resourcePool.end(),
+        [](const auto& a, const auto& b) { return a.second > b.second; });
+    std::vector<SmartGroup> resourceGroups(resource_bins);
+    std::vector<unsigned long long> binSize(resource_bins, 0);
+    for (size_t i = 0; i < resource_bins; ++i)
+        resourceGroups[i].archive = "resources." + std::to_string(i + 1) + ".zdb";
+    for (const auto& [full, sz] : resourcePool)
+    {
+        const size_t binI = size_t(std::min_element(binSize.begin(), binSize.end()) - binSize.begin());
+        resourceGroups[binI].files.push_back(full);
+        binSize[binI] += sz;
+    }
+
+    // ---- jobs: folder + archive name + files ----
+    struct Job { std::string folder; std::string archive; std::vector<std::string> files; };
+    std::vector<Job> jobs;
+    for (auto& kv : levelGroups) jobs.push_back({ kv.second.folder, kv.second.archive, std::move(kv.second.files) });
+    for (auto& kv : mpGroups)    jobs.push_back({ kv.second.folder, kv.second.archive, std::move(kv.second.files) });
+    if (!configsScripts.empty()) jobs.push_back({ "", "configs_scripts.zdb", std::move(configsScripts) });
+    for (auto& g : resourceGroups)
+        if (!g.files.empty()) jobs.push_back({ "", std::move(g.archive), std::move(g.files) });
+
+    // ---- pack all jobs ----
+    // Jobs are packed SEQUENTIALLY (no task layer here): each pack_zdb call runs
+    // on this thread and internally parallelizes its files across ALL worker
+    // threads via AddTaskRange + WaitAll. Nesting pack_zdb inside tasks would
+    // make workers wait on tasks only they could run (deadlock) or, with the
+    // IsInsideTask() fallback, degrade to the single I/O-bound thread per job
+    // (low CPU utilization). Sequential top-level calls keep all cores busy.
+    const size_t N = jobs.size();
+    std::vector<int> jobOk(N, 0);
+
+    for (uint32_t i = 0; i < N; ++i)
+    {
+        const auto& j = jobs[i];
+        const std::string outDir = std::filesystem::path(output_root).append(j.folder).string();
+        std::error_code ec;
+        std::filesystem::create_directories(std::filesystem::path(outDir), ec);
+        jobOk[i] = xrArchiver::pack_zdb(outDir, j.archive, j.files, base_dir, compression_level) ? 1 : 0;
+    }
+
+    if (results)
+    {
+        results->clear();
+        for (size_t i = 0; i < N; ++i)
+        {
+            const auto& j = jobs[i];
+            const std::string fp = std::filesystem::path(output_root).append(j.folder).append(j.archive).string();
+            std::error_code ec;
+            const uint64_t csz = std::filesystem::file_size(fp, ec);
+            uint64_t usz = 0;
+            for (const auto& f : j.files) usz += (uint64_t)fs().file_size(f);
+            results->push_back({ j.folder, j.archive, usz, ec ? 0 : csz });
+        }
+    }
+
+    return std::all_of(jobOk.begin(), jobOk.end(), [](int x) { return x != 0; });
 }

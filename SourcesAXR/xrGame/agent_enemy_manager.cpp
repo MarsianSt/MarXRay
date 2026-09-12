@@ -411,16 +411,6 @@ void CAgentEnemyManager::assign_wounded			()
 {
 	VERIFY					(m_only_wounded_left);
 
-#if 0//def DEBUG
-	u32						enemy_mask = 0;
-	ENEMIES::iterator		I = m_enemies.begin();
-	ENEMIES::iterator		E = m_enemies.end();
-	for ( ; I != E; ++I) {
-		VERIFY				(!(*I).m_distribute_mask.get());
-		enemy_mask			|= (*I).m_mask.get();
-	}
-	VERIFY					(enemy_mask == object().get_member().combat_mask());
-#endif // DEBUG
 
 	u32						previous_wounded_count = m_wounded.size();
 	WOUNDED_ENEMY			*previous_wounded = (WOUNDED_ENEMY*)_alloca(previous_wounded_count*sizeof(WOUNDED_ENEMY));

@@ -41,9 +41,6 @@
 
 #define DISABLE_COVER_BEFORE_DETOUR
 
-#if 0//def DEBUG
-#	define TEST_MENTAL_STATE
-#endif // DEBUG
 
 const float TEMP_DANGER_DISTANCE	= 5.f;
 const u32	TEMP_DANGER_INTERVAL	= 120000;

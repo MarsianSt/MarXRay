@@ -50,6 +50,30 @@ public:
         const std::string& base_dir,
         int compression_level);
 
+    // "Умная" упаковка всей дерева данных (адаптировано из test_pack/smartpack):
+    //   levels/<lv>/** где <lv> не начинается с "mp_" -> levels/<lv>.zdb
+    //   levels/mp_*/**                             -> mp/<lv>.zdb
+    //   configs/** или scripts/**                  -> configs_scripts.zdb
+    //   всё остальное                              -> resource_bins сбалансированных
+    //                                                 по суммарному размеру resources.N.zdb
+    // Дерево собирается рекурсивно из base_dir, имена членов в архивах — относительно
+    // base_dir. Каждый архив пакуется через многопоточный pack_zdb, сами архивы
+    // строятся параллельно через CTaskManager. Результаты (если results != nullptr)
+    // заполняются для каждого построенного архива в порядке его обработки.
+    // Возвращает true только если все архивы собраны успешно.
+    struct ZdbResult {
+        std::string folder;
+        std::string archive;
+        uint64_t uncompressed = 0;  // сумма исходных размеров файлов
+        uint64_t compressed = 0;    // размер получившегося архива (0 если файл отсутствует)
+    };
+    static bool pack_zdb_smart(
+        const std::string& base_dir,
+        const std::string& output_root,
+        std::vector<ZdbResult>* results = nullptr,
+        unsigned int resource_bins = 4,
+        int compression_level = 3);
+
 private:
     static void fill_tar_header(char header[512], const std::string& filename, uint64_t filesize);
 

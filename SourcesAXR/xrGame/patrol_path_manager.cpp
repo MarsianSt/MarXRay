@@ -177,18 +177,6 @@ void CPatrolPathManager::select_point(const Fvector &position, u32 &dest_vertex_
 
 		m_curr_point_index	= vertex->vertex_id();
 
-#if 0
-		// ���� ��������� ���� �� ������������� ������� ���� - ��� ��
-		// ����� ������� ��������� ������� ����������� ����
-		if (vertex->data().level_vertex_id() != m_game_object->ai_location().level_vertex_id()) {
-			dest_vertex_id		= vertex->data().level_vertex_id();
-			m_dest_position		= vertex->data().position();
-			VERIFY				(accessible(m_dest_position) || show_restrictions(m_object));
-			m_actuality			= true;
-			m_completed			= false;
-			return;
-		}
-#else
 		if (!m_game_object->Position().similar(vertex->data().position(),.1f)) {
 			dest_vertex_id		= vertex->data().level_vertex_id();
 			m_dest_position		= vertex->data().position();
@@ -197,7 +185,6 @@ void CPatrolPathManager::select_point(const Fvector &position, u32 &dest_vertex_
 			m_completed			= false;
 			return;
 		}
-#endif
 	}
 	VERIFY3					(m_path->vertex(m_curr_point_index) || show_restrictions(m_object),*m_path_name,*m_game_object->cName());
 

@@ -296,13 +296,6 @@ Fvector	CSightManager::aiming_position				() const
 {
 	Fvector						result;
 
-#if 0
-	Fmatrix								player_head;
-	IKinematics* actor_kinematics		= smart_cast<IKinematics*>(Actor()->Visual());
-	actor_kinematics->Bone_GetAnimPos	(player_head, actor_kinematics->LL_BoneID("bip01_head"), 1, false);
-	player_head.mulA_43					(Actor()->XFORM());
-	return								( player_head.c );
-#endif // #if 0
 
 #ifdef DEBUG
 	result.set					(flt_max, flt_max, flt_max);

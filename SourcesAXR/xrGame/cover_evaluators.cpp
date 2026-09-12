@@ -232,9 +232,6 @@ void CCoverEvaluatorBest::evaluate_cover			(const CCoverPoint *cover_point, floa
 
 void CCoverEvaluatorBest::evaluate_smart_cover(smart_cover::cover const *smart_cover, float const &weight)
 {
-#if 0
-	return;
-#else
 	if (!m_can_use_smart_covers)
 		return;
 
@@ -251,7 +248,6 @@ void CCoverEvaluatorBest::evaluate_smart_cover(smart_cover::cover const *smart_c
 	m_selected						= smart_cover;
 	m_loophole						= best_loophole;
 //	LogInfo("Loophole is NULL CCoverEvaluatorBest::evaluate_cover");
-#endif // #if 1
 }
 
 //////////////////////////////////////////////////////////////////////////

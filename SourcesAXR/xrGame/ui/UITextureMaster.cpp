@@ -109,7 +109,8 @@ void CUITextureMaster::InitTexture(const shared_str& texture_name, CUIStaticItem
 		xr_sprintf(str, "%s, %s", texture_name.c_str(), shader_name.c_str());
 		LogInfo("UI:Initing texture = %s, stutter time = %fms", str, time.GetElapsed_sec() * 1000.f);
 		shared_str str2 = str;
-		MainMenu()->SuggestedForPrefetching.push_back(str2);
+		if (MainMenu())
+			MainMenu()->SuggestedForPrefetching.push_back(str2);
 	}
 }
 

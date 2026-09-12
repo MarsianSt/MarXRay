@@ -250,12 +250,6 @@ private:
 
     float theta1_d_aux(float v, float delta) const;
 
-#if 0
-    void clip(int family, 
-	      float psi0, float psi1, 
-	      float low, float high, 
-	      AngleIntList &a) const;
-#else
     void clip(float low, float high, 
 	      int family,
 	      int n,
@@ -272,7 +266,6 @@ private:
 		 float *f1,
 		 int &n2,		
 		 float *f2) const;
-#endif
 
     // Used by Solve and Solve2
     int solve_aux(float v, float tan_v, float *solns) const;

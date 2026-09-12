@@ -16,8 +16,6 @@
 #include "gamefont.h"
 #include "render.h"
 
-#include <D3DX10Math.h>
-
 float	psCamInert		= 0.f;
 float	psCamSlideInert	= 0.25f;
 
@@ -505,7 +503,6 @@ void CCameraManager::ApplyDeviceInternal(float _viewport_near)
 	if (Render->currentViewPort == MAIN_VIEWPORT)
 	{
 		Device.mFullTransform.mul(Device.mProject, Device.mView);
-		D3DXMatrixInverse((D3DXMATRIX*)&Device.mInvFullTransform, 0, (D3DXMATRIX*)&Device.mFullTransform);
 	}
 
 	if( g_pGamePersistent && g_pGamePersistent->m_pMainMenu->IsActive() )

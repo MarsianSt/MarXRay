@@ -551,50 +551,41 @@ void CLocatorAPI::MountZDB()
 		return;
 	}
 
-	u32				mounted = 0, registered = 0;
-	for (const std::string& arc : archives)
+	// Mount all archives in parallel: every archive is mmap'd and its central
+	// directory parsed across the worker pool (xrFS::mount_zdb_many), then the
+	// merged flat index is registered into the locator in one pass.
+	const size_t mounted = vfs.mount_zdb_many(archives, virtual_root);
+	if (mounted == 0)
 	{
-		u32				arc_time = 0;
-		{
-			std::error_code fm_ec;
-			const auto	fst = std::filesystem::last_write_time(std::filesystem::path(arc), fm_ec);
-			if (!fm_ec)
-				arc_time = (u32)std::chrono::duration_cast<std::chrono::seconds>(
-					fst.time_since_epoch()).count();
-		}
-
-		if (!vfs.mount_zdb(arc, virtual_root))
-		{
-			LogInfo("VFS: cannot mount [%s]", arc.c_str());
-			continue;
-		}
-		++mounted;
-
-		const std::vector<std::string> names = vfs.list_last_archive_files();
-		for (const std::string& rel : names)
-		{
-			// locator key: gamedata root + relative entry name, '\' separators
-			string_path	key;
-			strconcat	(sizeof(key), key, game_data_root, rel.c_str());
-			for (char* c = key + gd_len; *c; ++c)
-				if (*c == '/') *c = '\\';
-
-			// real files (and addons) virtually override the archive entries
-			if (file_find_it(key) != m_files.end())
-				continue;
-
-			u32			size = 0, crc = 0;
-			vfs.archive_meta(rel, size, crc);
-
-			Register	(key, ZDB_VFS, crc, 0, size, size, arc_time);
-			++registered;
-
-			if (strstr(rel.c_str(), "prefetch/prefetch.ltx"))
-				LogInfo("VFS-DBG registered key: [%s] size=%u", key, size);
-		}
+		LogInfo("VFS: no zdb archives could be mounted from [%s]", zdb_dir);
+		return;
 	}
 
-	LogInfo("VFS: mounted %d zdb archive(s), %d virtual file(s) registered", mounted, registered);
+	u32				registered = 0;
+	const std::vector<std::string> names = vfs.list_archive_files();
+	for (const std::string& rel : names)
+	{
+		// locator key: gamedata root + relative entry name, '\' separators
+		string_path	key;
+		strconcat	(sizeof(key), key, game_data_root, rel.c_str());
+		for (char* c = key + gd_len; *c; ++c)
+			if (*c == '/') *c = '\\';
+
+		// real files (and addons) virtually override the archive entries
+		if (file_find_it(key) != m_files.end())
+			continue;
+
+		u32			size = 0, crc = 0, arc_time = 0;
+		vfs.archive_meta(rel, size, crc, &arc_time);
+
+		Register	(key, ZDB_VFS, crc, 0, size, size, arc_time);
+		++registered;
+
+		if (strstr(rel.c_str(), "prefetch/prefetch.ltx"))
+			LogInfo("VFS-DBG registered key: [%s] size=%u", key, size);
+	}
+
+	LogInfo("VFS: mounted %d zdb archive(s), %d virtual file(s) registered", (int)mounted, registered);
 }
 
 bool CLocatorAPI::select_zdb_archive(LPCSTR filename) const
@@ -605,6 +596,17 @@ bool CLocatorAPI::select_zdb_archive(LPCSTR filename) const
 	if (0 != stricmp(ext, ".zdb"))
 		return false;
 	return true;
+}
+
+void CLocatorAPI::prefetch_zdb(const xr_vector<shared_str>& names)
+{
+	if (names.empty())
+		return;
+	std::vector<std::string> paths;
+	paths.reserve(names.size());
+	for (const shared_str& n : names)
+		paths.push_back(n.c_str());
+	xrFS::instance().prefetch_virtual(paths);
 }
 
 void CLocatorAPI::unload_archive(CLocatorAPI::archive& A)

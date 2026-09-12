@@ -96,12 +96,6 @@ animation_action const &action::get_animation	(MonsterSpace::EBodyState const &t
 		return					(get_animation());
 	}
 
-#if 0 //for testing
-	VERIFY2						(
-		found != m_animations.end(),
-		make_string("There is no animation which can transfer bot to body_state [%i]", target_body_state)
-	);
-#endif
 
 	return						(**found);
 }

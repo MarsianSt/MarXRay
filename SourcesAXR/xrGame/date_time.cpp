@@ -8,34 +8,6 @@
 
 #include "stdafx.h"
 
-#if 0
-#define CHECK_YEAR(year)	\
-	do {\
-		generate_time	( year - 1, 12, 31, 0, 0, 0, 0);\
-		generate_time	( year,      1,  1, 0, 0, 0, 0);\
-		generate_time	( year,      2, 28, 0, 0, 0, 0);\
-		if ((year % 400 == 0) || ((year % 4 == 0) && (year % 100 != 0)) )\
-			generate_time	( year,      2, 29, 0, 0, 0, 0);\
-	} while (0)
-
-	generate_time	( 1, 1,  1, 0, 0, 0, 0);
-	generate_time	( 1, 2, 28, 0, 0, 0, 0);
-	CHECK_YEAR		(  2);
-	CHECK_YEAR		(  3);
-	CHECK_YEAR		(  4);
-	CHECK_YEAR		(  5);
-	CHECK_YEAR		(1600);
-	CHECK_YEAR		(1700);
-	CHECK_YEAR		(1800);
-	CHECK_YEAR		(1900);
-	CHECK_YEAR		(2000);
-	CHECK_YEAR		(2010);
-	CHECK_YEAR		(2011);
-	CHECK_YEAR		(2012);
-	CHECK_YEAR		(2013);
-
-#undef CHECK_YEAR
-#endif // #if 0
 
 static u64 generate_time_impl	(u32 years, u32 months, u32 days, u32 hours, u32 minutes, u32 seconds, u32 milliseconds)
 {
@@ -129,17 +101,6 @@ u64	generate_time				(u32 years, u32 months, u32 days, u32 hours, u32 minutes, u
 	u64 const result			= generate_time_impl(years, months, days, hours, minutes, seconds, milliseconds);
 
 #ifdef DEBUG
-#	if 0
-	{
-		u64 const milliseconds_in_day	= 24*60*60*1000;
-		u32						l_years, l_months, l_days, l_hours, l_minutes, l_seconds, l_milliseconds;
-		if (years > 1 || months > 1 || days > 1)
-			split_time_impl		(result - milliseconds_in_day, l_years, l_months, l_days, l_hours, l_minutes, l_seconds, l_milliseconds);
-		split_time_impl			(result, l_years, l_months, l_days, l_hours, l_minutes, l_seconds, l_milliseconds);
-		split_time_impl			(result + milliseconds_in_day, l_years, l_months, l_days, l_hours, l_minutes, l_seconds, l_milliseconds);
-		split_time_impl			(result, l_years, l_months, l_days, l_hours, l_minutes, l_seconds, l_milliseconds);
-	}
-#	endif // #if 0
 	u32							l_years, l_months, l_days, l_hours, l_minutes, l_seconds, l_milliseconds;
 	split_time_impl				(result, l_years, l_months, l_days, l_hours, l_minutes, l_seconds, l_milliseconds);
 	u64 const new_result		= generate_time_impl(l_years, l_months, l_days, l_hours, l_minutes, l_seconds, l_milliseconds);

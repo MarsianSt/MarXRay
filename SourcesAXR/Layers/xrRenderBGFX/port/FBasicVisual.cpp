@@ -92,7 +92,7 @@ void dxRender_Visual::Load(const char* N, IReader* data, u32)
 {
 
 	dbg_name = N;
-	LogInfo("--- bgfxport dxRender_Visual::Load name=%s", N ? N : "(null)");
+	LogInfo("dxRender_Visual::Load name=%s", N ? N : "(null)");
 
 	// header
 	VERIFY(data);
@@ -120,7 +120,7 @@ void dxRender_Visual::Load(const char* N, IReader* data, u32)
 		if (Type <= 2) {
 			static int s_texLog = 0;
 			if (s_texLog < 10) { ++s_texLog;
-				LogInfo("--- bgfxport OGF_TEXTURE type=%d name='%s' tex='%s' shd='%s'", Type, N, fnT, fnS);
+				LogInfo("OGF_TEXTURE type=%d name='%s' tex='%s' shd='%s'", Type, N, fnT, fnS);
 			}
 		}
 		if (replaceShaders(N, fnS, sizeof fnS)) {

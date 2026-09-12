@@ -191,7 +191,7 @@ namespace
 			for (u32 b = 0; b < chunk; b++)
 				sprintf(hex + b * 2, "%02X", p[off + b]);
 			hex[chunk * 2] = 0;
-			LogInfo("--- bgfxport %s+%04X: %s", tag, off, hex);
+			LogInfo("%s+%04X: %s", tag, off, hex);
 			off += chunk;
 			if (off >= 512) break;
 		}
@@ -205,10 +205,10 @@ namespace
 		while (n < maxN && (prev = fs->open_chunk_iterator(id, prev)) != 0)
 		{
 			if (n < 60)
-				LogInfo("--- bgfxport %s[%d] id=%u len=%u", tag, n, id, (u32)prev->length());
+				LogInfo("%s[%d] id=%u len=%u", tag, n, id, (u32)prev->length());
 			++n;
 		}
-		LogInfo("--- bgfxport %s total=%d", tag, n);
+		LogInfo("%s total=%d", tag, n);
 	}
 }
 
@@ -218,7 +218,7 @@ void CRender::load_visuals(IReader* fs)
 	IReader* vis = fs->open_chunk(fsL_VISUALS);
 	if (!vis)
 	{
-		LogInfo("--- bgfxport VIS: fsL_VISUALS NOT FOUND");
+		LogInfo("VIS: fsL_VISUALS NOT FOUND");
 		return;
 	}
 	dumpHex("VIS3", vis, 512);
@@ -236,18 +236,18 @@ void CRender::load_visuals(IReader* fs)
 	{
 		chunk->r_chunk_safe(OGF_HEADER, &H, sizeof(H));
 		if (index < 8)
-			LogInfo("--- bgfxport LVIS[%u] type=%u shader_id=%u", index, (u32)H.type, (u32)H.shader_id);
+			LogInfo("LVIS[%u] type=%u shader_id=%u", index, (u32)H.type, (u32)H.shader_id);
 		if (index < 2)
 			dumpChunkIterator("VISOGF", chunk, 40);
 		V = pool->Instance_Create((u16)H.type);
 		V->Load(0, chunk, 0);
 		Visuals.push_back(V);
-		LogInfo("--- bgfxport LVIS visual[%u] type=%u", index, (u32)H.type);
+		LogInfo("LVIS visual[%u] type=%u", index, (u32)H.type);
 		chunk->close();
 		index++;
 	}
 	vis->close();
-	LogInfo("--- bgfxport VIS: visuals loaded=%u", (u32)Visuals.size());
+	LogInfo("VIS: visuals loaded=%u", (u32)Visuals.size());
 }
 
 // ============================================================================
@@ -263,7 +263,7 @@ void CRender::load_buffers(IReader* geomFile, bool fast)
 	IReader* fs = geomFile->open_chunk(fsL_VB);
 	if (!fs)
 	{
-		LogInfo("--- bgfxport GEOM: fsL_VB NOT FOUND");
+		LogInfo("GEOM: fsL_VB NOT FOUND");
 		return;
 	}
 	u32 count = fs->r_u32();
@@ -292,7 +292,7 @@ void CRender::load_buffers(IReader* geomFile, bool fast)
 	fs = geomFile->open_chunk(fsL_IB);
 	if (!fs)
 	{
-		LogInfo("--- bgfxport GEOM: fsL_IB NOT FOUND");
+		LogInfo("GEOM: fsL_IB NOT FOUND");
 		return;
 	}
 	count = fs->r_u32();
@@ -309,7 +309,7 @@ void CRender::load_buffers(IReader* geomFile, bool fast)
 	}
 	fs->close();
 
-	LogInfo("--- bgfxport GEOM: %s VB=%u IB=%u", fast ? "fast" : "main", (u32)_VB.size(), (u32)_IB.size());
+	LogInfo("GEOM: %s VB=%u IB=%u", fast ? "fast" : "main", (u32)_VB.size(), (u32)_IB.size());
 }
 
 // ============================================================================
@@ -320,7 +320,7 @@ void CRender::load_swis(IReader* geomFile)
 	IReader* fs = geomFile->open_chunk(fsL_SWIS);
 	if (!fs)
 	{
-		LogInfo("--- bgfxport GEOM: fsL_SWIS NOT FOUND");
+		LogInfo("GEOM: fsL_SWIS NOT FOUND");
 		return;
 	}
 	u32 item_count = fs->r_u32();
@@ -339,7 +339,7 @@ void CRender::load_swis(IReader* geomFile)
 		fs->r(swi.sw, sizeof(FSlideWindow) * swi.count);
 	}
 	fs->close();
-	LogInfo("--- bgfxport GEOM: swis=%u", item_count);
+	LogInfo("GEOM: swis=%u", item_count);
 }
 
 FSlideWindowItem* CRender::getSWI(u32 ID)
@@ -508,11 +508,11 @@ namespace
 		if (bgfxLoadWorldTexture(tname.c_str(), e.handle, w, h))
 		{
 			if (bgfxIsValid(e.handle))
-				LogInfo("--- bgfxport WORLD tex '%s' %ux%u", tname.c_str(), w, h);
+				LogInfo("WORLD tex '%s' %ux%u", tname.c_str(), w, h);
 		}
 		else
 		{
-			LogInfo("--- bgfxport WORLD tex MISS '%s' (%s)", tname.c_str(), sn);
+			LogInfo("WORLD tex MISS '%s' (%s)", tname.c_str(), sn);
 			e.handle = BGFX_INVALID_HANDLE;
 		}
 		return e.handle;
@@ -587,9 +587,9 @@ namespace
 		e.handle = tex;
 		g_worldTextures.push_back(e);
 		if (ok && bgfxIsValid(tex))
-			LogInfo("--- bgfxport WORLD tex '%s' %ux%u h=%u", name, w, h, tex.idx);
+			LogInfo("WORLD tex '%s' %ux%u h=%u", name, w, h, tex.idx);
 		else
-			LogInfo("--- bgfxport WORLD tex MISS '%s'", name);
+			LogInfo("WORLD tex MISS '%s'", name);
 		return e.handle;
 	}
 
@@ -681,7 +681,7 @@ namespace
 		}
 
 		s_worldUploaded = 1;
-		LogInfo("--- bgfxport WORLD: uploaded VB=%u IB=%u",
+		LogInfo("WORLD: uploaded VB=%u IB=%u",
 			(u32)s_worldVbh.size(), (u32)s_worldIbh.size());
 	}
 
@@ -715,8 +715,7 @@ namespace
 			return;
 		bgfx_set_vertex_buffer_with_layout(0, s_worldVbh[vi], fv->vBase, fv->vCount, s_worldLayout);
 		bgfx_set_index_buffer(s_worldIbh[ii], fv->iBase, fv->iCount);
-		bgfx_texture_handle_t tex = BGFX_INVALID_HANDLE;
-		if (g_worldTexturesReady && bgfxIsValid(g_worldSampler))
+		bgfx_texture_handle_t tex = BGFX_INVALID_HANDLE;if (g_worldTexturesReady && bgfxIsValid(g_worldSampler))
 		{
 			tex = bgfxWorldLevelTexture(fv->shader_id);
 			if (!bgfxIsValid(tex))
@@ -859,7 +858,7 @@ extern "C"
 
 		g_levelShaders.clear();
 		IReader* r = fs->open_chunk(fsL_SHADERS);
-		LogInfo("--- bgfxport SHADERS chunk=%d len=%u", fsL_SHADERS, r ? (u32)r->length() : 0);
+		LogInfo("SHADERS chunk=%d len=%u", fsL_SHADERS, r ? (u32)r->length() : 0);
 		if (r)
 		{
 			u32 sz = r->r_u32();
@@ -871,7 +870,7 @@ extern "C"
 				r->r_stringZ(sbuf, sizeof(sbuf));
 				g_levelShaders.push_back(sbuf);
 			}
-			LogInfo("--- bgfxport SHDR parsed=%u", (u32)g_levelShaders.size());
+			LogInfo("SHDR parsed=%u", (u32)g_levelShaders.size());
 			r->close();
 		}
 
@@ -886,7 +885,7 @@ extern "C"
 			else
 				++preloadMiss;
 		}
-		LogInfo("--- bgfxport SHDR preload ok=%u miss=%u", preloadOk, preloadMiss);
+		LogInfo("SHDR preload ok=%u miss=%u", preloadOk, preloadMiss);
 
 		RImplementation.load_visuals(fs);
 	}
@@ -897,11 +896,11 @@ extern "C"
 		IReader* g = FS.r_open("$level$", "level.geom");
 		if (!g)
 		{
-			LogInfo("--- bgfxport GEOM: level.geom NOT FOUND");
+			LogInfo("GEOM: level.geom NOT FOUND");
 			return;
 		}
 		clearGeometryStore();
-		LogInfo("--- bgfxport GEOM: total=%u bytes", (u32)g->length());
+		LogInfo("GEOM: total=%u bytes", (u32)g->length());
 		RImplementation.load_buffers(g, false);
 		RImplementation.load_swis(g);
 		FS.r_close(g);
@@ -919,9 +918,11 @@ extern "C"
 		static int s_buildTagLogged = 0;
 		if (!s_buildTagLogged)
 		{
-			LogInfo("[BGFX] WORLD build tag: ui-clamp+scene-no-alpha-2026-09-09");
+			LogInfo("WORLD build tag: ui-clamp+scene-no-alpha-2026-09-09");
 			s_buildTagLogged = 1;
 		}
+
+		bgfxWorldEnsureTextures();
 
 		if (s_worldProgram.idx == 0xFFFF)
 		{
@@ -932,7 +933,6 @@ extern "C"
 		if (s_worldDecalProgram.idx == 0xFFFF)
 			s_worldDecalProgram = bgfxWorldDecalProgramGet();
 
-		bgfxWorldEnsureTextures();
 		// pass 1: opaque / alpha-tested / transparent world geometry
 		s_worldDecalPass = false;
 		++s_worldFrameMarker;
@@ -949,7 +949,7 @@ extern "C"
 		static int s_logged = 0;
 		if (!s_logged)
 		{
-			LogInfo("--- bgfxport WORLD: submitted=%d total=%d drawn=%d"
+			LogInfo("WORLD: submitted=%d total=%d drawn=%d"
 				" skipType=%d skipVb=%d skipIb=%d upSkipVb=%d upSkipIb=%d"
 				" t0=%d t1=%d t2=%d t4=%d t5=%d t6=%d t10=%d",
 				g_worldDiag.drawn, g_worldDiag.total, g_worldDiag.drawn,
@@ -962,16 +962,60 @@ extern "C"
 		}
 		bgfx_set_state(BGFX_STATE_WRITE_RGB | BGFX_STATE_WRITE_A | BGFX_STATE_WRITE_Z, 0);
 	}
+
+	// ========================================================================
+	// Skin-handoff implementation (hook declared in bgfxModelBridge.h:62, called
+	// by the bridge's CPU pass on bgfxModelBridge.cpp:67). Lives here, in the TU
+	// that owns s_worldVbh/s_worldIbh/s_worldLayout/s_worldProgram, so it can
+	// bind the SAME handles the world pass submits with (716-717/759) and apply
+	// the per-visual transform via bgfx_set_transform. Until the port also uploads
+	// a true skinned vertex stream, this binds the visual's rigid VB/IB the way
+	// bgfxWorldDrawMesh does and reports an honest skip when nothing could bind.
+	// ========================================================================
+	extern "C" bool bgfxSubmitSkinnedVisual(const void* visual, const float* transform,
+						int hud)
+	{
+		(void)hud;
+		if (!visual || !transform)
+			return false     ;
+
+		Fvisual* fv = static_cast<Fvisual*>(
+			const_cast<void*>(visual));	
+		if (!fv || !fv->p_rm_Vertices || !fv->p_rm_Indices)
+			return false;
+
+		int vi = -1, ii = -1;
+		for (u32 i = 0; i < s_worldVbh.size(); ++i)
+			if (s_vbList[i] == fv->p_rm_Vertices && bgfxIsValid(s_worldVbh[i])) { vi = (int)i; break; }
+		for (u32 i = 0; i < s_worldIbh.size(); ++i)
+			if (s_ibList[i] == fv->p_rm_Indices && bgfxIsValid(s_worldIbh[i]))  { ii = (int)i; break; }
+		if (vi < 0 || ii < 0)
+			return false;
+
+		bgfx_set_vertex_buffer_with_layout(0, s_worldVbh[vi], fv->vBase, fv->vCount, s_worldLayout);
+		bgfx_set_index_buffer(s_worldIbh[ii], fv->iBase, fv->iCount);
+		bgfx_set_transform(transform, 1);
+
+		const uint64_t st = BGFX_STATE_WRITE_RGB
+			| BGFX_STATE_WRITE_A
+			| BGFX_STATE_WRITE_Z
+			| BGFX_STATE_DEPTH_TEST_LESS
+			| BGFX_STATE_MSAA;
+		bgfx_set_state(st, 0);
+		bgfx_submit(0, s_worldProgram, 0, BGFX_DISCARD_ALL);
+		return true;
+	}
+
 	void bgfxDumpLevelGeom()
 	{
 		// --- bgfxport: inventory of level.geom (shared static geometry)
 		IReader* g = FS.r_open("$level$", "level.geom");
 		if (!g)
 		{
-			LogInfo("--- bgfxport GEOM: level.geom NOT FOUND");
+			LogInfo("GEOM: level.geom NOT FOUND");
 			return;
 		}
-		LogInfo("--- bgfxport GEOM: total=%u bytes", (u32)g->length());
+		LogInfo("GEOM: total=%u bytes", (u32)g->length());
 		dumpChunkIterator("GEOM", g, 64);
 		// probe key chunks by id: 9=VB 10=IB 11=SWIS
 		static const u32 ids[] = { 9, 10, 11 };
@@ -979,7 +1023,7 @@ extern "C"
 		{
 			IReader* c = g->open_chunk(ids[p]);
 			if (!c) continue;
-			LogInfo("--- bgfxport GEOM id=%u len=%u", ids[p], (u32)c->length());
+			LogInfo("GEOM id=%u len=%u", ids[p], (u32)c->length());
 			dumpHex("GEOMh", c, 128);
 			c->close();
 		}

@@ -29,16 +29,20 @@ typedef struct bgfx_vertex_layout {
     uint8_t padding[168]; // sizeof(bgfx::VertexLayout) on x64
 } bgfx_vertex_layout_t;
 
-// Renderer types
+// Renderer types - numeric values MUST match bgfx::RendererType::Enum in bgfx.h
 typedef enum bgfx_renderer_type {
     BGFX_RENDERER_TYPE_NOOP = 0,
-    BGFX_RENDERER_TYPE_DIRECT3D11 = 1,
-    BGFX_RENDERER_TYPE_DIRECT3D12 = 2,
-    BGFX_RENDERER_TYPE_OPENGL = 3,
-    BGFX_RENDERER_TYPE_METAL = 4,
-    BGFX_RENDERER_TYPE_VULKAN = 5,
-    BGFX_RENDERER_TYPE_WEBGPU = 6,
-    BGFX_RENDERER_TYPE_COUNT
+    BGFX_RENDERER_TYPE_AGC = 1,
+    BGFX_RENDERER_TYPE_DIRECT3D11 = 2,
+    BGFX_RENDERER_TYPE_DIRECT3D12 = 3,
+    BGFX_RENDERER_TYPE_GNM = 4,
+    BGFX_RENDERER_TYPE_METAL = 5,
+    BGFX_RENDERER_TYPE_NVN = 6,
+    BGFX_RENDERER_TYPE_OPENGLES = 7,
+    BGFX_RENDERER_TYPE_OPENGL = 8,
+    BGFX_RENDERER_TYPE_VULKAN = 9,
+    BGFX_RENDERER_TYPE_WEBGPU = 10,
+    BGFX_RENDERER_TYPE_COUNT = 11
 } bgfx_renderer_type_t;
 
 // Reset flags
@@ -541,6 +545,7 @@ void bgfx_request_screen_shot(bgfx_frame_buffer_handle_t _handle, const char* _f
 
 // Immediate mode (default encoder) functions
 void bgfx_set_state(uint64_t _state, uint32_t _rgba);
+uint32_t bgfx_set_transform(const void* _mtx, uint16_t _num);
 void bgfx_set_transient_vertex_buffer(uint8_t _stream, const bgfx_transient_vertex_buffer_t* _tvb, uint32_t _startVertex, uint32_t _numVertices);
 void bgfx_set_transient_index_buffer(const bgfx_transient_index_buffer_t* _tib, uint32_t _startIndex, uint32_t _numIndices);
 void bgfx_set_texture(uint8_t _stage, bgfx_uniform_handle_t _sampler, bgfx_texture_handle_t _handle, uint32_t _flags);

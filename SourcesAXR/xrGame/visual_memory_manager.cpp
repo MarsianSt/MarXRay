@@ -739,14 +739,6 @@ void CVisualMemoryManager::update				(float time_delta)
 	}
 	STOP_PROFILE
 
-#if 0//def DEBUG
-	if (m_stalker) {
-		CAgentMemberManager::MEMBER_STORAGE::const_iterator	I = m_stalker->agent_manager().get_member().members().begin();
-		CAgentMemberManager::MEMBER_STORAGE::const_iterator	E = m_stalker->agent_manager().get_member().members().end();
-		for ( ; I != E; ++I)
-			(*I)->object().get_memory().visual().check_visibles();
-	}
-#endif
 
 	if (m_object && g_actor && m_object->is_relation_enemy(Actor())) {
 		xr_vector<CNotYetVisibleObject>::iterator	I = std::find_if(

@@ -435,9 +435,6 @@ CStalkerPropertyEvaluatorShouldThrowGrenade::CStalkerPropertyEvaluatorShouldThro
 
 _value_type CStalkerPropertyEvaluatorShouldThrowGrenade::evaluate	()
 {
-#if 0
-	return						(false);
-#else // #if 1
 
 	if (m_storage->property(eWorldPropertyStartedToThrowGrenade))
 		return					(true);
@@ -488,7 +485,6 @@ _value_type CStalkerPropertyEvaluatorShouldThrowGrenade::evaluate	()
 
 	// do throw grenade
 	return						(true);
-#endif // #if 1
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -525,35 +521,4 @@ _value_type CStalkerPropertyEvaluatorLowCover::evaluate	()
 {
 	return						(false);
 
-#if 0
-	if (!m_storage->property(eWorldPropertyInCover))
-		return					(false);
-
-	if (!object().get_memory().get_enemy().selected())
-		return					(false);
-
-	if (!object().best_weapon())
-		return					(false);
-
-	CMemoryInfo					mem_object = object().get_memory().memory(object().get_memory().get_enemy().selected());
-	const CCoverPoint			*cover = object().best_cover(mem_object.m_object_params.m_position);
-	if (!cover)
-		return					(false);
-
-	if (object().Position().distance_to_sqr(cover->position()) > .1f)
-		return					(false);
-
-	Fvector						direction;
-	float						y,p;
-	direction.sub				(mem_object.m_object_params.m_position, cover->position());
-	direction.getHP				(y,p);
-	float						high_cover_value = ai().level_graph().high_cover_in_direction(y, cover->level_vertex_id());
-	float						low_cover_value  = ai().level_graph().low_cover_in_direction (y, cover->level_vertex_id());
-
-	if (low_cover_value >= high_cover_value)
-		return					(false);
-
-	// should be several other conditions here
-	return						(true);
-#endif
 }

@@ -272,14 +272,6 @@ bool CIKFoot::make_shift( Fmatrix &xm,const Fvector &cl_point, bool collide, con
 	clamp( shift_m, -collide_dist, collide_dist );
 	shift.mul( shift_m );
 	xm.c.add( shift );
-#if	0
-	if(shift_m > 0.f)
-	{
-		DBG_OpenCashedDraw();
-		DBG_DrawLine( toe, Fvector().add( toe, shift ), color_xrgb( 255, 255, 255 )  );
-		DBG_ClosedCashedDraw( 1000 );
-	}
-#endif
 	return true;
 }
 

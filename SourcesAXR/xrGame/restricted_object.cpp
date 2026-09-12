@@ -43,23 +43,6 @@ IC	void construct_string					(LPSTR result, u32 const result_size, const xr_vect
 	}
 }
 
-#if 0
-IC	void construct_id_string					(LPSTR result, const xr_vector<ALife::_OBJECT_ID> &restrictions)
-{
-	xr_strcpy			(result,"");
-	string16		temp;
-	u32				count = 0;
-	xr_vector<ALife::_OBJECT_ID>::const_iterator	I = restrictions.begin();
-	xr_vector<ALife::_OBJECT_ID>::const_iterator	E = restrictions.end();
-	for ( ; I != E; ++I) {
-		if (count)
-			xr_strcat	(result,",");
-		xr_sprintf		(temp,"%d",*I);
-		xr_strcat		(result,temp);
-		++count;
-	}
-}
-#endif
 
 BOOL CRestrictedObject::net_Spawn			(CSE_Abstract* data)
 {
@@ -80,21 +63,6 @@ BOOL CRestrictedObject::net_Spawn			(CSE_Abstract* data)
 		construct_string		(temp1,sizeof(temp1),monster->m_dynamic_in_restrictions);
 	}
 
-#if 0
-	string4096					temp2;
-	string4096					temp3;
-
-	construct_id_string			(temp2,monster->m_dynamic_out_restrictions);
-	construct_id_string			(temp3,monster->m_dynamic_in_restrictions);
-
-	LogInfo("Restricting object %s with",monster->name_replace());
-	LogInfo("STATIC OUT  : %s",*monster->m_out_space_restrictors);
-	LogInfo("STATIC IN   : %s",*monster->m_in_space_restrictors);
-	LogInfo("DYNAMIC OUT : %s",temp2);
-	LogInfo("DYNAMIC IN  : %s",temp3);
-	LogInfo("OUT         : %s",temp0);
-	LogInfo("IN          : %s",temp1);
-#endif
 
 	Level().space_restriction_manager().restrict	(monster->ID,temp0,temp1);
 

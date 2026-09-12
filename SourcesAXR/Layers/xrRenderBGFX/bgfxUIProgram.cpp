@@ -1,22 +1,14 @@
-// UI shader programs for bgfx D3D11.
-// Shader sources live in <gamedata>\shaders (ui_solid.*, ui_textured.*,
-// hud_font.*), loaded through the engine VFS ($game_shaders$) and compiled
-// at runtime with D3DCompile (vs_5_0/ps_5_0). The DXBC blobs are wrapped
-// into the bgfx binary shader format (magic VSH/FSH + header) so that
-// bgfx_create_shader accepts them. Format (see bgfx_src/renderer_d3d11.cpp
-// ShaderD3D11::create):
-//   u32 magic ('V','S','H',ver=12) / ('F','S','H',12)
-//   u32 hashIn, u32 hashOut, u32 srvMask, u32 uavMask
-//   u16 uniformCount (0)
-//   u32 bytecodeSize, u8 bytecode[bytecodeSize], u8 terminator(0)
-//   u8  numAttrs (VS: 3, PS: 0), u16 attrIds[]
-//   u16 cbufferSize (0)
+// UI shader programs for bgfx.
+// Shaders (.sc) are compiled at startup by the bgfx shaderc tool loaded as
+// shaderc.dll (see bgfxShaderCompiler.cpp) for the active backend. The source
+// files live in $game_shaders$ (ui_solid.*, ui_textured.*, hud_font.*).
 
 #include "stdafx.h"
 #include "bgfxUIProgram.h"
+#include "bgfxShaderCompiler.h"
 #include "bgfxRenderInterface.h"
 
-#include <d3dcompiler.h>
+#include <vector>
 
 static bgfx_program_handle_t s_uiProgram = BGFX_INVALID_HANDLE;
 
@@ -25,107 +17,40 @@ bool bgfxUIProgramValid(bgfx_program_handle_t _h)
     return _h.idx != 0xFFFF;
 }
 
-// Loads shader source text from $game_shaders$ (gamedata\shaders).
-// Returns a NUL-terminated string allocated with xr_malloc; caller frees.
-static bool LoadShaderSource(const char* fname, char*& outText)
+namespace
 {
-    outText = nullptr;
-    IReader* file = FS.r_open("$game_shaders$", fname);
-    if (!file)
-        return false;
-
-    u32 size = (u32)file->elapsed();
-    outText = (char*)xr_malloc(size + 1);
-    file->r(outText, (int)size);
-    outText[size] = 0;
-    FS.r_close(file);
-    return true;
-}
-
-// Compiles one stage and wraps the DXBC into the bgfx shader format.
-static bgfx_shader_handle_t CompileShader(bool _isVS, const char* srcText, const char* fname)
-{
-    ID3DBlob* code = nullptr;
-    ID3DBlob* err = nullptr;
-    HRESULT hr = D3DCompile(srcText, (SIZE_T)strlen(srcText), fname, nullptr, nullptr,
-                            "main", _isVS ? "vs_5_0" : "ps_5_0",
-                            D3DCOMPILE_OPTIMIZATION_LEVEL3, 0, &code, &err);
-    if (FAILED(hr))
+    struct ShaderBlob
     {
-        LogError("[BGFX] Shader compile failed '%s': %s",
-            fname, err ? (LPCSTR)err->GetBufferPointer() : "unknown error");
-        if (err) err->Release();
-        return BGFX_INVALID_HANDLE;
-    }
-    if (err) err->Release();
+        std::vector<uint8_t> bytes;
+    };
 
-    const u32 magic   = _isVS ? 0x0C485356u : 0x0C485346u; // 'V','S','H',12 / 'F','S','H',12
-    const u32 codeSz  = (u32)code->GetBufferSize();
-    const u32 numAttr = _isVS ? 3u : 0u;
-    const u32 total   = 4 + 4 + 4 + 4 + 4 + 2 + 4 + codeSz + 1 + 1 + numAttr * 2 + 2;
-
-    const bgfx_memory_t* mem = bgfx_alloc(total);
-    if (!mem || !mem->data)
+    // Compiles the given .sc source for the active backend.
+    ShaderBlob CompileStage(const char* _scFile, char _type)
     {
-        LogError("[BGFX] bgfx_alloc failed for shader binary (%u bytes)", total);
-        code->Release();
-        return BGFX_INVALID_HANDLE;
+        ShaderBlob blob;
+        bgfxShaderCompileFile(_scFile, _type, blob.bytes);
+        return blob;
     }
 
-    u8* d = (u8*)mem->data;
-    auto Write32 = [&d](u32 v) { memcpy(d, &v, 4); d += 4; };
-    auto Write16 = [&d](u16 v) { memcpy(d, &v, 2); d += 2; };
-    auto Write8  = [&d](u8 v)  { *d = v; d += 1; };
-
-    Write32(magic);
-    Write32(0); // hashIn
-    Write32(0); // hashOut
-    Write32(0); // srvMask
-    Write32(0); // uavMask
-    Write16(0); // uniform count
-    Write32(codeSz);
-    memcpy(d, code->GetBufferPointer(), codeSz);
-    d += codeSz;
-    Write8(0); // terminator
-    Write8((u8)numAttr);
-    if (_isVS)
+    bgfx_shader_handle_t CreateStage(const ShaderBlob& _blob)
     {
-        // Attribute ids must match bgfx_src/vertexlayout.cpp s_attribToId
-        // (idToAttrib table): Position=0x0001, Color0=0x0005, TexCoord0=0x0010.
-        Write16(0x0001);  // Position
-        Write16(0x0005);  // Color0
-        Write16(0x0010);  // TexCoord0
-    }
-    Write16(0); // cbuffer size
-
-    code->Release();
-
-    return bgfx_create_shader(mem);
-}
-
-// Loads, compiles and wraps one stage from a gamedata\shaders file.
-static bgfx_shader_handle_t BuildShader(bool _isVS, const char* fname)
-{
-    char* src = nullptr;
-    if (!LoadShaderSource(fname, src))
-    {
-        LogError("[BGFX] Shader source not found: $game_shaders$\\%s", fname);
-        return BGFX_INVALID_HANDLE;
+        if (_blob.bytes.empty())
+            return { 0xFFFF };
+        const bgfx_memory_t* mem = bgfx_copy(_blob.bytes.data(), (u32)_blob.bytes.size());
+        if (!mem)
+            return { 0xFFFF };
+        return bgfx_create_shader(mem);
     }
 
-    bgfx_shader_handle_t h = CompileShader(_isVS, src, fname);
-    xr_free(src);
-    return h;
-}
+    bgfx_program_handle_t BuildProgram6x2(ShaderBlob _vs, ShaderBlob _ps)
+    {
+        bgfx_shader_handle_t vsh = CreateStage(_vs);
+        bgfx_shader_handle_t fsh = CreateStage(_ps);
+        if (!bgfxUIProgramValid(vsh) || !bgfxUIProgramValid(fsh))
+            return BGFX_INVALID_HANDLE;
 
-static bgfx_program_handle_t BuildProgram(const char* vsName, const char* psName)
-{
-    bgfx_shader_handle_t vsh = BuildShader(true, vsName);
-    bgfx_shader_handle_t fsh = BuildShader(false, psName);
-    if (!bgfxUIProgramValid(vsh) || !bgfxUIProgramValid(fsh))
-        return BGFX_INVALID_HANDLE;
-
-    return bgfx_create_program(vsh, fsh, true);
+        return bgfx_create_program(vsh, fsh, true);
+    }
 }
 
 static bgfx_program_handle_t s_uiTexProgram = BGFX_INVALID_HANDLE;
@@ -138,7 +63,9 @@ bgfx_program_handle_t bgfxUITexturedProgramGet()
     if (bgfxUIProgramValid(s_uiTexProgram))
         return s_uiTexProgram;
 
-    s_uiTexProgram = BuildProgram("ui_textured.vs", "ui_textured.ps");
+    ShaderBlob vs = CompileStage("ui_textured_vs.sc", 'v');
+    ShaderBlob ps = CompileStage("ui_textured_ps.sc", 'f');
+    s_uiTexProgram = BuildProgram6x2(vs, ps);
     if (!bgfxUIProgramValid(s_uiTexProgram))
         return BGFX_INVALID_HANDLE;
 
@@ -170,7 +97,9 @@ bgfx_program_handle_t bgfxFontProgramGet()
     if (bgfxUIProgramValid(s_fontProgram))
         return s_fontProgram;
 
-    s_fontProgram = BuildProgram("hud_font.vs", "hud_font.ps");
+    ShaderBlob vs = CompileStage("hud_font_vs.sc", 'v');
+    ShaderBlob ps = CompileStage("hud_font_ps.sc", 'f');
+    s_fontProgram = BuildProgram6x2(vs, ps);
     if (!bgfxUIProgramValid(s_fontProgram))
         return BGFX_INVALID_HANDLE;
 
@@ -185,7 +114,9 @@ bgfx_program_handle_t bgfxUIProgramGet()
     if (bgfxUIProgramValid(s_uiProgram))
         return s_uiProgram;
 
-    s_uiProgram = BuildProgram("ui_solid.vs", "ui_solid.ps");
+    ShaderBlob vs = CompileStage("ui_solid_vs.sc", 'v');
+    ShaderBlob ps = CompileStage("ui_solid_ps.sc", 'f');
+    s_uiProgram = BuildProgram6x2(vs, ps);
     if (!bgfxUIProgramValid(s_uiProgram))
         return BGFX_INVALID_HANDLE;
 

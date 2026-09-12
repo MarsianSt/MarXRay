@@ -290,14 +290,6 @@ void	imotion_position::state_end( )
 	update_callback.motion = 0;
 	KA->SetUpdateTracksCalback( 0 );
 
-#if 0
-
-			DBG_OpenCashedDraw();
-			shell->dbg_draw_geometry( 0.02, color_argb( 255, 0, 255, 0 )  );
-			DBG_DrawBones( *shell->get_ElementByStoreOrder( 0 )->PhysicsRefObject() );
-			DBG_ClosedCashedDraw( 50000 );
-
-#endif
 
 	u16 root = K->LL_GetBoneRoot();
 	if( root!=0 )
@@ -315,14 +307,6 @@ void	imotion_position::state_end( )
 	K->CalculateBones_Invalidate();
 	K->CalculateBones( true );
 
-#if 0 
-
-			DBG_OpenCashedDraw();
-			shell->dbg_draw_geometry( 0.02, color_argb( 255, 0, 0, 255 )  );
-			DBG_DrawBones( *shell->get_ElementByStoreOrder( 0 )->PhysicsRefObject() );
-			DBG_ClosedCashedDraw( 50000 );
-
-#endif
 }
 
 void	imotion_position::disable_update( bool v )

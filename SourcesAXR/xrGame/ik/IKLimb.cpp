@@ -185,12 +185,6 @@ void CIKLimb::SetGoal( SCalculateData &cd )
 			
 	}
 	transform( cd.state.b2tob3, 2, 3 );
-#if	0
-	if(!state_valide(sv_state))
-	{
-		LogInfo( "st ! valide:-: time: %d ;time delta: %d ; sv_state.calc_time: %d", Device.dwTimeGlobal, Device.dwTimeDelta,  sv_state.calc_time );
-	}
-#endif
 	SetNewGoal(cld,cd);
 }
 void CIKLimb::SolveBones( SCalculateData &cd )

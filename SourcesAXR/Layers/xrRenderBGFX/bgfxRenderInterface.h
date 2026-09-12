@@ -11,6 +11,15 @@
 #include "..\..\xrEngine\Render.h"
 #include "port\bgfxModelBridge.h"
 
+// Accumulated CPU-side entry for a dynamic (skinned/physic) visual.
+struct bgfxDynamicVisual
+{
+	IRenderVisual*	visual		= nullptr;
+	Fmatrix			transform;				// current model matrix
+	BOOL			hud			= FALSE;	// render in HUD mode
+	BOOL			invisible	= FALSE;	// set_Invisible (skip)
+};
+
 class bgfxRenderTarget : public IRender_Target
 {
 public:
@@ -171,17 +180,28 @@ public:
     virtual SurfaceParams getSurface(const char* nameTexture) override { return SurfaceParams(); }
 
     // Main
-    virtual void set_Transform(Fmatrix* M) override {}
-    virtual void set_HUD(BOOL V) override {}
-    virtual BOOL get_HUD() override { return FALSE; }
-    virtual void set_Invisible(BOOL V) override {}
+    virtual void set_Transform(Fmatrix* M) override { if (M) m_transform = *M; }
+    virtual void set_HUD(BOOL V) override { m_hud = V; }
+    virtual BOOL get_HUD() override { return m_hud; }
+    virtual void set_Invisible(BOOL V) override { m_invisible = V; }
     virtual void Render3DStatic() override {}
-    virtual void set_UI(BOOL V) override {}
+    virtual void set_UI(BOOL V) override { m_ui = V; }
     virtual void flush() override {}
-    virtual void set_Object(IRenderable* O) override {}
-    virtual void add_Occluder(Fbox2& bb_screenspace) override {}
-    virtual void add_Visual(IRenderVisual* V, bool ignore_opt = false) override {}
-    virtual void add_Geometry(IRenderVisual* V) override {}
+    virtual void set_Object(IRenderable* O) override { m_object = O; }
+    virtual void add_Occluder(Fbox2& bb_screenspace) override { (void)bb_screenspace; }
+    virtual void add_Visual(IRenderVisual* V, bool ignore_opt = false) override
+    {
+        (void)ignore_opt;
+        if (!V || m_invisible)
+            return;
+        bgfxDynamicVisual e;
+        e.visual    = V;
+        e.transform = m_transform;
+        e.hud       = m_hud;
+        m_dynamic.push_back(e);
+        m_dirty     = true;
+    }
+    virtual void add_Geometry(IRenderVisual* V) override { (void)V; }
     virtual void add_StaticWallmark(const wm_shader& S, const Fvector& P, float s, CDB::TRI* T, Fvector* V) override {}
     virtual void add_StaticWallmark(IWallMarkArray* pArray, const Fvector& P, float s, CDB::TRI* T, Fvector* V) override {}
     virtual void clear_static_wallmarks() override {}
@@ -224,6 +244,7 @@ public:
             LogInfo("[BGFX] IRender_interface::Render() pass");
         ++s_calls;
         bgfxRenderWorld();
+        bgfxRenderDynamic();    // flush CPU-side dynamic visuals to the port
     }
 
     // [FFT++]
@@ -262,5 +283,13 @@ public:
     virtual void RenderApplyRTandZB() override {}
 
 protected:
+    Fmatrix       m_transform  = Fidentity;   // set_Transform
+    BOOL          m_hud        = FALSE;       // set_HUD / get_HUD
+    BOOL          m_invisible  = FALSE;       // set_Invisible
+    BOOL          m_ui         = FALSE;       // set_UI
+    IRenderable*  m_object     = nullptr;     // set_Object
+    std::vector<bgfxDynamicVisual> m_dynamic; // add_Visual accumulator
+    bool          m_dirty      = false;       // new visual since last flush
+
     virtual void ScreenshotImpl(ScreenshotMode mode, LPCSTR name, CMemoryWriter* memory_writer) override {}
 };

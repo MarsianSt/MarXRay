@@ -126,6 +126,20 @@ void CTextureDescrMngr::LoadTHM(LPCSTR initial)
 		}
 	}
 
+	// Parallel warm-up: decode every .thm body into the VFS cache before the
+	// serial parse loop, so r_open() below becomes a memcpy from memory.
+	{
+		xr_vector<shared_str> thm_paths;
+		thm_paths.reserve(flist.size());
+		string_path thm_fn;
+		for (FS_FileSetIt it = flist.begin(); it != flist.end(); ++it)
+		{
+			FS.update_path(thm_fn, initial, it->name.c_str());
+			thm_paths.push_back(shared_str(thm_fn));
+		}
+		FS.prefetch_zdb(thm_paths);
+	}
+
 #ifdef DEBUG
 	LogInfo("count of .thm files=%d", flist.size());
 #endif // #ifdef DEBUG
@@ -209,6 +223,20 @@ void CTextureDescrMngr::LoadTHM()
 		{
 			FS.file_list(flist, "$game_textures_reference$", FS_ListFiles, "*.thm"); // FS_FileSet is actually a set )
 		}
+	}
+
+	// Parallel warm-up: decode every .thm body into the VFS cache before the
+	// serial parse loop, so r_open() below becomes a memcpy from memory.
+	{
+		xr_vector<shared_str> thm_paths;
+		thm_paths.reserve(flist.size());
+		string_path thm_fn;
+		for (FS_FileSetIt it = flist.begin(); it != flist.end(); ++it)
+		{
+			FS.update_path(thm_fn, "$game_textures$", it->name.c_str());
+			thm_paths.push_back(shared_str(thm_fn));
+		}
+		FS.prefetch_zdb(thm_paths);
 	}
 
 	LogInfo("count of .thm files=%d", flist.size());

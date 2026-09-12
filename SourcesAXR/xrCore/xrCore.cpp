@@ -6,6 +6,7 @@
 #include <mmsystem.h>
 #include <objbase.h>
 #include "xrCore.h"
+#include "TaskManager.h"
 #include "../xrGameSpy/xrGameSpy_MainDefs.h"
 
 #ifdef PROTECT_CBT
@@ -84,6 +85,8 @@ void xrCore::_initialize	(LPCSTR _ApplicationName, LogCallback cb, BOOL init_fs,
 		CPU::Detect			();
 		
 		Memory._initialize	(strstr(Params,"-mem_debug") ? TRUE : FALSE);
+
+		CTaskManager::Initialize	();
 
 		_initialize_cpu		();
 
@@ -179,7 +182,9 @@ void xrCore::_destroy		()
 		}
 #endif
 
-		Memory._destroy		();
+		CTaskManager::Destroy		();
+
+Memory._destroy		();
 	}
 }
 

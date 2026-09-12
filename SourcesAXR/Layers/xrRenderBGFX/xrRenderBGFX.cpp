@@ -43,6 +43,16 @@ public:
     virtual void __stdcall dbgDrawFace(const Fvector&, const Fvector&, const Fvector&, u32, LPCSTR) override {}
 
     virtual void __stdcall DrawFace(const Fvector&, const Fvector&, const Fvector&, u32, u32, BOOL, BOOL) override {}
+    // DrawLine / DrawAABB / DrawBox are intentionally stubs.
+    // What is needed to implement them (not present in this port):
+    //   * A world-space, color-only line shader+program, e.g. "debug_line.vs"
+    //     taking a u_modelViewProj uniform + POSITION/COLOR0 and emitting color
+    //     (ui_solid.* can't be reused: it passes NDC straight through, but DU
+    //     vertices are world-space). world_solid.vs already has u_modelViewProj
+    //     but reads no COLOR attribute, so it can't draw colored lines.
+    //   * Access to the current camera view/proj from here (DX DU flushes
+    //     world lines with the RCache debug shader and the engine view matrix).
+    // See report for details.
     virtual void __stdcall DrawLine(const Fvector&, const Fvector&, u32) override {}
     virtual void __stdcall DrawLink(const Fvector&, const Fvector&, float, u32) override {}
     virtual void __stdcall DrawFaceNormal(const Fvector&, const Fvector&, const Fvector&, float, u32) override {}
@@ -57,6 +67,8 @@ public:
     virtual void __stdcall DrawIdentBox(BOOL, BOOL, u32, u32) override {}
 
     virtual void __stdcall DrawBox(const Fvector&, const Fvector&, BOOL, BOOL, u32, u32) override {}
+    // Stubs: would be implemented as 12 grid edges via DrawLine once the
+    // world-space line pipeline above exists.
     virtual void __stdcall DrawAABB(const Fvector&, const Fvector&, u32, u32, BOOL, BOOL) override {}
     virtual void __stdcall DrawAABB(const Fmatrix&, const Fvector&, const Fvector&, u32, u32, BOOL, BOOL) override {}
     virtual void __stdcall DrawOBB(const Fmatrix&, const Fobb&, u32, u32) override {}
@@ -124,7 +136,7 @@ private:
     UIVertex m_vertices[MAX_UI_VERTS];
     u32 m_vertCount = 0;
     ePrimitiveType m_primType = ptNone;
-    ePointType m_pointType = pttTL;
+    ePointType m_pointType = pttTL;   // unused, reserved (only m_primType drives topology)
     bool m_bRendering = false;
 
     void CreateVertexLayout()
@@ -182,7 +194,17 @@ public:
 
     virtual void SetShader(IUIShader &shader) override
     {
-        s_pCurrentUIShader = (bgfxUIShader*)&shader;
+        // RTTI is enabled for this project (xrRenderBGFX.vcxproj: RuntimeTypeInfo),
+        // so verify the concrete type instead of a blind C-style cast: the game can
+        // hand us any IUIShader, and a wrong downcast would corrupt the texture state.
+        bgfxUIShader* pUIShader = dynamic_cast<bgfxUIShader*>(&shader);
+        if (!pUIShader)
+        {
+            LogWarning("[BGFX] SetShader: IUIShader is not a bgfxUIShader, falling back to white texture");
+            s_pCurrentUIShader = nullptr;
+            return;
+        }
+        s_pCurrentUIShader = pUIShader;
     }
     virtual void SetAlphaRef(int aref) override {}
     virtual void SetScissor(Irect* rect=NULL) override
@@ -203,7 +225,15 @@ public:
         if (s_pCurrentUIShader && s_pCurrentUIShader->GetWidth() > 0)
             res.set((float)s_pCurrentUIShader->GetWidth(), (float)s_pCurrentUIShader->GetHeight());
         else
+        {
+            static bool warned = false;
+            if (!warned)
+            {
+                LogWarning("[BGFX] GetActiveTextureResolution: no active UI shader/texture, reporting 1024x1024");
+                warned = true;
+            }
             res.set(1024.0f, 1024.0f);
+        }
     }
 
     virtual void PushPoint(float x, float y, float z, u32 C, float u, float v) override
@@ -220,6 +250,15 @@ public:
             m_vertices[m_vertCount].u = u;
             m_vertices[m_vertCount].v = v;
             m_vertCount++;
+        }
+        else
+        {
+            static bool warned = false;
+            if (!warned)
+            {
+                LogWarning("[BGFX] PushPoint: UI vertex buffer full (%u verts), dropping points", (u32)MAX_UI_VERTS);
+                warned = true;
+            }
         }
     }
 
@@ -245,35 +284,71 @@ public:
             return;
         }
 
-        if (m_vertCount >= 3)
+        // Map the X-Ray primitive type onto a bgfx primitive topology. The
+        // default (no BGFX_STATE_PT_* bit) is a triangle list.
+        // NOTE: IUIRender::ePrimitiveType has no ptPointList. If one is ever
+        // added, points would require BGFX_STATE_PT_POINTS plus a gl_PointSize
+        // write in the vertex shader (ui_solid.vs/ui_textured.vs don't emit it)
+        // — not implemented here.
+        uint64_t ptState = 0;
+        u32 minVerts = 3;
+        switch (m_primType)
         {
-            bgfx_program_handle_t prog = bgfxUITexturedProgramGet();
-            if (bgfxUIProgramValid(prog))
+        case ptTriList:
+            ptState = 0; // default bgfx primitive = triangle list
+            minVerts = 3;
+            break;
+        case ptTriStrip:
+            ptState = BGFX_STATE_PT_TRISTRIP;
+            minVerts = 3;
+            break;
+        case ptLineList:
+            ptState = BGFX_STATE_PT_LINES;
+            minVerts = 2;
+            break;
+        case ptLineStrip:
+            ptState = BGFX_STATE_PT_LINESTRIP;
+            minVerts = 2;
+            break;
+        case ptNone:
+        default:
+            LogWarning("[BGFX] FlushPrimitive: unsupported primitive type %d, skipping submit", (int)m_primType);
+            m_vertCount = 0;
+            m_bRendering = false;
+            return;
+        }
+
+        if (m_vertCount < minVerts)
+        {
+            m_vertCount = 0;
+            m_bRendering = false;
+            return;
+        }
+
+        bgfx_program_handle_t prog = bgfxUITexturedProgramGet();
+        if (bgfxUIProgramValid(prog))
+        {
+            TransformToClipSpace();
+
+            bgfx_transient_vertex_buffer_t tvb;
+            bgfx_alloc_transient_vertex_buffer(&tvb, m_vertCount, &g_uiVertexLayout);
+            if (tvb.data)
             {
-                TransformToClipSpace();
+                memcpy(tvb.data, m_vertices, m_vertCount * sizeof(UIVertex));
 
-                bgfx_transient_vertex_buffer_t tvb;
-                bgfx_alloc_transient_vertex_buffer(&tvb, m_vertCount, &g_uiVertexLayout);
-                if (tvb.data)
-                {
-                    memcpy(tvb.data, m_vertices, m_vertCount * sizeof(UIVertex));
-
-                    uint64_t state = BGFX_STATE_WRITE_RGB | BGFX_STATE_WRITE_A | BGFX_STATE_BLEND_ALPHA;
-                    if (m_primType == ptTriStrip || m_primType == ptLineStrip)
-                        state |= BGFX_STATE_PT_TRISTRIP;
-
-                    bgfx_set_state(state, 0);
-                    bgfx_set_transient_vertex_buffer(0, &tvb, 0, m_vertCount);
-                    bgfx_uniform_handle_t sampler = bgfxUITextureSamplerGet();
-                    bgfx_texture_handle_t tex;
-                    if (s_pCurrentUIShader && bgfxIsValid(s_pCurrentUIShader->GetTexture()))
-                        tex = s_pCurrentUIShader->GetTexture();
-                    else
-                        tex = bgfxUIWhiteTextureGet();
-                    bgfx_set_texture(0, sampler, tex, UINT32_MAX);
-                    bgfxUIScissorApply();
-                    bgfx_submit(0, prog, 0, BGFX_DISCARD_ALL);
-                }
+                uint64_t state = BGFX_STATE_WRITE_RGB | BGFX_STATE_WRITE_A | BGFX_STATE_BLEND_ALPHA | ptState;
+                bgfx_set_state(state, 0);
+                bgfx_set_transient_vertex_buffer(0, &tvb, 0, m_vertCount);
+                bgfx_uniform_handle_t sampler = bgfxUITextureSamplerGet();
+                bgfx_texture_handle_t tex;
+                if (s_pCurrentUIShader && bgfxIsValid(s_pCurrentUIShader->GetTexture()))
+                    tex = s_pCurrentUIShader->GetTexture();
+                else
+                    tex = bgfxUIWhiteTextureGet();
+                // 0 = BGFX_SAMPLER_NONE; UINT32_MAX would set reserved sampler bits.
+                bgfx_set_texture(0, sampler, tex, 0);
+                bgfxUIScissorApply();
+                bgfx_submit(0, prog, 0, BGFX_DISCARD_ALL);
             }
         }
 
@@ -334,6 +409,11 @@ extern "C"
 bool _declspec(dllexport) SupportsVulkanRendering()
 {
     LogDebug("[BGFX] SupportsVulkanRendering() called");
-    // BGFX with DX11 backend is supported on Windows
+    // Exported ABI name kept from the original engine (can't rename — resolved
+    // by name in CEngineAPI::CreateRendererList). Its job there is to gate the
+    // "renderer_bgfx" token. The BGFX device is created with the Vulkan backend
+    // (bgfxRenderDeviceRender::InitBGFX: init.type = BGFX_RENDERER_TYPE_VULKAN),
+    // but bgfx is NOT initialized at this call site (no window yet), so we can't
+    // probe bgfx_get_renderer_type() — returning true advertises the bgfx renderer.
     return true;
 }

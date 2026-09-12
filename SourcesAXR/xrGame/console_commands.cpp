@@ -992,12 +992,6 @@ public:
 	CCC_ALifeSave(LPCSTR N) : IConsole_Command(N)  { bEmptyArgsHandled = true; };
 	virtual void Execute(LPCSTR args) {
 		
-#if 0
-		if (!Level().autosave_manager().ready_for_autosave()) {
-			LogInfo("! Cannot save the game right now!");
-			return;
-		}
-#endif
 		if(!IsGameTypeSingle()){
 			LogInfo("for single-mode only");
 			return;

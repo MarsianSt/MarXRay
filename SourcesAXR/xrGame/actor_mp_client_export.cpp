@@ -50,20 +50,6 @@ void CActorMP::fill_state	(actor_mp_state &state)
 
 //	static test = false;
 //	if (test) {
-#if 0
-		LogInfo("Frame [%d], object [%d]",Device.dwFrame,ID());
-//		LogInfo("quaternion   : [%f][%f][%f][%f]",State.quaternion.x,State.quaternion.y,State.quaternion.z,State.quaternion.w);
-//		LogInfo("angular      : [%f][%f][%f]",State.angular_vel.x,State.angular_vel.y,State.angular_vel.z);
-		LogInfo("linear       : [%f][%f][%f]",State.linear_vel.x,State.linear_vel.y,State.linear_vel.z);
-//		LogInfo("force        : [%f][%f][%f]",State.force.x,State.force.y,State.force.z);
-//		LogInfo("torque       : [%f][%f][%f]",State.torque.x,State.torque.y,State.torque.z);
-//		LogInfo("acceleration : [%f][%f][%f]",NET_SavedAccel.x,NET_SavedAccel.y,NET_SavedAccel.z);
-		LogInfo("model_yaw    : [%f]",angle_normalize(r_model_yaw));
-		LogInfo("camera_yaw   : [%f]",angle_normalize(unaffected_r_torso.yaw));
-//		LogInfo("camera_pitch : [%f]",angle_normalize(unaffected_r_torso.pitch));
-//		LogInfo("camera_roll  : [%f]",angle_normalize(unaffected_r_torso.roll));
-//	}
-#endif // 0
 
 	state.physics_quaternion		= State.quaternion;
 	state.physics_angular_velocity	= State.angular_vel;

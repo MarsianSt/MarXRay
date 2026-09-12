@@ -51,18 +51,6 @@ bool activating_character_delay::do_position_correct()
 	bool ret = char_support.CollisionCorrectObjPos();
 	if(!ret)
 		obj->Position().set(sv_pos);
-#if	0
-	else
-	{
-		DBG_OpenCashedDraw();
-		DBG_DrawMatrix( obj->XFORM(), 1.f );
-		Fmatrix m = obj->XFORM();
-		m.c = sv_pos;
-		DBG_DrawMatrix( m, 0.5f );
-		DBG_DrawLine( obj->Position(), m.c, color_xrgb( 255, 255, 255 ) );
-		DBG_ClosedCashedDraw(50000);
-	}
-#endif
 	return ret;
 
 }

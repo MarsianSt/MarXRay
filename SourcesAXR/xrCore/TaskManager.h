@@ -27,6 +27,12 @@ public:
     
     // Check if scheduler is running
     static bool IsRunning();
+    
+    // True when the calling thread is currently inside a CTaskManager task
+    // (i.e. a worker/executing thread). Used to avoid nested scheduler waits:
+    // inner work should run sequentially so no task waits for tasks that only
+    // the already-busy worker pool could run.
+    static bool IsInsideTask();
 
 private:
     CTaskManager() = delete;

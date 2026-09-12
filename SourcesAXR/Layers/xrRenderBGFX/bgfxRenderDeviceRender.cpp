@@ -2,16 +2,11 @@
 #include "stdafx.h"
 #include "bgfxRenderDeviceRender.h"
 #include "bgfxRenderInterface.h"
+#include "bgfxImGuiRender.h"
 #include "bgfx_capi.h"
 
 #include <imgui.h>
 #include <backends/imgui_impl_win32.h>
-#include <backends/imgui_impl_dx11.h>
-
-#include <d3d11.h>
-#include <d3dcompiler.h>
-#pragma comment(lib, "d3d11.lib")
-#pragma comment(lib, "d3dcompiler.lib")
 
 // ImGui initialization callback (called from bgfx thread)
 static bool g_bImGuiInitialized = false;
@@ -243,29 +238,11 @@ void bgfxRenderDeviceRender::Create(HWND hWnd, u32 &dwWidth, u32 &dwHeight, floa
 
         ImGui_ImplWin32_Init(hWnd);
 
-        // Create a D3D11 device for ImGui DX11 backend
-        // (bgfx doesn't expose its internal D3D11 device)
-        D3D_FEATURE_LEVEL featureLevel = D3D_FEATURE_LEVEL_11_0;
-        ID3D11Device* pd3dDevice = nullptr;
-        ID3D11DeviceContext* pd3dContext = nullptr;
-        HRESULT hr = D3D11CreateDevice(
-            nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr,
-            D3D11_CREATE_DEVICE_BGRA_SUPPORT,
-            &featureLevel, 1, D3D11_SDK_VERSION,
-            &pd3dDevice, nullptr, &pd3dContext);
-        if (SUCCEEDED(hr) && pd3dDevice && pd3dContext)
-        {
-            ImGui_ImplDX11_Init(pd3dDevice, pd3dContext);
-            LogInfo("[BGFX] ImGui DX11 backend initialized");
-        }
-        else
-        {
-            LogError("[BGFX] Failed to create D3D11 device for ImGui, hr=0x%08X", hr);
-        }
-
         g_bImGuiInitialized = true;
         LogInfo("[BGFX] ImGui initialized");
     }
+
+    bgfxImguiInit();
 
     LogInfo("[BGFX] Create complete");
 }
@@ -382,6 +359,7 @@ IResourceManager* bgfxRenderDeviceRender::GetResourceManager() const
 
 void bgfxRenderDeviceRender::PresentFrame()
 {
+    bgfxImguiRenderFrame();
     bgfx_frame(BGFX_FRAME_NONE);
 }
 
@@ -392,7 +370,10 @@ bool bgfxRenderDeviceRender::InitBGFX(HWND hWnd, u32 width, u32 height)
 
     bgfx_init_t init;
     bgfx_init_ctor(&init);
-    init.type = BGFX_RENDERER_TYPE_DIRECT3D11;
+    // All four backends are compiled (BGFX_CONFIG_RENDERER_DIRECT3D11/DIRECT3D12/VULKAN/OPENGL).
+    // Shaders are precompiled into per-backend blobs (dxbc/dxil/glsl/spv), picked
+    // at runtime by bgfx_get_renderer_type(); verify each backend below.
+    init.type = BGFX_RENDERER_TYPE_VULKAN;
     init.platformData.nwh = hWnd;
     init.resolution.width = width;
     init.resolution.height = height;

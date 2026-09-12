@@ -46,19 +46,6 @@ inline float iszero(float x)
     return x*x < 1e-6;
 }
 
-#if 0
-//
-// Normalize an angle to to range -Pi..Pi
-//
-//double angle_normalize(double x);
-
-
-//
-// Returns angle between angles x and y
-//
-double angle_distance(float x, float y);
-
-#endif
 
 // Solve a*cos(theta) + b*sin(theta) = c
 int   solve_trig1(float a, float b, float c, float theta[2]);

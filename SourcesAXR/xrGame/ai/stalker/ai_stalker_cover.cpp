@@ -49,19 +49,6 @@ void CAI_Stalker::unsubscribe_on_best_cover_changed	(const on_best_cover_changed
 
 void CAI_Stalker::on_best_cover_changed				(const CCoverPoint *new_cover, const CCoverPoint *old_cover)
 {
-#if 0
-	if (new_cover) {
-		if (!new_cover->m_is_smart_cover)
-			LogInfo("[%6d][%s], now it is cover", Device.dwTimeGlobal, cName().c_str());
-		else
-			LogInfo(
-				"[%6d][%s], now it is smart cover %s",
-				Device.dwTimeGlobal,
-				cName().c_str(),
-				static_cast<smart_cover::cover const *>(new_cover)->object().cName().c_str()
-			);
-	}
-#endif
 
 	cover_delegates::const_iterator		I = m_cover_delegates.begin();
 	cover_delegates::const_iterator		E = m_cover_delegates.end();
@@ -185,18 +172,12 @@ void CAI_Stalker::update_best_cover_actuality		(const Fvector &position_to_cover
 
 	if (m_best_cover->position().distance_to_sqr(position_to_cover_from) < _sqr(MIN_SUITABLE_ENEMY_DISTANCE)) {
 		m_best_cover_actual				= false;
-#if 0//def _DEBUG
-		LogInfo("* [%6d][%s] enemy too close",Device.dwTimeGlobal,*cName());
-#endif
 		return;
 	}
 
 	float								cover_value = best_cover_value(position_to_cover_from);
 	if (cover_value >= m_best_cover_value + 1.f) {
 		m_best_cover_actual				= false;
-#if 0//def _DEBUG
-		LogInfo("* [%6d][%s] cover became too bad",Device.dwTimeGlobal,*cName());
-#endif
 		return;
 	}
 

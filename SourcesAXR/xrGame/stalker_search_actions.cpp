@@ -93,21 +93,6 @@ void CStalkerActionReachEnemyLocation::execute			()
 	}
 
 	if (object().get_movement().path_completed()) {
-#if 0
-		object().m_ce_ambush->setup		(mem_object.m_object_params.m_position,mem_object.m_self_params.m_position,10.f);
-		const CCoverPoint				*point = ai().cover_manager().best_cover(mem_object.m_object_params.m_position,10.f,*object().m_ce_ambush,CStalkerMovementRestrictor(m_object,true));
-		if (!point) {
-			object().m_ce_ambush->setup	(mem_object.m_object_params.m_position,mem_object.m_self_params.m_position,10.f);
-			point						= ai().cover_manager().best_cover(mem_object.m_object_params.m_position,30.f,*object().m_ce_ambush,CStalkerMovementRestrictor(m_object,true));
-		}
-
-		if (point) {
-			object().get_movement().set_level_dest_vertex	(point->level_vertex_id());
-			object().get_movement().set_desired_position	(&point->position());
-		}
-		else
-			object().get_movement().set_nearest_accessible_position	();
-#else
 		if (object().get_movement().accessible(mem_object.m_object_params.m_level_vertex_id)) {
 			object().get_movement().set_level_dest_vertex	(mem_object.m_object_params.m_level_vertex_id);
 //			object().get_movement().set_desired_position	(0);
@@ -127,7 +112,6 @@ void CStalkerActionReachEnemyLocation::execute			()
 				true
 			)
 		);
-#endif
 
 		if (object().get_movement().path_completed()) {
 			m_storage->set_property		(eWorldPropertyEnemyLocationReached, true);

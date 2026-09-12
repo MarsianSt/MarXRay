@@ -3,6 +3,16 @@
 // Define module name for async logger
 #define LOG_MODULE "BGFX"
 
+#ifndef ENGINE_API
+#define ENGINE_API __declspec(dllimport)
+#endif
+#ifndef ECORE_API
+#define ECORE_API
+#endif
+#ifndef DLL_API
+#define DLL_API
+#endif
+
 // Include engine headers (C++17)
 #include "../../xrCore/xrCore.h"
 

@@ -408,14 +408,6 @@ void CCharacterPhysicsSupport::in_shedule_Update( u32 DT )
 	else	if( m_pPhysicsShell&&m_pPhysicsShell->isFullActive( ) && !m_pPhysicsShell->isEnabled( ) )
 		m_EntityAlife.deactivate_physics_shell( );
 	get_movement( )->in_shedule_Update( DT );
-#if	0
-	if( anim_mov_state.active )
-	{
-		DBG_OpenCashedDraw( );
-		DBG_DrawMatrix( mXFORM, 0.5f );
-		DBG_ClosedCashedDraw( 5000 );
-	}
-#endif
 
 }
 
@@ -934,13 +926,6 @@ void		CCharacterPhysicsSupport::on_child_shell_activate	( CPhysicsShellHolder* o
 		return;
 
 	VERIFY(obj->PPhysicsShell());
-#if	0
-//	DBG_OpenCashedDraw();
-	//m_pPhysicsShell->dbg_draw_geometry( 0.2f, color_xrgb( 255, 100, 0 ) );
-	m_pPhysicsShell->dbg_draw_velocity( 0.01f, color_xrgb( 100, 255, 0 ) );
-	m_pPhysicsShell->dbg_draw_force( 0.1f, color_xrgb( 100, 0, 255 ) );
-	DBG_ClosedCashedDraw( 50000 );
-#endif
 	//DBG_OpenCashedDraw();
 	//obj->PPhysicsShell()->dbg_draw_geometry( 0.2f, color_xrgb( 255, 100, 0 ) );
 	
@@ -1421,21 +1406,7 @@ void	CCharacterPhysicsSupport::FlyTo(const	Fvector &disp)
 		for(u16	i=0;steps_num>i;++i)
 		{
 			m_pPhysicsShell->set_LinearVel(vel);
-#if	0
-	DBG_OpenCashedDraw();
-	//m_pPhysicsShell->dbg_draw_geometry( 0.2f, color_xrgb( 255, 100, 0 ) );
-	m_pPhysicsShell->dbg_draw_velocity( 0.01f, color_xrgb( 0, 255, 0 ) );
-	m_pPhysicsShell->dbg_draw_force( 0.1f, color_xrgb( 0, 0, 255 ) );
-//	DBG_ClosedCashedDraw( 50000 );
-#endif
 			physics_world()->Step();
-#if	0
-//	DBG_OpenCashedDraw();
-	//m_pPhysicsShell->dbg_draw_geometry( 0.2f, color_xrgb( 255, 100, 0 ) );
-	m_pPhysicsShell->dbg_draw_velocity( 0.01f, color_xrgb( 100, 255, 0 ) );
-	m_pPhysicsShell->dbg_draw_force( 0.1f, color_xrgb( 100, 0, 255 ) );
-	DBG_ClosedCashedDraw( 50000 );
-#endif
 		}
 		//u16 step_num=disp.magnitude()/fixed_step;
 		m_pPhysicsShell->set_ApplyByGravity(g);
