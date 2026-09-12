@@ -8,6 +8,7 @@
 #include "level.h"
 #include "game_cl_base.h"
 #include "../xrEngine/x_ray.h"
+#include "../xrCore/TaskManager.h"
 #include "../xrEngine/gamemtllib.h"
 #include "../xrEngine/Rain.h"
 #include "../xrphysics/PhysicsCommon.h"
@@ -233,41 +234,57 @@ void CLevel::Load_GameSpecific_CFORM	( CDB::TRI* tris, u32 count )
 	// LogInfo("* Material remapping ID: [Max:%d, StaticMax:%d]",max_ID,max_static_ID);
 	VERIFY(max_static_ID<0xFFFF);
 	
-	if (static_mtl_count < 128) {
-		CDB::TRI						*I = tris;
-		CDB::TRI						*E = tris + count;
-		for ( ; I != E; ++I) {
-			ID_INDEX_PAIRS::iterator	i = std::find(translator.begin(),translator.end(),(u16)(*I).material);
-			if (i != translator.end()) {
-				(*I).material			= (*i).m_index;
-				SGameMtl* mtl			= GMLib.GetMaterialByIdx	((*i).m_index);
-				(*I).suppress_shadows	= mtl->Flags.is(SGameMtl::flSuppressShadows);
-				(*I).suppress_wm		= mtl->Flags.is(SGameMtl::flSuppressWallmarks);
-				continue;
-			}
+	if (!count) return;
 
-			Debug.fatal					(DEBUG_INFO,"Game material '%d' not found",(*I).material);
+	const bool						use_binary_search = (static_mtl_count >= 128);
+	if (use_binary_search)
+		std::sort						(translator.begin(),translator.end());
+
+	std::atomic<bool>				all_found{true};
+	std::atomic<u32>				first_missing{0xFFFFFFFFu};
+
+	auto remap_range = [&](u32 a, u32 b) {
+		for (u32 n = a; n < b; ++n) {
+			CDB::TRI&					t = tris[n];
+			ID_INDEX_PAIRS::iterator	i;
+			if (use_binary_search) {
+				i						= std::lower_bound(translator.begin(),translator.end(),(u16)t.material);
+				if ((i == translator.end()) || ((*i).m_id != t.material)) {
+					all_found.store		(false, std::memory_order_relaxed);
+					u32 expected		= 0xFFFFFFFFu;
+					first_missing.compare_exchange_weak(expected,(u32)t.material,std::memory_order_relaxed);
+					continue;
+				}
+			} else {
+				i						= std::find(translator.begin(),translator.end(),(u16)t.material);
+				if (i == translator.end()) {
+					all_found.store		(false, std::memory_order_relaxed);
+					u32 expected		= 0xFFFFFFFFu;
+					first_missing.compare_exchange_weak(expected,(u32)t.material,std::memory_order_relaxed);
+					continue;
+				}
+			}
+			t.material					= (*i).m_index;
+			SGameMtl* mtl				= GMLib.GetMaterialByIdx	((*i).m_index);
+			t.suppress_shadows			= mtl->Flags.is(SGameMtl::flSuppressShadows);
+			t.suppress_wm				= mtl->Flags.is(SGameMtl::flSuppressWallmarks);
 		}
-		return;
+	};
+
+	if (CTaskManager::IsInsideTask()) {
+		// Nested call (inside a worker task): run inline to avoid
+		// waiting on the busy pool.
+		remap_range						(0,count);
+	} else {
+		const u32 grain					= (count >= 1024) ? std::max(256u, count/64u) : 1u;
+		CTaskManager::AddTaskRange		(
+			[&](u32 a, u32 b, u32)		{ remap_range(a,b); },
+			count, grain);
+		CTaskManager::WaitAll();
 	}
 
-	std::sort							(translator.begin(),translator.end());
-	{
-		CDB::TRI						*I = tris;
-		CDB::TRI						*E = tris + count;
-		for ( ; I != E; ++I) {
-			ID_INDEX_PAIRS::iterator	i = std::lower_bound(translator.begin(),translator.end(),(u16)(*I).material);
-			if ((i != translator.end()) && ((*i).m_id == (*I).material)) {
-				(*I).material			= (*i).m_index;
-				SGameMtl* mtl			= GMLib.GetMaterialByIdx	((*i).m_index);
-				(*I).suppress_shadows	= mtl->Flags.is(SGameMtl::flSuppressShadows);
-				(*I).suppress_wm		= mtl->Flags.is(SGameMtl::flSuppressWallmarks);
-				continue;
-			}
-
-			Debug.fatal					(DEBUG_INFO,"Game material '%d' not found",(*I).material);
-		}
-	}
+	if (!all_found.load(std::memory_order_relaxed))
+		Debug.fatal						(DEBUG_INFO,"Game material '%d' not found", first_missing.load(std::memory_order_relaxed));
 }
 
 void CLevel::BlockCheatLoad()
