@@ -106,7 +106,9 @@ public:
     std::vector<std::string> list_virtual_files() const;
 
     static xrFS& instance();
-    // Only effective before the first instance() call (call_once lazy init).
+    // Legacy hook: call ONLY before the first instance() call (i.e. before any
+    // worker threads start). instance() returns a Meyers singleton; an xrFS set
+    // here is NOT used by instance(), the hook is kept for source compatibility.
     static void set_instance(std::unique_ptr<xrFS> new_fs);
 
     virtual ~xrFS();
@@ -123,9 +125,11 @@ private:
     std::shared_ptr<const FlatIndex> m_flat;
     mutable std::mutex m_mtx;
     mutable std::unordered_map<std::string, std::vector<char>> m_cache;
+    mutable size_t m_cacheBytes = 0; // total bytes currently held in m_cache
     mutable std::mutex m_cacheMtx;
     void rebuild_flat_locked();
 
+    static std::string normalize_path(const std::string& path); // unify separators + lowercase
     static std::string vfs_key(const std::string& path);   // normalize + lowercase, '/'
     static std::string vfs_disk_path(const std::string& root, const std::string& key);
     static std::string vfs_resolve(const std::string& vpath, const std::string& vroot);

@@ -17,13 +17,14 @@
 std::unique_ptr<xrFS> xrFS::s_instance;
 
 xrFS& xrFS::instance() {
-    if (!s_instance) {
-        s_instance = std::make_unique<xrFS>();
-    }
-    return *s_instance;
+    static xrFS the_fs; // Meyers singleton: thread-safe lazy initialization.
+    return the_fs;
 }
 
 void xrFS::set_instance(std::unique_ptr<xrFS> new_fs) {
+    // Legacy hook: call ONLY before the first instance() call / before any
+    // worker threads start. instance() returns the Meyers singleton, so an xrFS
+    // supplied here is not used by instance(). Kept for source compatibility.
     s_instance = std::move(new_fs);
 }
 
@@ -36,14 +37,20 @@ static uint32_t rdU32(const uint8_t* p) {
     return (uint32_t)p[0] | ((uint32_t)p[1] << 8) | ((uint32_t)p[2] << 16) | ((uint32_t)p[3] << 24);
 }
 
-// Normalize a virtual path: separators -> '/', folded to lower case, leading
-// "./" and trailing "/" stripped. Keys are these normalized strings.
-std::string xrFS::vfs_key(const std::string& path) {
+// Common normalization: unify separators to '/' and fold to lower case.
+std::string xrFS::normalize_path(const std::string& path) {
     std::string s = path;
     for (char& c : s) {
         if (c == '\\') c = '/';
         else c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
     }
+    return s;
+}
+
+// Normalize a virtual path: separators -> '/', folded to lower case, leading
+// "./" and trailing "/" stripped. Keys are these normalized strings.
+std::string xrFS::vfs_key(const std::string& path) {
+    std::string s = normalize_path(path);
     if (s.size() >= 2 && s[0] == '.' && s[1] == '/') s.erase(0, 2);
     while (!s.empty() && s.back() == '/') s.pop_back();
     if (s.size() > 1 && s.front() == '/') s.erase(0, 1);
@@ -52,18 +59,11 @@ std::string xrFS::vfs_key(const std::string& path) {
 
 // Resolve: strip the absolute virtual_root prefix (if present) then normalize.
 std::string xrFS::vfs_resolve(const std::string& vpath, const std::string& vroot) {
-    std::string s = vpath;
-    for (char& c : s) {
-        if (c == '\\') c = '/';
-        else c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
-    }
+    std::string s = normalize_path(vpath);
     if (!vroot.empty()) {
         std::string vr = vroot;
-        if (!vr.empty() && vr.size() >= 1) {
-            for (char& c : vr) {
-                if (c == '\\') c = '/';
-                else c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
-            }
+        if (!vr.empty()) {
+            vr = normalize_path(vr);
             while (!vr.empty() && vr.back() == '/') vr.pop_back();
             if (s.size() > vr.size() && s.compare(0, vr.size(), vr) == 0 && s[vr.size()] == '/')
                 s.erase(0, vr.size());
@@ -75,11 +75,14 @@ std::string xrFS::vfs_resolve(const std::string& vpath, const std::string& vroot
     return s;
 }
 
+// Join the real-disk root with a normalized (lowercase, '/'-separated) key
+// using the platform's native separator via std::filesystem::path. On POSIX the
+// key used to be joined with '\\' and collapsed into a single filename.
 std::string xrFS::vfs_disk_path(const std::string& root, const std::string& key) {
-    std::string p = root;
-    if (!p.empty() && p.back() != '\\' && p.back() != '/') p += '\\';
-    for (char c : key) p += (c == '/') ? '\\' : c;
-    return p;
+    std::filesystem::path p(root);
+    for (const auto& part : std::filesystem::path(key))
+        p /= part;
+    return p.string();
 }
 
 void xrFS::set_data_root(const std::string& real_dir) {
@@ -128,9 +131,19 @@ struct xrFS::MountedArchive {
         uint32_t hi = static_cast<uint32_t>(size >> 32);
         uint32_t lo = static_cast<uint32_t>(size & 0xFFFFFFFF);
         hMap = CreateFileMappingW(hFile, nullptr, PAGE_READONLY, hi, lo, nullptr);
-        if (!hMap) return false;
+        if (!hMap) {
+            CloseHandle(hFile);
+            hFile = nullptr;
+            return false;
+        }
         view = static_cast<const uint8_t*>(MapViewOfFile(hMap, FILE_MAP_READ, 0, 0, 0));
-        if (!view) return false;
+        if (!view) {
+            CloseHandle(hMap);
+            hMap = nullptr;
+            CloseHandle(hFile);
+            hFile = nullptr;
+            return false;
+        }
         viewSize = size;
         return true;
 #endif
@@ -305,7 +318,7 @@ struct xrFS::MountedArchive {
 // published: readers grab the shared_ptr and can use it lock-free.
 struct xrFS::FlatIndex {
     struct Rec {
-        uint16_t owner;   // index into owners
+        uint32_t owner;   // index into owners
         uint32_t mtime;   // archive file last_write_time (seconds), for locator
         MountedArchive::ZEntry e;
     };
@@ -334,7 +347,7 @@ void xrFS::rebuild_flat_locked()
         if (!ec)
             mt = (uint32_t)std::chrono::duration_cast<std::chrono::seconds>(
                 fst.time_since_epoch()).count();
-        const uint16_t owner = (uint16_t)oi;
+        const uint32_t owner = (uint32_t)oi;
         // First-wins: the archive mounted first owns the key, mirroring the old
         // per-archive scan order.
         for (const auto& kv : arc->index)
@@ -395,6 +408,7 @@ void xrFS::unmount_zdb() {
     m_flat.reset();
     std::lock_guard<std::mutex> cm(m_cacheMtx);
     m_cache.clear();
+    m_cacheBytes = 0;
 }
 
 bool xrFS::is_mounted() const {
@@ -438,10 +452,11 @@ uint64_t xrFS::virtual_file_size(const std::string& vpath) const
     }
     const std::string key = vfs_resolve(vpath, vroot);
     if (!droot.empty()) {
+        // Single stat: file_size already fails for non-files, no need for a
+        // separate is_regular_file syscall on top.
         std::error_code ec;
-        std::filesystem::path dp = vfs_disk_path(droot, key);
-        if (std::filesystem::is_regular_file(dp, ec) && !ec)
-            return std::filesystem::file_size(dp, ec);
+        uint64_t sz = std::filesystem::file_size(vfs_disk_path(droot, key), ec);
+        if (!ec) return sz;
     }
     const FlatIndex::Rec* r = flat ? flat->find(key) : nullptr;
     return r ? r->e.uncompSize : 0;
@@ -449,14 +464,27 @@ uint64_t xrFS::virtual_file_size(const std::string& vpath) const
 
 uint32_t xrFS::virtual_crc(const std::string& vpath) const
 {
-    std::string vroot;
+    std::string droot, vroot;
     std::shared_ptr<const FlatIndex> flat;
     {
         std::lock_guard<std::mutex> lock(m_mtx);
+        droot = m_data_root;
         vroot = m_virtual_root;
         flat = m_flat;
     }
     const std::string key = vfs_resolve(vpath, vroot);
+    // Same disk-override semantics as virtual_exists / virtual_file_size:
+    // a real file under the data root wins, and its CRC is computed from disk.
+    if (!droot.empty()) {
+        std::error_code ec;
+        std::filesystem::path dp = vfs_disk_path(droot, key);
+        if (std::filesystem::is_regular_file(dp, ec) && !ec) {
+            std::vector<char> buf;
+            if (read_file(dp.string(), buf))
+                return xrArchiver::crc32(buf.data(), buf.size());
+            return 0;
+        }
+    }
     const FlatIndex::Rec* r = flat ? flat->find(key) : nullptr;
     return r ? r->e.crc : 0;
 }
@@ -501,11 +529,20 @@ void xrFS::prefetch_virtual(const std::vector<std::string>& vpaths) const
     }
     if (!flat || vpaths.empty()) return;
 
+    // Overall cache quota: bytes already cached + this batch. On overflow the
+    // whole cache is dropped (simplest eviction, no LRU). A batch that alone
+    // exceeds the quota is ignored entirely (normal lazy path stays in effect).
+    static const size_t kCacheCap = 1024ull * 1024 * 1024; // 1 GiB total cached bytes
+    size_t cachedBytes;
+    {
+        std::lock_guard<std::mutex> cm(m_cacheMtx);
+        cachedBytes = m_cacheBytes;
+    }
+
     // Select cacheable archive entries (no disk override) and size the batch.
-    static const uint64_t kCacheCap = 512ull * 1024 * 1024; // total uncompressed bytes
     std::vector<std::string> keys;
     keys.reserve(vpaths.size());
-    uint64_t total = 0;
+    size_t total = 0;
     for (const std::string& vp : vpaths)
     {
         const std::string key = vfs_resolve(vp, vroot);
@@ -517,20 +554,31 @@ void xrFS::prefetch_virtual(const std::vector<std::string>& vpaths) const
         }
         const FlatIndex::Rec* r = flat->find(key);
         if (!r) continue;
-        total += r->e.uncompSize;
-        if (total > kCacheCap) return; // too big to cache, leave the normal path
+        const size_t sz = r->e.uncompSize;
+        if (cachedBytes + total + sz > kCacheCap)
+        {
+            // Overflow: drop the whole cache and retry with a warm budget.
+            {
+                std::lock_guard<std::mutex> cm(m_cacheMtx);
+                m_cache.clear();
+                m_cacheBytes = 0;
+            }
+            cachedBytes = 0;
+            if (total + sz > kCacheCap) return; // batch alone too large for the cache
+        }
+        total += sz;
         keys.push_back(key);
     }
-    const u32 n = (u32)keys.size();
+    const uint32_t n = (uint32_t)keys.size();
     if (n == 0) return;
 
     // Parallel decode (mmap views are read-only; per-slot buffers are private).
     std::vector<std::vector<char>> slots(n);
     std::atomic<bool> allOk{true};
     CTaskManager::AddTaskRange(
-        [&](u32 start, u32 end, u32)
+        [&](uint32_t start, uint32_t end, uint32_t)
         {
-            for (u32 i = start; i < end; ++i)
+            for (uint32_t i = start; i < end; ++i)
             {
                 const FlatIndex::Rec* r = flat->find(keys[i]);
                 if (r && !flat->archive_of(*r)->extract(r->e, slots[i]))
@@ -541,14 +589,18 @@ void xrFS::prefetch_virtual(const std::vector<std::string>& vpaths) const
     if (!allOk.load(std::memory_order_relaxed)) return;
 
     std::lock_guard<std::mutex> cm(m_cacheMtx);
-    for (u32 i = 0; i < n; ++i)
-        m_cache.emplace(keys[i], std::move(slots[i]));
+    for (uint32_t i = 0; i < n; ++i)
+    {
+        const size_t sz = slots[i].size();
+        if (m_cache.emplace(keys[i], std::move(slots[i])).second)
+            m_cacheBytes += sz;
+    }
 }
 
 bool xrFS::read_virtual_many(const std::vector<std::string>& vpaths,
                              std::vector<std::vector<char>>& results) const
 {
-    const u32 count = (u32)vpaths.size();
+    const uint32_t count = (uint32_t)vpaths.size();
     if (count == 0) { results.clear(); return true; }
 
     std::string droot, vroot;
@@ -563,17 +615,18 @@ bool xrFS::read_virtual_many(const std::vector<std::string>& vpaths,
     results.assign(count, {});
     // Pre-resolve keys once (single flat-index snapshot, lock-free afterwards).
     std::vector<std::string> keys(count);
-    for (u32 i = 0; i < count; ++i)
+    for (uint32_t i = 0; i < count; ++i)
         keys[i] = vfs_resolve(vpaths[i], vroot);
 
     std::atomic<bool> allOk{true};
     // Same per-element semantics as read_virtual: a real file under the data
-    // root overrides the archive entry. Multi-frame entries nested-extract
-    // sequentially via the IsInsideTask() guard, so no scheduler deadlock.
+    // root overrides the archive entry; otherwise the prefetch cache is used
+    // first, then the archive. Multi-frame entries nested-extract sequentially
+    // via the IsInsideTask() guard, so no scheduler deadlock.
     CTaskManager::AddTaskRange(
-        [&](u32 start, u32 end, u32)
+        [&](uint32_t start, uint32_t end, uint32_t)
         {
-            for (u32 i = start; i < end; ++i)
+            for (uint32_t i = start; i < end; ++i)
             {
                 const std::string& key = keys[i];
                 if (!droot.empty())
@@ -584,6 +637,15 @@ bool xrFS::read_virtual_many(const std::vector<std::string>& vpaths,
                     {
                         if (read_file(dp.string(), results[i])) continue;
                         allOk.store(false, std::memory_order_relaxed);
+                        continue;
+                    }
+                }
+                {
+                    std::lock_guard<std::mutex> cm(m_cacheMtx);
+                    auto cit = m_cache.find(key);
+                    if (cit != m_cache.end())
+                    {
+                        results[i] = cit->second;
                         continue;
                     }
                 }
@@ -660,6 +722,7 @@ std::vector<std::string> xrFS::list_last_archive_files() const
     if (last) {
         out.reserve(last->index.size());
         for (const auto& kv : last->index) out.push_back(kv.first);
+        std::sort(out.begin(), out.end());
     }
     return out;
 }
@@ -719,11 +782,16 @@ uint64_t xrFS::file_size(const std::string& path) const {
 bool xrFS::read_file(const std::string& path, std::vector<char>& out) const {
     std::ifstream f(path, std::ios::binary | std::ios::ate);
     if (!f) return false;
-    size_t size = f.tellg();
+    const std::streamoff off = f.tellg();
+    if (off < 0) return false; // stream not at a valid position
+    const size_t size = static_cast<size_t>(off);
     out.resize(size);
     f.seekg(0);
-    f.read(out.data(), size);
-    return f.good();
+    if (size > 0)
+        f.read(out.data(), static_cast<std::streamsize>(size));
+    // Verify by bytes actually transferred (gcount), not f.good(): a short read
+    // (dfs eof) otherwise reports success with stale vector contents.
+    return static_cast<size_t>(f.gcount()) == size;
 }
 
 bool xrFS::write_file(const std::string& path, const std::vector<char>& data) {
@@ -816,7 +884,11 @@ static void collect_tree(const std::string& base_dir, std::vector<std::string>& 
         if (rel.is_absolute()) continue;
 
         std::string name = rel.string();
+#if defined(_WIN32)
+        // std::filesystem::relative yields backslashes on Windows; normalize to
+        // the key separator. On POSIX the native separator is already '/'.
         for (char& c : name) if (c == '\\') c = '/';
+#endif
         if (name.size() > UINT16_MAX) continue; // zip central dir name limit
 
         files.push_back(full.string());
