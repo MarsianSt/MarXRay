@@ -245,9 +245,9 @@ void CLevel::ClientReceive()
 			}break;
 		//---------------------------------------------------
 		case M_SV_CONFIG_NEW_CLIENT:
-			LogInfo("--- bgfxport got NEW_CLIENT, game=%p", (void*)game);
+			LogInfo("got NEW_CLIENT, game=%p", (void*)game);
 			InitializeClientGame	(*P);
-			LogInfo("--- bgfxport NEW_CLIENT done, game=%p", (void*)game);
+			LogInfo("NEW_CLIENT done, game=%p", (void*)game);
 			break;
 		case M_SV_CONFIG_GAME:
 			game->net_import_state(*P);

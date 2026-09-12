@@ -18,7 +18,7 @@ CGameMtlLibrary::	CGameMtlLibrary		()
         material_count	    = 0;
 #endif
 		PGMLib = &GMLib;
-		LogInfo("--- bgfxport GMLib ctor: obj=%p PGMLib=%p", (void*)&GMLib, (void*)PGMLib);
+		LogInfo("GMLib ctor: obj=%p PGMLib=%p", (void*)&GMLib, (void*)PGMLib);
     }
 
 void SGameMtl::Load(IReader& fs)
@@ -130,7 +130,7 @@ void CGameMtlLibrary::Load()
     }
 #endif
 
-	LogInfo("--- bgfxport GMLib.Load end: obj=%p mtl=%u pair=%u", (void*)this, (u32)materials.size(), (u32)material_pairs.size());
+	LogInfo("GMLib.Load end: obj=%p mtl=%u pair=%u", (void*)this, (u32)materials.size(), (u32)material_pairs.size());
 
 /*
 	for (GameMtlPairIt p_it=material_pairs.begin(); material_pairs.end() != p_it; ++p_it){

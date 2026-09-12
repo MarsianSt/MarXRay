@@ -228,12 +228,12 @@ namespace enki
     // Custom allocator, set in TaskSchedulerConfig. Also see ENKI_CUSTOM_ALLOC_FILE_AND_LINE for file_ and line_
     typedef void* (*AllocFunc)( size_t align_, size_t size_, void* userData_, const char* file_, int line_ );
     typedef void  (*FreeFunc)(  void* ptr_,    size_t size_, void* userData_, const char* file_, int line_ );
-    // Удалили DefaultAllocFunc и DefaultFreeFunc
+    // пїЅпїЅпїЅпїЅпїЅпїЅпїЅ DefaultAllocFunc пїЅ DefaultFreeFunc
 
     struct CustomAllocator
     {
-        AllocFunc alloc = EnkiAllocFunc; // Используем вашу функцию
-        FreeFunc  free = EnkiFreeFunc;  // Используем вашу функцию
+        AllocFunc alloc = EnkiAllocFunc; // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ
+        FreeFunc  free = EnkiFreeFunc;  // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ
         void* userData = nullptr;
     };
 
@@ -391,7 +391,7 @@ namespace enki
         bool        TryRunTask( uint32_t threadNum_, uint32_t& hintPipeToCheck_io_ );
         bool        TryRunTask( uint32_t threadNum_, uint32_t priority_, uint32_t& hintPipeToCheck_io_ );
         void        StartThreads();
-        void        StopThreads( bool bWait_ );
+        void        StopThreads();
         void        SplitAndAddTask( uint32_t threadNum_, SubTaskSet subTask_, uint32_t rangeToSplit_ );
         void        WakeThreadsForNewTasks();
         void        WakeThreadsForTaskCompletion();
@@ -427,7 +427,7 @@ namespace enki
         uint32_t               m_NumInitialPartitions;
         bool                   m_bHaveThreads;
         TaskSchedulerConfig    m_Config;
-        std::atomic<int32_t>   m_NumExternalTaskThreadsRegistered;
+        std::atomic<uint32_t>   m_NumExternalTaskThreadsRegistered;
 
         TaskScheduler( const TaskScheduler& nocopy_ );
         TaskScheduler& operator=( const TaskScheduler& nocopy_ );

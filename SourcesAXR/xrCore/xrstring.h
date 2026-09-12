@@ -2,6 +2,9 @@
 
 #include <locale>
 #include <algorithm>
+#include <string>
+#include <string_view>
+#include <unordered_map>
 
 #pragma pack(push,4)
 //////////////////////////////////////////////////////////////////////////

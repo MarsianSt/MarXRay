@@ -209,6 +209,20 @@
 #include <tracy/Tracy.hpp>
 
 #include "xrDebug.h"
+
+// Log* macros are function-like; MSVC substitutes them when a template body is
+// parsed (not when it is instantiated). Some math headers parsed below (e.g.
+// _cylinder.h via vector.h) use LogInfo in debug code, so the macro must exist
+// before vector.h. The class xrAsyncLogger that these expand to is only needed
+// at instantiation time, which is always after xrCore.h is fully included.
+#ifndef LOG_MODULE
+#define LOG_MODULE "engine"
+#endif
+#define LogInfo(fmt, ...)    xrAsyncLogger::instance().info(LOG_MODULE, fmt, ##__VA_ARGS__)
+#define LogWarning(fmt, ...) xrAsyncLogger::instance().warning(LOG_MODULE, fmt, ##__VA_ARGS__)
+#define LogError(fmt, ...)   xrAsyncLogger::instance().error(LOG_MODULE, fmt, ##__VA_ARGS__)
+#define LogDebug(fmt, ...)   xrAsyncLogger::instance().debug(LOG_MODULE, fmt, ##__VA_ARGS__)
+
 #include "vector.h"
 
 #include "clsid.h"

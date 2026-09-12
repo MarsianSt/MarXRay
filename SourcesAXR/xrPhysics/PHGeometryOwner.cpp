@@ -13,7 +13,7 @@ CPHGeometryOwner::CPHGeometryOwner()
 		char mf[260] = {0};
 		if (hm) GetModuleFileNameA(hm, mf, sizeof(mf));
 		CGameMtlLibrary& gl = GMLibrary();
-		LogInfo("--- bgfxport PHCtor: ph_world=%p impPGMLib=%p [%s] gle=%p cnt=%u",
+		LogInfo("PHCtor: ph_world=%p impPGMLib=%p [%s] gle=%p cnt=%u",
 			(void*)ph_world, (void*)PGMLib, mf, (void*)&gl, gl.CountMaterial());
 	}
 	b_builded=false;

@@ -7,6 +7,8 @@
  
 #include "ximajpg.h"
 
+#include "../../../xrCore/xrAsyncLogger.h"
+
 #pragma warning(disable:4995)
 
 #if CXIMAGE_SUPPORT_JPG
@@ -491,7 +493,7 @@ bool CxImageJPG::Encode(CxFile * hFile)
 	}
 
 #ifdef DEBUG
-	Msg("JPEG compressing cycle time : %u ms", tmp_dbg_timer.GetElapsed_ms());
+	LogInfo("JPEG compressing cycle time : %u ms", tmp_dbg_timer.GetElapsed_ms());
 #endif
 
 

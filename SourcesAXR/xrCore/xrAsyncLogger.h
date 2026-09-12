@@ -2,9 +2,13 @@
 #pragma once
 
 #include <string>
+#include <vector>
 #include <queue>
 #include <fstream>
 #include <atomic>
+#include <mutex>
+#include <condition_variable>
+#include <thread>
 
 typedef void (*LogCallback)(LPCSTR string);
 
@@ -86,16 +90,21 @@ private:
     static constexpr size_t MAX_PREINIT_MSGS = 4096;  // лимит pre-init буфера
 };
 
-#ifndef LOG_MODULE
-#define LOG_MODULE "Core"
-#endif
-
 #define VPUSH(a)	((a).x), ((a).y), ((a).z)
 
+// Every TU that uses the Log* macros must have LOG_MODULE declared. Provide a
+// sensible default here; a TU that wants its own module label defines LOG_MODULE
+// BEFORE including this header (e.g. '#define LOG_MODULE "xrCore"').
+#ifndef LOG_MODULE
+#define LOG_MODULE "engine"
+#endif
+
+#ifndef LogInfo
 #define LogInfo(fmt, ...)    xrAsyncLogger::instance().info(LOG_MODULE, fmt, ##__VA_ARGS__)
 #define LogWarning(fmt, ...) xrAsyncLogger::instance().warning(LOG_MODULE, fmt, ##__VA_ARGS__)
 #define LogError(fmt, ...)   xrAsyncLogger::instance().error(LOG_MODULE, fmt, ##__VA_ARGS__)
 #define LogDebug(fmt, ...)   xrAsyncLogger::instance().debug(LOG_MODULE, fmt, ##__VA_ARGS__)
+#endif
 
 // Backward-compatible global LogFile pointer (used by XR_IOConsole, Text_Console, console_commands)
 extern XRCORE_API xr_vector<shared_str>* LogFile;

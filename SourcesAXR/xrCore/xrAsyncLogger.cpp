@@ -1,3 +1,5 @@
+#define LOG_MODULE "xrAsyncLogger"
+
 #include "stdafx.h"
 #include "xrAsyncLogger.h"
 #include "xrStatusConsole.h"

@@ -340,7 +340,7 @@ void CLevel::InitializeClientGame	(NET_Packet& P)
 {
 	ZoneScoped;
 
-	LogInfo("--- bgfxport InitializeClientGame: enter, game=%p", (void*)game);
+	LogInfo("InitializeClientGame: enter, game=%p", (void*)game);
 	string256 game_type_name;
 	P.r_stringZ(game_type_name);
 	if(game && !xr_strcmp(game_type_name, game->type_name()) )
@@ -355,7 +355,7 @@ void CLevel::InitializeClientGame	(NET_Packet& P)
 	game->set_type_name		(game_type_name);
 	game->Init				();
 	m_bGameConfigStarted	= TRUE;
-	LogInfo("--- bgfxport InitializeClientGame: created, game=%p", (void*)game);
+	LogInfo("InitializeClientGame: created, game=%p", (void*)game);
 
 	if (!IsGameTypeSingle())
 	{

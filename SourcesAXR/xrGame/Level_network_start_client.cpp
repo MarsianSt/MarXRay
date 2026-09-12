@@ -67,7 +67,7 @@ bool	CLevel::net_start_client2				()
 		}
 	}
 
-	LogInfo("--- bgfxport client2: direct=%d, connecting...", (int)psNET_direct_connect);
+	LogInfo("client2: direct=%d, connecting...", (int)psNET_direct_connect);
 	connected_to_server = Connect2Server(*m_caClientOptions);
 
 	if (connected_to_server && psNET_direct_connect)
@@ -77,7 +77,7 @@ bool	CLevel::net_start_client2				()
 			Server->Update();
 		}
 
-	LogInfo("--- bgfxport client2: connected=%d, configured=%d, game=%p", (int)connected_to_server, (int)game_configured, (void*)game);
+	LogInfo("client2: connected=%d, configured=%d, game=%p", (int)connected_to_server, (int)game_configured, (void*)game);
 
 	return true;
 }
@@ -142,20 +142,20 @@ bool	CLevel::net_start_client3				()
 		snprintf(rpc_settings.LargeImageKey, 128, level_name);
 		g_discord.SetStatus();
 
-		LogInfo("--- bgfxport client3: loading level, connected=%d", (int)connected_to_server);
+		LogInfo("client3: loading level, connected=%d", (int)connected_to_server);
 		// Load level
 		R_ASSERT2				(Load(level_id),"Loading failed.");
-		LogInfo("--- bgfxport client3: level loaded, pLevel=%p, connected_now=%d", (void*)pLevel, (int)connected_to_server);
+		LogInfo("client3: level loaded, pLevel=%p, connected_now=%d", (void*)pLevel, (int)connected_to_server);
 		map_data.m_level_geom_crc32 = 0;
 		if (!IsGameTypeSingle())
 			CalculateLevelCrc32		();
 
 		if (m_bGameSpecificAfterPending)
 		{
-			LogInfo("--- bgfxport client3: running deferred Load_GameSpecific_After");
+			LogInfo("client3: running deferred Load_GameSpecific_After");
 			R_ASSERT				(Load_GameSpecific_After ());
 			m_bGameSpecificAfterPending	= FALSE;
-			LogInfo("--- bgfxport client3: deferred Load_GameSpecific_After done");
+			LogInfo("client3: deferred Load_GameSpecific_After done");
 		}
 	}
 	return true;
