@@ -37,7 +37,8 @@ public:
 
 protected:
 	CPointQuadTree					*m_covers;
-	xr_vector<bool>					m_temp;
+	xr_vector<u8>					m_temp;
+	xr_vector<u8>					m_is_cover;
 	mutable PointVector				m_nearest;
 
 private:

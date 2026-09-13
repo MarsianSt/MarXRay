@@ -1,5 +1,7 @@
 ﻿#pragma once
 
+#include "../xrCore/TaskManager.h"
+
 #ifdef XRGAME_EXPORTS
 #	include "ui/xrUIXmlParser.h"
 #else // XRGAME_EXPORTS
@@ -148,53 +150,92 @@ typename void	CSXML_IdToIndex::InitInternal ()
 	VERIFY(file_str);
 	VERIFY(tag_name);
 
-	string_path	xml_file;
-	int			count = _GetItemCount	(file_str);
-	int			index = 0;
-	for (int it=0; it<count; ++it)	
+	// Collect full file list (single-threaded string ops)
+	xr_vector<xr_string> xml_paths;
 	{
-		_GetItem	(file_str, it, xml_file);
-
-		CUIXml* uiXml			= xr_new<CUIXml>();
-		xr_string				xml_file_full;
-		xml_file_full			= xml_file;
-		xml_file_full			+= ".xml";
-		uiXml->Load				(CONFIG_PATH, "gameplay", xml_file_full.c_str());
-
-		//����� ������
-		int items_num			= uiXml->GetNodesNum(uiXml->GetRoot(), tag_name);
-
-		for(int i=0; i<items_num; ++i)
+		string_path	xml_file;
+		int			count = _GetItemCount(file_str);
+		if (count)
 		{
-			LPCSTR item_name	= uiXml->ReadAttrib(uiXml->GetRoot(), tag_name, i, "id", NULL);
+			xml_paths.reserve	(count);
+			for (int it=0; it<count; ++it)
+			{
+				_GetItem	(file_str, it, xml_file);
+				xr_string	full = xml_file;
+				full		+= ".xml";
+				xml_paths.push_back(full);
+			}
+		}
+	}
+
+	const u32 n = (u32)xml_paths.size();
+	if (n == 0)
+		return;
+
+	// Phase 1: load & parse each XML in parallel.
+	// Each CUIXml/tinyxml instance is self-contained; shared_str docking is
+	// mutex-guarded inside the string container and ref-counting is atomic.
+	xr_vector<xr_vector<ITEM_DATA>> per_file(n);
+	auto parse_file = [&](u32 i)
+	{
+		CUIXml* uiXml		= xr_new<CUIXml>();
+		uiXml->Load			(CONFIG_PATH, "gameplay", xml_paths[i].c_str());
+
+		xr_vector<ITEM_DATA>& out = per_file[i];
+		int items_num		= uiXml->GetNodesNum(uiXml->GetRoot(), tag_name);
+		out.reserve			(items_num < 0 ? 0 : (size_t)items_num);
+
+		for (int id=0; id<items_num; ++id)
+		{
+			LPCSTR item_name	= uiXml->ReadAttrib(uiXml->GetRoot(), tag_name, id, "id", NULL);
 
 			string256			buf;
-			xr_sprintf				(buf, "id for item don't set, number %d in %s", i, xml_file);
+			xr_sprintf			(buf, "id for item don't set, number %d in %s", id, xml_paths[i].c_str());
 			R_ASSERT2			(item_name, buf);
-
-
-			//����������� ID �� ������������
-			T_VECTOR::iterator t_it = m_pItemDataVector->begin();
-			for(;m_pItemDataVector->end() != t_it; t_it++)
-			{
-				if(shared_str((*t_it).id) == shared_str(item_name))
-					break;
-			}
-
-			R_ASSERT3(m_pItemDataVector->end() == t_it, "duplicate item id", item_name);
 
 			ITEM_DATA			data;
 			data.id				= item_name;
-			data.index			= index;
-			data.pos_in_file	= i;
-//.				data.file_name		= xml_file;
+			data.index			= -1;			// assigned below on merge
+			data.pos_in_file	= id;
 			data._xml			= uiXml;
-			m_pItemDataVector->push_back(data);
-
-			index++; 
+			out.push_back		(data);
 		}
-		if(0==items_num)
-			delete_data(uiXml);
+
+		if (0 == items_num)
+			delete_data		(uiXml);
+	};
+
+	if (CTaskManager::IsInsideTask())
+		for (u32 i=0; i<n; ++i)
+			parse_file		(i);
+	else
+	{
+		CTaskManager::AddTaskRange(
+			[&](u32 start, u32 end, u32)
+			{
+				for (u32 i=start; i<end; ++i)
+					parse_file (i);
+			}, n, 1);
+		CTaskManager::WaitAll ();
+	}
+
+	// Phase 2: merge serially (the duplicate check / global index are order-dependent)
+	int		index = 0;
+	for (u32 f=0; f<n; ++f)
+	{
+		for (xr_vector<ITEM_DATA>::iterator it = per_file[f].begin(); it != per_file[f].end(); ++it)
+		{
+			T_VECTOR::iterator t_it = m_pItemDataVector->begin();
+			for(;m_pItemDataVector->end() != t_it; t_it++)
+			{
+				if(shared_str((*t_it).id) == shared_str((*it).id))
+					break;
+			}
+			R_ASSERT3(m_pItemDataVector->end() == t_it, "duplicate item id", (*it).id.c_str());
+
+			(*it).index		= index++;
+			m_pItemDataVector->push_back(*it);
+		}
 	}
 }
 

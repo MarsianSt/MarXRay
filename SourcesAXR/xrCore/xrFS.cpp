@@ -14,20 +14,10 @@
 #include <Windows.h>
 #endif
 
-std::unique_ptr<xrFS> xrFS::s_instance;
-
 xrFS& xrFS::instance() {
     static xrFS the_fs; // Meyers singleton: thread-safe lazy initialization.
     return the_fs;
 }
-
-void xrFS::set_instance(std::unique_ptr<xrFS> new_fs) {
-    // Legacy hook: call ONLY before the first instance() call / before any
-    // worker threads start. instance() returns the Meyers singleton, so an xrFS
-    // supplied here is not used by instance(). Kept for source compatibility.
-    s_instance = std::move(new_fs);
-}
-
 // ---- helpers ---------------------------------------------------------------
 
 static uint16_t rdU16(const uint8_t* p) {
@@ -591,6 +581,7 @@ void xrFS::prefetch_virtual(const std::vector<std::string>& vpaths) const
     std::lock_guard<std::mutex> cm(m_cacheMtx);
     for (uint32_t i = 0; i < n; ++i)
     {
+        slots[i].shrink_to_fit();
         const size_t sz = slots[i].size();
         if (m_cache.emplace(keys[i], std::move(slots[i])).second)
             m_cacheBytes += sz;

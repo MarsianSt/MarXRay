@@ -107,11 +107,11 @@ class					shared_str
 private:
 	str_value*			p_;
 protected:
-	// ref-counting
-	void				_dec		()								{	if (0==p_) return;	p_->dwReference--; 	if (0==p_->dwReference)	p_=0;						}
+	// ref-counting (atomic: shared_str may be created/copied on task threads)
+	void				_dec		()								{	if (0==p_) return;	if (0==InterlockedDecrement((volatile LONG*)&p_->dwReference)) p_=0;		}
 public:
-	void				_set		(str_c rhs) 					{	str_value* v = g_pStringContainer->dock(rhs); if (0!=v) v->dwReference++; _dec(); p_ = v;	}
-	void				_set		(shared_str const &rhs)			{	str_value* v = rhs.p_; if (0!=v) v->dwReference++; _dec(); p_ = v;							}
+	void				_set		(str_c rhs) 					{	str_value* v = g_pStringContainer->dock(rhs); if (0!=v) InterlockedIncrement((volatile LONG*)&v->dwReference); _dec(); p_ = v;	}
+	void				_set		(shared_str const &rhs)			{	str_value* v = rhs.p_; if (0!=v) InterlockedIncrement((volatile LONG*)&v->dwReference); _dec(); p_ = v;							}
 //	void				_set		(shared_str const &rhs)			{	str_value* v = g_pStringContainer->dock(rhs.c_str()); if (0!=v) v->dwReference++; _dec(); p_ = v;							}
 	
 

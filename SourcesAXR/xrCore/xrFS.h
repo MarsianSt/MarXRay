@@ -70,6 +70,7 @@ public:
     // merged into a single flat O(1) lookup table. Returns how many mounted.
     size_t mount_zdb_many(const std::vector<std::string>& archive_paths,
                           const std::string& virtual_root = "");
+    // Detach and reset everything back to a not-mounted, no-data-root state.
     void unmount_zdb();
     bool is_mounted() const;
     size_t mounted_count() const;
@@ -106,10 +107,6 @@ public:
     std::vector<std::string> list_virtual_files() const;
 
     static xrFS& instance();
-    // Legacy hook: call ONLY before the first instance() call (i.e. before any
-    // worker threads start). instance() returns a Meyers singleton; an xrFS set
-    // here is NOT used by instance(), the hook is kept for source compatibility.
-    static void set_instance(std::unique_ptr<xrFS> new_fs);
 
     virtual ~xrFS();
 
@@ -133,8 +130,6 @@ private:
     static std::string vfs_key(const std::string& path);   // normalize + lowercase, '/'
     static std::string vfs_disk_path(const std::string& root, const std::string& key);
     static std::string vfs_resolve(const std::string& vpath, const std::string& vroot);
-
-    static std::unique_ptr<xrFS> s_instance;
 };
 
 inline xrFS& fs() { return xrFS::instance(); }

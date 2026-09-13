@@ -372,12 +372,16 @@ namespace
 
 	bgfx_vertex_layout_t              s_worldLayoutDesc = {};
 	bgfx_vertex_layout_handle_t       s_worldLayout     = BGFX_INVALID_HANDLE;
+	bgfx_vertex_layout_t              s_worldTerrainLayoutDesc = {};
+	bgfx_vertex_layout_handle_t       s_worldTerrainLayout     = BGFX_INVALID_HANDLE;
 	xr_vector<bgfx_vertex_buffer_handle_t> s_worldVbh;   // index-aligned with s_vbList
 	xr_vector<bgfx_index_buffer_handle_t>  s_worldIbh;   // index-aligned with s_ibList
+	xr_vector<u8>                        s_worldVbHasUv1; // 1 = buffer includes lightmap UV1
 	int                                 s_worldUploaded = 0;
 	int                                 g_worldDiagLogN = 0;
 	bgfx_program_handle_t               s_worldProgram = BGFX_INVALID_HANDLE;
 	bgfx_program_handle_t               s_worldDecalProgram = BGFX_INVALID_HANDLE;
+	bgfx_program_handle_t               s_worldTerrainProgram = BGFX_INVALID_HANDLE;
 
 	// Byte offset of the POSITION float3 in a vertex declaration, or -1.
 	int worldPosOffset(const xr_vector<D3DVERTEXELEMENT9>& dcl)
@@ -414,6 +418,40 @@ namespace
 		return worldUvOffset(dcl, t);
 	}
 
+	// IEEE 754 half -> float (used to expand FLOAT16_2 lightmap UVs).
+	float unpackHalf(u16 h)
+	{
+		const u32 sign = (u32)((h >> 15) & 1u) << 31u;
+		const u32 exp  = (u32)((h >> 10) & 0x1Fu);
+		u32       man  = (u32)(h & 0x3FFu);
+		u32       bits;
+		if (exp == 0)
+		{
+			if (man == 0)
+				bits = sign;
+			else
+			{
+				// subnormal half
+				int e = -24;
+				u32 m = man;
+				while ((m & 0x400u) == 0)
+				{
+					m <<= 1;
+					++e;
+				}
+				m &= 0x3FFu;
+				bits = sign | ((u32)(e + 127) << 23u) | (m << 13u);
+			}
+		}
+		else if (exp == 0x1F)
+			bits = sign | 0x7F800000u | (man << 13u); // inf/nan
+		else
+			bits = sign | ((exp + (u32)(127 - 15)) << 23u) | (man << 13u);
+		float f;
+		memcpy(&f, &bits, sizeof(f));
+		return f;
+	}
+
 	struct WorldDiag
 	{
 		int drawn     = 0;
@@ -436,6 +474,9 @@ namespace
 	xr_vector<WorldTexEntry> g_worldTextures;
 	bgfx_uniform_handle_t   g_worldSampler = BGFX_INVALID_HANDLE;
 	bgfx_uniform_handle_t   g_worldAlphaCtrl = BGFX_INVALID_HANDLE;
+	bgfx_uniform_handle_t   g_worldMaskSampler = BGFX_INVALID_HANDLE;
+	bgfx_uniform_handle_t   g_worldDtSamplers[4] = { BGFX_INVALID_HANDLE, BGFX_INVALID_HANDLE, BGFX_INVALID_HANDLE, BGFX_INVALID_HANDLE };
+	bgfx_uniform_handle_t   g_worldDtScale = BGFX_INVALID_HANDLE;
 	bool g_worldTexturesReady = false;
 
 	// Level shader name table from fsL_SHADERS. index 0 is empty, entries are
@@ -469,6 +510,19 @@ namespace
 	}
 
 	xr_string bgfxLevelTextureName(const char* shaderName);
+	xr_string bgfxLevelTextureNamePart(const xr_string& s);
+	bool      bgfxWorldIsTerrainShader(const char* shaderName);
+	bool      bgfxWorldTerrainDetail(const char* baseName, xr_string& detailName, float& detailScale);
+	bgfx_texture_handle_t bgfxWorldTextureGet(const char* name);
+
+	struct WorldTerrainLayers
+	{
+		bgfx_texture_handle_t mask;    // <base>_mask, RGBA channels select the 4 details
+		bgfx_texture_handle_t det[4];  // detail textures for mask.r / .g / .b / .a
+		float detailScale;             // tile scale shared by all 4 details
+	};
+
+	bool bgfxWorldLevelTerrain(u16 shader_id, WorldTerrainLayers& out);
 
 	// Resolve the diffuse texture for a level visual by its fsL_SHADERS index,
 	// converting the shader name to the db texture path and caching the handle.
@@ -476,7 +530,10 @@ namespace
 	// parallel "resolved" vector so failed lookups are cached too.
 	struct WorldLevelTex
 	{
-		bgfx_texture_handle_t handle;
+		bgfx_texture_handle_t handle;   // diffuse base texture
+		bgfx_texture_handle_t mask;     // <base>_mask (terrain only), invalid if none
+		bgfx_texture_handle_t det[4];   // 4 detail textures (terrain only)
+		float detailScale;              // detail tile scale from .thm (0 = none)
 		u8 resolved;
 	};
 	static xr_vector<WorldLevelTex> g_worldLevelTexCache;
@@ -491,6 +548,10 @@ namespace
 			for (auto& e : g_worldLevelTexCache)
 			{
 				e.handle = BGFX_INVALID_HANDLE;
+				e.mask = BGFX_INVALID_HANDLE;
+				for (int i = 0; i < 4; ++i)
+					e.det[i] = BGFX_INVALID_HANDLE;
+				e.detailScale = 0.0f;
 				e.resolved = 0;
 			}
 		}
@@ -499,6 +560,11 @@ namespace
 			return e.handle;
 
 		e.resolved = 1;
+		e.handle = BGFX_INVALID_HANDLE;
+		e.mask = BGFX_INVALID_HANDLE;
+		for (int i = 0; i < 4; ++i)
+			e.det[i] = BGFX_INVALID_HANDLE;
+		e.detailScale = 0.0f;
 		const char* sn = bgfxLevelShaderName(shader_id);
 		if (!sn || !sn[0])
 			return e.handle;
@@ -515,30 +581,67 @@ namespace
 			LogInfo("WORLD tex MISS '%s' (%s)", tname.c_str(), sn);
 			e.handle = BGFX_INVALID_HANDLE;
 		}
+
+		// Terrain blends the (uni-copy) base painting with 4 tiled detail
+		// textures selected by <base>_mask (BLENDER: CBlender_BmmD, R2/R3
+		// "s_mask" RGBA -> s_dt_r/g/b/a). The shared tile scale comes from the
+		// base texture's .thm (THM_CHUNK_DETAIL_EXT = 0x0815). The 4 details
+		// default to the original blender's BmmD defaults. No lightmap: it is
+		// neither loaded nor used (matching R3's s_mask/s_lmap removal).
+		if (bgfxWorldIsTerrainShader(sn))
+		{
+			xr_string detName;
+			float detailScale = 0.0f;
+			if (bgfxWorldTerrainDetail(tname.c_str(), detName, detailScale))
+			{
+				e.detailScale = detailScale;
+				xr_string maskName = tname;
+				maskName += "_mask";
+				e.mask = bgfxWorldTextureGet(maskName.c_str());
+				static const char* s_terrainDetails[4] = {
+					"detail\\detail_grnd_grass",
+					"detail\\detail_grnd_asphalt",
+					"detail\\detail_grnd_earth",
+					"detail\\detail_grnd_yantar",
+				};
+				for (int i = 0; i < 4; ++i)
+					e.det[i] = bgfxWorldTextureGet(s_terrainDetails[i]);
+			}
+		}
 		return e.handle;
+	}
+
+	// Mask + 4 detail textures + shared scale for a terrain shader id (cached
+	// in the same entry resolved by bgfxWorldLevelTexture). Handles are
+	// BGFX_INVALID_HANDLE / scale 0 when the terrain mix is absent.
+	bool bgfxWorldLevelTerrain(u16 shader_id, WorldTerrainLayers& out)
+	{
+		out.mask = BGFX_INVALID_HANDLE;
+		for (int i = 0; i < 4; ++i)
+			out.det[i] = BGFX_INVALID_HANDLE;
+		out.detailScale = 0.0f;
+		if (shader_id == 0 || shader_id >= (u16)g_worldLevelTexCache.size())
+			return false;
+		if (!g_worldLevelTexCache[shader_id].resolved)
+			bgfxWorldLevelTexture(shader_id);
+		if (shader_id >= (u16)g_worldLevelTexCache.size())
+			return false;
+		const WorldLevelTex& e = g_worldLevelTexCache[shader_id];
+		out.mask = e.mask;
+		for (int i = 0; i < 4; ++i)
+			out.det[i] = e.det[i];
+		out.detailScale = e.detailScale;
+		return bgfxIsValid(e.mask) && e.detailScale > 0.0f;
 	}
 
 	//
 	// Keep the world texture-name cache small; diffusion entries are stored by
 	// name, sector textures resolve through the level table.
 	//
-	// fsL_SHADERS entries are shader/material names with mixed slashes, e.g.
-	// "def_shaders\def_vertex/mtl\mtl_bochka_01" or
-	// "levels\zaton_asfalt/terrain\terrain_zaton,terrain\terrain_zaton_lm".
-	// Textures live in the db under the LAST TWO path segments, e.g. "mtl\mtl_bochka_01".
-	// Pairs are split at ',' - only the diffuse (first) part is used.
-	xr_string bgfxLevelTextureName(const char* shaderName)
+	// Strip a raw (pre-comma) shader path down to its LAST TWO path segments,
+	// e.g. "levels\zaton_asfalt/terrain\terrain_zaton" -> "terrain\terrain_zaton".
+	xr_string bgfxLevelTextureNamePart(const xr_string& s)
 	{
-		xr_string s = shaderName ? shaderName : "";
-		for (size_t i = 0; i < s.size(); ++i)
-		{
-			if (s[i] == ',')
-			{
-				s = s.substr(0, i);
-				break;
-			}
-		}
-		// collect segments (split on '/' or '\')
 		xr_vector<xr_string> segs;
 		size_t start = 0;
 		for (size_t i = 0; i <= s.size(); ++i)
@@ -558,12 +661,86 @@ namespace
 		return out;
 	}
 
+	// fsL_SHADERS entries are shader/material names with mixed slashes, e.g.
+	// "def_shaders\def_vertex/mtl\mtl_bochka_01" or
+	// "levels\zaton_asfalt/terrain\terrain_zaton,terrain\terrain_zaton_lm".
+	// Textures live in the db under the LAST TWO path segments, e.g. "mtl\mtl_bochka_01".
+	// Pairs are split at ',' - only the diffuse (first) part is used.
+	xr_string bgfxLevelTextureName(const char* shaderName)
+	{
+		xr_string s = shaderName ? shaderName : "";
+		for (size_t i = 0; i < s.size(); ++i)
+		{
+			if (s[i] == ',')
+			{
+				s = s.substr(0, i);
+				break;
+			}
+		}
+		return bgfxLevelTextureNamePart(s);
+	}
+
+	// Terrain materials are the fsL_SHADERS entries whose diffuse (first)
+	// part carries a "terrain" path segment, e.g. ".../terrain\terrain_zaton,...".
+	bool bgfxWorldIsTerrainShader(const char* shaderName)
+	{
+		if (!shaderName)
+			return false;
+		xr_string baseName = bgfxLevelTextureName(shaderName);
+		for (size_t i = 0; i + 8 <= baseName.size(); ++i)
+		{
+			if (baseName.compare(i, 8, "terrain\\") == 0)
+				return true;
+		}
+		return false;
+	}
+
+	// Parse the base texture's .thm for the terrain detail (name + scale):
+	// THM_CHUNK_DETAIL_EXT = 0x0815 holds r_stringZ(detail_name) + r_float(scale).
+	// Called with the base texture path, e.g. "terrain\terrain_zaton"; the .thm
+	// lives next to the seed geographic folder ($game_textures$\<base>.thm).
+	bool bgfxWorldTerrainDetail(const char* baseName, xr_string& detailName, float& detailScale)
+	{
+		detailName.clear();
+		detailScale = 0.0f;
+		if (!baseName || !baseName[0])
+			return false;
+
+		xr_string thmPath = baseName;
+		thmPath += ".thm";
+		IReader* F = FS.r_open("$game_textures$", thmPath.c_str());
+		if (!F)
+		{
+			LogInfo("WORLD thm MISS '%s'", thmPath.c_str());
+			return false;
+		}
+		bool ok = false;
+		if (F->find_chunk(0x0815))
+		{
+			F->r_stringZ(detailName);
+			detailScale = F->r_float();
+			ok = !detailName.empty() && detailScale > 0.0f;
+		}
+		FS.r_close(F);
+		LogInfo("WORLD thm '%s' -> detail '%s' scale=%.3f ok=%d",
+			thmPath.c_str(), detailName.c_str(), detailScale, ok ? 1 : 0);
+		return ok;
+	}
+
 	void bgfxWorldEnsureTextures()
 	{
 		if (g_worldTexturesReady)
 			return;
 		g_worldSampler = bgfx_create_uniform("u_texture", BGFX_UNIFORM_TYPE_SAMPLER, 1);
 		g_worldAlphaCtrl = bgfx_create_uniform("u_alphaCtrl", BGFX_UNIFORM_TYPE_VEC4, 1);
+		g_worldMaskSampler = bgfx_create_uniform("u_mask", BGFX_UNIFORM_TYPE_SAMPLER, 1);
+		for (int i = 0; i < 4; ++i)
+		{
+			char name[16];
+			xr_sprintf(name, sizeof(name), "u_dt%d", i);
+			g_worldDtSamplers[i] = bgfx_create_uniform(name, BGFX_UNIFORM_TYPE_SAMPLER, 1);
+		}
+		g_worldDtScale = bgfx_create_uniform("u_dtScale", BGFX_UNIFORM_TYPE_VEC4, 1);
 		g_worldTexturesReady = true;
 	}
 
@@ -604,8 +781,16 @@ namespace
 		bgfx_vertex_layout_end(&s_worldLayoutDesc);
 		s_worldLayout = bgfx_create_vertex_layout(&s_worldLayoutDesc);
 
+		bgfx_vertex_layout_begin(&s_worldTerrainLayoutDesc, BGFX_RENDERER_TYPE_DIRECT3D11);
+		bgfx_vertex_layout_add(&s_worldTerrainLayoutDesc, BGFX_ATTRIB_POSITION, 3, BGFX_ATTRIB_TYPE_FLOAT, false, false);
+		bgfx_vertex_layout_add(&s_worldTerrainLayoutDesc, BGFX_ATTRIB_TEXCOORD0, 2, BGFX_ATTRIB_TYPE_FLOAT, false, false);
+		bgfx_vertex_layout_add(&s_worldTerrainLayoutDesc, BGFX_ATTRIB_TEXCOORD1, 2, BGFX_ATTRIB_TYPE_FLOAT, false, false);
+		bgfx_vertex_layout_end(&s_worldTerrainLayoutDesc);
+		s_worldTerrainLayout = bgfx_create_vertex_layout(&s_worldTerrainLayoutDesc);
+
 		s_worldVbh.assign(s_vbList.size(), bgfx_vertex_buffer_handle_t{ 0xFFFF });
 		s_worldIbh.assign(s_ibList.size(), bgfx_index_buffer_handle_t{ 0xFFFF });
+		s_worldVbHasUv1.assign(s_vbList.size(), 0);
 
 		for (u32 i = 0; i < (u32)s_vbList.size(); ++i)
 		{
@@ -617,19 +802,35 @@ namespace
 			int uvType = 0;
 			int uvOff = (i < (u32)s_dcl.size()) ? worldUvOffset(s_dcl[i], uvType) : -1;
 
+			// Diag: dump the declaration elements for this vertex buffer.
+			{
+				char dstr[512];
+				int dp = 0;
+				if (i >= (u32)s_dcl.size())
+					dp = sprintf_s(dstr, sizeof(dstr), " (no decl)");
+				else
+				{
+					for (const D3DVERTEXELEMENT9& e : s_dcl[i])
+						dp += sprintf_s(dstr + dp, sizeof(dstr) - dp, " [%u:%u:%u:%u]", e.Offset, e.Type, e.Usage, e.UsageIndex);
+				}
+				LogInfo("WORLD VB[%u] stride=%u pos=%d uv0=%d(%d)%s", i, vb->vStride, posOff, uvOff, uvType, dstr);
+			}
+
 			int uvOff1 = -1;
+			int uvType1 = 0;
 			if (i < (u32)s_dcl.size())
 			{
 				for (const D3DVERTEXELEMENT9& e : s_dcl[i])
 				{
-					if (e.Stream == 0 && e.Usage == D3DDECLUSAGE_TEXCOORD && e.UsageIndex == 1 &&
-						(e.Type == D3DDECLTYPE_SHORT2 || e.Type == D3DDECLTYPE_FLOAT2 || e.Type == D3DDECLTYPE_FLOAT16_2))
+					if (e.Stream == 0 && e.Usage == D3DDECLUSAGE_TEXCOORD && e.UsageIndex == 1)
 					{
 						uvOff1 = e.Offset;
+						uvType1 = e.Type;
 						break;
 					}
 				}
 			}
+			LogInfo("WORLD VB[%u] uv1=%d(%d) hasUv1=%d", i, uvOff1, uvType1, (uvOff1 >= 0) ? 1 : 0);
 
 			// Original decode (shaders\shared\common.h): base uv is ALWAYS
 			// TEXCOORD0: unpack_tc_base(tc, T.w, B.w) = (tc + frac) * 32/32768
@@ -642,29 +843,61 @@ namespace
 				continue;
 			}
 
+			const bool hasUv1GT = (uvOff1 >= 0);
+			const bool uv1TypeOk = (uvType1 == D3DDECLTYPE_FLOAT2 || uvType1 == D3DDECLTYPE_SHORT2 || uvType1 == D3DDECLTYPE_FLOAT16_2);
+			const bool hasUv1 = hasUv1GT && uv1TypeOk;
+			LogInfo("WORLD VB[%u] uv1typeOk=%d", i, uv1TypeOk ? 1 : 0);
+			const u32 vstride = hasUv1 ? 28 : 20;
+			s_worldVbHasUv1[i] = hasUv1 ? 1 : 0;
+
 			const u32 vcount = vb->vCount;
 			const u32 stride = vb->vStride;
-			const bgfx_memory_t* mem = bgfx_alloc(vcount * 20);
+			const bgfx_memory_t* mem = bgfx_alloc(vcount * vstride);
 			const u8* src = &vb->data[0];
 			u8* dst = (u8*)mem->data;
 			const bool uvFloat = (uvType == D3DDECLTYPE_FLOAT2);
+			const bool uv1Float = (uvType1 == D3DDECLTYPE_FLOAT2);
+			const bool uv1Half = (uvType1 == D3DDECLTYPE_FLOAT16_2);
 			for (u32 v = 0; v < vcount; ++v)
 			{
-				memcpy(dst + v * 20, src + v * stride + posOff, 12);
+				memcpy(dst + v * vstride, src + v * stride + posOff, 12);
 				if (uvOff >= 0 && uvFloat)
-					memcpy(dst + v * 20 + 12, src + v * stride + uvOff, 8);
+					memcpy(dst + v * vstride + 12, src + v * stride + uvOff, 8);
 				else if (uvOff >= 0)
 				{
 					const s16* s = (const s16*)(src + v * stride + uvOff);
-					float*      f = (float*)(dst + v * 20 + 12);
+					float*      f = (float*)(dst + v * vstride + 12);
 					f[0] = (float)s[0] * (1.0f / 1024.0f);
 					f[1] = (float)s[1] * (1.0f / 1024.0f);
 				}
 				else
-					memset(dst + v * 20 + 12, 0, 8);
+					memset(dst + v * vstride + 12, 0, 8);
+
+				// Lightmap uv (TEXCOORD1): unpack_tc_lmap = /32768 for the
+				// packed types, raw float for FLOAT2.
+				if (!hasUv1)
+					continue;
+				if (uv1Float)
+					memcpy(dst + v * vstride + 20, src + v * stride + uvOff1, 8);
+				else if (uv1Half)
+				{
+					// FLOAT16_2: expand half floats to full float.
+					const u16* s = (const u16*)(src + v * stride + uvOff1);
+					float*      f = (float*)(dst + v * vstride + 20);
+					f[0] = unpackHalf(s[0]);
+					f[1] = unpackHalf(s[1]);
+				}
+				else
+				{
+					const s16* s = (const s16*)(src + v * stride + uvOff1);
+					float*      f = (float*)(dst + v * vstride + 20);
+					f[0] = (float)s[0] * (1.0f / 32768.0f);
+					f[1] = (float)s[1] * (1.0f / 32768.0f);
+				}
 			}
 
-			s_worldVbh[i] = bgfx_create_vertex_buffer(mem, &s_worldLayoutDesc, 0);
+			const bgfx_vertex_layout_t* dcl = hasUv1 ? &s_worldTerrainLayoutDesc : &s_worldLayoutDesc;
+			s_worldVbh[i] = bgfx_create_vertex_buffer(mem, dcl, 0);
 		}
 
 		for (u32 i = 0; i < (u32)s_ibList.size(); ++i)
@@ -713,8 +946,58 @@ namespace
 		const bool isDecal = (decalKind != WDK_NONE);
 		if (isDecal != s_worldDecalPass)
 			return;
-		bgfx_set_vertex_buffer_with_layout(0, s_worldVbh[vi], fv->vBase, fv->vCount, s_worldLayout);
+		const bool isTerrain = !isDecal && bgfxWorldIsTerrainShader(sh);
+		const bool vbHasUv1 = (vi < (int)s_worldVbHasUv1.size()) && (s_worldVbHasUv1[vi] != 0);
+		{
+			static bool s_terrainDiag = false;
+			if (isTerrain && !s_terrainDiag)
+			{
+				s_terrainDiag = true;
+				char dstr[256] = {};
+				u32 dp = (u32)sprintf_s(dstr, sizeof(dstr), "VB[%d] hasUv1=%d", vi, vbHasUv1 ? 1 : 0);
+				if (vi >= 0 && vi < (int)s_vbList.size() && s_vbList[vi])
+				{
+					const ID3DVertexBuffer* tvb = s_vbList[vi];
+					const int uo = 28;
+					if (tvb->vCount > 0)
+					{
+						const u8* p0 = &tvb->data[0];
+						const u8* p1 = (tvb->vCount > 1) ? &tvb->data[tvb->vStride] : p0;
+						const s16* u00 = (const s16*)(p0 + 24);
+						const s16* u10 = (const s16*)(p0 + uo);
+						const s16* u01 = (const s16*)(p1 + 24);
+						const s16* u11 = (const s16*)(p1 + uo);
+						const u8* t0 = p0 + 16;
+						const u8* b0 = p0 + 20;
+						dp += (u32)sprintf_s(dstr + dp, sizeof(dstr) - dp, " uv0[0]=%d,%d uv1[0]=%d,%d uv0[1]=%d,%d uv1[1]=%d,%d",
+							u00[0], u00[1], u10[0], u10[1], u01[0], u01[1], u11[0], u11[1]);
+						dp += (u32)sprintf_s(dstr + dp, sizeof(dstr) - dp, " T=[%03d,%03d,%03d,%03d] B=[%03d,%03d,%03d,%03d]",
+							t0[0], t0[1], t0[2], t0[3], b0[0], b0[1], b0[2], b0[3]);
+					}
+				}
+				float dscale = 0.0f;
+				WorldTerrainLayers tl;
+				bgfxWorldLevelTerrain(fv->shader_id, tl);
+				dscale = tl.detailScale;
+				dp += (u32)sprintf_s(dstr + dp, sizeof(dstr) - dp, " mask=%s dt0=%s dt1=%s dt2=%s dt3=%s scale=%.3f prog=%s",
+					bgfxIsValid(tl.mask) ? "ok" : "bad",
+					bgfxIsValid(tl.det[0]) ? "ok" : "bad",
+					bgfxIsValid(tl.det[1]) ? "ok" : "bad",
+					bgfxIsValid(tl.det[2]) ? "ok" : "bad",
+					bgfxIsValid(tl.det[3]) ? "ok" : "bad",
+					dscale,
+					bgfxIsValid(s_worldTerrainProgram) ? "ok" : "bad");
+				LogInfo("WORLD TERR: %s", dstr);
+			}
+		}
+		// Buffers that carry a lightmap slot (TEXCOORD1 SHORT2/FLOAT2) were
+		// repacked to a 28-byte stride; those without stay at 20 bytes. The
+		// draw layout must match the upload repacking, NOT derive from the
+		// shader kind (non-terrain world VBs also carry uv1).
+		const bgfx_vertex_layout_handle_t layout = vbHasUv1 ? s_worldTerrainLayout : s_worldLayout;
+		bgfx_set_vertex_buffer_with_layout(0, s_worldVbh[vi], fv->vBase, fv->vCount, layout);
 		bgfx_set_index_buffer(s_worldIbh[ii], fv->iBase, fv->iCount);
+		const bool hasValidTerrain = isTerrain && vbHasUv1 && bgfxIsValid(s_worldTerrainProgram);
 		bgfx_texture_handle_t tex = BGFX_INVALID_HANDLE;if (g_worldTexturesReady && bgfxIsValid(g_worldSampler))
 		{
 			tex = bgfxWorldLevelTexture(fv->shader_id);
@@ -723,6 +1006,24 @@ namespace
 		}
 		if (bgfxIsValid(g_worldSampler))
 			bgfx_set_texture(0, g_worldSampler, tex, UINT32_MAX);
+		if (hasValidTerrain && bgfxIsValid(g_worldMaskSampler))
+		{
+			WorldTerrainLayers tl;
+			const bool haveMix = bgfxWorldLevelTerrain(fv->shader_id, tl);
+			float dscale = haveMix ? tl.detailScale : 0.0f;
+			bgfx_texture_handle_t mask = haveMix ? tl.mask : bgfxUIWhiteTextureGet();
+			bgfx_set_texture(1, g_worldMaskSampler, mask, UINT32_MAX);
+			for (int i = 0; i < 4; ++i)
+			{
+				bgfx_texture_handle_t det = bgfxIsValid(tl.det[i]) ? tl.det[i] : bgfxUIWhiteTextureGet();
+				bgfx_set_texture(2 + i, g_worldDtSamplers[i], det, UINT32_MAX);
+			}
+			if (bgfxIsValid(g_worldDtScale))
+			{
+				float dtScale[4] = { dscale, dscale, 0.0f, 0.0f };
+				bgfx_set_uniform(g_worldDtScale, dtScale, 1);
+			}
+		}
 		const bool isAref = sh && strstr(sh, "def_aref");
 		const bool isTrans = sh && strstr(sh, "def_trans");
 		const bool alphaTest = isAref || isDecal;
@@ -754,7 +1055,11 @@ namespace
 				| BGFX_STATE_MSAA;
 		}
 		bgfx_set_state(st, 0);
-		bgfx_program_handle_t prog = (isDecal && bgfxIsValid(s_worldDecalProgram)) ? s_worldDecalProgram : s_worldProgram;
+		bgfx_program_handle_t prog = s_worldProgram;
+		if (isDecal && bgfxIsValid(s_worldDecalProgram))
+			prog = s_worldDecalProgram;
+		else if (hasValidTerrain)
+			prog = s_worldTerrainProgram;
 		bgfx_submit(0, prog, 0, BGFX_DISCARD_ALL);
 		++dg.drawn;
 	}
@@ -932,6 +1237,8 @@ extern "C"
 		}
 		if (s_worldDecalProgram.idx == 0xFFFF)
 			s_worldDecalProgram = bgfxWorldDecalProgramGet();
+		if (s_worldTerrainProgram.idx == 0xFFFF)
+			s_worldTerrainProgram = bgfxWorldTerrainProgramGet();
 
 		// pass 1: opaque / alpha-tested / transparent world geometry
 		s_worldDecalPass = false;

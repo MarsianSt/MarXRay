@@ -16,6 +16,7 @@
 #include "smart_cover_loophole.h"
 #include "smart_cover_storage.h"
 #include "smart_cover_object.h"
+#include "../xrCore/TaskManager.h"
 
 #define MIN_COVER_VALUE 16
 
@@ -86,26 +87,49 @@ void CCoverManager::compute_static_cover	()
 	clear					();
 	xr_delete				(m_covers);
 	m_covers				= xr_new<CPointQuadTree>(ai().level_graph().header().box(),ai().level_graph().header().cell_size()*.5f,8*65536,4*65536);
-	m_temp.resize			(ai().level_graph().header().vertex_count());
+	const u32				n = ai().level_graph().header().vertex_count();
+	m_temp.assign			(n,u8(0));
+	m_is_cover.assign		(n,u8(0));
 
 	CLevelGraph const		&graph = ai().level_graph();
-	for (u32 i=0, n = ai().level_graph().header().vertex_count(); i<n; ++i) {
-		CLevelGraph::CVertex const &vertex = *graph.vertex(i);
-		if (vertex.high_cover(0) + vertex.high_cover(1) + vertex.high_cover(2) + vertex.high_cover(3)) {
-			m_temp[i]		= edge_vertex(i);
-			continue;
-		}
 
-		if (vertex.low_cover(0) + vertex.low_cover(1) + vertex.low_cover(2) + vertex.low_cover(3)) {
-			m_temp[i]		= edge_vertex(i);
-			continue;
+	// Note: per-vertex processing is independent; m_temp/m_is_cover use
+	// byte entries so distinct elements are writable from different threads.
+	// The two passes are separate batches: pass 2 reads m_temp of *other*
+	// vertices (via cover()), so pass 1 must fully complete first.
+	auto process_edge_range	= [&](u32 a, u32 b) {
+		for (u32 i = a; i < b; ++i) {
+			CLevelGraph::CVertex const	&vertex = *graph.vertex(i);
+			const bool		has_cover =
+				(vertex.high_cover(0) + vertex.high_cover(1) + vertex.high_cover(2) + vertex.high_cover(3)) ||
+				(vertex.low_cover(0)  + vertex.low_cover(1)  + vertex.low_cover(2)  + vertex.low_cover(3));
+			m_temp[i]		= u8(has_cover && edge_vertex(i));
 		}
+	};
+	auto process_cover_range = [&](u32 a, u32 b) {
+		for (u32 i = a; i < b; ++i)
+			m_is_cover[i]	= u8(m_temp[i] && critical_cover(i));
+	};
 
-		m_temp[i]			= false;
+	if (CTaskManager::IsInsideTask()) {
+		// Nested call (inside a worker task): run inline to avoid
+		// waiting on the busy pool.
+		process_edge_range	(0,n);
+		process_cover_range	(0,n);
+	} else {
+		const u32 grain		= (n >= 1024) ? std::max(256u, n/64u) : 1u;
+		CTaskManager::AddTaskRange	(
+			[&](u32 a, u32 b, u32)	{ process_edge_range(a,b); },
+			n, grain);
+		CTaskManager::WaitAll();
+		CTaskManager::AddTaskRange	(
+			[&](u32 a, u32 b, u32)	{ process_cover_range(a,b); },
+			n, grain);
+		CTaskManager::WaitAll();
 	}
 
 	for (u32 i=0; i<n; ++i)
-		if (m_temp[i] && critical_cover(i))
+		if (m_is_cover[i])
 			m_covers->insert(xr_new<CCoverPoint>(ai().level_graph().vertex_position(ai().level_graph().vertex(i)),i));
 
 	VERIFY					(!m_smart_covers_storage);
