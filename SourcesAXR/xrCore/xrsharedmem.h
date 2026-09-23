@@ -42,17 +42,15 @@ IC bool					smem_equal		(const smem_value* A, u32 dwCRC, u32 dwLength, u8* ptr)
 class		XRCORE_API	smem_container
 {
 private:
+	static const u32					bucket_count = 64;
 	typedef xr_vector<smem_value*>		cdb;
-	xrCriticalSection					cs;
-	cdb									container;
+	cdb									container[bucket_count];
+	xrCriticalSection					locks[bucket_count];
 public:
 	smem_value*			dock			(u32 dwCRC, u32 dwLength, void* ptr);
 	void				clean			();
 	void				dump			();
 	u32					stat_economy	();
-#ifdef PROFILE_CRITICAL_SECTIONS
-						smem_container	():cs(MUTEX_PROFILE_ID(smem_container)){}
-#endif // PROFILE_CRITICAL_SECTIONS
 						~smem_container	();
 };
 XRCORE_API	extern		smem_container*	g_pSharedMemoryContainer;
@@ -64,10 +62,10 @@ class					ref_smem
 private:
 	smem_value*			p_;
 protected:
-	// ref-counting
-	void				_dec		()								{	if (0==p_) return;	p_->dwReference--; 	if (0==p_->dwReference)	p_=0;						}
+	// ref-counting (atomic: ref_smem may be created/copied on task threads)
+	void				_dec		()								{	if (0==p_) return;	if (0==InterlockedDecrement((volatile LONG*)&p_->dwReference)) p_=0;						}
 public:
-	void				_set		(ref_smem const &rhs)			{	smem_value* v = rhs.p_; if (0!=v) v->dwReference++; _dec(); p_ = v;							}
+	void				_set		(ref_smem const &rhs)			{	smem_value* v = rhs.p_; if (0!=v) InterlockedIncrement((volatile LONG*)&v->dwReference); _dec(); p_ = v;							}
 	const smem_value*	_get		()	const						{	return p_;																					}
 public:
 	// construction
@@ -78,7 +76,7 @@ public:
 	void				create		(u32 dwCRC, u32 dwLength, T* ptr)
 	{
 		smem_value* v	= g_pSharedMemoryContainer->dock(dwCRC,dwLength*sizeof(T),ptr); 
-		if (0!=v)		v->dwReference++; _dec(); p_ = v;	
+		if (0!=v)		InterlockedIncrement((volatile LONG*)&v->dwReference); _dec(); p_ = v;	
 	}
 
 	// assignment & accessors

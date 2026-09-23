@@ -9,7 +9,11 @@ smem_value*			smem_container::dock			(u32 dwCRC, u32 dwLength, void* ptr)
 {
 	VERIFY						(dwCRC && dwLength && ptr);
 
-	cs.Enter					();
+	const u32					bid			= dwCRC % bucket_count;
+	cdb&						bucket		= container[bid];
+	xrCriticalSection&			lk			= locks[bid];
+
+	lk.Enter					();
 	smem_value*		result		= 0;
 
 	// search a place to insert
@@ -18,12 +22,12 @@ smem_value*			smem_container::dock			(u32 dwCRC, u32 dwLength, void* ptr)
 	value->dwReference			= 0;
 	value->dwCRC				= dwCRC;
 	value->dwLength				= dwLength;
-	cdb::iterator	it			= std::lower_bound	(container.begin(),container.end(),value,smem_search);
+	cdb::iterator	it			= std::lower_bound	(bucket.begin(),bucket.end(),value,smem_search);
 	cdb::iterator	saved_place	= it;
-	if (container.end() != it)	{
+	if (bucket.end() != it)	{
 		// supposedly found
 		for (;;	it++)	{
-			if (it==container.end())			break;
+			if (it==bucket.end())				break;
 			if ((*it)->dwCRC	!= dwCRC)		break;
 			if ((*it)->dwLength != dwLength)	break;
 			if (0==memcmp((*it)->value,ptr,dwLength))
@@ -47,52 +51,61 @@ smem_value*			smem_container::dock			(u32 dwCRC, u32 dwLength, void* ptr)
 		result->dwCRC			= dwCRC;
 		result->dwLength		= dwLength;
 		CopyMemory			(result->value,ptr,dwLength);
-		container.insert		(saved_place,result);
+		bucket.insert		(saved_place,result);
 	}
 
 	// exit
-	cs.Leave					();
+	lk.Leave					();
 	return						result;
 }
 
 void				smem_container::clean			()
 {
-	cs.Enter		();
-	cdb::iterator	it	= container.begin	();
-	cdb::iterator	end	= container.end		();
-	for (; it!=end; it++)	if (0==(*it)->dwReference)	xr_free	(*it);
-	container.erase	(remove(container.begin(),container.end(),(smem_value*)0),container.end());
-	if (container.empty())	container.clear	();
-	cs.Leave		();
+	for (u32 b=0; b<bucket_count; ++b)	{
+		locks[b].Enter	();
+		cdb&			bucket	= container[b];
+		cdb::iterator	it		= bucket.begin	();
+		cdb::iterator	end		= bucket.end		();
+		for (; it!=end; it++)	if (0==(*it)->dwReference)	xr_free	(*it);
+		bucket.erase	(remove(bucket.begin(),bucket.end(),(smem_value*)0),bucket.end());
+		if (bucket.empty())	bucket.clear	();
+		locks[b].Leave	();
+	}
 }
 
 void				smem_container::dump			()
 {
-	cs.Enter		();
-	cdb::iterator	it	= container.begin	();
-	cdb::iterator	end	= container.end		();
 	FILE* F			= fopen("x:\\$smem_dump$.txt","w");
-	for (; it!=end; it++)
-		fprintf		(F,"%4d : crc[%6x], %d bytes\n",(*it)->dwReference,(*it)->dwCRC,(*it)->dwLength);
+	for (u32 b=0; b<bucket_count; ++b)	{
+		locks[b].Enter	();
+		cdb&			bucket	= container[b];
+		cdb::iterator	it		= bucket.begin	();
+		cdb::iterator	end		= bucket.end		();
+		for (; it!=end; it++)
+			fprintf		(F,"%4d : crc[%6x], %d bytes\n",(*it)->dwReference,(*it)->dwCRC,(*it)->dwLength);
+		locks[b].Leave	();
+	}
 	fclose			(F);
-	cs.Leave		();
 }
 
 u32					smem_container::stat_economy	()
 {
-	cs.Enter		();
-	cdb::iterator	it		= container.begin	();
-	cdb::iterator	end		= container.end		();
 	s64				counter	= 0;
 	counter			-= sizeof(*this);
-	counter			-= sizeof(cdb::allocator_type);
+	counter			-= sizeof(cdb::allocator_type)*bucket_count;
 	const int		node_size = 20;
-	for (; it!=end; it++)	{
-		counter		-= 16;
-		counter		-= node_size;
-		counter		+= s64((s64((*it)->dwReference) - 1)*s64((*it)->dwLength));
+	for (u32 b=0; b<bucket_count; ++b)	{
+		locks[b].Enter	();
+		cdb&			bucket	= container[b];
+		cdb::iterator	it		= bucket.begin	();
+		cdb::iterator	end		= bucket.end		();
+		for (; it!=end; it++)	{
+			counter		-= 16;
+			counter		-= node_size;
+			counter		+= s64((s64((*it)->dwReference) - 1)*s64((*it)->dwLength));
+		}
+		locks[b].Leave	();
 	}
-	cs.Leave		();
 
 	return			u32(s64(counter)/s64(1024));
 }

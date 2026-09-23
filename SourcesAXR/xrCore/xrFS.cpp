@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <atomic>
 #include <cctype>
+#include <functional>
 #include <unordered_map>
 #include <set>
 
@@ -25,6 +26,10 @@ static uint16_t rdU16(const uint8_t* p) {
 }
 static uint32_t rdU32(const uint8_t* p) {
     return (uint32_t)p[0] | ((uint32_t)p[1] << 8) | ((uint32_t)p[2] << 16) | ((uint32_t)p[3] << 24);
+}
+
+size_t xrFS::cache_shard_index(const std::string& key) {
+    return std::hash<std::string>{}(key) % kCacheShards;
 }
 
 // Common normalization: unify separators to '/' and fold to lower case.
@@ -396,9 +401,11 @@ void xrFS::unmount_zdb() {
     m_archives.clear();
     m_virtual_root.clear();
     m_flat.reset();
-    std::lock_guard<std::mutex> cm(m_cacheMtx);
-    m_cache.clear();
-    m_cacheBytes = 0;
+    for (auto& shard : m_cacheShards) {
+        std::lock_guard<std::mutex> cm(shard.mtx);
+        shard.map.clear();
+    }
+    m_cacheBytes.store(0, std::memory_order_relaxed);
 }
 
 bool xrFS::is_mounted() const {
@@ -500,9 +507,10 @@ bool xrFS::read_virtual(const std::string& vpath, std::vector<char>& out) const
     if (!r) { out.clear(); return false; }
     {
         // Prefetched entry: serve straight from memory.
-        std::lock_guard<std::mutex> cm(m_cacheMtx);
-        auto cit = m_cache.find(key);
-        if (cit != m_cache.end()) { out = cit->second; return true; }
+        auto& shard = m_cacheShards[cache_shard_index(key)];
+        std::lock_guard<std::mutex> cm(shard.mtx);
+        auto cit = shard.map.find(key);
+        if (cit != shard.map.end()) { out = cit->second; return true; }
     }
     return flat->archive_of(*r)->extract(r->e, out);
 }
@@ -523,11 +531,7 @@ void xrFS::prefetch_virtual(const std::vector<std::string>& vpaths) const
     // whole cache is dropped (simplest eviction, no LRU). A batch that alone
     // exceeds the quota is ignored entirely (normal lazy path stays in effect).
     static const size_t kCacheCap = 1024ull * 1024 * 1024; // 1 GiB total cached bytes
-    size_t cachedBytes;
-    {
-        std::lock_guard<std::mutex> cm(m_cacheMtx);
-        cachedBytes = m_cacheBytes;
-    }
+    const size_t cachedBytes = m_cacheBytes.load(std::memory_order_relaxed);
 
     // Select cacheable archive entries (no disk override) and size the batch.
     std::vector<std::string> keys;
@@ -574,13 +578,14 @@ void xrFS::prefetch_virtual(const std::vector<std::string>& vpaths) const
     CTaskManager::WaitAll();
     if (!allOk.load(std::memory_order_relaxed)) return;
 
-    std::lock_guard<std::mutex> cm(m_cacheMtx);
     for (uint32_t i = 0; i < n; ++i)
     {
         slots[i].shrink_to_fit();
         const size_t sz = slots[i].size();
-        if (m_cache.emplace(keys[i], std::move(slots[i])).second)
-            m_cacheBytes += sz;
+        auto& shard = m_cacheShards[cache_shard_index(keys[i])];
+        std::lock_guard<std::mutex> cm(shard.mtx);
+        if (shard.map.emplace(keys[i], std::move(slots[i])).second)
+            m_cacheBytes.fetch_add(sz, std::memory_order_relaxed);
     }
 }
 
@@ -628,9 +633,10 @@ bool xrFS::read_virtual_many(const std::vector<std::string>& vpaths,
                     }
                 }
                 {
-                    std::lock_guard<std::mutex> cm(m_cacheMtx);
-                    auto cit = m_cache.find(key);
-                    if (cit != m_cache.end())
+                    auto& shard = m_cacheShards[cache_shard_index(key)];
+                    std::lock_guard<std::mutex> cm(shard.mtx);
+                    auto cit = shard.map.find(key);
+                    if (cit != shard.map.end())
                     {
                         results[i] = cit->second;
                         continue;

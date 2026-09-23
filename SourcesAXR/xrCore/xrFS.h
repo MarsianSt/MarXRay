@@ -5,6 +5,8 @@
 #include <memory>
 #include <mutex>
 #include <unordered_map>
+#include <array>
+#include <atomic>
 
 #if !defined(XRCORE_API)
 #	if defined(XRCORE_EXPORTS)
@@ -121,9 +123,14 @@ private:
     std::vector<std::shared_ptr<MountedArchive>> m_archives;
     std::shared_ptr<const FlatIndex> m_flat;
     mutable std::mutex m_mtx;
-    mutable std::unordered_map<std::string, std::vector<char>> m_cache;
-    mutable size_t m_cacheBytes = 0; // total bytes currently held in m_cache
-    mutable std::mutex m_cacheMtx;
+    static constexpr size_t kCacheShards = 16;
+    struct CacheShard {
+        std::mutex mtx;
+        std::unordered_map<std::string, std::vector<char>> map;
+    };
+    mutable std::array<CacheShard, kCacheShards> m_cacheShards;
+    mutable std::atomic<size_t> m_cacheBytes{ 0 };
+    static size_t cache_shard_index(const std::string& key);
     void rebuild_flat_locked();
 
     static std::string normalize_path(const std::string& path); // unify separators + lowercase

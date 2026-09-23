@@ -12,7 +12,9 @@ XRCORE_API	extern		str_container*	g_pStringContainer	= NULL;
 struct str_container_impl
 {
 	static const u32 buffer_size = 1024*256;
+	static const u32 lock_count  = 256;
 	str_value*		 buffer[buffer_size];
+	xrCriticalSection locks[lock_count];
 	int              num_docs;
 
 	str_container_impl ()
@@ -20,6 +22,11 @@ struct str_container_impl
 		num_docs = 0;
 		ZeroMemory(buffer, sizeof(buffer));
 	}
+
+	// buffer_size is a multiple of lock_count, so every string hashing into the
+	// same bucket always resolves to the same shard lock.
+	IC xrCriticalSection&	lock_index	(u32 idx)			{	return locks[ idx % lock_count ];			}
+	IC xrCriticalSection&	lock_crc	(u32 crc)			{	return locks[ (crc % buffer_size) % lock_count ];	}
 
 	str_value*       find   (str_value* value, const char* str)
 	{
@@ -50,6 +57,7 @@ struct str_container_impl
 	{
 		for ( u32 i=0; i<buffer_size; ++i )
 		{
+			lock_index(i).Enter();
 			str_value** current = &buffer[i];
 
 			while ( *current != NULL )
@@ -65,6 +73,7 @@ struct str_container_impl
 					current = &value->next;
 				}
 			}
+			lock_index(i).Leave();
 		}
 	}
 
@@ -73,6 +82,7 @@ struct str_container_impl
 		LogInfo("strings verify started");
 		for ( u32 i=0; i<buffer_size; ++i )
 		{
+			lock_index(i).Enter();
 			str_value* value = buffer[i];
 			while ( value )
 			{
@@ -82,27 +92,31 @@ struct str_container_impl
 				R_ASSERT3	(value->dwLength == xr_strlen(value->value), "CorePanic: read-only memory corruption (shared_strings, internal structures)", value->value);
 				value = value->next;
 			}
+			lock_index(i).Leave();
 		}
 		LogInfo("strings verify completed");
 	}
 
-	void			dump (FILE* f) const
+	void			dump (FILE* f)
 	{
 		for ( u32 i=0; i<buffer_size; ++i )
 		{
+			lock_index(i).Enter();
 			str_value* value = buffer[i];
 			while ( value )
 			{
 				fprintf	(f,"ref[%4d]-len[%3d]-crc[%8X] : %s\n",value->dwReference,value->dwLength,value->dwCRC,value->value);
 				value = value->next;
 			}
+			lock_index(i).Leave();
 		}
 	}
 
-	void			dump (IWriter* f) const
+	void			dump (IWriter* f)
 	{
 		for ( u32 i=0; i<buffer_size; ++i )
 		{
+			lock_index(i).Enter();
 			str_value* value = buffer[i];
 			string4096		temp;
 			while ( value )
@@ -111,6 +125,7 @@ struct str_container_impl
 				f->w_string	(temp);
 				value		= value->next;
 			}
+			lock_index(i).Leave();
 		}
 	}
 
@@ -119,6 +134,7 @@ struct str_container_impl
 		int				counter	  = 0;
 		for ( u32 i=0; i<buffer_size; ++i )
 		{
+			lock_index(i).Enter();
 			str_value* value = buffer[i];
 			while ( value )
 			{
@@ -126,6 +142,7 @@ struct str_container_impl
 				counter += (value->dwReference-1)*(value->dwLength+1);
 				value = value->next;
 			}
+			lock_index(i).Leave();
 		}
 
 		return counter;
@@ -140,8 +157,6 @@ str_container::str_container ()
 str_value*	str_container::dock		(str_c value)
 {
 	if (0==value)				return 0;
-
-	cs.Enter					();
 
 #ifdef DEBUG_MEMORY_MANAGER
 	Memory.stat_strdock			++	;
@@ -159,6 +174,9 @@ str_value*	str_container::dock		(str_c value)
 	sv->dwReference				= 0;
 	sv->dwLength				= s_len;
 	sv->dwCRC					= crc32	(value,s_len);
+
+	xrCriticalSection&	lk		= impl->lock_crc	(sv->dwCRC);
+	lk.Enter					();
 
 	// search
 	result						= impl->find	(sv, value);
@@ -196,48 +214,38 @@ str_value*	str_container::dock		(str_c value)
 
 		impl->insert (result);
 	}
-	cs.Leave					();
+	lk.Leave					();
 
 	return	result;
 }
 
 void		str_container::clean	()
 {
-	cs.Enter	();
 	impl->clean ();
-	cs.Leave	();
 }
 
 void		str_container::verify	()
 {
-	cs.Enter	();
 	impl->verify();
-	cs.Leave	();
 }
 
 void		str_container::dump	()
 {
- 	cs.Enter	();
  	FILE* F		= fopen("d:\\$str_dump$.txt","w");
  	impl->dump  (F);
  	fclose		(F);
- 	cs.Leave	();
 }
 
 void		str_container::dump	(IWriter* W)
 {
- 	cs.Enter	();
  	impl->dump  (W);
- 	cs.Leave	();
 }
 
 u32			str_container::stat_economy		()
 {
- 	cs.Enter	();
  	int				counter	= 0;
  	counter			-= sizeof(*this);
-	counter			+= impl->stat_economy();
- 	cs.Leave		(); 
+ 	counter			+= impl->stat_economy();
  	return			u32(counter);
 }
 

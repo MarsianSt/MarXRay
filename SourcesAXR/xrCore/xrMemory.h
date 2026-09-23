@@ -1,5 +1,7 @@
 #pragma once
 
+#include <atomic>
+
 #include "memory_monitor.h"
 
 #ifdef USE_MEMORY_MONITOR
@@ -48,7 +50,7 @@ public:
 	u32					stat_strdock	;
 #endif // DEBUG_MEMORY_MANAGER
 
-	u32					stat_calls;
+	std::atomic<u32>	stat_calls;
 	s32					stat_counter;
 public:
 	void				dbg_register	(void* _p,	size_t _size, const char* _name);
