@@ -25,6 +25,9 @@
 #include "../../../xrEngine/Render.h"
 #include "../../../xrEngine/IGame_Level.h"
 #include "../../../xrEngine/xr_object.h"
+#include "../../../xrEngine/device.h"
+#include "../../../xrEngine/CustomHUD.h"
+#include "bgfxModelBridge.h"
 
 // ============================================================================
 // Global instances
@@ -1534,6 +1537,8 @@ namespace
 // ============================================================================
 // C bridge used by the (non-port) bgfxRenderInterface
 // ============================================================================
+extern ENGINE_API float psHUD_FOV;
+
 extern "C"
 {
 	void* bgfxModelCreate(const char* name)
@@ -1733,11 +1738,54 @@ extern "C"
 			CObject* O = objects.o_get_by_iterator(i);
 			if (!O)
 				continue;
+			if (!(O->spatial.type & STYPE_RENDERABLE))
+				continue;
+			if (O->H_Parent())
+				continue;
 			IRenderable* R = O->dcast_Renderable();
 			if (!R || !R->renderable.visual)
 				continue;
 			R->renderable_Render();
 		}
+	}
+
+	// ========================================================================
+	// HUD pass (hands + weapon of the actor). Mirrors the reference sequence:
+	// CHUDManager::Render_Last (HUDManager.cpp:227) collects the visuals through
+	// g_player_hud with set_HUD(TRUE), then they are drawn with a dedicated
+	// view/projection (hud_transform_helper, r__dsgraph_render.cpp:490) in front
+	// of the world. bgfx processes view transforms at frame end, so the HUD gets
+	// its own view with a depth clear instead of an in-frame view swap.
+	// ========================================================================
+	const bgfx_view_id_t kHudViewId = 3;
+
+	extern "C" void bgfxRenderHudPass()
+	{
+		if (!g_pGameLevel || !g_hud)
+			return;
+
+		g_hud->Render_Last();
+
+		Fmatrix hudView, hudProj;
+		hudView.build_camera_dir(Fvector().set(0.f, 0.f, 0.f), Device.vCameraDirection, Device.vCameraTop);
+
+		const float fNear = -Device.mProject._43 / Device.mProject._33;
+		float fFar = 100.f;
+		if (_abs(Device.mProject._33 - 1.f) > EPS_L)
+		{
+			const float fFarDerived = fNear * Device.mProject._33 / (Device.mProject._33 - 1.f);
+			if (fFarDerived > fNear + 1.f)
+				fFar = fFarDerived;
+		}
+		hudProj.build_projection(psHUD_FOV, Device.fASPECT, HUD_VIEWPORT_NEAR, fFar);
+
+		bgfx_set_view_rect(kHudViewId, 0, 0, (uint16_t)Device.dwWidth, (uint16_t)Device.dwHeight);
+		bgfx_set_view_clear(kHudViewId, BGFX_CLEAR_DEPTH, 0, 1.0f, 0);
+		bgfx_set_view_mode(kHudViewId, BGFX_VIEW_MODE_SEQUENTIAL);
+		bgfx_set_view_transform(kHudViewId, hudView.m, hudProj.m);
+		bgfx_touch(kHudViewId);
+
+		bgfxRenderDynamic(1);
 	}
 
 	// ========================================================================
@@ -1820,7 +1868,7 @@ extern "C"
 		return h;
 	}
 
-	bool bgfxSkinDrawMesh(CSkeletonX* sk, CKinematics* K, const float* xform)
+	bool bgfxSkinDrawMesh(CSkeletonX* sk, CKinematics* K, const float* xform, u32 viewId = 0)
 	{
 		Fvisual* fv = dynamic_cast<Fvisual*>(sk);
 		if (!fv)
@@ -1875,15 +1923,30 @@ extern "C"
 
 		static xr_vector<float> boneRows;
 		boneRows.clear();
-		boneRows.reserve(boneCount * 12);
-		for (u32 b = 0; b < boneCount; ++b)
+		if (rm == 0)
 		{
-			const Fmatrix& M = K->LL_GetTransform_R(u16(b));
-			boneRows.push_back(M._11); boneRows.push_back(M._21); boneRows.push_back(M._31); boneRows.push_back(M._41);
-			boneRows.push_back(M._12); boneRows.push_back(M._22); boneRows.push_back(M._32); boneRows.push_back(M._42);
-			boneRows.push_back(M._13); boneRows.push_back(M._23); boneRows.push_back(M._33); boneRows.push_back(M._43);
+			const Fmatrix& M = K->LL_GetTransform_R(sk->SkinSingleBone());
+			boneRows.reserve(85 * 12);
+			for (u32 b = 0; b < 85; ++b)
+			{
+				boneRows.push_back(M._11); boneRows.push_back(M._21); boneRows.push_back(M._31); boneRows.push_back(M._41);
+				boneRows.push_back(M._12); boneRows.push_back(M._22); boneRows.push_back(M._32); boneRows.push_back(M._42);
+				boneRows.push_back(M._13); boneRows.push_back(M._23); boneRows.push_back(M._33); boneRows.push_back(M._43);
+			}
+			bgfx_set_uniform(s_skinBones, boneRows.data(), 255);
 		}
-		bgfx_set_uniform(s_skinBones, boneRows.data(), (uint16_t)(boneCount * 3u));
+		else
+		{
+			boneRows.reserve(boneCount * 12);
+			for (u32 b = 0; b < boneCount; ++b)
+			{
+				const Fmatrix& M = K->LL_GetTransform_R(u16(b));
+				boneRows.push_back(M._11); boneRows.push_back(M._21); boneRows.push_back(M._31); boneRows.push_back(M._41);
+				boneRows.push_back(M._12); boneRows.push_back(M._22); boneRows.push_back(M._32); boneRows.push_back(M._42);
+				boneRows.push_back(M._13); boneRows.push_back(M._23); boneRows.push_back(M._33); boneRows.push_back(M._43);
+			}
+			bgfx_set_uniform(s_skinBones, boneRows.data(), (uint16_t)(boneCount * 3u));
+		}
 
 		bgfx_texture_handle_t tex = bgfxWorldTextureGet(fv->diffuse_name.c_str());
 		if (!bgfxIsValid(tex))
@@ -1900,7 +1963,7 @@ extern "C"
 			| BGFX_STATE_DEPTH_TEST_LESS
 			| BGFX_STATE_MSAA;
 		bgfx_set_state(st, 0);
-		bgfx_submit(0, prog, 0, BGFX_DISCARD_ALL);
+		bgfx_submit(viewId, prog, 0, BGFX_DISCARD_ALL);
 		return true;
 	}
 
@@ -1916,16 +1979,16 @@ extern "C"
 		case MT_SKELETON_ANIM:
 		case MT_SKELETON_RIGID:
 		{
-			if (hud)
-				return false; // HUD pass not ported yet
 			CKinematics* K = static_cast<CKinematics*>(v);
 			K->CalculateBones(TRUE);
 
-			u32 drawn = 0, skipped = 0;
+			u32 drawn = 0, skipped = 0, modes = 0;
 			for (dxRender_Visual* ch : K->children)
 			{
 				CSkeletonX* sk = dynamic_cast<CSkeletonX*>(ch);
-				if (sk && bgfxSkinDrawMesh(sk, K, transform))
+				if (sk)
+					modes |= 1u << sk->SkinMode();
+				if (sk && bgfxSkinDrawMesh(sk, K, transform, hud ? kHudViewId : 0u))
 					++drawn;
 				else
 					++skipped;
@@ -1935,9 +1998,9 @@ extern "C"
 			if (s_logged < 8)
 			{
 				++s_logged;
-				LogInfo("DYN SKEL: '%s' children=%u drawn=%u skipped=%u bones=%u",
+				LogInfo("DYN SKEL: '%s' children=%u drawn=%u skipped=%u bones=%u modes=0x%x",
 					v->dbg_name.c_str(), (u32)K->children.size(), drawn, skipped,
-					(u32)K->LL_BoneCount());
+					(u32)K->LL_BoneCount(), modes);
 			}
 			return drawn > 0;
 		}

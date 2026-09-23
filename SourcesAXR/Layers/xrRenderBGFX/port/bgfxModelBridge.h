@@ -62,7 +62,11 @@ extern "C" void bgfxSubmitSkinnedFrame(const bgfxDynamicVisualEntry* entries,
 extern "C" bool bgfxSubmitSkinnedVisual(const void* visual, const float* transform,
 					int hud);
 
-inline void bgfxRenderDynamic()
+// HUD pass: drives g_hud->Render_Last() (collects hand/weapon visuals with
+// hud=true) and submits them with the dedicated HUD view/projection.
+extern "C" void bgfxRenderHudPass();
+
+inline void bgfxRenderDynamic(int hudFilter = -1)
 {
 	auto& store = bgfxDynamicStore();
 	if (store.empty())
@@ -75,7 +79,7 @@ inline void bgfxRenderDynamic()
 	s_visible.reserve(store.size());
 
 	for (const auto& e : store)
-		if (!e.invisible)
+		if (!e.invisible && (hudFilter < 0 || e.hud == hudFilter))
 			s_visible.push_back(e);
 
 	if (!s_visible.empty())

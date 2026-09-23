@@ -9,9 +9,9 @@ void main()
     float w0 = a_normal.w;
     float w1 = a_tangent.w;
     float w2 = a_bitangent.w;
-    int i0 = int(a_texcoord2.x * 255.0 + 0.5);
+    int i0 = int(a_texcoord2.z * 255.0 + 0.5);
     int i1 = int(a_texcoord2.y * 255.0 + 0.5);
-    int i2 = int(a_texcoord2.z * 255.0 + 0.5);
+    int i2 = int(a_texcoord2.x * 255.0 + 0.5);
     int i3 = int(a_texcoord2.w * 255.0 + 0.5);
     vec4 p = vec4(a_position, 1.0);
     vec3 p0 = vec3(

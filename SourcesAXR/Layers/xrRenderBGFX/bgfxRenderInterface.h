@@ -231,7 +231,9 @@ public:
         ++s_calls;
         bgfxRenderSceneObjects();
         bgfxRenderWorld();
-        bgfxRenderDynamic();    // flush CPU-side dynamic visuals to the port
+        bgfxRenderDynamic(0);   // world dynamics: flush CPU-side visuals to the port
+        if (currentViewPort == MAIN_VIEWPORT)
+            bgfxRenderHudPass();    // actor hands + weapon (see bgfxRenderCompat)
         bgfxClearDynamic();
     }
 
