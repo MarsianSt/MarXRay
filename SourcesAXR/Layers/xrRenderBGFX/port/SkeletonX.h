@@ -75,6 +75,12 @@ public:
 	BOOL					has_visible_bones	();
 							CSkeletonX		()	{ Parent = 0; ChildIDX = u16(-1); }
 
+	// Rendering info for the BGFX port (see bgfxRenderCompat.cpp skin handoff)
+	u16						SkinMode		() const { return RenderMode; }
+	u32						SkinBoneCount	() const { return RMS_bonecount; }
+	u32						SkinSingleBone	() const { return RMS_boneid; }
+	CKinematics*			SkinParent		() const { return Parent; }
+
 	virtual void			SetParent		(CKinematics* K)					{ Parent = K; }
 	virtual void			AfterLoad		(CKinematics* parent, u16 child_idx)=0;
 	virtual void			EnumBoneVertices(SEnumVerticesCallback &C, u16 bone_id)=0;

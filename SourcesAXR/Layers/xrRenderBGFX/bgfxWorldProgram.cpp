@@ -20,6 +20,8 @@
 static bgfx_program_handle_t s_worldProgram = BGFX_INVALID_HANDLE;
 static bgfx_program_handle_t s_worldDecalProgram = BGFX_INVALID_HANDLE;
 static bgfx_program_handle_t s_worldTerrainProgram = BGFX_INVALID_HANDLE;
+static bgfx_program_handle_t s_skinProgram[4] = { BGFX_INVALID_HANDLE, BGFX_INVALID_HANDLE,
+						  BGFX_INVALID_HANDLE, BGFX_INVALID_HANDLE };
 
 static bool s_valid(bgfx_program_handle_t h) { return h.idx != 0xFFFF; }
 
@@ -96,4 +98,22 @@ bgfx_program_handle_t bgfxWorldTerrainProgramGet()
     if (s_valid(s_worldTerrainProgram))
         LogInfo("[BGFX] World terrain program created: %u", s_worldTerrainProgram.idx);
     return s_worldTerrainProgram;
+}
+
+// Skinned models (vertHW_1W..4W, SkeletonX._Load_hw) index their bones through
+// u_bones (3 rows per bone, see SkeletonX::_Render matrix packing).
+bgfx_program_handle_t bgfxSkinProgramGet(uint32_t mode)
+{
+    if (mode > 3)
+        return BGFX_INVALID_HANDLE;
+    if (s_valid(s_skinProgram[mode]))
+        return s_skinProgram[mode];
+
+    static const char* vsNames[4] = { "skin1w_vs.sc", "skin2w_vs.sc", "skin3w_vs.sc", "skin4w_vs.sc" };
+    ShaderBlob vs = CompileStage(vsNames[mode], 'v');
+    ShaderBlob ps = CompileStage("skin_ps.sc", 'f');
+    s_skinProgram[mode] = BuildProgram(vs, ps);
+    if (s_valid(s_skinProgram[mode]))
+        LogInfo("[BGFX] Skin program created: mode=%u id=%u", (u32)mode, s_skinProgram[mode].idx);
+    return s_skinProgram[mode];
 }

@@ -9,7 +9,11 @@
 #include "FBasicVisual.h"
 #include "FVisual.h"
 #include "FProgressive.h"
+#include "FTreeVisual.h"
+#include "FLOD.h"
 #include "FHierrarhyVisual.h"
+#include "FSkinned.h"
+#include "SkeletonCustom.h"
 #include "../../../xrEngine/fmesh.h"
 #include "../../../xrEngine/xrLevel.h"
 
@@ -19,6 +23,8 @@
 #include "../bgfxUIProgram.h"
 
 #include "../../../xrEngine/Render.h"
+#include "../../../xrEngine/IGame_Level.h"
+#include "../../../xrEngine/xr_object.h"
 
 // ============================================================================
 // Global instances
@@ -377,6 +383,7 @@ namespace
 	xr_vector<bgfx_vertex_buffer_handle_t> s_worldVbh;   // index-aligned with s_vbList
 	xr_vector<bgfx_index_buffer_handle_t>  s_worldIbh;   // index-aligned with s_ibList
 	xr_vector<u8>                        s_worldVbHasUv1; // 1 = buffer includes lightmap UV1
+	bgfx_index_buffer_handle_t           s_worldLodIbh = BGFX_INVALID_HANDLE;
 	int                                 s_worldUploaded = 0;
 	int                                 g_worldDiagLogN = 0;
 	bgfx_program_handle_t               s_worldProgram = BGFX_INVALID_HANDLE;
@@ -484,6 +491,14 @@ namespace
 	xr_vector<xr_string> g_levelShaders;
 	bool s_worldDecalPass = false;
 
+	// Children of flora impostors (MT_LOD / FLOD) are present in the level's
+	// Visuals array as top-level entries too (referenced by OGF_CHILDREN_L),
+	// but the reference submits them only while the impostor is close enough
+	// (r__dsgraph_build.cpp, MT_LOD case). Collected once so the top-level walk
+	// skips them and bgfxWorldDrawLod decides when they are drawn.
+	xr_set<dxRender_Visual*> s_flodChildren;
+	bool s_flodChildrenReady = false;
+
 	enum WorldDecalKind
 	{
 		WDK_NONE = 0,
@@ -511,9 +526,120 @@ namespace
 
 	xr_string bgfxLevelTextureName(const char* shaderName);
 	xr_string bgfxLevelTextureNamePart(const xr_string& s);
+	xr_string bgfxLevelShaderNameOnly(const char* shaderName);
 	bool      bgfxWorldIsTerrainShader(const char* shaderName);
 	bool      bgfxWorldTerrainDetail(const char* baseName, xr_string& detailName, float& detailScale);
 	bgfx_texture_handle_t bgfxWorldTextureGet(const char* name);
+
+	// Detail textures of the BmmD ("implicit detail") level materials, read from
+	// the blender library (shaders.xr chunk 2) the same way the reference
+	// renderer does it (CResourceManager::OnDeviceCreate + CBlender_BmmD::Load).
+	// R2-R/G/B/A are the four detail textures selected by <base>_mask channels.
+	struct WorldBmmD
+	{
+		xr_string det[4];
+	};
+	xr_map<xr_string, WorldBmmD> s_bmmdDetails;
+	bool s_bmmdDetailsReady = false;
+
+	u32 bgfxWorldPropSize(u32 type)
+	{
+		switch (type)
+		{
+		case 1: case 2: case 3: case 9: case 10: return 64; // string64 payloads
+		case 4: return 12;                                  // xrP_Integer
+		case 5: return 12;                                  // xrP_Float
+		case 6: return 4;                                   // xrP_BOOL
+		default: return 0;                                  // marker
+		}
+	}
+
+	void bgfxWorldSkipProp(IReader* F)
+	{
+		const u32 type = F->r_u32();
+		F->skip_stringZ();
+		switch (type)
+		{
+		case 7: // xrP_TOKEN: IDselected + Count, Count * (ID + string64)
+			F->r_u32();
+			F->advance(int(F->r_u32() * (4 + 64)));
+			break;
+		case 8: // xrP_CLSID: CLASS_ID + Count, Count * CLASS_ID
+			F->r_u64();
+			F->advance(int(F->r_u32() * 8));
+			break;
+		default:
+			F->advance(int(bgfxWorldPropSize(type)));
+			break;
+		}
+	}
+
+	void bgfxWorldReadPropName(IReader* F, xr_string& out)
+	{
+		out.clear();
+		const u32 type = F->r_u32();
+		F->skip_stringZ();
+		if (bgfxWorldPropSize(type) != 64)
+			return;
+		char buf[65] = {};
+		F->r(buf, 64);
+		buf[64] = 0;
+		out = buf;
+	}
+
+	void bgfxWorldLoadBlenders()
+	{
+		if (s_bmmdDetailsReady)
+			return;
+		s_bmmdDetailsReady = true;
+
+		IReader* F = FS.r_open("$game_data$", "shaders.xr");
+		if (!F)
+		{
+			LogInfo("WORLD blenders: shaders.xr not found");
+			return;
+		}
+		IReader* lib = F->open_chunk(2);
+		if (lib)
+		{
+			const u64 bmmdCls = 0x426D6D446F6C6420ull; // MK_CLSID('B','m','m','D','o','l','d',' ')
+			u32 chunkId = 0;
+			IReader* ch = nullptr;
+			while ((ch = lib->open_chunk_iterator(chunkId, ch)) != nullptr)
+			{
+				const u64 cls = ch->r_u64();
+				char cname[128] = {};
+				ch->r(cname, 128);
+				cname[127] = 0;
+				ch->advance(32 + 4); // cComputer, cTime
+				const u16 version = ch->r_u16();
+				ch->advance(2);      // struct padding
+				if (cls != bmmdCls || version < 3)
+					continue;
+
+				// IBlender::Load + CBlender_BmmD::Load property order
+				bgfxWorldSkipProp(ch); // marker "General"
+				bgfxWorldSkipProp(ch); // "Priority"
+				bgfxWorldSkipProp(ch); // "Strict sorting"
+				bgfxWorldSkipProp(ch); // marker "Base Texture"
+				bgfxWorldSkipProp(ch); // "Name"
+				bgfxWorldSkipProp(ch); // "Transform"
+				bgfxWorldSkipProp(ch); // marker "Detail map"
+				bgfxWorldSkipProp(ch); // "Name"      (oT2_Name)
+				bgfxWorldSkipProp(ch); // "Transform" (oT2_xform)
+
+				WorldBmmD d;
+				bgfxWorldReadPropName(ch, d.det[0]); // R2-R
+				bgfxWorldReadPropName(ch, d.det[1]); // R2-G
+				bgfxWorldReadPropName(ch, d.det[2]); // R2-B
+				bgfxWorldReadPropName(ch, d.det[3]); // R2-A
+				s_bmmdDetails[cname] = d;
+			}
+			lib->close();
+		}
+		FS.r_close(F);
+		LogInfo("WORLD blenders: BmmD materials=%u", (u32)s_bmmdDetails.size());
+	}
 
 	struct WorldTerrainLayers
 	{
@@ -584,28 +710,37 @@ namespace
 
 		// Terrain blends the (uni-copy) base painting with 4 tiled detail
 		// textures selected by <base>_mask (BLENDER: CBlender_BmmD, R2/R3
-		// "s_mask" RGBA -> s_dt_r/g/b/a). The shared tile scale comes from the
-		// base texture's .thm (THM_CHUNK_DETAIL_EXT = 0x0815). The 4 details
-		// default to the original blender's BmmD defaults. No lightmap: it is
+		// "s_mask" RGBA -> s_dt_r/g/b/a). The 4 detail names are the blender's
+		// R2-R/G/B/A properties from shaders.xr; the shared tile scale is the
+		// base texture's .thm detail scale (THM_CHUNK_DETAIL_EXT = 0x0815),
+		// which is what the reference feeds into dt_params. No lightmap: it is
 		// neither loaded nor used (matching R3's s_mask/s_lmap removal).
 		if (bgfxWorldIsTerrainShader(sn))
 		{
+			bgfxWorldLoadBlenders();
+			const xr_string shaderName = bgfxLevelShaderNameOnly(sn);
+			const auto bi = s_bmmdDetails.find(shaderName);
 			xr_string detName;
 			float detailScale = 0.0f;
-			if (bgfxWorldTerrainDetail(tname.c_str(), detName, detailScale))
+			if (bi != s_bmmdDetails.end() && bgfxWorldTerrainDetail(tname.c_str(), detName, detailScale))
 			{
 				e.detailScale = detailScale;
 				xr_string maskName = tname;
 				maskName += "_mask";
 				e.mask = bgfxWorldTextureGet(maskName.c_str());
-				static const char* s_terrainDetails[4] = {
-					"detail\\detail_grnd_grass",
-					"detail\\detail_grnd_asphalt",
-					"detail\\detail_grnd_earth",
-					"detail\\detail_grnd_yantar",
-				};
 				for (int i = 0; i < 4; ++i)
-					e.det[i] = bgfxWorldTextureGet(s_terrainDetails[i]);
+				{
+					const xr_string& dn = bi->second.det[i];
+					if (!dn.empty() && dn[0] != '$')
+						e.det[i] = bgfxWorldTextureGet(dn.c_str());
+				}
+				LogInfo("WORLD BmmD '%s': R='%s' G='%s' B='%s' A='%s' scale=%.3f",
+					shaderName.c_str(), bi->second.det[0].c_str(), bi->second.det[1].c_str(),
+					bi->second.det[2].c_str(), bi->second.det[3].c_str(), detailScale);
+			}
+			else
+			{
+				LogInfo("WORLD BmmD '%s': no blender/detail", shaderName.c_str());
 			}
 		}
 		return e.handle;
@@ -678,6 +813,17 @@ namespace
 			}
 		}
 		return bgfxLevelTextureNamePart(s);
+	}
+
+	// fsL_SHADERS entries are "<shader>/<textures>"; the blender is registered
+	// under the part before '/' (r4_loader.cpp: delim = strchr(n_sh,'/')).
+	xr_string bgfxLevelShaderNameOnly(const char* shaderName)
+	{
+		xr_string s = shaderName ? shaderName : "";
+		const size_t p = s.find('/');
+		if (p != xr_string::npos)
+			s = s.substr(0, p);
+		return s;
 	}
 
 	// Terrain materials are the fsL_SHADERS entries whose diffuse (first)
@@ -830,6 +976,21 @@ namespace
 					}
 				}
 			}
+
+			int tOff = -1;
+			int bOff = -1;
+			if (i < (u32)s_dcl.size())
+			{
+				for (const D3DVERTEXELEMENT9& e : s_dcl[i])
+				{
+					if (e.Stream != 0 || e.Type != D3DDECLTYPE_D3DCOLOR)
+						continue;
+					if (e.Usage == D3DDECLUSAGE_TANGENT && e.UsageIndex == 0)
+						tOff = e.Offset;
+					else if (e.Usage == D3DDECLUSAGE_BINORMAL && e.UsageIndex == 0)
+						bOff = e.Offset;
+				}
+			}
 			LogInfo("WORLD VB[%u] uv1=%d(%d) hasUv1=%d", i, uvOff1, uvType1, (uvOff1 >= 0) ? 1 : 0);
 
 			// Original decode (shaders\shared\common.h): base uv is ALWAYS
@@ -867,8 +1028,30 @@ namespace
 				{
 					const s16* s = (const s16*)(src + v * stride + uvOff);
 					float*      f = (float*)(dst + v * vstride + 12);
-					f[0] = (float)s[0] * (1.0f / 1024.0f);
-					f[1] = (float)s[1] * (1.0f / 1024.0f);
+					float du = 0.0f;
+					float dv = 0.0f;
+					if (uvType == D3DDECLTYPE_SHORT2)
+					{
+						if (tOff >= 0)
+							du = (float)src[v * stride + tOff + 3] * (1.0f / 255.0f);
+						if (bOff >= 0)
+							dv = (float)src[v * stride + bOff + 3] * (1.0f / 255.0f);
+						f[0] = ((float)s[0] + du) * (32.0f / 32768.0f);
+						f[1] = ((float)s[1] + dv) * (32.0f / 32768.0f);
+					}
+					else if (uvType == D3DDECLTYPE_SHORT4)
+					{
+						// v_tree (FTreeVisual): tc is int4 (u, v, frac, unused)
+						// and the shader scales it by consts.x = 1/FTreeVisual_quant
+						// (= 1/2048, tree textures tile 16x16 per mesh).
+						f[0] = (float)s[0] * (1.0f / 2048.0f);
+						f[1] = (float)s[1] * (1.0f / 2048.0f);
+					}
+					else
+					{
+						f[0] = (float)s[0] * (32.0f / 32768.0f);
+						f[1] = (float)s[1] * (32.0f / 32768.0f);
+					}
 				}
 				else
 					memset(dst + v * vstride + 12, 0, 8);
@@ -913,23 +1096,32 @@ namespace
 			s_worldIbh[i] = bgfx_create_index_buffer(mem, 0);
 		}
 
+		// Shared quad index buffer for flora impostors (X-Ray QuadIB order:
+		// 0,1,2, 3,2,1 per 4 vertices).
+		{
+			static const u16 quadIdx[6] = { 0, 1, 2, 3, 2, 1 };
+			const bgfx_memory_t* mem = bgfx_alloc(sizeof(quadIdx));
+			memcpy(mem->data, quadIdx, sizeof(quadIdx));
+			s_worldLodIbh = bgfx_create_index_buffer(mem, 0);
+		}
+
 		s_worldUploaded = 1;
 		LogInfo("WORLD: uploaded VB=%u IB=%u",
 			(u32)s_worldVbh.size(), (u32)s_worldIbh.size());
 	}
 
-	void bgfxWorldDrawMesh(Fvisual* fv, WorldDiag& dg)
+	void bgfxWorldDrawMesh(IRender_Mesh* mesh, u16 shaderId, WorldDiag& dg, bool isTree, const float* treeXform = nullptr)
 	{
-		if (!fv || !fv->p_rm_Vertices || !fv->p_rm_Indices)
+		if (!mesh || !mesh->p_rm_Vertices || !mesh->p_rm_Indices)
 			return;
-		if (!fv->vCount || !fv->iCount)
+		if (!mesh->vCount || !mesh->iCount)
 			return;
 
 		int vi = -1, ii = -1;
 		for (u32 i = 0; i < s_worldVbh.size(); ++i)
-			if (s_vbList[i] == fv->p_rm_Vertices && s_worldVbh[i].idx != 0xFFFF) { vi = (int)i; break; }
+			if (s_vbList[i] == mesh->p_rm_Vertices && s_worldVbh[i].idx != 0xFFFF) { vi = (int)i; break; }
 		for (u32 i = 0; i < s_worldIbh.size(); ++i)
-			if (s_ibList[i] == fv->p_rm_Indices && s_worldIbh[i].idx != 0xFFFF)  { ii = (int)i; break; }
+			if (s_ibList[i] == mesh->p_rm_Indices && s_worldIbh[i].idx != 0xFFFF)  { ii = (int)i; break; }
 		if (vi < 0)
 		{
 			++dg.skipVb;
@@ -941,13 +1133,31 @@ namespace
 			return;
 		}
 
-		const char* sh = bgfxLevelShaderName(fv->shader_id);
+		const char* sh = bgfxLevelShaderName(shaderId);
 		const WorldDecalKind decalKind = bgfxWorldDecalKind(sh);
 		const bool isDecal = (decalKind != WDK_NONE);
 		if (isDecal != s_worldDecalPass)
 			return;
 		const bool isTerrain = !isDecal && bgfxWorldIsTerrainShader(sh);
 		const bool vbHasUv1 = (vi < (int)s_worldVbHasUv1.size()) && (s_worldVbHasUv1[vi] != 0);
+		if (isTree)
+		{
+			static bool s_treeDiag = false;
+			if (!s_treeDiag)
+			{
+				s_treeDiag = true;
+				char dstr[256] = {};
+				u32 dp = (u32)sprintf_s(dstr, sizeof(dstr), "VB[%d] hasUv1=%d shader=%s", vi, vbHasUv1 ? 1 : 0, sh ? sh : "(null)");
+				if (vi >= 0 && vi < (int)s_vbList.size() && s_vbList[vi] && s_vbList[vi]->vCount > 0)
+				{
+					const ID3DVertexBuffer* tvb = s_vbList[vi];
+					const s16* tc = (const s16*)(&tvb->data[0] + 24);
+					dp += (u32)sprintf_s(dstr + dp, sizeof(dstr) - dp, " tc=%d,%d,%d,%d uv=%f,%f",
+						tc[0], tc[1], tc[2], tc[3], (float)tc[0] * (1.0f / 2048.0f), (float)tc[1] * (1.0f / 2048.0f));
+				}
+				LogInfo("WORLD TREE: %s", dstr);
+			}
+		}
 		{
 			static bool s_terrainDiag = false;
 			if (isTerrain && !s_terrainDiag)
@@ -977,7 +1187,7 @@ namespace
 				}
 				float dscale = 0.0f;
 				WorldTerrainLayers tl;
-				bgfxWorldLevelTerrain(fv->shader_id, tl);
+				bgfxWorldLevelTerrain(shaderId, tl);
 				dscale = tl.detailScale;
 				dp += (u32)sprintf_s(dstr + dp, sizeof(dstr) - dp, " mask=%s dt0=%s dt1=%s dt2=%s dt3=%s scale=%.3f prog=%s",
 					bgfxIsValid(tl.mask) ? "ok" : "bad",
@@ -995,12 +1205,12 @@ namespace
 		// draw layout must match the upload repacking, NOT derive from the
 		// shader kind (non-terrain world VBs also carry uv1).
 		const bgfx_vertex_layout_handle_t layout = vbHasUv1 ? s_worldTerrainLayout : s_worldLayout;
-		bgfx_set_vertex_buffer_with_layout(0, s_worldVbh[vi], fv->vBase, fv->vCount, layout);
-		bgfx_set_index_buffer(s_worldIbh[ii], fv->iBase, fv->iCount);
+		bgfx_set_vertex_buffer_with_layout(0, s_worldVbh[vi], mesh->vBase, mesh->vCount, layout);
+		bgfx_set_index_buffer(s_worldIbh[ii], mesh->iBase, mesh->iCount);
 		const bool hasValidTerrain = isTerrain && vbHasUv1 && bgfxIsValid(s_worldTerrainProgram);
 		bgfx_texture_handle_t tex = BGFX_INVALID_HANDLE;if (g_worldTexturesReady && bgfxIsValid(g_worldSampler))
 		{
-			tex = bgfxWorldLevelTexture(fv->shader_id);
+			tex = bgfxWorldLevelTexture(shaderId);
 			if (!bgfxIsValid(tex))
 				tex = bgfxUIWhiteTextureGet();
 		}
@@ -1009,7 +1219,7 @@ namespace
 		if (hasValidTerrain && bgfxIsValid(g_worldMaskSampler))
 		{
 			WorldTerrainLayers tl;
-			const bool haveMix = bgfxWorldLevelTerrain(fv->shader_id, tl);
+			const bool haveMix = bgfxWorldLevelTerrain(shaderId, tl);
 			float dscale = haveMix ? tl.detailScale : 0.0f;
 			bgfx_texture_handle_t mask = haveMix ? tl.mask : bgfxUIWhiteTextureGet();
 			bgfx_set_texture(1, g_worldMaskSampler, mask, UINT32_MAX);
@@ -1026,8 +1236,8 @@ namespace
 		}
 		const bool isAref = sh && strstr(sh, "def_aref");
 		const bool isTrans = sh && strstr(sh, "def_trans");
-		const bool alphaTest = isAref || isDecal;
-		const float alphaRef = isAref ? 0.33f : 0.001f;
+		const bool alphaTest = isAref || isDecal || isTree;
+		const float alphaRef = (isAref || isTree) ? 0.33f : 0.001f;
 		float alphaCtrl[4] = { alphaRef, alphaTest ? 1.0f : 0.0f, 0.0f, 0.0f };
 		if (bgfxIsValid(g_worldAlphaCtrl))
 			bgfx_set_uniform(g_worldAlphaCtrl, alphaCtrl, 1);
@@ -1060,7 +1270,166 @@ namespace
 			prog = s_worldDecalProgram;
 		else if (hasValidTerrain)
 			prog = s_worldTerrainProgram;
+		if (treeXform)
+			bgfx_set_transform(treeXform, 1);
 		bgfx_submit(0, prog, 0, BGFX_DISCARD_ALL);
+		if (treeXform)
+		{
+			static const float s_identityXform[16] =
+			{
+				1.0f, 0.0f, 0.0f, 0.0f,
+				0.0f, 1.0f, 0.0f, 0.0f,
+				0.0f, 0.0f, 1.0f, 0.0f,
+				0.0f, 0.0f, 0.0f, 1.0f,
+			};
+			bgfx_set_transform(s_identityXform, 1);
+		}
+		++dg.drawn;
+	}
+
+	// LOD selection thresholds for flora impostors, computed like the reference
+	// (xrRender_R2/r2_R_calculate.cpp): g_fSCREEN = W*H*(90/FOV)^2*(EPS_S+lod),
+	// r_ssaLOD_A = (ps_r2_ssaLOD_A/3)^2 / g_fSCREEN (and likewise for B/DISCARD).
+	// ssa = (sphere.R / distSQ) * lod_factor (r__dsgraph_build.cpp MT_LOD case).
+	float s_lodSsaA       = 0.0002f;
+	float s_lodSsaB       = 0.0001f;
+	float s_lodSsaDiscard = 0.000005f;
+	u32   s_lodSsaW       = 0;
+	u32   s_lodSsaH       = 0;
+	float s_lodSsaFov     = 0.0f;
+
+	void bgfxWorldUpdateLodThresholds()
+	{
+		const u32 w = Device.dwWidth;
+		const u32 h = Device.dwHeight;
+		const float fov = Device.fFOV;
+		if (w == s_lodSsaW && h == s_lodSsaH && fov == s_lodSsaFov)
+			return;
+		s_lodSsaW = w;
+		s_lodSsaH = h;
+		s_lodSsaFov = fov;
+		if (w == 0 || h == 0 || fov < 1.0f)
+			return;
+
+		const float geometryLod = 0.75f; // ps_r__LOD default (r__geometry_lod)
+		const float fovFactor = (90.0f / fov) * (90.0f / fov);
+		const float fscreen = float(w) * float(h) * fovFactor * (EPS_S + geometryLod);
+		if (fscreen <= 1.0f)
+			return;
+
+		const float lodA = 64.0f;   // ps_r2_ssaLOD_A
+		const float lodB = 48.0f;   // ps_r2_ssaLOD_B
+		const float discard = 3.5f; // ps_r__ssaDISCARD
+		s_lodSsaA = (lodA / 3.0f) * (lodA / 3.0f) / fscreen;
+		s_lodSsaB = (lodB / 3.0f) * (lodB / 3.0f) / fscreen;
+		s_lodSsaDiscard = discard * discard / fscreen;
+		LogInfo("WORLD LOD thresholds: A=%.7f B=%.7f discard=%.7f (screen %ux%u fov %.1f lod %.2f)",
+			s_lodSsaA, s_lodSsaB, s_lodSsaDiscard, w, h, fov, geometryLod);
+	}
+
+	void bgfxWorldDrawVisual(dxRender_Visual* v, WorldDiag& dg);
+
+	// Level flora (MT_LOD / FLOD) renders as 8-facet impostors: pick the facet
+	// whose normal faces the camera, emit its 4 corners shifted half a radius
+	// towards the viewer, and draw with the regular world program. Reference:
+	// r__dsgraph_render_lods.cpp (single-facet approximation, no fade blend).
+	void bgfxWorldDrawLod(FLOD* lod, WorldDiag& dg)
+	{
+		if (!lod)
+			return;
+		if (s_worldDecalPass)
+			return;
+
+		const u16 shaderId = lod->shader_id;
+		const char* sh = bgfxLevelShaderName(shaderId);
+
+		Fvector Ldir;
+		Ldir.sub(lod->vis.sphere.P, Device.vCameraPosition);
+		const float len = Ldir.magnitude();
+		if (len > 0.0001f)
+			Ldir.div(len);
+		else
+			Ldir.set(0.0f, 0.0f, 1.0f);
+
+		bgfxWorldUpdateLodThresholds();
+
+		const float distSQ = Device.vCameraPosition.distance_to_sqr(lod->vis.sphere.P) + EPS;
+		const float ssa = (lod->vis.sphere.R / distSQ) * lod->lod_factor;
+		const bool hasChildren = !lod->children.empty();
+
+		if (ssa < s_lodSsaDiscard)
+			return;
+
+		// Reference (r__dsgraph_build.cpp MT_LOD): children are submitted when
+		// ssa > r_ssaLOD_B and the impostor only while ssa < r_ssaLOD_A. The
+		// [B, A] overlap is a fade in the reference; here the impostor is drawn
+		// only below A so it cannot cover the detail geometry.
+		if (hasChildren && ssa >= s_lodSsaA)
+		{
+			for (dxRender_Visual* ch : lod->children)
+				bgfxWorldDrawVisual(ch, dg);
+			return;
+		}
+
+		u32 best = 0;
+		float bestDot = Ldir.dotproduct(lod->facets[0].N);
+		for (u32 s = 1; s < 8; ++s)
+		{
+			const float d = Ldir.dotproduct(lod->facets[s].N);
+			if (d > bestDot)
+			{
+				bestDot = d;
+				best = s;
+			}
+		}
+
+		Fvector shift;
+		shift.mul(Ldir, -0.5f * lod->vis.sphere.R);
+
+		bgfx_transient_vertex_buffer_t tvb;
+		bgfx_alloc_transient_vertex_buffer(&tvb, 4, &s_worldLayoutDesc);
+
+		static const int vid[4] = { 3, 0, 2, 1 };
+		const FLOD::_face& F = lod->facets[best];
+		for (int i = 0; i < 4; ++i)
+		{
+			const FLOD::_vertex& sv = F.v[vid[i]];
+			float* dst = (float*)((u8*)tvb.data + i * tvb.stride);
+			dst[0] = sv.v.x + shift.x;
+			dst[1] = sv.v.y + shift.y;
+			dst[2] = sv.v.z + shift.z;
+			dst[3] = sv.t.x;
+			dst[4] = sv.t.y;
+		}
+
+		{
+			static bool s_lodDiag = false;
+			if (!s_lodDiag)
+			{
+				s_lodDiag = true;
+				LogInfo("WORLD LOD: shader=%s R=%.3f children=%u ssa=%.7f dist=%.2f A=%.7f discard=%.7f best=%u",
+					sh ? sh : "(null)", lod->vis.sphere.R, (u32)lod->children.size(),
+					ssa, len, s_lodSsaA, s_lodSsaDiscard, best);
+			}
+		}
+
+		if (g_worldTexturesReady && bgfxIsValid(g_worldSampler))
+		{
+			bgfx_texture_handle_t tex = bgfxWorldLevelTexture(shaderId);
+			if (!bgfxIsValid(tex))
+				tex = bgfxUIWhiteTextureGet();
+			bgfx_set_texture(0, g_worldSampler, tex, UINT32_MAX);
+		}
+		if (bgfxIsValid(g_worldAlphaCtrl))
+		{
+			float alphaCtrl[4] = { 0.33f, 1.0f, 0.0f, 0.0f };
+			bgfx_set_uniform(g_worldAlphaCtrl, alphaCtrl, 1);
+		}
+
+		bgfx_set_state(WORLD_STATE, 0);
+		bgfx_set_transient_vertex_buffer(0, &tvb, 0, 4);
+		bgfx_set_index_buffer(s_worldLodIbh, 0, 6);
+		bgfx_submit(0, s_worldProgram, 0, BGFX_DISCARD_ALL);
 		++dg.drawn;
 	}
 
@@ -1082,7 +1451,10 @@ namespace
 		switch (v->Type)
 		{
 		case MT_NORMAL:
-			bgfxWorldDrawMesh(static_cast<Fvisual*>(v), dg);
+			bgfxWorldDrawMesh(static_cast<Fvisual*>(v), v->shader_id, dg, false);
+			break;
+		case MT_LOD:
+			bgfxWorldDrawLod(static_cast<FLOD*>(v), dg);
 			break;
 		case MT_PROGRESSIVE:
 		{
@@ -1099,7 +1471,7 @@ namespace
 				pm->vCount = sw.num_verts;
 				pm->iBase  = oldIBase + sw.offset;
 				pm->iCount = u32(sw.num_tris) * 3u;
-				bgfxWorldDrawMesh(pm, dg);
+				bgfxWorldDrawMesh(pm, v->shader_id, dg, false);
 
 				pm->vBase  = oldVBase;
 				pm->vCount = oldVCount;
@@ -1108,7 +1480,40 @@ namespace
 			}
 			else
 			{
-				bgfxWorldDrawMesh(pm, dg);
+				bgfxWorldDrawMesh(pm, v->shader_id, dg, false);
+			}
+			break;
+		}
+		case MT_TREE_ST:
+		{
+			FTreeVisual* tv = static_cast<FTreeVisual*>(v);
+			bgfxWorldDrawMesh(tv, v->shader_id, dg, true, tv->GetTreeXform());
+			break;
+		}
+		case MT_TREE_PM:
+		{
+			FTreeVisual_PM* tp = static_cast<FTreeVisual_PM*>(v);
+			FSlideWindow sw;
+			if (tp->GetCurrentSlideWindow(sw))
+			{
+				const u32 oldVBase  = tp->vBase;
+				const u32 oldVCount = tp->vCount;
+				const u32 oldIBase  = tp->iBase;
+				const u32 oldICount = tp->iCount;
+
+				tp->vCount = sw.num_verts;
+				tp->iBase  = oldIBase + sw.offset;
+				tp->iCount = u32(sw.num_tris) * 3u;
+				bgfxWorldDrawMesh(tp, v->shader_id, dg, true, tp->GetTreeXform());
+
+				tp->vBase  = oldVBase;
+				tp->vCount = oldVCount;
+				tp->iBase  = oldIBase;
+				tp->iCount = oldICount;
+			}
+			else
+			{
+				bgfxWorldDrawMesh(tp, v->shader_id, dg, true, tp->GetTreeXform());
 			}
 			break;
 		}
@@ -1215,6 +1620,27 @@ extern "C"
 		// first Render() call)
 		bgfxWorldUploadBuffers();
 	}
+	void bgfxWorldCollectFlodChildren(dxRender_Visual* v, int depth)
+	{
+		if (!v || depth > 8)
+			return;
+		if (v->Type == MT_LOD)
+		{
+			FLOD* lod = static_cast<FLOD*>(v);
+			for (dxRender_Visual* ch : lod->children)
+			{
+				s_flodChildren.insert(ch);
+				bgfxWorldCollectFlodChildren(ch, depth + 1);
+			}
+		}
+		else if (v->Type == MT_HIERRARHY)
+		{
+			FHierrarhyVisual* hv = static_cast<FHierrarhyVisual*>(v);
+			for (dxRender_Visual* ch : hv->children)
+				bgfxWorldCollectFlodChildren(ch, depth + 1);
+		}
+	}
+
 	void bgfxRenderWorld()
 	{
 		if (!s_geomLoaded || !s_worldUploaded || RImplementation.Visuals.empty())
@@ -1240,77 +1666,285 @@ extern "C"
 		if (s_worldTerrainProgram.idx == 0xFFFF)
 			s_worldTerrainProgram = bgfxWorldTerrainProgramGet();
 
+		if (!s_flodChildrenReady)
+		{
+			s_flodChildrenReady = true;
+			for (IRenderVisual* V0 : RImplementation.Visuals)
+				bgfxWorldCollectFlodChildren(static_cast<dxRender_Visual*>(V0), 0);
+			LogInfo("WORLD FLOD children=%u", (u32)s_flodChildren.size());
+		}
+
 		// pass 1: opaque / alpha-tested / transparent world geometry
 		s_worldDecalPass = false;
 		++s_worldFrameMarker;
 		for (IRenderVisual* V0 : RImplementation.Visuals)
-			bgfxWorldDrawVisual(static_cast<dxRender_Visual*>(V0), g_worldDiag);
+		{
+			dxRender_Visual* v = static_cast<dxRender_Visual*>(V0);
+			if (s_flodChildren.find(v) != s_flodChildren.end())
+				continue;
+			bgfxWorldDrawVisual(v, g_worldDiag);
+		}
 
 		// pass 2: projected decals (wallmark blend/multiply), on top of base surfaces
 		s_worldDecalPass = true;
 		++s_worldFrameMarker;
 		for (IRenderVisual* V0 : RImplementation.Visuals)
-			bgfxWorldDrawVisual(static_cast<dxRender_Visual*>(V0), g_worldDiag);
+		{
+			dxRender_Visual* v = static_cast<dxRender_Visual*>(V0);
+			if (s_flodChildren.find(v) != s_flodChildren.end())
+				continue;
+			bgfxWorldDrawVisual(v, g_worldDiag);
+		}
 		s_worldDecalPass = false;
 
 		static int s_logged = 0;
 		if (!s_logged)
 		{
+			char tb[512];
+			int tp = 0;
+			for (int t = 0; t < 32; ++t)
+				if (g_worldDiag.byType[t])
+					tp += sprintf_s(tb + tp, sizeof(tb) - tp, " %d=%d", t, g_worldDiag.byType[t]);
 			LogInfo("WORLD: submitted=%d total=%d drawn=%d"
-				" skipType=%d skipVb=%d skipIb=%d upSkipVb=%d upSkipIb=%d"
-				" t0=%d t1=%d t2=%d t4=%d t5=%d t6=%d t10=%d",
+				" skipType=%d skipVb=%d skipIb=%d upSkipVb=%d upSkipIb=%d byType:%s",
 				g_worldDiag.drawn, g_worldDiag.total, g_worldDiag.drawn,
 				g_worldDiag.skipType, g_worldDiag.skipVb, g_worldDiag.skipIb,
-				g_worldDiag.upSkipVb, g_worldDiag.upSkipIb,
-				g_worldDiag.byType[0], g_worldDiag.byType[1], g_worldDiag.byType[2],
-				g_worldDiag.byType[4], g_worldDiag.byType[5], g_worldDiag.byType[6],
-				g_worldDiag.byType[10]);
+				g_worldDiag.upSkipVb, g_worldDiag.upSkipIb, tb);
 			s_logged = 1;
 		}
 		bgfx_set_state(BGFX_STATE_WRITE_RGB | BGFX_STATE_WRITE_A | BGFX_STATE_WRITE_Z, 0);
 	}
 
 	// ========================================================================
-	// Skin-handoff implementation (hook declared in bgfxModelBridge.h:62, called
-	// by the bridge's CPU pass on bgfxModelBridge.cpp:67). Lives here, in the TU
-	// that owns s_worldVbh/s_worldIbh/s_worldLayout/s_worldProgram, so it can
-	// bind the SAME handles the world pass submits with (716-717/759) and apply
-	// the per-visual transform via bgfx_set_transform. Until the port also uploads
-	// a true skinned vertex stream, this binds the visual's rigid VB/IB the way
-	// bgfxWorldDrawMesh does and reports an honest skip when nothing could bind.
+	// Reference dynamic pass (CRender::render_main, r4_R_render.cpp:147-201):
+	// every renderable object asks the renderer for its visual. The port has no
+	// portal/HOM traversal yet, so all level objects are asked; visuals are
+	// accumulated by ::Render->add_Visual and drawn by bgfxRenderDynamic after
+	// the world pass.
 	// ========================================================================
-	extern "C" bool bgfxSubmitSkinnedVisual(const void* visual, const float* transform,
-						int hud)
+	void bgfxRenderSceneObjects()
 	{
-		(void)hud;
-		if (!visual || !transform)
-			return false     ;
+		if (!g_pGameLevel)
+			return;
 
-		Fvisual* fv = static_cast<Fvisual*>(
-			const_cast<void*>(visual));	
-		if (!fv || !fv->p_rm_Vertices || !fv->p_rm_Indices)
+		CObjectList& objects = g_pGameLevel->Objects;
+		for (u32 i = 0; i < objects.o_count(); ++i)
+		{
+			CObject* O = objects.o_get_by_iterator(i);
+			if (!O)
+				continue;
+			IRenderable* R = O->dcast_Renderable();
+			if (!R || !R->renderable.visual)
+				continue;
+			R->renderable_Render();
+		}
+	}
+
+	// ========================================================================
+	// Skin-handoff implementation (hook declared in bgfxModelBridge.h:62, called
+	// by the bridge's CPU pass on bgfxModelBridge.cpp:67).
+	// ========================================================================
+	// ========================================================================
+	// Skinned dynamic models (CKinematics / CKinematicsAnimated, MT_SKELETON_*).
+	//
+	// CSkeletonX_ext::_Load_hw (FSkinned.cpp:591) already repacked the mesh into
+	// the vertHW_1W..4W streams, whose bone references are pre-multiplied
+	// indices (bone*3) - exactly what the reference CSkeletonX::_Render feeds
+	// into sbones_array (SkeletonX.cpp:74-83). We bind those model buffers and
+	// upload the same packing (3 rows per bone: M._11,M._21,M._31,M._41 / ...)
+	// into u_bones; the vertex shader rebuilds the object-space skinned
+	// position, u_modelViewProj applies the visual matrix.
+	// ========================================================================
+	bgfx_vertex_layout_t         s_skinLayoutDesc[4];
+	bool                         s_skinLayoutInit[4] = { false, false, false, false };
+	bgfx_vertex_layout_handle_t  s_skinLayout[4] = { BGFX_INVALID_HANDLE, BGFX_INVALID_HANDLE,
+							 BGFX_INVALID_HANDLE, BGFX_INVALID_HANDLE };
+	xr_map<const void*, bgfx_vertex_buffer_handle_t> s_modelVbh;
+	xr_map<const void*, bgfx_index_buffer_handle_t>  s_modelIbh;
+	bgfx_uniform_handle_t s_skinBones = BGFX_INVALID_HANDLE;
+	bgfx_uniform_handle_t s_skinSampler = BGFX_INVALID_HANDLE;
+
+	bgfx_vertex_layout_handle_t bgfxSkinLayoutGet(u32 mode)
+	{
+		if (mode > 3)
+			return BGFX_INVALID_HANDLE;
+		if (s_skinLayoutInit[mode])
+			return s_skinLayout[mode];
+
+		bgfx_vertex_layout_t& d = s_skinLayoutDesc[mode];
+		bgfx_vertex_layout_begin(&d, BGFX_RENDERER_TYPE_DIRECT3D11);
+		bgfx_vertex_layout_add(&d, BGFX_ATTRIB_POSITION, 4, BGFX_ATTRIB_TYPE_FLOAT, false, false);
+		bgfx_vertex_layout_add(&d, BGFX_ATTRIB_NORMAL, 4, BGFX_ATTRIB_TYPE_UINT8, true, false);
+		bgfx_vertex_layout_add(&d, BGFX_ATTRIB_TANGENT, 4, BGFX_ATTRIB_TYPE_UINT8, true, false);
+		bgfx_vertex_layout_add(&d, BGFX_ATTRIB_BITANGENT, 4, BGFX_ATTRIB_TYPE_UINT8, true, false);
+		bgfx_vertex_layout_add(&d, BGFX_ATTRIB_TEXCOORD0, 2, BGFX_ATTRIB_TYPE_FLOAT, false, false);
+		if (mode == 3) // vertHW_4W: indices as px4 color
+			bgfx_vertex_layout_add(&d, BGFX_ATTRIB_TEXCOORD2, 4, BGFX_ATTRIB_TYPE_UINT8, true, false);
+		else if (mode == 1 || mode == 2) // vertHW_2W/3W: tc.zw = bone indices
+			bgfx_vertex_layout_add(&d, BGFX_ATTRIB_TEXCOORD2, 2, BGFX_ATTRIB_TYPE_FLOAT, false, false);
+		bgfx_vertex_layout_end(&d);
+
+		s_skinLayout[mode] = bgfx_create_vertex_layout(&d);
+		s_skinLayoutInit[mode] = true;
+		LogInfo("DYN skin layout mode=%u stride=%u id=%u", mode,
+			(u32)bgfx_vertex_layout_get_stride(&d), s_skinLayout[mode].idx);
+		return s_skinLayout[mode];
+	}
+
+	bgfx_vertex_buffer_handle_t bgfxModelVertexBuffer(ID3DVertexBuffer* vb, u32 mode)
+	{
+		if (!vb || vb->data.empty() || mode > 3)
+			return BGFX_INVALID_HANDLE;
+		const void* key = vb;
+		auto it = s_modelVbh.find(key);
+		if (it != s_modelVbh.end())
+			return it->second;
+		bgfxSkinLayoutGet(mode);
+		const bgfx_memory_t* mem = bgfx_copy(&vb->data[0], (u32)vb->data.size());
+		bgfx_vertex_buffer_handle_t h = bgfx_create_vertex_buffer(mem, &s_skinLayoutDesc[mode], 0);
+		s_modelVbh[key] = h;
+		return h;
+	}
+
+	bgfx_index_buffer_handle_t bgfxModelIndexBuffer(ID3DIndexBuffer* ib)
+	{
+		if (!ib || ib->data.empty())
+			return BGFX_INVALID_HANDLE;
+		const void* key = ib;
+		auto it = s_modelIbh.find(key);
+		if (it != s_modelIbh.end())
+			return it->second;
+		const bgfx_memory_t* mem = bgfx_copy(&ib->data[0], (u32)ib->data.size());
+		bgfx_index_buffer_handle_t h = bgfx_create_index_buffer(mem, 0);
+		s_modelIbh[key] = h;
+		return h;
+	}
+
+	bool bgfxSkinDrawMesh(CSkeletonX* sk, CKinematics* K, const float* xform)
+	{
+		Fvisual* fv = dynamic_cast<Fvisual*>(sk);
+		if (!fv)
+			return false;
+		const u32 rm = sk->SkinMode();
+		if (rm > 4)
+			return false;
+		// RM_SINGLE meshes carry the single bone index in the vertex stream too,
+		// so they render through the 1W program; only its bone count differs.
+		const u32 mode = (rm == 0) ? 0u : (rm - 1u);
+		const u32 boneCount = (rm == 0) ? (sk->SkinSingleBone() + 1u) : sk->SkinBoneCount();
+		if (boneCount == 0 || boneCount > 85)
 			return false;
 
-		int vi = -1, ii = -1;
-		for (u32 i = 0; i < s_worldVbh.size(); ++i)
-			if (s_vbList[i] == fv->p_rm_Vertices && bgfxIsValid(s_worldVbh[i])) { vi = (int)i; break; }
-		for (u32 i = 0; i < s_worldIbh.size(); ++i)
-			if (s_ibList[i] == fv->p_rm_Indices && bgfxIsValid(s_worldIbh[i]))  { ii = (int)i; break; }
-		if (vi < 0 || ii < 0)
+		ID3DVertexBuffer* vb = fv->p_rm_Vertices;
+		ID3DIndexBuffer*  ib = fv->p_rm_Indices;
+		if (!vb || !ib)
 			return false;
 
-		bgfx_set_vertex_buffer_with_layout(0, s_worldVbh[vi], fv->vBase, fv->vCount, s_worldLayout);
-		bgfx_set_index_buffer(s_worldIbh[ii], fv->iBase, fv->iCount);
-		bgfx_set_transform(transform, 1);
+		u32 vCount = fv->vCount;
+		u32 iBase  = fv->iBase;
+		u32 iCount = fv->iCount;
+		if (fv->Type == MT_SKELETON_GEOMDEF_PM)
+		{
+			FProgressive* pm = dynamic_cast<FProgressive*>(fv);
+			FSlideWindow sw;
+			if (!pm || !pm->GetCurrentSlideWindow(sw))
+				return false;
+			vCount = sw.num_verts;
+			iBase += sw.offset;
+			iCount = u32(sw.num_tris) * 3u;
+		}
+		if (!vCount || !iCount)
+			return false;
 
+		bgfx_vertex_layout_handle_t layout = bgfxSkinLayoutGet(mode);
+		bgfx_program_handle_t prog = bgfxSkinProgramGet(mode);
+		if (!bgfxIsValid(layout) || !bgfxIsValid(prog))
+			return false;
+
+		bgfx_vertex_buffer_handle_t vbh = bgfxModelVertexBuffer(vb, mode);
+		bgfx_index_buffer_handle_t  ibh = bgfxModelIndexBuffer(ib);
+		if (!bgfxIsValid(vbh) || !bgfxIsValid(ibh))
+			return false;
+
+		if (!bgfxIsValid(s_skinBones))
+			s_skinBones = bgfx_create_uniform("u_bones", BGFX_UNIFORM_TYPE_VEC4, 255);
+		if (!bgfxIsValid(s_skinSampler))
+			s_skinSampler = bgfx_create_uniform("u_texture", BGFX_UNIFORM_TYPE_SAMPLER, 1);
+		if (!bgfxIsValid(s_skinBones))
+			return false;
+
+		static xr_vector<float> boneRows;
+		boneRows.clear();
+		boneRows.reserve(boneCount * 12);
+		for (u32 b = 0; b < boneCount; ++b)
+		{
+			const Fmatrix& M = K->LL_GetTransform_R(u16(b));
+			boneRows.push_back(M._11); boneRows.push_back(M._21); boneRows.push_back(M._31); boneRows.push_back(M._41);
+			boneRows.push_back(M._12); boneRows.push_back(M._22); boneRows.push_back(M._32); boneRows.push_back(M._42);
+			boneRows.push_back(M._13); boneRows.push_back(M._23); boneRows.push_back(M._33); boneRows.push_back(M._43);
+		}
+		bgfx_set_uniform(s_skinBones, boneRows.data(), (uint16_t)(boneCount * 3u));
+
+		bgfx_texture_handle_t tex = bgfxWorldTextureGet(fv->diffuse_name.c_str());
+		if (!bgfxIsValid(tex))
+			tex = bgfxUIWhiteTextureGet();
+		if (bgfxIsValid(s_skinSampler))
+			bgfx_set_texture(0, s_skinSampler, tex, UINT32_MAX);
+
+		bgfx_set_vertex_buffer_with_layout(0, vbh, fv->vBase, vCount, layout);
+		bgfx_set_index_buffer(ibh, iBase, iCount);
+		bgfx_set_transform(xform, 1);
 		const uint64_t st = BGFX_STATE_WRITE_RGB
 			| BGFX_STATE_WRITE_A
 			| BGFX_STATE_WRITE_Z
 			| BGFX_STATE_DEPTH_TEST_LESS
 			| BGFX_STATE_MSAA;
 		bgfx_set_state(st, 0);
-		bgfx_submit(0, s_worldProgram, 0, BGFX_DISCARD_ALL);
+		bgfx_submit(0, prog, 0, BGFX_DISCARD_ALL);
 		return true;
+	}
+
+	extern "C" bool bgfxSubmitSkinnedVisual(const void* visual, const float* transform,
+						int hud)
+	{
+		if (!visual || !transform)
+			return false;
+
+		dxRender_Visual* v = static_cast<dxRender_Visual*>(const_cast<void*>(visual));
+		switch (v->Type)
+		{
+		case MT_SKELETON_ANIM:
+		case MT_SKELETON_RIGID:
+		{
+			if (hud)
+				return false; // HUD pass not ported yet
+			CKinematics* K = static_cast<CKinematics*>(v);
+			K->CalculateBones(TRUE);
+
+			u32 drawn = 0, skipped = 0;
+			for (dxRender_Visual* ch : K->children)
+			{
+				CSkeletonX* sk = dynamic_cast<CSkeletonX*>(ch);
+				if (sk && bgfxSkinDrawMesh(sk, K, transform))
+					++drawn;
+				else
+					++skipped;
+			}
+
+			static u32 s_logged = 0;
+			if (s_logged < 8)
+			{
+				++s_logged;
+				LogInfo("DYN SKEL: '%s' children=%u drawn=%u skipped=%u bones=%u",
+					v->dbg_name.c_str(), (u32)K->children.size(), drawn, skipped,
+					(u32)K->LL_BoneCount());
+			}
+			return drawn > 0;
+		}
+		default:
+			// rigid/progressive dynamics (own FVF streams) are not ported yet
+			return false;
+		}
 	}
 
 	void bgfxDumpLevelGeom()

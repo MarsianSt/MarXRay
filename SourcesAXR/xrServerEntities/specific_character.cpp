@@ -7,11 +7,6 @@
 
 #define _SILENCE_EXPERIMENTAL_FILESYSTEM_DEPRECATION_WARNING
 
-#include <experimental/filesystem>
-
-namespace fs = std::experimental::filesystem;
-
-
 SSpecificCharacterData::SSpecificCharacterData()
 {
 	m_sGameName.clear		();

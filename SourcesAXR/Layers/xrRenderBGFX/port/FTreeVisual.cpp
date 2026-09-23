@@ -291,10 +291,21 @@ void FTreeVisual_PM::Render		(float LOD)
 	RCache.Render				(D3DPT_TRIANGLELIST,vBase,0,SW.num_verts,iBase+SW.offset,SW.num_tris);
 	RCache.stat.r.s_flora.add	(SW.num_verts);
 }
-void FTreeVisual_PM::Copy		(dxRender_Visual *pSrc)
+void FTreeVisual_PM::Copy	(dxRender_Visual *pSrc)
 {
 	inherited::Copy				(pSrc);
 	FTreeVisual_PM	*pFrom		= dynamic_cast<FTreeVisual_PM*> (pSrc);
 	PCOPY						(pSWI);
+}
+
+bool FTreeVisual_PM::GetCurrentSlideWindow	(FSlideWindow& out) const
+{
+	if (!pSWI || !pSWI->sw || pSWI->count == 0)
+		return false;
+	u32 lod_id = last_lod;
+	if (lod_id >= pSWI->count)
+		lod_id = 0;
+	out = pSWI->sw[lod_id];
+	return true;
 }
 

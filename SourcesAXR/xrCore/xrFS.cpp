@@ -547,14 +547,10 @@ void xrFS::prefetch_virtual(const std::vector<std::string>& vpaths) const
         const size_t sz = r->e.uncompSize;
         if (cachedBytes + total + sz > kCacheCap)
         {
-            // Overflow: drop the whole cache and retry with a warm budget.
-            {
-                std::lock_guard<std::mutex> cm(m_cacheMtx);
-                m_cache.clear();
-                m_cacheBytes = 0;
-            }
-            cachedBytes = 0;
-            if (total + sz > kCacheCap) return; // batch alone too large for the cache
+            // Would overflow the cache budget. Skip this file so read_virtual's
+            // serial fallback reads it from disk. Never flush the whole cache
+            // for one oversized file: the previous batch filled it in parallel.
+            continue;
         }
         total += sz;
         keys.push_back(key);

@@ -11,15 +11,6 @@
 #include "..\..\xrEngine\Render.h"
 #include "port\bgfxModelBridge.h"
 
-// Accumulated CPU-side entry for a dynamic (skinned/physic) visual.
-struct bgfxDynamicVisual
-{
-	IRenderVisual*	visual		= nullptr;
-	Fmatrix			transform;				// current model matrix
-	BOOL			hud			= FALSE;	// render in HUD mode
-	BOOL			invisible	= FALSE;	// set_Invisible (skip)
-};
-
 class bgfxRenderTarget : public IRender_Target
 {
 public:
@@ -194,12 +185,7 @@ public:
         (void)ignore_opt;
         if (!V || m_invisible)
             return;
-        bgfxDynamicVisual e;
-        e.visual    = V;
-        e.transform = m_transform;
-        e.hud       = m_hud;
-        m_dynamic.push_back(e);
-        m_dirty     = true;
+        bgfxAddDynamicVisual(V, &m_transform._11, m_hud, m_invisible);
     }
     virtual void add_Geometry(IRenderVisual* V) override { (void)V; }
     virtual void add_StaticWallmark(const wm_shader& S, const Fvector& P, float s, CDB::TRI* T, Fvector* V) override {}
@@ -243,8 +229,10 @@ public:
         if (s_calls < 3)
             LogInfo("[BGFX] IRender_interface::Render() pass");
         ++s_calls;
+        bgfxRenderSceneObjects();
         bgfxRenderWorld();
         bgfxRenderDynamic();    // flush CPU-side dynamic visuals to the port
+        bgfxClearDynamic();
     }
 
     // [FFT++]
@@ -288,8 +276,6 @@ protected:
     BOOL          m_invisible  = FALSE;       // set_Invisible
     BOOL          m_ui         = FALSE;       // set_UI
     IRenderable*  m_object     = nullptr;     // set_Object
-    std::vector<bgfxDynamicVisual> m_dynamic; // add_Visual accumulator
-    bool          m_dirty      = false;       // new visual since last flush
 
     virtual void ScreenshotImpl(ScreenshotMode mode, LPCSTR name, CMemoryWriter* memory_writer) override {}
 };

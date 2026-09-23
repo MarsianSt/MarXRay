@@ -106,5 +106,6 @@ extern "C"
 	void	bgfxLoadVisuals		(IReader* fs);
 	void	bgfxLoadGeometry	();
 	void	bgfxRenderWorld		();
+	void	bgfxRenderSceneObjects	();
 	void	bgfxDumpLevelGeom	();
 }

@@ -19,6 +19,7 @@ void main()
     if (u_dtScale.x > 0.5)
     {
         vec4 mask = texture2D(u_mask, v_texcoord0);
+        mask /= max(mask.r + mask.g + mask.b + mask.a, 0.00001);
         vec2 uv = v_texcoord0 * u_dtScale.xy;
         vec3 det = texture2D(u_dt0, uv).rgb * mask.r
                  + texture2D(u_dt1, uv).rgb * mask.g

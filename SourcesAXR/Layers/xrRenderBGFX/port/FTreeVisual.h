@@ -2,6 +2,7 @@
 
 // refs
 struct	FSlideWindowItem;
+struct	FSlideWindow;
 
 #include "FBasicVisual.h"
 
@@ -26,6 +27,8 @@ public:
 
 	FTreeVisual(void);
 	virtual ~FTreeVisual(void);
+
+	const float* GetTreeXform	() const { return &xform._11; }
 };
 
 class FTreeVisual_ST :	public FTreeVisual
@@ -58,6 +61,7 @@ public:
 	virtual void	Load			(LPCSTR N, IReader *data, u32 dwFlags);
 	virtual void	Copy			(dxRender_Visual *pFrom	);
 	virtual void	Release			();
+	bool			GetCurrentSlideWindow	(FSlideWindow& out) const;
 private:
 	FTreeVisual_PM				(const FTreeVisual_PM& other);
 	void	operator=			( const FTreeVisual_PM& other);
