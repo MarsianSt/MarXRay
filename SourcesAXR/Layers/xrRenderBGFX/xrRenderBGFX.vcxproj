@@ -142,6 +142,7 @@
     <ClInclude Include="port\bgfxD3DX.h" />
     <ClInclude Include="port\bgfxGpuCompat.h" />
     <ClInclude Include="port\bgfxModelBridge.h" />
+    <ClInclude Include="port\bgfxParticleRender.h" />
     <ClInclude Include="port\bgfxRenderCompat.h" />
     <ClInclude Include="port\bgfxResourceManager.h" />
     <ClInclude Include="port\bgfxStubParticles.h" />
@@ -164,6 +165,7 @@
     <ClInclude Include="port\ParticleEffect.h" />
     <ClInclude Include="port\ParticleEffectDef.h" />
     <ClInclude Include="port\ParticleGroup.h" />
+    <ClInclude Include="port\PSLibrary.h" />
     <ClInclude Include="port\R_Backend.h" />
     <ClInclude Include="port\r_constants.h" />
     <ClInclude Include="port\r_constants_cache.h" />
@@ -262,6 +264,21 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="port/ModelPool.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="port/ParticleEffect.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="port/ParticleEffectDef.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="port/ParticleGroup.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="port/bgfxParticleRender.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="port/PSLibrary.cpp">
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="port/r_constants.cpp">

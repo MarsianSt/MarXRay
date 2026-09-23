@@ -26,6 +26,7 @@ public:
 	virtual ObjectFactory::CLIENT_BASE_CLASS	*client_object		() const = 0;
 #endif
 	virtual ObjectFactory::SERVER_BASE_CLASS	*server_object		(LPCSTR section) const = 0;
+	virtual bool								is_script_object	() const { return false; }
 };
 
 #include "object_item_abstract_inline.h"

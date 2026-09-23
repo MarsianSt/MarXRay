@@ -2,6 +2,9 @@
 #include "..\..\Include\xrRender\UIShader.h"
 #include "bgfx_capi.h"
 
+#define BGFX_UI_TEX_MIN_ANISOTROPIC UINT64_C(0x00000080)
+#define BGFX_UI_TEX_MAG_ANISOTROPIC UINT64_C(0x00000200)
+
 class BgfxVideoDecoder;
 
 class bgfxUIShader : public IUIShader
@@ -53,7 +56,6 @@ private:
 
 // Loads a game texture (DDS/TGA) through the engine VFS. Cached by name.
 bool bgfxLoadUITexture(LPCSTR texName, bgfx_texture_handle_t& outTex, unsigned int& outW, unsigned int& outH);
-
 // Loads world/static-geometry textures with wrap sampling (terrain/tiling).
 bool bgfxLoadWorldTexture(LPCSTR texName, bgfx_texture_handle_t& outTex, unsigned int& outW, unsigned int& outH);
 

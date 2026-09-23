@@ -2,6 +2,7 @@
 
 #include "stdafx.h"
 #include "bgfx_capi.h"
+#include "bgfxUIState.h"
 #include "..\..\Include\xrRender\RenderFactory.h"
 
 #ifndef ENGINE_API
@@ -109,9 +110,6 @@ public:
     virtual void set_color(float r, float g, float b) override { m_color.set(r, g, b, 1.f); }
 };
 
-// Particle systems stub: defined in port/ModelPool.cpp (BGFX port).
-IRenderVisual* bgfxStubParticleCreate();
-
 // ---------------------------------------------------------------------------
 // Stub object-specific info: implements all IRender_ObjectSpecific virtuals so
 // the game can call ROS()->* safely (state stored CPU-side only).
@@ -204,7 +202,7 @@ public:
     virtual void glow_destroy(IRender_Glow* p_) override {}
 
     // Models
-    virtual IRenderVisual* model_CreateParticles(LPCSTR name) override { (void)name; return bgfxStubParticleCreate(); }
+    virtual IRenderVisual* model_CreateParticles(LPCSTR name) override { return static_cast<IRenderVisual*>(bgfxModelCreateParticles(name)); }
     virtual IRenderVisual* model_Create(LPCSTR name, IReader* data = 0) override
     {
         return static_cast<IRenderVisual*>(bgfxModelCreate(name));
@@ -229,9 +227,13 @@ public:
         if (s_calls < 3)
             LogInfo("[BGFX] IRender_interface::Render() pass");
         ++s_calls;
+        // R2 combine: sky/clouds are the background, submitted before the world.
+        bgfxRenderEnvironmentSky();
         bgfxRenderSceneObjects();
         bgfxRenderWorld();
         bgfxRenderDynamic(0);   // world dynamics: flush CPU-side visuals to the port
+        // R2 combine (flares over scene) + R2 forward (rain/thunder after sorted).
+        bgfxRenderEnvironmentFx();
         if (currentViewPort == MAIN_VIEWPORT)
             bgfxRenderHudPass();    // actor hands + weapon (see bgfxRenderCompat)
         bgfxClearDynamic();

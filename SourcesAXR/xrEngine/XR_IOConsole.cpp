@@ -436,6 +436,9 @@ void CConsole::DrawBackgrounds( bool bGame )
 	Frect r;
 	r.set( 0.0f, 0.0f, float(Device.dwWidth), ky * float(Device.dwHeight) );
 
+	if ( !UIRender || !m_hShader_back )
+		return;
+
 	UIRender->SetShader( **m_hShader_back );
 	// 6 = back, 12 = tips, (VIEW_TIPS_COUNT+1)*6 = highlight_words, 12 = scroll
 	UIRender->StartPrimitive( 6 + 12 + (VIEW_TIPS_COUNT+1)*6 + 12, IUIRender::ptTriList, IUIRender::pttTL );

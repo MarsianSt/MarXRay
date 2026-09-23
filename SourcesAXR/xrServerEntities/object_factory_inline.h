@@ -105,6 +105,15 @@ IC	int	CObjectFactory::script_clsid	(const CLASS_ID &clsid) const
 	return				(int(I - clsids().begin()));
 }
 
+IC	bool CObjectFactory::is_script_object	(const CLASS_ID &clsid) const
+{
+	actualize			();
+	const_iterator		I = std::lower_bound(clsids().begin(),clsids().end(),clsid,CObjectItemPredicate());
+	if ((I == clsids().end()) || ((*I)->clsid() != clsid))
+		return			(false);
+	return				((*I)->is_script_object());
+}
+
 #ifndef NO_XR_GAME
 IC	CObjectFactory::CLIENT_BASE_CLASS *CObjectFactory::client_object	(const CLASS_ID &clsid) const
 {

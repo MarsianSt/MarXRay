@@ -138,9 +138,9 @@ void bgfxImguiRenderFrame()
     const bgfx_caps_t* caps = bgfx_get_caps();
     const bool homogeneousDepth = caps && caps->homogeneousDepth;
 
-    bgfx_set_view_rect(2, 0, 0, (uint16_t)fbWidth, (uint16_t)fbHeight);
-    bgfx_set_view_clear(2, BGFX_CLEAR_NONE, 0, 1.0f, 0);
-    bgfx_set_view_mode(2, BGFX_VIEW_MODE_SEQUENTIAL);
+    bgfx_set_view_rect(5, 0, 0, (uint16_t)fbWidth, (uint16_t)fbHeight);
+    bgfx_set_view_clear(5, BGFX_CLEAR_NONE, 0, 1.0f, 0);
+    bgfx_set_view_mode(5, BGFX_VIEW_MODE_SEQUENTIAL);
 
     // Orthographic projection (top-left origin, pixel space), parallel to
     // bx::mtxOrtho as used by the bgfx imgui example.
@@ -167,8 +167,8 @@ void bgfxImguiRenderFrame()
     }
 
     float ident[16] = { 1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1 };
-    bgfx_set_view_transform(2, ident, ortho);
-    bgfx_touch(2);
+    bgfx_set_view_transform(5, ident, ortho);
+    bgfx_touch(5);
 
     const float sx = io.DisplayFramebufferScale.x;
     const float sy = io.DisplayFramebufferScale.y;
@@ -230,7 +230,7 @@ void bgfxImguiRenderFrame()
             bgfx_set_transient_vertex_buffer(0, &tvb, (uint32_t)cmd->VtxOffset, (uint32_t)cmd->ElemCount);
             bgfx_set_transient_index_buffer(&tib, (uint32_t)cmd->IdxOffset, (uint32_t)cmd->ElemCount);
 
-            bgfx_submit(2, s_program, 0, BGFX_DISCARD_ALL);
+            bgfx_submit(5, s_program, 0, BGFX_DISCARD_ALL);
         }
     }
 }

@@ -122,21 +122,27 @@ struct string_prdicate {
 
 IReader const* CALifeSimulator::get_config	( shared_str config ) const
 {
+	m_configs_cs.Enter			();
 	configs_type::iterator const found = std::find_if( m_configs_lru.begin(), m_configs_lru.end(), string_prdicate(config) );
 	if ( found != m_configs_lru.end() ) {
 		configs_type::value_type	temp = *found;
 		m_configs_lru.erase			( found );
 		m_configs_lru.insert		( m_configs_lru.begin(), std::make_pair(temp.first, temp.second) );
+		m_configs_cs.Leave			();
 		return						temp.second;
 	}
 
 	string_path						file_name;
 	FS.update_path					( file_name,"$game_config$", config.c_str() );
-	if ( !FS.exist(file_name) )
+	if ( !FS.exist(file_name) ) {
+		m_configs_cs.Leave			();
 		return						0;
+	}
 
 	m_configs_lru.insert			( m_configs_lru.begin(), std::make_pair(config, FS.r_open(file_name)) );
-	return							m_configs_lru.front().second;
+	IReader const*					result = m_configs_lru.front().second;
+	m_configs_cs.Leave				();
+	return							result;
 }
 
 namespace detail

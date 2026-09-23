@@ -104,6 +104,10 @@ namespace
     XrCallbackInterface s_xrCallback = { &s_xrCallbackVtbl, nullptr };
 }
 
+// View id for sky/clouds submits (bgfxEnvironmentRender kSkyView).
+// Map: 0 = world, 1 = intro video, 2 = sky, 3 = HUD, 4 = game UI, 5 = ImGui.
+const bgfx_view_id_t kBgfxSkyViewId = 2;
+
 bgfxRenderDeviceRender::bgfxRenderDeviceRender()
     : m_bInitialized(false)
     , m_hWnd(nullptr)
@@ -327,6 +331,22 @@ void bgfxRenderDeviceRender::Begin()
     // must draw on top of the UI "back" quad that covers the screen.
     bgfx_set_view_rect(1, 0, 0, (uint16_t)m_width, (uint16_t)m_height);
     bgfx_touch(1);
+
+    // View 2 (no clear) carries sky/clouds submits (kBgfxSkyViewId). It runs
+    // after the world view, so it shares the world depth buffer content.
+    bgfx_set_view_rect(kBgfxSkyViewId, 0, 0, (uint16_t)m_width, (uint16_t)m_height);
+    bgfx_set_view_clear(kBgfxSkyViewId, BGFX_CLEAR_NONE, 0, 1.0f, 0);
+    bgfx_set_view_mode(kBgfxSkyViewId, BGFX_VIEW_MODE_SEQUENTIAL);
+    bgfx_touch(kBgfxSkyViewId);
+
+    // View 3 (HUD hands/weapon, depth-cleared) is configured by the render
+    // interface (bgfxRenderHudPass). View 4 (no clear) renders after it and
+    // carries the game UI, which must stay on top of the HUD (the engine draws
+    // it via HUD().RenderUI() after Render->Render()).
+    bgfx_set_view_rect(4, 0, 0, (uint16_t)m_width, (uint16_t)m_height);
+    bgfx_set_view_clear(4, BGFX_CLEAR_NONE, 0, 1.0f, 0);
+    bgfx_set_view_mode(4, BGFX_VIEW_MODE_SEQUENTIAL);
+    bgfx_touch(4);
 }
 
 void bgfxRenderDeviceRender::Clear()
@@ -337,6 +357,9 @@ void bgfxRenderDeviceRender::Clear()
 
 void bgfxRenderDeviceRender::End()
 {
+    // Reset the 2D UI view for the next frame: by default it renders after the
+    // HUD view; the video item switches it back to the world view per frame.
+    bgfxUISubmitView() = 4;
 }
 
 void bgfxRenderDeviceRender::ClearTarget()
@@ -346,6 +369,8 @@ void bgfxRenderDeviceRender::ClearTarget()
 void bgfxRenderDeviceRender::SetCacheXform(Fmatrix &mView, Fmatrix &mProject)
 {
     bgfx_set_view_transform(0, mView.m, mProject.m);
+    // Sky view follows the world camera until it gets its own far-plane setup.
+    bgfx_set_view_transform(kBgfxSkyViewId, mView.m, mProject.m);
 }
 
 void bgfxRenderDeviceRender::OnAssetsChanged()

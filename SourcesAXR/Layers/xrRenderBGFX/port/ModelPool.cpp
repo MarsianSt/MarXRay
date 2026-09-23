@@ -56,8 +56,10 @@ dxRender_Visual*	CModelPool::Instance_Create(u32 type)
 		V	= xr_new<CSkeletonX_ST>			();
 		break;
 	case MT_PARTICLE_EFFECT:
+		V	= xr_new<PS::CParticleEffect>	();
+		break;
 	case MT_PARTICLE_GROUP:
-		V	= static_cast<dxRender_Visual*>(bgfxStubParticleCreate());
+		V	= xr_new<PS::CParticleGroup>	();
 		break;
 #ifndef _EDITOR
 	case MT_LOD:
@@ -397,14 +399,16 @@ void CModelPool::ClearPool( BOOL b_complete)
 
 dxRender_Visual* CModelPool::CreatePE	(PS::CPEDef* source)
 {
-	(void)source;
-	return static_cast<dxRender_Visual*>(bgfxStubParticleCreate());
+	PS::CParticleEffect* V	= (PS::CParticleEffect*)Instance_Create(MT_PARTICLE_EFFECT);
+	V->Compile		(source);
+	return V;
 }
 
 dxRender_Visual* CModelPool::CreatePG	(PS::CPGDef* source)
 {
-	(void)source;
-	return static_cast<dxRender_Visual*>(bgfxStubParticleCreate());
+	PS::CParticleGroup* V	= (PS::CParticleGroup*)Instance_Create(MT_PARTICLE_GROUP);
+	V->Compile		(source);
+	return V;
 }
 
 void CModelPool::dump()

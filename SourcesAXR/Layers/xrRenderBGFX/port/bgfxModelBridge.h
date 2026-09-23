@@ -103,6 +103,7 @@ class IReader;
 extern "C"
 {
 	void*	bgfxModelCreate		(const char* name);
+	void*	bgfxModelCreateParticles	(const char* name);
 	void*	bgfxModelCreateChild	(const char* name, IReader* data);
 	void*	bgfxModelDuplicate	(void* V);
 	void	bgfxModelDelete		(void** V, int bDiscard);
@@ -111,5 +112,7 @@ extern "C"
 	void	bgfxLoadGeometry	();
 	void	bgfxRenderWorld		();
 	void	bgfxRenderSceneObjects	();
+	void	bgfxRenderEnvironmentSky	();
+	void	bgfxRenderEnvironmentFx	();
 	void	bgfxDumpLevelGeom	();
 }

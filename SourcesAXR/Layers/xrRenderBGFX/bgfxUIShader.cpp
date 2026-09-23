@@ -21,6 +21,7 @@ namespace
 #define DDPF_FOURCC     0x00000004
 #define DDPF_RGB        0x00000040
 #define DDPF_ALPHA      0x00000002
+#define DDSD_MIPMAPCOUNT 0x00020000
 
 #define FOURCC(a, b, c, d) ((u32)(a) | ((u32)(b) << 8) | ((u32)(c) << 16) | ((u32)(d) << 24))
 
@@ -56,6 +57,21 @@ namespace
     };
 #pragma pack(pop)
 
+u32 DdsMipLevelBytes(bgfx_texture_format_t fmt, u32 w, u32 h)
+{
+    switch (fmt)
+    {
+    case BGFX_TEXTURE_FORMAT_BC1:
+        return ((w + 3) / 4) * ((h + 3) / 4) * 8;
+    case BGFX_TEXTURE_FORMAT_BC2:
+    case BGFX_TEXTURE_FORMAT_BC3:
+        return ((w + 3) / 4) * ((h + 3) / 4) * 16;
+    default:
+        break;
+    }
+    return w * h * 4;
+}
+
 bgfx_texture_handle_t LoadDDSTexture(IReader* file, unsigned int& outW, unsigned int& outH, bool worldWrap)
 {
     u32 size = file->elapsed();
@@ -84,37 +100,32 @@ bgfx_texture_handle_t LoadDDSTexture(IReader* file, unsigned int& outW, unsigned
         bool isRgb = (hdr.ddspf.flags & DDPF_RGB) != 0;
 
         bgfx_texture_format_t fmt;
-        u32 mipBytes;
         u64 flags = worldWrap
-            ? BGFX_TEXTURE_NONE
+            ? (BGFX_TEXTURE_NONE | BGFX_UI_TEX_MIN_ANISOTROPIC | BGFX_UI_TEX_MAG_ANISOTROPIC)
             : (BGFX_TEXTURE_U_CLAMP | BGFX_TEXTURE_V_CLAMP | BGFX_TEXTURE_MIN_POINT | BGFX_TEXTURE_MAG_POINT);
 
             if (isDxt && fourcc == FOURCC('D', 'X', 'T', '1'))
             {
                 fmt = BGFX_TEXTURE_FORMAT_BC1;
-                mipBytes = ((w + 3) / 4) * ((h + 3) / 4) * 8;
             }
             else if (isDxt && (fourcc == FOURCC('D', 'X', 'T', '3') || fourcc == FOURCC('D', 'X', 'T', '2')))
             {
                 fmt = BGFX_TEXTURE_FORMAT_BC2;
-                mipBytes = ((w + 3) / 4) * ((h + 3) / 4) * 16;
             }
             else if (isDxt && (fourcc == FOURCC('D', 'X', 'T', '5') || fourcc == FOURCC('D', 'X', 'T', '4')))
             {
                 fmt = BGFX_TEXTURE_FORMAT_BC3;
-                mipBytes = ((w + 3) / 4) * ((h + 3) / 4) * 16;
             }
             else if (!isDxt && isRgb && hdr.ddspf.rgbBitCount == 32)
             {
                 fmt = BGFX_TEXTURE_FORMAT_BGRA8;
-                mipBytes = w * h * 4;
             }
             else if (!isDxt && !isRgb && (hdr.ddspf.flags & DDPF_ALPHA) && hdr.ddspf.rgbBitCount == 8)
             {
                 // X-Ray font textures: 8-bit alpha-only DDS. Expand to RGBA8
                 // (alpha = value) so shaders can sample .a directly.
                 fmt = BGFX_TEXTURE_FORMAT_RGBA8;
-                mipBytes = w * h * 4;
+                u32 mipBytes = w * h * 4;
 
                 u8* rgba = (u8*)xr_malloc(mipBytes);
                 const u8* src = data + 4 + sizeof(DdsHeader);
@@ -139,11 +150,40 @@ bgfx_texture_handle_t LoadDDSTexture(IReader* file, unsigned int& outW, unsigned
             else
                 break;
 
+            if (4 + sizeof(DdsHeader) + DdsMipLevelBytes(fmt, w, h) > size)
+                break;
+
+            u32 fullLevels = 1;
+            for (u32 t = w > h ? w : h; t > 1; t >>= 1)
+                fullLevels++;
+
+            u32 fileLevels = 1;
+            if ((hdr.flags & DDSD_MIPMAPCOUNT) && hdr.mipMapCount > 1)
+                fileLevels = hdr.mipMapCount;
+            if (fileLevels > fullLevels)
+                fileLevels = fullLevels;
+
+            u32 mipBytes = 0;
+            {
+                u32 lw = w, lh = h;
+                for (u32 i = 0; i < fileLevels; i++)
+                {
+                    mipBytes += DdsMipLevelBytes(fmt, lw, lh);
+                    lw = lw > 1 ? lw >> 1 : 1;
+                    lh = lh > 1 ? lh >> 1 : 1;
+                }
+            }
+            if (fileLevels > 1 && fileLevels != fullLevels)
+            {
+                fileLevels = 1;
+                mipBytes = DdsMipLevelBytes(fmt, w, h);
+            }
+
             if (4 + sizeof(DdsHeader) + mipBytes > size)
                 break;
 
             const bgfx_memory_t* mem = bgfx_copy(data + 4 + sizeof(DdsHeader), mipBytes);
-            tex = bgfx_create_texture_2d((u16)w, (u16)h, false, 1, fmt, flags, mem, 0);
+            tex = bgfx_create_texture_2d((u16)w, (u16)h, fileLevels > 1, 1, fmt, flags, mem, 0);
 
             if (bgfxIsValid(tex))
             {
@@ -243,7 +283,7 @@ bgfx_texture_handle_t LoadTGATexture(IReader* file, unsigned int& outW, unsigned
         }
 
         u64 flags = worldWrap
-            ? BGFX_TEXTURE_NONE
+            ? (BGFX_TEXTURE_NONE | BGFX_UI_TEX_MIN_ANISOTROPIC | BGFX_UI_TEX_MAG_ANISOTROPIC)
             : (BGFX_TEXTURE_U_CLAMP | BGFX_TEXTURE_V_CLAMP | BGFX_TEXTURE_MIN_POINT | BGFX_TEXTURE_MAG_POINT);
         const bgfx_memory_t* mem = bgfx_copy(rgba, mipBytes);
         tex = bgfx_create_texture_2d((u16)w, (u16)h, false, 1, BGFX_TEXTURE_FORMAT_RGBA8, flags, mem, 0);

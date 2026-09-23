@@ -279,6 +279,7 @@ public:
 class ENGINE_API	CEnvironment
 {
 	friend class dxEnvironmentRender;
+	friend class bgfxEnvironmentRender;
 	struct str_pred
 	{	
 		IC bool operator()(const shared_str& x, const shared_str& y) const

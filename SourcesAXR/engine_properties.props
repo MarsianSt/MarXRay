@@ -4,10 +4,9 @@
   <ItemDefinitionGroup>
     <ClCompile>
       <PreprocessorDefinitions>
-        <!-- comment to disable
         TRACY_ENABLE;
         TRACY_NO_FRAME_IMAGE;
-        TRACY_ON_DEMAND; --> 
+        TRACY_ON_DEMAND;
 		<!-- comment to disable
 		PROTECT_CBT; -->
         %(PreprocessorDefinitions)

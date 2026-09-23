@@ -136,7 +136,7 @@ void bgfxFontRender::OnRender(CGameFont &owner)
                 bgfx_uniform_handle_t sampler = bgfxUITextureSamplerGet();
                 bgfx_set_texture(0, sampler, m_texture, UINT32_MAX);
                 bgfxUIScissorApply();
-                bgfx_submit(0, prog, 0, BGFX_DISCARD_ALL);
+                bgfx_submit(bgfxUISubmitView(), prog, 0, BGFX_DISCARD_ALL);
             }
         }
     }

@@ -30,6 +30,10 @@ namespace PS
 		Fvector				m_InitialPosition;
 	public:
 		CPEDef*				m_Def;
+		// BGFX: blend mode used for the billboard submit (bgfxParticles::BlendMode).
+		// Derived from the definition's shader name in Compile(); defaults to
+		// BLEND_BLEND (=1) when the shader name carries no blend hint.
+		int					m_BlendMode;
         Fmatrix				m_XFORM;
     protected:
     	DestroyCallback		m_DestroyCallback;

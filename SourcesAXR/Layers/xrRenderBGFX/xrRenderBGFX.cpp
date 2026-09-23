@@ -348,7 +348,7 @@ public:
                 // 0 = BGFX_SAMPLER_NONE; UINT32_MAX would set reserved sampler bits.
                 bgfx_set_texture(0, sampler, tex, 0);
                 bgfxUIScissorApply();
-                bgfx_submit(0, prog, 0, BGFX_DISCARD_ALL);
+                bgfx_submit(bgfxUISubmitView(), prog, 0, BGFX_DISCARD_ALL);
             }
         }
 

@@ -158,6 +158,10 @@ void bgfxUISequenceVideoItem::RenderVideoFrame()
     bgfx_set_state(BGFX_STATE_WRITE_RGB | BGFX_STATE_WRITE_A, 0);
     bgfx_set_transient_vertex_buffer(0, &tvb, 0, 4);
     bgfx_set_transient_index_buffer(&tib, 0, 6);
-    // View 1 draws after all view 0 (UI) submits so the video is on top
+    // View 1 draws after all view 0 (UI) submits so the video is on top.
+    // Any 2D UI submitted later in this frame (the fullscreen menu/intro
+    // backdrop goes through bgfxUIShader after Render->Render()) must fall
+    // back to the world view to keep the video visible.
+    bgfxUISubmitView() = 0;
     bgfx_submit(1, prog, 0, BGFX_DISCARD_ALL);
 }

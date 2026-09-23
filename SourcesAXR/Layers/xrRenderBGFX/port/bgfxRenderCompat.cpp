@@ -14,6 +14,9 @@
 #include "FHierrarhyVisual.h"
 #include "FSkinned.h"
 #include "SkeletonCustom.h"
+#include "ParticleEffect.h"
+#include "ParticleGroup.h"
+#include "PSLibrary.h"
 #include "../../../xrEngine/fmesh.h"
 #include "../../../xrEngine/xrLevel.h"
 
@@ -24,6 +27,8 @@
 
 #include "../../../xrEngine/Render.h"
 #include "../../../xrEngine/IGame_Level.h"
+#include "../../../xrEngine/IGame_Persistent.h"
+#include "../../../xrEngine/Environment.h"
 #include "../../../xrEngine/xr_object.h"
 #include "../../../xrEngine/device.h"
 #include "../../../xrEngine/CustomHUD.h"
@@ -45,6 +50,36 @@ void bgfxEnsureModelPool()
 {
 	if (!RImplementation.pool)
 		RImplementation.pool = xr_new<CModelPool>();
+}
+
+// Submits one particle visual. CParticleEffect::Render feeds its live PAPI
+// particle array to bgfxParticles::SubmitPAPI (particle view, kView=6).
+// CParticleGroup has no Render of its own (same as the reference), so its
+// items' visuals are walked and each effect rendered individually.
+void bgfxDrawParticleVisual(dxRender_Visual* v)
+{
+	if (!v)
+		return;
+	switch (v->Type)
+	{
+	case MT_PARTICLE_EFFECT:
+		static_cast<PS::CParticleEffect*>(v)->Render(0.f);
+		break;
+	case MT_PARTICLE_GROUP:
+	{
+		PS::CParticleGroup* g = static_cast<PS::CParticleGroup*>(v);
+		for (PS::CParticleGroup::SItemVecIt it = g->items.begin(); it != g->items.end(); ++it)
+		{
+			xr_vector<dxRender_Visual*> visuals;
+			it->GetVisuals(visuals);
+			for (dxRender_Visual* e : visuals)
+				bgfxDrawParticleVisual(e);
+		}
+		break;
+	}
+	default:
+		break;
+	}
 }
 
 // ============================================================================
@@ -153,6 +188,24 @@ IRenderVisual* CRender::model_Create(LPCSTR name, IReader* data)
 {
 	bgfxEnsureModelPool();
 	return RImplementation.pool ? RImplementation.pool->Create(name) : nullptr;
+}
+
+IRenderVisual* CRender::model_CreateParticles(LPCSTR name)
+{
+	bgfxEnsureModelPool();
+	if (!RImplementation.pool)
+		return nullptr;
+
+	CPSLibrary& lib = bgfxPSLibrary();
+	PS::CPEDef* SE = lib.FindPED(name);
+	if (SE)
+		return RImplementation.pool->CreatePE(SE);
+
+	PS::CPGDef* SG = lib.FindPGD(name);
+	R_ASSERT3(SG, "Particle effect or group doesn't exist", name);
+	if (!SG)
+		return nullptr;
+	return RImplementation.pool->CreatePG(SG);
 }
 
 IRenderVisual* CRender::model_CreateChild(LPCSTR name, IReader* data)
@@ -1527,6 +1580,17 @@ namespace
 				bgfxWorldDrawVisual(ch, dg);
 			break;
 		}
+		case MT_PARTICLE_EFFECT:
+		case MT_PARTICLE_GROUP:
+			// Particles submit into their own view (kView=6). Draw them only in
+			// the base pass: the decal pass re-walks the visuals with a fresh
+			// frame marker and would otherwise submit them twice.
+			if (!s_worldDecalPass)
+			{
+				bgfxDrawParticleVisual(v);
+				++dg.drawn;
+			}
+			break;
 		default:
 			++dg.skipType;
 			break;
@@ -1753,9 +1817,11 @@ extern "C"
 	// HUD pass (hands + weapon of the actor). Mirrors the reference sequence:
 	// CHUDManager::Render_Last (HUDManager.cpp:227) collects the visuals through
 	// g_player_hud with set_HUD(TRUE), then they are drawn with a dedicated
-	// view/projection (hud_transform_helper, r__dsgraph_render.cpp:490) in front
-	// of the world. bgfx processes view transforms at frame end, so the HUD gets
-	// its own view with a depth clear instead of an in-frame view swap.
+	// view/projection (hud_transform_helper, r__dsgraph_render.cpp:490). bgfx
+	// resolves view transforms at frame end, so the HUD gets its own view with a
+	// depth clear. The game UI is submitted into a later view (see
+	// bgfxRenderDeviceRender::Begin) since CLevel::OnRender draws it after
+	// Render->Render() and it belongs on top of the HUD.
 	// ========================================================================
 	const bgfx_view_id_t kHudViewId = 3;
 
@@ -1988,7 +2054,7 @@ extern "C"
 				CSkeletonX* sk = dynamic_cast<CSkeletonX*>(ch);
 				if (sk)
 					modes |= 1u << sk->SkinMode();
-				if (sk && bgfxSkinDrawMesh(sk, K, transform, hud ? kHudViewId : 0u))
+				if (sk && bgfxSkinDrawMesh(sk, K, transform, hud != 0 ? kHudViewId : 0u))
 					++drawn;
 				else
 					++skipped;
@@ -2044,3 +2110,28 @@ float	ps_r__Tree_w_speed	= 1.00f;
 float	ps_r__Tree_w_amp	= 0.005f;
 Fvector	ps_r__Tree_Wave		= {0.1f, 0.01f, 0.11f};
 float	ps_r__Tree_SBC		= 1.5f;
+
+// ============================================================================
+// Environment pass (sky wiring): called from bgfxRenderInterface::Render().
+// Order mirrors R2: RenderSky/RenderClouds before the world (combine :83/86),
+// RenderFlares over the scene (combine :398) + RenderLast after sorted
+// (forward :446). Guarded for menu (no level) — CEnvironment also guards
+// internally, but eff_* may be null before the first level load.
+// ============================================================================
+extern "C" void bgfxRenderEnvironmentSky()
+{
+	if (!g_pGameLevel || !g_pGamePersistent)
+		return;
+	CEnvironment& env = g_pGamePersistent->Environment();
+	env.RenderSky();
+	env.RenderClouds();
+}
+
+extern "C" void bgfxRenderEnvironmentFx()
+{
+	if (!g_pGameLevel || !g_pGamePersistent)
+		return;
+	CEnvironment& env = g_pGamePersistent->Environment();
+	env.RenderFlares();
+	env.RenderLast();
+}

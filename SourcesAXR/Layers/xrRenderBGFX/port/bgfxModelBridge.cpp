@@ -67,9 +67,18 @@ extern "C" void bgfxSubmitSkinnedFrame(const bgfxDynamicVisualEntry* entries,
 				++drawn;
 			break;
 
+		case MT_PARTICLE_EFFECT:	// CParticleEffect
+		case MT_PARTICLE_GROUP:		// CParticleGroup
+			// Game particle objects (CParticlesObject::renderable_Render ->
+			// add_Visual) arrive through this accumulator, not the level's
+			// Visuals array. They submit into their own view (kView=6).
+			bgfxDrawParticleVisual(v);
+			++drawn;
+			break;
+
 		default:
-			// Particles, progressive, hierarchy: handled by the world pass,
-			// not by the dynamic accumulator. Ignore here.
+			// Progressive/hierarchy: handled by the world pass, not by the
+			// dynamic accumulator. Ignore here.
 			++skipped;
 			break;
 		}
@@ -92,6 +101,11 @@ extern "C" void bgfxSubmitSkinnedFrame(const bgfxDynamicVisualEntry* entries,
 // (e.g. the non-PCH bgfxRenderInterface front-end). Keeps the bridge a single
 // TU for the C++ side while the inline stubs stay header-only for the game.
 // ============================================================================
+extern "C" void* bgfxModelCreateParticles(const char* name)
+{
+	return RImplementation.model_CreateParticles(name);
+}
+
 extern "C" void bgfxBridgeRenderDynamic()
 {
 	bgfxRenderDynamic();

@@ -9,6 +9,8 @@
 #include "stdafx.h"
 #include "alife_object_registry.h"
 #include "ai_debug.h"
+#include "../xrCore/TaskManager.h"
+#include "object_factory.h"
 
 CALifeObjectRegistry::CALifeObjectRegistry	(LPCSTR section)
 {
@@ -135,10 +137,65 @@ void CALifeObjectRegistry::load				(IReader &file_stream)
 	u32							count = file_stream.r_u32();
 	CSE_ALifeDynamicObject		**objects = (CSE_ALifeDynamicObject**)_alloca(count*sizeof(CSE_ALifeDynamicObject*));
 
+	if (count)
+	{
+		u8							*base = (u8*)file_stream.pointer() - file_stream.tell();
+
+		struct SObjectSlice {
+			u32						field_offset;
+			u32						slice_size;
+			u16						spawn_size;
+			bool					scripted;
+		};
+
+		xr_vector<SObjectSlice>		slices;
+		slices.resize				(count);
+		for (u32 i=0; i<count; ++i) {
+			SObjectSlice&			slice = slices[i];
+			slice.field_offset		= file_stream.tell();
+			slice.spawn_size		= file_stream.r_u16();
+			file_stream.seek		(file_stream.tell() + slice.spawn_size);
+			u16						update_size = file_stream.r_u16();
+			file_stream.seek		(file_stream.tell() + update_size);
+			slice.slice_size		= file_stream.tell() - slice.field_offset;
+
+			IReader					spawn_stream(base + slice.field_offset + 2, slice.spawn_size);
+			u16						packet_id = spawn_stream.r_u16();
+			R_ASSERT2				(M_SPAWN==packet_id,"Invalid packet ID (!= M_SPAWN)");
+			string64				s_name;
+			spawn_stream.r_stringZ	(s_name, sizeof(s_name));
+			slice.scripted			= object_factory().is_script_object(pSettings->r_clsid(s_name,"class"));
+		}
+
+		auto load_object = [&](u32 i) {
+			SObjectSlice&			slice = slices[i];
+			IReader					sub_stream(base + slice.field_offset, (int)slice.slice_size);
+			objects[i]				= get_object(sub_stream);
+		};
+
+	if (!CTaskManager::IsInsideTask() && (count >= 64)) {
+			CTaskManager::AddTaskRange([&](u32 start, u32 end, u32) {
+				for (u32 i=start; i<end; ++i)
+					if (!slices[i].scripted)
+						load_object(i);
+			}, count, 16);
+			CTaskManager::WaitAll	();
+
+			// Scripted objects create their server entities through Lua creators,
+			// which are not thread-safe - keep them on the main thread.
+			for (u32 i=0; i<count; ++i)
+				if (slices[i].scripted)
+					load_object(i);
+		}
+		else {
+			for (u32 i=0; i<count; ++i)
+				load_object(i);
+		}
+	}
+
 	CSE_ALifeDynamicObject		**I = objects;
 	CSE_ALifeDynamicObject		**E = objects + count;
 	for ( ; I != E; ++I) {
-		*I						= get_object(file_stream);
 		add						(*I);
 	}
 

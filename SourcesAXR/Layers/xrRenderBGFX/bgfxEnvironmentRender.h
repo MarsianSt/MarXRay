@@ -1,5 +1,6 @@
 #pragma once
 #include "..\..\Include\xrRender\EnvironmentRender.h"
+#include "bgfx_capi.h"
 
 class bgfxEnvDescriptorRender : public IEnvDescriptorRender
 {
@@ -9,6 +10,11 @@ public:
     virtual void OnDeviceDestroy() override;
     virtual void OnPrepare(CEnvDescriptor& owner) override;
     virtual void OnUnload(CEnvDescriptor& owner) override;
+
+    bgfx_texture_handle_t sky_texture = BGFX_INVALID_HANDLE;
+    bgfx_texture_handle_t sky_texture_env = BGFX_INVALID_HANDLE;
+    bgfx_texture_handle_t clouds_texture = BGFX_INVALID_HANDLE;
+    bool b_textures_loaded = false;
 };
 
 class bgfxEnvDescriptorMixerRender : public IEnvDescriptorMixerRender
@@ -18,6 +24,13 @@ public:
     virtual void Destroy() override;
     virtual void Clear() override;
     virtual void lerp(IEnvDescriptorRender *inA, IEnvDescriptorRender *inB) override;
+
+    bgfx_texture_handle_t sky_a = BGFX_INVALID_HANDLE;
+    bgfx_texture_handle_t sky_b = BGFX_INVALID_HANDLE;
+    bgfx_texture_handle_t sky_env_a = BGFX_INVALID_HANDLE;
+    bgfx_texture_handle_t sky_env_b = BGFX_INVALID_HANDLE;
+    bgfx_texture_handle_t clouds_a = BGFX_INVALID_HANDLE;
+    bgfx_texture_handle_t clouds_b = BGFX_INVALID_HANDLE;
 };
 
 class bgfxEnvironmentRender : public IEnvironmentRender

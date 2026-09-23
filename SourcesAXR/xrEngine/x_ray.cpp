@@ -53,10 +53,8 @@ BOOL	g_bIntroFinished			= FALSE;
 extern	void	Intro				( void* fn );
 
 // Define and export global pointers that were previously in xrRender.dll
-__declspec(dllexport) IUIRender* UIRender = nullptr;
 __declspec(dllexport) CGameMtlLibrary* PGMLib = nullptr;
 __declspec(dllexport) IDebugRender* DRender = nullptr;
-__declspec(dllexport) xr_token* vid_mode_token = nullptr;
 
 extern "C" __declspec(dllexport) void* BGFX_GetGMLib()
 {

@@ -37,4 +37,5 @@ public:
 	virtual ObjectFactory::CLIENT_BASE_CLASS	*client_object		() const;
 #endif
 	virtual ObjectFactory::SERVER_BASE_CLASS	*server_object		(LPCSTR section) const;
+	virtual bool								is_script_object	() const { return true; }
 };

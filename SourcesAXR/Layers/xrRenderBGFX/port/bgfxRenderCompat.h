@@ -55,6 +55,7 @@ public:
 	bool		occ_visible			(void*) { return true; }
 	// ---- model pool bridge (implemented using CModelPool) ----
 	IRenderVisual*	model_Create	(LPCSTR name, IReader* data = 0);
+	IRenderVisual*	model_CreateParticles(LPCSTR name);
 	IRenderVisual*	model_CreateChild(LPCSTR name, IReader* data = 0);
 	IRenderVisual*	model_Duplicate	(IRenderVisual* V);
 	void			model_Delete	(IRenderVisual*& V, BOOL bDiscard = FALSE);
@@ -68,5 +69,8 @@ extern CRender&		ERender;
 
 // Installs the CModelPool on RImplementation (idempotent).
 void	bgfxEnsureModelPool();
+
+// Submits a particle visual (effect or group) into the particle view.
+void	bgfxDrawParticleVisual(dxRender_Visual* v);
 
 #endif // bgfxRenderCompat_included
