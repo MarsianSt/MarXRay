@@ -1811,6 +1811,29 @@ extern "C"
 				continue;
 			R->renderable_Render();
 		}
+
+		// Reference r__dsgraph_render.cpp:757-783 additionally walks
+		// g_SpatialSpace for dynamic renderables. Particle objects
+		// (CParticlesObject : CPS_Instance) are registered there, not in the
+		// level's Objects list, so without this pass they never reach
+		// add_Visual and are silently dropped from the frame. CObjects are
+		// skipped here - the loop above already submitted them.
+		if (g_SpatialSpace)
+		{
+			static xr_vector<ISpatial*> s_renderables;
+			g_SpatialSpace->q_sphere(s_renderables, ISpatial_DB::O_ORDERED,
+				STYPE_RENDERABLE, Device.vCameraPosition, 100000.f);
+			for (u32 i = 0; i < s_renderables.size(); ++i)
+			{
+				ISpatial* spatial = s_renderables[i];
+				if (!spatial || spatial->dcast_CObject())
+					continue;
+				IRenderable* R = spatial->dcast_Renderable();
+				if (!R || !R->renderable.visual)
+					continue;
+				R->renderable_Render();
+			}
+		}
 	}
 
 	// ========================================================================

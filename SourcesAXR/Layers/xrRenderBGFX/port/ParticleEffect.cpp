@@ -55,6 +55,8 @@ CParticleEffect::~CParticleEffect()
 
 void CParticleEffect::Play()
 {
+	static bool s_loggedPlay = false;
+	if (!s_loggedPlay) { s_loggedPlay = true; LogInfo("[BGFX] PEffect Play"); }
 	m_RT_Flags.set		(flRT_DefferedStop,FALSE);
 	m_RT_Flags.set		(flRT_Playing,TRUE);
     ParticleManager()->PlayEffect(m_HandleEffect,m_HandleActionList);
