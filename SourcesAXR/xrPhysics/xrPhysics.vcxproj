@@ -639,9 +639,9 @@
     <ClInclude Include="ode_redefine.h" />
     <ClInclude Include="params.h" />
     <ClInclude Include="PHActivationShape.h" />
-    <ClInclude Include="PHActorCharacter.h" />
-    <ClInclude Include="PHActorCharacterInline.h" />
-    <ClInclude Include="PHAICharacter.h" />
+     <ClInclude Include="PHActorCharacter.h" />
+     <ClInclude Include="PHAICharacter.h" />
+
     <ClInclude Include="PHBaseBodyEffector.h" />
     <ClInclude Include="PHCapture.h" />
     <ClInclude Include="PHCharacter.h" />

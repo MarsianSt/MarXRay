@@ -1,5 +1,5 @@
-#ifndef PH_SPLITED_SELL
-#define PH_SPLITED_SELL
+#ifndef PH_SPLITTED_SHELL
+#define PH_SPLITTED_SHELL
 
 #include "PHShell.h"
 
