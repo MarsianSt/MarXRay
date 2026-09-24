@@ -631,15 +631,15 @@ bool CUIActorMenu::ToSlot(CUICellItem* itm, bool force_place, u16 slot_id)
 	{
 		if (pOutfit || pHelmet1 || pHelmet2)
 		{
-			CHelmet* pHelmet1 = smart_cast<CHelmet*>(m_pActorInvOwner->inventory().ItemFromSlot(HELMET_SLOT));
-			CHelmet* pHelmet2 = smart_cast<CHelmet*>(m_pActorInvOwner->inventory().ItemFromSlot(SECOND_HELMET_SLOT));
+			CHelmet* pHelmet1_inner = smart_cast<CHelmet*>(m_pActorInvOwner->inventory().ItemFromSlot(HELMET_SLOT));
+			CHelmet* pHelmet2_inner = smart_cast<CHelmet*>(m_pActorInvOwner->inventory().ItemFromSlot(SECOND_HELMET_SLOT));
 
 			if (slot_id == HELMET_SLOT)
 			{
 				if (pOutfit && !pOutfit->bIsHelmetAvaliable)
 					return false;
 
-				if (pHelmet2 && !pHelmet2->m_bSecondHelmetEnabled)
+				if (pHelmet2_inner && !pHelmet2_inner->m_bSecondHelmetEnabled)
 					return false;
 			}
 			else if (slot_id == SECOND_HELMET_SLOT)
@@ -647,7 +647,7 @@ bool CUIActorMenu::ToSlot(CUICellItem* itm, bool force_place, u16 slot_id)
 				if (pOutfit && !pOutfit->bIsSecondHelmetAvaliable)
 					return false;
 
-				if (pHelmet1 && !pHelmet1->m_bSecondHelmetEnabled)
+				if (pHelmet1_inner && !pHelmet1_inner->m_bSecondHelmetEnabled)
 					return false;
 			}
 		}
@@ -664,8 +664,8 @@ bool CUIActorMenu::ToSlot(CUICellItem* itm, bool force_place, u16 slot_id)
 
 		if(slot_id==OUTFIT_SLOT)
 		{
-			CCustomOutfit* pOutfit = smart_cast<CCustomOutfit*>(iitem);
-			if(pOutfit)
+			CCustomOutfit* pOutfit_item = smart_cast<CCustomOutfit*>(iitem);
+			if(pOutfit_item)
 			{
 				if (!pOutfit->bIsHelmetAvaliable)
 				{
@@ -1569,9 +1569,9 @@ void CUIActorMenu::PropertiesBoxForUsing( PIItem item, bool& b_show )
 			{
 				repair_hint = CStringTable().translate("st_materials_for_repair");
 
-				for (int i = 0; i < item_in_outfit_slot->m_ItemsForRepair.size(); i++)
+				for (int i = 0; i < static_cast<int>(item_in_outfit_slot->m_ItemsForRepair.size()); i++)
 				{
-					repair_hint.printf("%s\\n%s: x%s;\\n", repair_hint.c_str(), CStringTable().translate(item_in_outfit_slot->m_ItemsForRepairNames[i]).c_str(), std::to_string(item_in_outfit_slot->m_ItemsForRepair[i].second));
+					repair_hint.printf("%s\\n%s: x%s;\\n", repair_hint.c_str(), CStringTable().translate(item_in_outfit_slot->m_ItemsForRepairNames[i]).c_str(), std::to_string(item_in_outfit_slot->m_ItemsForRepair[i].second).c_str());
 				}
 			}
 
@@ -1590,9 +1590,9 @@ void CUIActorMenu::PropertiesBoxForUsing( PIItem item, bool& b_show )
 			{
 				repair_hint = CStringTable().translate("st_materials_for_repair");
 
-				for (int i = 0; i < item_in_helmet_slot->m_ItemsForRepair.size(); i++)
+				for (int i = 0; i < static_cast<int>(item_in_helmet_slot->m_ItemsForRepair.size()); i++)
 				{
-					repair_hint.printf("%s\\n%s: x%s;\\n", repair_hint.c_str(), CStringTable().translate(item_in_helmet_slot->m_ItemsForRepairNames[i]).c_str(), std::to_string(item_in_helmet_slot->m_ItemsForRepair[i].second));
+					repair_hint.printf("%s\\n%s: x%s;\\n", repair_hint.c_str(), CStringTable().translate(item_in_helmet_slot->m_ItemsForRepairNames[i]).c_str(), std::to_string(item_in_helmet_slot->m_ItemsForRepair[i].second).c_str());
 				}
 			}
 
@@ -1611,9 +1611,9 @@ void CUIActorMenu::PropertiesBoxForUsing( PIItem item, bool& b_show )
 			{
 				repair_hint = CStringTable().translate("st_materials_for_repair");
 
-				for (int i = 0; i < item_in_helmet2_slot->m_ItemsForRepair.size(); i++)
+				for (int i = 0; i < static_cast<int>(item_in_helmet2_slot->m_ItemsForRepair.size()); i++)
 				{
-					repair_hint.printf("%s\\n%s: x%s;\\n", repair_hint.c_str(), CStringTable().translate(item_in_helmet2_slot->m_ItemsForRepairNames[i]).c_str(), std::to_string(item_in_helmet2_slot->m_ItemsForRepair[i].second));
+					repair_hint.printf("%s\\n%s: x%s;\\n", repair_hint.c_str(), CStringTable().translate(item_in_helmet2_slot->m_ItemsForRepairNames[i]).c_str(), std::to_string(item_in_helmet2_slot->m_ItemsForRepair[i].second).c_str());
 				}
 			}
 
@@ -1632,9 +1632,9 @@ void CUIActorMenu::PropertiesBoxForUsing( PIItem item, bool& b_show )
 			{
 				repair_hint = CStringTable().translate("st_materials_for_repair");
 
-				for (int i = 0; i < item_in_knife_slot->m_ItemsForRepair.size(); i++)
+				for (int i = 0; i < static_cast<int>(item_in_knife_slot->m_ItemsForRepair.size()); i++)
 				{
-					repair_hint.printf("%s\\n%s: x%s;\\n", repair_hint.c_str(), CStringTable().translate(item_in_knife_slot->m_ItemsForRepairNames[i]).c_str(), std::to_string(item_in_knife_slot->m_ItemsForRepair[i].second));
+					repair_hint.printf("%s\\n%s: x%s;\\n", repair_hint.c_str(), CStringTable().translate(item_in_knife_slot->m_ItemsForRepairNames[i]).c_str(), std::to_string(item_in_knife_slot->m_ItemsForRepair[i].second).c_str());
 				}
 			}
 
@@ -1653,9 +1653,9 @@ void CUIActorMenu::PropertiesBoxForUsing( PIItem item, bool& b_show )
 			{
 				repair_hint = CStringTable().translate("st_materials_for_repair");
 
-				for (int i = 0; i < item_in_wpn1_slot->m_ItemsForRepair.size(); i++)
+				for (int i = 0; i < static_cast<int>(item_in_wpn1_slot->m_ItemsForRepair.size()); i++)
 				{
-					repair_hint.printf("%s\\n%s: x%s;\\n", repair_hint.c_str(), CStringTable().translate(item_in_wpn1_slot->m_ItemsForRepairNames[i]).c_str(), std::to_string(item_in_wpn1_slot->m_ItemsForRepair[i].second));
+					repair_hint.printf("%s\\n%s: x%s;\\n", repair_hint.c_str(), CStringTable().translate(item_in_wpn1_slot->m_ItemsForRepairNames[i]).c_str(), std::to_string(item_in_wpn1_slot->m_ItemsForRepair[i].second).c_str());
 				}
 			}
 
@@ -1674,9 +1674,9 @@ void CUIActorMenu::PropertiesBoxForUsing( PIItem item, bool& b_show )
 			{
 				repair_hint = CStringTable().translate("st_materials_for_repair");
 
-				for (int i = 0; i < item_in_wpn2_slot->m_ItemsForRepair.size(); i++)
+				for (int i = 0; i < static_cast<int>(item_in_wpn2_slot->m_ItemsForRepair.size()); i++)
 				{
-					repair_hint.printf("%s\\n%s: x%s;\\n", repair_hint.c_str(), CStringTable().translate(item_in_wpn2_slot->m_ItemsForRepairNames[i]).c_str(), std::to_string(item_in_wpn2_slot->m_ItemsForRepair[i].second));
+					repair_hint.printf("%s\\n%s: x%s;\\n", repair_hint.c_str(), CStringTable().translate(item_in_wpn2_slot->m_ItemsForRepairNames[i]).c_str(), std::to_string(item_in_wpn2_slot->m_ItemsForRepair[i].second).c_str());
 				}
 			}
 
@@ -1695,9 +1695,9 @@ void CUIActorMenu::PropertiesBoxForUsing( PIItem item, bool& b_show )
 			{
 				repair_hint = CStringTable().translate("st_materials_for_repair");
 
-				for (int i = 0; i < item_in_wpn3_slot->m_ItemsForRepair.size(); i++)
+				for (int i = 0; i < static_cast<int>(item_in_wpn3_slot->m_ItemsForRepair.size()); i++)
 				{
-					repair_hint.printf("%s\\n%s: x%s;\\n", repair_hint.c_str(), CStringTable().translate(item_in_wpn3_slot->m_ItemsForRepairNames[i]).c_str(), std::to_string(item_in_wpn3_slot->m_ItemsForRepair[i].second));
+					repair_hint.printf("%s\\n%s: x%s;\\n", repair_hint.c_str(), CStringTable().translate(item_in_wpn3_slot->m_ItemsForRepairNames[i]).c_str(), std::to_string(item_in_wpn3_slot->m_ItemsForRepair[i].second).c_str());
 				}
 			}
 
@@ -1911,10 +1911,10 @@ void CUIActorMenu::ProcessPropertiesBoxClicked( CUIWindow* w, void* d )
 		}
 	case INVENTORY_ATTACH_ADDON:
 		{
-			PIItem item = CurrentIItem(); // temporary storing because of AttachAddon is setting curiitem to NULL
+			PIItem item_tmp = CurrentIItem(); // temporary storing because of AttachAddon is setting curiitem to NULL
 			AttachAddon((PIItem)(m_UIPropertiesBox->GetClickedItem()->GetData()));
 			if(m_currMenuMode==mmDeadBodySearch)
-				RemoveItemFromList(m_pDeadBodyBagList, item);
+				RemoveItemFromList(m_pDeadBodyBagList, item_tmp);
 			
 			break;
 		}

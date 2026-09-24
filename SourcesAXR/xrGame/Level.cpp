@@ -505,12 +505,12 @@ void CLevel::ProcessGameEvents		()
 					u8 Count = P.r_u8();
 					for (u8 i=0; i<Count; i++)
 					{
-						u16 ID = P.r_u16();					
+						u16 net_id = P.r_u16();					
 						Fvector NewPos, NewDir;
 						P.r_vec3(NewPos);
 						P.r_vec3(NewDir);
 
-						CActor*	OActor	= smart_cast<CActor*>(Objects.net_Find		(ID));
+						CActor*	OActor	= smart_cast<CActor*>(Objects.net_Find		(net_id));
 						if (0 == OActor)		break;
 						OActor->MoveActor(NewPos, NewDir);
 					};
@@ -1459,7 +1459,7 @@ std::string CLevel::GetMoonPhase()
 
 		int day = 365 * (Y - (start_year - 2)) + D;
 
-		for (int mm = 0; mm < M - 1; ++mm)
+		for (u32 mm = 0; mm < M - 1; ++mm)
 			day += months[mm];
 
 		if (h >= 12)

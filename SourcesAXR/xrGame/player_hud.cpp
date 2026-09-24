@@ -94,7 +94,7 @@ void player_hud_motion_container::load(IKinematicsAnimated* model, const shared_
 				pm->m_additional_name	= (xr_strlen(str_item) > 0) ? pm->m_additional_name = str_item : pm->m_base_name;
 
 				_GetItem(anm.c_str(), 2, str_item);
-				pm->m_anim_speed = atof(str_item);
+				pm->m_anim_speed = static_cast<float>(atof(str_item));
 			}
 
 			string128 speed_param;
@@ -598,9 +598,9 @@ player_hud::player_hud()
 			_GetItem(layer_def, 0, tmp);
 			anm->Load(tmp);
 			_GetItem(layer_def, 1, tmp);
-			anm->anm->Speed() = (atof(tmp) ? atof(tmp) : 1.f);
+			anm->anm->Speed() = static_cast<float>(atof(tmp) ? atof(tmp) : 1.f);
 			_GetItem(layer_def, 2, tmp);
-			anm->m_power = (atof(tmp) ? atof(tmp) : 1.f);
+			anm->m_power = static_cast<float>(atof(tmp) ? atof(tmp) : 1.f);
 			m_movement_layers.push_back(anm);
 		}
 	}

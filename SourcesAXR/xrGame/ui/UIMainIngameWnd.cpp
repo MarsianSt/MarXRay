@@ -1376,9 +1376,9 @@ void CUIMainIngameWnd::UpdateMainIndicators()
 
 	if (m_ind_temperature)
 	{
-		float heating = pActor->GetCurrentHeating();
+		float heating_value = pActor->GetCurrentHeating();
 		float cur_temperature = g_pGamePersistent->Environment().CurrentEnv->m_fAirTemperature;
-		float diff = cur_temperature + heating;
+		float diff = cur_temperature + heating_value;
 		string16 temper = "";
 		Fcolor curr, neg, neut, pos;
 		float zero_to_one = remapval(diff, -30.f, 40.f, 0.f, 1.f);

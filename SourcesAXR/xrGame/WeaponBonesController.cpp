@@ -198,7 +198,7 @@ void CWeaponBoneTransform::ApplyBoneMatrix()
 	if (!m_CurrentTranslation.similar(Fvector().set(0.f, 0.f, 0.f)))
 		m_Translation.translate(m_CurrentTranslation);
 
-	// Сначала поворот, потом сдвиг (порядок важен)
+	// пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ (пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ)
 	m_FullTransform.mul(m_Rotation, m_Translation);
 }
 
@@ -212,7 +212,7 @@ void CWeaponBoneTransform::RefreshBoneCurrentParams()
 	ApplyBoneMatrix();
 }
 
-// Установка режима стрельбы для предохранителей
+// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 void CWeaponBoneTransform::SetSafetyMode(u32 mode, u32 modes_count)
 {
 	if (!m_RotationAngles.empty() && mode < modes_count && mode < m_RotationAngles.size())
@@ -287,7 +287,7 @@ void CWeaponBonesController::Load(LPCSTR section, u32 fire_modes_cnt, u32 cur_fi
 		for (size_t i = 0; i < bones_count; i++)
 		{
 			string128 bone_name;
-			_GetItem(controlled_bones_list.c_str(), i, bone_name);
+			_GetItem(controlled_bones_list.c_str(), static_cast<int>(i), bone_name);
 
 			if (m_Bones.find(bone_name) != m_Bones.end())
 				continue;
@@ -344,7 +344,7 @@ void CWeaponBonesController::RefreshBoneCurrentParams(shared_str bone_name)
 	m_Bones[bone_name]->RefreshBoneCurrentParams();
 }
 
-// Установка режима стрельбы для предохранителей
+// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 void CWeaponBonesController::SetSafetyMode(u32 mode, u32 modes_count)
 {
 	for (auto& bone : m_Bones)

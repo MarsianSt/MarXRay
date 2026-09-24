@@ -554,7 +554,7 @@ void player_hud::SaveAttachesCfg(LPCSTR parent_section, CWeapon* parent_wpn) con
 
 	CInifile pAttachesCfg(fname, false, true, true);
 
-	for (int i = 0; i < parent_wpn->m_weapon_attaches.size(); i++)
+	for (int i = 0; i < static_cast<int>(parent_wpn->m_weapon_attaches.size()); i++)
 	{
 		auto mesh = parent_wpn->m_weapon_attaches[i];
 

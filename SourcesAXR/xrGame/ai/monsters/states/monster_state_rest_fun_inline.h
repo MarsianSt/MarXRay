@@ -55,17 +55,17 @@ void CStateMonsterRestFunAbstract::execute()
 		CPhysicsShellHolder	*target = smart_cast<CPhysicsShellHolder *>	(corpse);
 
 		if  (target && target->m_pPhysicsShell) {
-			Fvector			dir;
-			dir.add			(Fvector().sub(target->Position(), object->Position()), object->Direction());
+			Fvector			corpse_dir;
+			corpse_dir.add	(Fvector().sub(target->Position(), object->Position()), object->Direction());
 			
 			float			h,p;
-			dir.getHP		(h,p);
-			dir.setHP		(h, p + 5 * PI / 180);
-			dir.normalize	();
+			corpse_dir.getHP	(h,p);
+			corpse_dir.setHP	(h, p + 5 * PI / 180);
+			corpse_dir.normalize	();
 			
-			// выполнить бросок
+			// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
 			for (u32 i=0; i<target->m_pPhysicsShell->get_ElementsNumber();i++) {
-				target->m_pPhysicsShell->get_ElementByStoreOrder((u16)i)->applyImpulse(dir, IMPULSE_TO_CORPSE * target->m_pPhysicsShell->getMass() / target->m_pPhysicsShell->Elements().size());
+				target->m_pPhysicsShell->get_ElementByStoreOrder((u16)i)->applyImpulse(corpse_dir, IMPULSE_TO_CORPSE * target->m_pPhysicsShell->getMass() / target->m_pPhysicsShell->Elements().size());
 			}
 
 			time_last_hit	= Device.dwTimeGlobal;

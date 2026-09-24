@@ -160,10 +160,10 @@ void CStalkerActionHoldPositionLowCover::execute							()
 	}
 
 	if (object().get_memory().get_enemy().selected()) {
-		CMemoryInfo						mem_object = object().get_memory().memory(object().get_memory().get_enemy().selected());
+		CMemoryInfo						mem_object_local = object().get_memory().memory(object().get_memory().get_enemy().selected());
 
-		if (mem_object.m_object) {
-			object().best_cover			(mem_object.m_object_params.m_position);
+		if (mem_object_local.m_object) {
+			object().best_cover			(mem_object_local.m_object_params.m_position);
 		}
 	}
 }

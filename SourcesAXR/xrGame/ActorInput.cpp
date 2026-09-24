@@ -482,7 +482,7 @@ void CActor::IR_OnKeyboardHold(int cmd)
 
 	if (hud_adj_mode && pInput->iGetAsyncKeyState(DIK_LSHIFT) && g_player_hud)
 	{
-		u8 idx = g_player_hud->attached_item(hud_adj_item_idx)->m_parent_hud_item->GetCurrentHudOffsetIdx();
+		u8 idx = g_player_hud->attached_item(static_cast<u16>(hud_adj_item_idx))->m_parent_hud_item->GetCurrentHudOffsetIdx();
 
 		bool bIsRot = (hud_adj_mode == 2) && (idx != 0);
 
@@ -704,7 +704,7 @@ void CActor::ActorUse()
 					TryToTalk();
 				}else
 				{
-					//только если находимся в режиме single
+					//пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅ single
 					CUIGameSP* pGameSP = smart_cast<CUIGameSP*>(CurrentGameUI());
 					if ( pGameSP )
 					{

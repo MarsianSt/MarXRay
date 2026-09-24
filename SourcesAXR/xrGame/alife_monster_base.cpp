@@ -35,8 +35,8 @@ void CSE_ALifeMonsterBase::on_spawn				()
         {
             xr_string item_section, tmp_prob;
             _GetItem(str, i++, item_section);
-            R_ASSERT2(i < count, make_string("Incorrect [Spawn_Inventory_Item_Section] in section [%s]", s_name).c_str());
-            spawn_probability = atof(_GetItem(str, i++, tmp_prob));
+            R_ASSERT2(i < count, make_string("Incorrect [Spawn_Inventory_Item_Section] in section [%s]", s_name.c_str()).c_str());
+            spawn_probability = static_cast<float>(atof(_GetItem(str, i++, tmp_prob)));
 
             if (randF() < spawn_probability || fsimilar(spawn_probability, 1.f))
                 alife().spawn_item(item_section.c_str(), o_Position, m_tNodeID, m_tGraphID, ID)->ID_Parent = ID;

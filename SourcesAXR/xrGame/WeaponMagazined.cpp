@@ -420,12 +420,12 @@ void CWeaponMagazined::EngineMotionMarksUpdate(u32 state, const motion_marks& M)
 		if (!GetHUDmode() || bullets_bones.empty())
 			return;
 
-		u8 bullets_to_show = iMagazineSize;
+		u8 bullets_to_show = static_cast<u8>(iMagazineSize);
 
 		if (!unlimited_ammo())
 		{
 			u8 available = GetAvailableCartridgesToLoad(true);
-			bullets_to_show = (available >= iMagazineSize) ? iMagazineSize : (available + iAmmoElapsed);
+			bullets_to_show = static_cast<u8>((available >= iMagazineSize) ? iMagazineSize : (available + iAmmoElapsed));
 		}
 
 		for (size_t i = 0; i < bullets_bones.size(); ++i)
@@ -523,13 +523,13 @@ bool CWeaponMagazined::TryReload()
 		}
 		else for(u8 i = 0; i < u8(m_ammoTypes.size()); ++i) 
 		{
-			for (u32 i = 0; i < m_ammoTypes.size(); ++i)
+			for (u32 ammo_idx = 0; ammo_idx < m_ammoTypes.size(); ++ammo_idx)
 			{
-				m_pCurrentAmmo = smart_cast<CWeaponAmmo*>(m_pInventory->GetAny(*m_ammoTypes[i]));
+				m_pCurrentAmmo = smart_cast<CWeaponAmmo*>(m_pInventory->GetAny(*m_ammoTypes[ammo_idx]));
 
 				if (m_pCurrentAmmo)
 				{
-					m_set_next_ammoType_on_reload = i;
+					m_set_next_ammoType_on_reload = static_cast<u8>(ammo_idx);
 					SetPending(TRUE);
 					SwitchState(eReload);
 					return				true;
@@ -1721,7 +1721,7 @@ void CWeaponMagazined::PlayReloadSound()
 	{
 		if (m_bIsRevolver)
 		{
-			u8 bullets_to_load = iMagazineSize - GetAvailableCartridgesToLoad(!iAmmoElapsed);
+			u8 bullets_to_load = static_cast<u8>(iMagazineSize - GetAvailableCartridgesToLoad(!iAmmoElapsed));
 
 			string128 sndReloadName;
 			strconcat(sizeof(sndReloadName), sndReloadName, "sndReload", (bullets_to_load > 0 && m_set_next_ammoType_on_reload == undefined_ammo_type) ? std::to_string(bullets_to_load).c_str() : "Empty");
@@ -2502,7 +2502,7 @@ void CWeaponMagazined::PlayAnimReload()
 
 	if (m_bIsRevolver)
 	{
-		u8 bullets_to_load = iMagazineSize - GetAvailableCartridgesToLoad(!iAmmoElapsed);
+		u8 bullets_to_load = static_cast<u8>(iMagazineSize - GetAvailableCartridgesToLoad(!iAmmoElapsed));
 
 		string128 anmReloadName;
 		strconcat(sizeof(anmReloadName), anmReloadName, "anm_reload_", (bullets_to_load > 0 && m_set_next_ammoType_on_reload == undefined_ammo_type) ? std::to_string(bullets_to_load).c_str() : "empty");
@@ -3355,10 +3355,10 @@ u8 CWeaponMagazined::GetAvailableCartridgesToLoad(bool full_reload, u8 ammo_type
 {
 	if (full_reload)
 	{
-		if (HaveCartridgeInInventory(iMagazineSize, ammo_type))
-			return iMagazineSize;
+		if (HaveCartridgeInInventory(static_cast<u8>(iMagazineSize), ammo_type))
+			return static_cast<u8>(iMagazineSize);
 
-		for (u8 try_load = (iMagazineSize - 1); try_load > 0; try_load--)
+		for (u8 try_load = static_cast<u8>(iMagazineSize - 1); try_load > 0; try_load--)
 		{
 			if (HaveCartridgeInInventory(try_load, ammo_type))
 				return try_load;
@@ -3368,7 +3368,7 @@ u8 CWeaponMagazined::GetAvailableCartridgesToLoad(bool full_reload, u8 ammo_type
 	}
 	else
 	{
-		u8 needed = iMagazineSize - iAmmoElapsed;
+		u8 needed = static_cast<u8>(iMagazineSize - iAmmoElapsed);
 
 		if (HaveCartridgeInInventory(needed, ammo_type))
 			return needed;

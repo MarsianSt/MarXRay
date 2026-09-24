@@ -208,7 +208,8 @@ void CActor::PickupModeUpdate()
 	if (eacFirstEye != cam_active)
 		feel_touch_update(Position(), m_fPickupInfoRadius);
 	else {
-		feel_touch_update(get_bone_position(this, "bip01_spine"), m_fPickupInfoRadius);
+		Fvector spine_position = get_bone_position(this, "bip01_spine");
+		feel_touch_update(spine_position, m_fPickupInfoRadius);
 	}
 	
 	CFrustum frustum;
@@ -583,7 +584,7 @@ void CActor::UpdateUseAnim()
 
 	bool IsActorAlive = g_pGamePersistent->GetActorAliveStatus();
 
-	if ((m_iActionTiming <= Device.dwTimeGlobal && !m_bItemTaked) && IsActorAlive)
+	if ((static_cast<u32>(m_iActionTiming) <= Device.dwTimeGlobal && !m_bItemTaked) && IsActorAlive)
 	{
 		m_iActionTiming = Device.dwTimeGlobal;
 
@@ -599,7 +600,7 @@ void CActor::UpdateUseAnim()
 
 	if (m_bTakeItemActivated)
 	{
-		if ((m_iTakeAnimLength <= Device.dwTimeGlobal) || !IsActorAlive)
+		if ((static_cast<u32>(m_iTakeAnimLength) <= Device.dwTimeGlobal) || !IsActorAlive)
 		{
 			m_iTakeAnimLength = Device.dwTimeGlobal;
 			m_iActionTiming = Device.dwTimeGlobal;

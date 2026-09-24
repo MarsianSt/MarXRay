@@ -64,19 +64,19 @@ int get_all_achievements(lua_State* L)
 	{
 		lua_createtable(L, 0, 3);
 
-		// Имя
+		// пїЅпїЅпїЅ
 		lua_pushstring(L, achievements[i]->getName().c_str());
 		lua_setfield(L, -2, "name");
 
-		// Описание
+		// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 		lua_pushstring(L, achievements[i]->getDescription().c_str());
 		lua_setfield(L, -2, "description");
 
-		// Название иконки
+		// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
 		lua_pushstring(L, achievements[i]->getIconName().c_str());
 		lua_setfield(L, -2, "icon");
 
-		lua_rawseti(L, -2, i + 1);
+		lua_rawseti(L, -2, static_cast<int>(i + 1));
 	}
 
 	return 1;

@@ -245,7 +245,7 @@ void CUITrackBar::SetTrackValue(float v)
 	if (m_b_is_float)
 		m_f_val = v;
 	else
-		m_i_val = v;
+		m_i_val = static_cast<int>(v);
 
 	UpdatePos();
 }
@@ -263,7 +263,7 @@ float CUITrackBar::GetStep()
 	if (m_b_is_float)
 		return m_f_step;
 	else
-		return m_i_step;
+		return static_cast<float>(m_i_step);
 }
 
 void CUITrackBar::SetStep(float step)

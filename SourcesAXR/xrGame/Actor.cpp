@@ -1647,7 +1647,7 @@ void CActor::shedule_Update	(u32 DT)
 			PP->StartParticles(m_sColdSteamParticleName, play_bone, Direction(), ID(), -1, false, cam_active == eacFirstEye);
 			
 			float stamina = (1.0f - conditions().GetPower()) * 1500.f;
-			timing = Device.dwTimeGlobal + ::Random.randI(2500 - stamina, 5000 - stamina);
+			timing = Device.dwTimeGlobal + ::Random.randI(static_cast<int>(2500 - stamina), static_cast<int>(5000 - stamina));
 		}
 	}
 
@@ -3135,7 +3135,7 @@ void CActor::StartNVGAnimation()
 
 void CActor::UpdateNVGUseAnim()
 {
-	if ((m_iActionTiming <= Device.dwTimeGlobal && !m_bNVGSwitched) && g_Alive())
+	if ((static_cast<u32>(m_iActionTiming) <= Device.dwTimeGlobal && !m_bNVGSwitched) && g_Alive())
 	{
 		m_iActionTiming = Device.dwTimeGlobal;
 		SwitchNightVision(!m_bNightVisionOn);
@@ -3145,7 +3145,7 @@ void CActor::UpdateNVGUseAnim()
 
 	if (m_bNVGActivated)
 	{
-		if ((m_iNVGAnimLength <= Device.dwTimeGlobal) || !g_Alive())
+		if ((static_cast<u32>(m_iNVGAnimLength) <= Device.dwTimeGlobal) || !g_Alive())
 		{
 			m_iNVGAnimLength = Device.dwTimeGlobal;
 			m_iActionTiming = Device.dwTimeGlobal;
@@ -3252,7 +3252,7 @@ void CActor::CleanMask()
 
 void CActor::UpdateMaskUseAnim()
 {
-	if ((m_iActionTiming <= Device.dwTimeGlobal && !m_bMaskClear) && g_Alive())
+	if ((static_cast<u32>(m_iActionTiming) <= Device.dwTimeGlobal && !m_bMaskClear) && g_Alive())
 	{
 		m_iActionTiming = Device.dwTimeGlobal;
 		m_bWaitingForDetectorHide = false;
@@ -3265,7 +3265,7 @@ void CActor::UpdateMaskUseAnim()
 
 	if (m_bMaskAnimActivated)
 	{
-		if ((m_iMaskAnimLength <= Device.dwTimeGlobal) || !g_Alive())
+		if ((static_cast<u32>(m_iMaskAnimLength) <= Device.dwTimeGlobal) || !g_Alive())
 		{
 			m_iMaskAnimLength = Device.dwTimeGlobal;
 			m_iActionTiming = Device.dwTimeGlobal;
@@ -3343,7 +3343,7 @@ void CActor::QuickKick()
 
 void CActor::UpdateQuickKickAnim()
 {
-	if ((m_iActionTiming <= Device.dwTimeGlobal && !m_bQuickKick) && g_Alive())
+	if ((static_cast<u32>(m_iActionTiming) <= Device.dwTimeGlobal && !m_bQuickKick) && g_Alive())
 	{
 		m_iActionTiming = Device.dwTimeGlobal;
 		m_bQuickKick = true;
@@ -3356,7 +3356,7 @@ void CActor::UpdateQuickKickAnim()
 
 	if (m_bQuickKickActivated)
 	{
-		if ((m_iQuickKickAnimLength <= Device.dwTimeGlobal) || !g_Alive())
+		if ((static_cast<u32>(m_iQuickKickAnimLength) <= Device.dwTimeGlobal) || !g_Alive())
 		{
 			CEffectorCam* effector = Cameras().GetCamEffector((ECamEffectorType)eCEUseItem);
 
@@ -3607,7 +3607,7 @@ bool CActor::use_HolderEx(CHolderCustom* object, bool bForce)
 
 bool CActor::HasItemsForRepair(xr_vector<std::pair<shared_str, int>> item)
 {
-	for (int i{}; i < item.size(); ++i)
+	for (int i{}; i < static_cast<int>(item.size()); ++i)
 	{
 		CInventoryOwner* l_tpInventoryOwner = smart_cast<CInventoryOwner*>(this);
 
@@ -3643,7 +3643,7 @@ bool CActor::HasItemsForRepair(xr_vector<std::pair<shared_str, int>> item)
 
 void CActor::RemoveItemsForRepair(xr_vector<std::pair<shared_str, int>> item)
 {
-	for (int i{}; i < item.size(); ++i)
+	for (int i{}; i < static_cast<int>(item.size()); ++i)
 	{
 		CInventoryOwner* l_tpInventoryOwner = smart_cast<CInventoryOwner*>(this);
 

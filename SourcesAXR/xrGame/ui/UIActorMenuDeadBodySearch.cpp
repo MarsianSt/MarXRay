@@ -29,7 +29,7 @@ void move_item_from_to (u16 from_id, u16 to_id, u16 what_id)
 	P.w_u16									(what_id);
 	CGameObject::u_EventSend				(P);
 
-	//другому инвентарю - взять вещь 
+	//пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ - пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ 
 	CGameObject::u_EventGen					(P, GE_OWNERSHIP_TAKE, to_id);
 	P.w_u16									(what_id);
 	CGameObject::u_EventSend				(P);
@@ -115,13 +115,13 @@ void CUIActorMenu::InitDeadBodySearchMode()
 		known_info_registry.registry().init		(m_pPartnerInvOwner->object_id());
 		KNOWN_INFO_VECTOR& known_infos			= known_info_registry.registry().objects();
 
-		KNOWN_INFO_VECTOR_IT it					= known_infos.begin();
-		for(int i=0;it!=known_infos.end();++it,++i)
+		KNOWN_INFO_VECTOR_IT known_it			= known_infos.begin();
+		for(int i=0;known_it!=known_infos.end();++known_it,++i)
 		{
 			NET_Packet					P;
 			CGameObject::u_EventGen		(P,GE_INFO_TRANSFER, m_pActorInvOwner->object_id());
 			P.w_u16						(0);
-			P.w_stringZ					((*it).info_id);
+			P.w_stringZ					((*known_it).info_id);
 			P.w_u8						(1);
 			CGameObject::u_EventSend	(P);
 		}

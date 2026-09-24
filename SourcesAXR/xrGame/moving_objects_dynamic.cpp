@@ -248,7 +248,7 @@ bool moving_objects::exchange_all				(moving_object *previous, moving_object *ne
 	return						(result);
 }
 
-bool moving_objects::fill_collisions			(moving_object *object, const Fvector &object_position, const float &time_to_check)
+bool moving_objects::fill_collisions			(moving_object *object_ptr, const Fvector &object_position, const float &time_to_check_value)
 {
 	possible_actions			action;
 	int							i = 0;
@@ -258,9 +258,9 @@ bool moving_objects::fill_collisions			(moving_object *object, const Fvector &ob
 		++i;
 		bool					break_cycle = false;
 
-		bool					priority = ::priority::predicate(object,*I);
+		bool					priority = ::priority::predicate(object_ptr,*I);
 		if (priority) {
-			if (!collided_dynamic(object, object_position, (*I), (*I)->predict_position(time_to_check), action))
+			if (!collided_dynamic(object_ptr, object_position, (*I), (*I)->predict_position(time_to_check_value), action))
 				continue;
 
 			if (action == possible_action_1_can_wait_2)
@@ -269,7 +269,7 @@ bool moving_objects::fill_collisions			(moving_object *object, const Fvector &ob
 				VERIFY			(action == possible_action_2_can_wait_1);
 		}
 		else {
-			if (!collided_dynamic((*I), (*I)->predict_position(time_to_check), object, object_position, action))
+			if (!collided_dynamic((*I), (*I)->predict_position(time_to_check_value), object_ptr, object_position, action))
 				continue;
 
 			if (action == possible_action_2_can_wait_1)
@@ -280,12 +280,12 @@ bool moving_objects::fill_collisions			(moving_object *object, const Fvector &ob
 
 		m_collisions.push_back	(
 			std::make_pair(
-				time_to_check,
+				time_to_check_value,
 				std::make_pair(
 					action,
 					std::make_pair(
-						priority ? object : (*I),
-						!priority ? object : (*I)
+						priority ? object_ptr : (*I),
+						!priority ? object_ptr : (*I)
 					)
 				)
 			)
@@ -299,35 +299,35 @@ bool moving_objects::fill_collisions			(moving_object *object, const Fvector &ob
 		u32							collision_count = m_collisions.size();
 		COLLISION_TIME				*collisions = (COLLISION_TIME*)_alloca(collision_count*sizeof(COLLISION_TIME));
 		std::copy					(m_collisions.begin(), m_collisions.end(), collisions);
-		COLLISION_TIME				*I = collisions;
-		COLLISION_TIME				*E = collisions + collision_count;
-		for ( ; I != E; ++I) {
+		COLLISION_TIME				*I_col = collisions;
+		COLLISION_TIME				*E_col = collisions + collision_count;
+		for ( ; I_col != E_col; ++I_col) {
 			moving_object			*test;
-			if ((*I).second.first == possible_action_1_can_wait_2)
-				test				= (*I).second.second.first;
+			if ((*I_col).second.first == possible_action_1_can_wait_2)
+				test				= (*I_col).second.second.first;
 			else {
-				VERIFY				((*I).second.first == possible_action_2_can_wait_1);
-				test				= (*I).second.second.second;
+				VERIFY				((*I_col).second.first == possible_action_2_can_wait_1);
+				test				= (*I_col).second.second.second;
 			}
 
-			bool					priority = ::priority::predicate(object,test);
+			bool					priority = ::priority::predicate(object_ptr,test);
 			if (priority) {
-				if (!collided_dynamic(object, object_position, test, test->position()))
+				if (!collided_dynamic(object_ptr, object_position, test, test->position()))
 					continue;
 			}
 			else {
-				if (!collided_dynamic(test, test->position(), object, object_position))
+				if (!collided_dynamic(test, test->position(), object_ptr, object_position))
 					continue;
 			}
 
 			m_collisions.push_back	(
 				std::make_pair(
-					time_to_check,
+					time_to_check_value,
 					std::make_pair(
 						priority ? possible_action_2_can_wait_1 : possible_action_1_can_wait_2,
 						std::make_pair(
-							priority ? object : test,
-							!priority ? object : test
+							priority ? object_ptr : test,
+							!priority ? object_ptr : test
 						)
 					)
 				)
@@ -335,20 +335,20 @@ bool moving_objects::fill_collisions			(moving_object *object, const Fvector &ob
 		}
 
 		VERIFY					(m_collisions.size() >= collision_count);
-		COLLISIONS::iterator	b = m_collisions.begin() + collision_count, i = b;
-		COLLISIONS::iterator	e = m_collisions.end();
-		for ( ; i != e; ++i) {
-			if ((*i).second.second.first == object) {
-				if (exchange_all((*i).second.second.second, object, collision_count))
+		COLLISIONS::iterator	col_b = m_collisions.begin() + collision_count, col_i = col_b;
+		COLLISIONS::iterator	col_e = m_collisions.end();
+		for ( ; col_i != col_e; ++col_i) {
+			if ((*col_i).second.second.first == object_ptr) {
+				if (exchange_all((*col_i).second.second.second, object_ptr, collision_count))
 					continue;
 
-				(*i).second.second.first	= 0;
+				(*col_i).second.second.first	= 0;
 				continue;
 			}
 
-			VERIFY				((*i).second.second.second == object);
-			if (!exchange_all((*i).second.second.first, object, collision_count))
-				(*i).second.second.first	= 0;
+			VERIFY				((*col_i).second.second.second == object_ptr);
+			if (!exchange_all((*col_i).second.second.first, object_ptr, collision_count))
+				(*col_i).second.second.first	= 0;
 		}
 
 		struct remove {
@@ -360,11 +360,11 @@ bool moving_objects::fill_collisions			(moving_object *object, const Fvector &ob
 
 		m_collisions.erase		(
 			std::remove_if(
-				b,
-				e,
+				col_b,
+				col_e,
 				&remove::predicate
 			),
-			e
+			col_e
 		);
 	}
 

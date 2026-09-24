@@ -51,7 +51,7 @@ void CUIMultiElement::InitFromXml(CUIXml& xml, LPCSTR path, int index, CUIWindow
 			SetWndPos(pWnd->GetWndPos());
 	}
 
-	if (m_static = UIHelper::CreateStatic(xml, path, this, false))
+	if ((m_static = UIHelper::CreateStatic(xml, path, this, false)))
 	{
 		XML_NODE* stored_root = xml.GetLocalRoot();
 		XML_NODE* new_root = xml.NavigateToNode(path, index);
@@ -107,7 +107,7 @@ void CUIMultiElement::SetProgressShape(float value, float max_value)
 	if (fis_zero(max_value))
 		m_progress_shape->SetPos(value);
 	else
-		m_progress_shape->SetPos(value, max_value);
+		m_progress_shape->SetPos(static_cast<int>(value), static_cast<int>(max_value));
 }
 
 float CUIMultiElement::GetProgressPos()
@@ -170,7 +170,7 @@ void CUIMultiElement::SetIconInfo(float value, float max_value)
 	}
 
 	if (m_progress_shape)
-		m_progress_shape->SetPos(value * 100.f, max_value * 100.f);
+		m_progress_shape->SetPos(static_cast<int>(value * 100.f), static_cast<int>(max_value * 100.f));
 
 	if (m_arrow)
 		SetArrow(value);

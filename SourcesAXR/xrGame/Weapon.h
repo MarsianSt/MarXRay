@@ -233,14 +233,14 @@ public:
 	//для отоброажения иконок апгрейдов в интерфейсе
 	int GetScopeX();
 	int GetScopeY();
-	int	GetSilencerX() {return m_iSilencerX * UI().get_icons_kx();}
-	int	GetSilencerY() {return m_iSilencerY * UI().get_icons_kx();}
-	int	GetGrenadeLauncherX() {return m_iGrenadeLauncherX * UI().get_icons_kx();}
-	int	GetGrenadeLauncherY() {return m_iGrenadeLauncherY * UI().get_icons_kx();}
-	int	GetLaserDesignatorX() {return m_iLaserX * UI().get_icons_kx();}
-	int	GetLaserDesignatorY() {return m_iLaserY * UI().get_icons_kx();}
-	int	GetTacticalTorchX() {return m_iTacticalTorchX * UI().get_icons_kx();}
-	int	GetTacticalTorchY() {return m_iTacticalTorchY * UI().get_icons_kx();}
+	int	GetSilencerX() {return static_cast<int>(m_iSilencerX * UI().get_icons_kx());}
+	int	GetSilencerY() {return static_cast<int>(m_iSilencerY * UI().get_icons_kx());}
+	int	GetGrenadeLauncherX() {return static_cast<int>(m_iGrenadeLauncherX * UI().get_icons_kx());}
+	int	GetGrenadeLauncherY() {return static_cast<int>(m_iGrenadeLauncherY * UI().get_icons_kx());}
+	int	GetLaserDesignatorX() {return static_cast<int>(m_iLaserX * UI().get_icons_kx());}
+	int	GetLaserDesignatorY() {return static_cast<int>(m_iLaserY * UI().get_icons_kx());}
+	int	GetTacticalTorchX() {return static_cast<int>(m_iTacticalTorchX * UI().get_icons_kx());}
+	int	GetTacticalTorchY() {return static_cast<int>(m_iTacticalTorchY * UI().get_icons_kx());}
 
 	const shared_str& GetGrenadeLauncherName	() const{return m_sGrenadeLauncherName;}
 	const shared_str GetScopeName				() const;

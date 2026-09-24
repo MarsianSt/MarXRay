@@ -64,7 +64,7 @@ bool CWeaponDoubleBarrelShotgun::Action(u16 cmd, u32 flags)
 	bool over_three_cartridge = HaveCartridgeInInventory(3);
 
 	if (over_three_cartridge && m_bTriStateReload && GetState() == eReload && !IsMisfire() && cmd == kWPN_FIRE && flags & CMD_START &&
-	m_sub_state == eSubstateReloadInProcess) //остановить перезагрузку
+	m_sub_state == eSubstateReloadInProcess) //пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 	{
 		AddCartridge((over_three_cartridge && !iAmmoElapsed) ? 2 : 1);
 		m_sub_state = eSubstateReloadEnd;
@@ -86,14 +86,14 @@ void CWeaponDoubleBarrelShotgun::OnAnimationEnd(u32 state)
 		} break;
 	}
 
-	if (!m_bTriStateReload || (m_bIsBoltRiffle && !(IsScopeAttached() && m_bOnlyTriStateWithScope) && !iAmmoElapsed && HaveCartridgeInInventory(iMagazineSize)) || state != eReload)
+	if (!m_bTriStateReload || (m_bIsBoltRiffle && !(IsScopeAttached() && m_bOnlyTriStateWithScope) && !iAmmoElapsed && HaveCartridgeInInventory(static_cast<u8>(iMagazineSize))) || state != eReload)
 		return inheritedShotgun::OnAnimationEnd(state);
 
 	switch (m_sub_state)
 	{
 	case eSubstateReloadBegin:
 		{
-			m_sub_state = IsMisfire() ? eSubstateReloadEnd : eSubstateReloadInProcess;
+			m_sub_state = static_cast<u8>(IsMisfire() ? eSubstateReloadEnd : eSubstateReloadInProcess);
 			SwitchState(eReload);
 		} break;
 	case eSubstateReloadInProcess:

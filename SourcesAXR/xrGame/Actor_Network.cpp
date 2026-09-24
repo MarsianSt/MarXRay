@@ -1368,7 +1368,7 @@ void CActor::save(NET_Packet &output_packet)
 
 	cam_Active()->save(output_packet);
 
-	output_packet.w_u8(cam_active);
+	output_packet.w_u8(u8(cam_active));
 
 	output_packet.w_u8(u8(m_bOutBorder));
 	CUITaskWnd* task_wnd = HUD().GetGameUI()->PdaMenu().pUITaskWnd;

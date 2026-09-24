@@ -405,18 +405,18 @@ void CUIOutfitItem::SetInfo(CCustomOutfit* cur_outfit, CCustomOutfit* slot_outfi
 		}
 
 		ALife::EHitType hit_type = (ALife::EHitType)i;
-		float max_power = actor->conditions().GetZoneMaxPower(hit_type);
+		float max_power_zone = actor->conditions().GetZoneMaxPower(hit_type);
 
-		float cur = cur_outfit->GetDefHitTypeProtection(hit_type);
-		cur /= max_power; // = 0..1
-		slot = cur;
+		float cur_prot = cur_outfit->GetDefHitTypeProtection(hit_type);
+		cur_prot /= max_power_zone; // = 0..1
+		slot = cur_prot;
 
 		if (slot_outfit)
 		{
 			slot = slot_outfit->GetDefHitTypeProtection(hit_type);
-			slot /= max_power; //  = 0..1
+			slot /= max_power_zone; //  = 0..1
 		}
-		m_items[i]->SetProgressValue(cur, slot);
+		m_items[i]->SetProgressValue(cur_prot, slot);
 		pos.set(m_items[i]->GetWndPos());
 		pos.y = h;
 		m_items[i]->SetWndPos(pos);
@@ -430,12 +430,12 @@ void CUIOutfitItem::SetInfo(CCustomOutfit* cur_outfit, CCustomOutfit* slot_outfi
 		VERIFY(ikv);
 		u16 spine_bone = ikv->LL_BoneID("bip01_spine");
 
-		float cur = cur_outfit->GetBoneArmor(spine_bone) * cur_outfit->GetCondition();
-		slot = slot_outfit ? slot_outfit->GetBoneArmor(spine_bone) * slot_outfit->GetCondition() : cur;
+		float cur_wound = cur_outfit->GetBoneArmor(spine_bone) * cur_outfit->GetCondition();
+		slot = slot_outfit ? slot_outfit->GetBoneArmor(spine_bone) * slot_outfit->GetCondition() : cur_wound;
 		max_power = actor->conditions().GetMaxFireWoundProtection() != 0 ? actor->conditions().GetMaxFireWoundProtection() : 1.f;
-		cur /= max_power;
+		cur_wound /= max_power;
 		slot /= max_power;
-		m_items[ALife::eHitTypeFireWound]->SetProgressValue(cur, slot);
+		m_items[ALife::eHitTypeFireWound]->SetProgressValue(cur_wound, slot);
 		pos.set(m_items[ALife::eHitTypeFireWound]->GetWndPos());
 		pos.y = h;
 		m_items[ALife::eHitTypeFireWound]->SetWndPos(pos);
@@ -489,7 +489,7 @@ void CUIOutfitItem::SetInfo(CCustomOutfit* cur_outfit, CCustomOutfit* slot_outfi
 		}
 	}
 
-	cur = cur_outfit->get_artefact_count();
+	cur = static_cast<float>(cur_outfit->get_artefact_count());
 	slot = slot_outfit ? slot_outfit->get_artefact_count() : cur;
 	if (!fis_zero(cur))
 	{

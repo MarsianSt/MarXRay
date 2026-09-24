@@ -506,7 +506,7 @@ void CUIWindow::SetKeyboardCapture(CUIWindow* pChildWindow, bool capture_status)
 void CUIWindow::SendMessage(CUIWindow *pWnd, s16 msg, void *pData)	  
 {
 	//���������� �������� ����
-	for(int i = 0; i < m_ChildWndList.size(); ++i)
+	for(int i = 0; i < static_cast<int>(m_ChildWndList.size()); ++i)
 	{
 		if(m_ChildWndList[i]->IsEnabled())
 			m_ChildWndList[i]->SendMessage(pWnd,msg,pData);

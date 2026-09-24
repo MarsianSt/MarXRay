@@ -309,7 +309,7 @@ bool CWeaponBM16::PlayAnimAimEnd()
 	else if (guns_aim_end_anm && strstr(guns_aim_end_anm, "_jammed"))
 	{
 		char* jammed_position = strstr(guns_aim_end_anm, "_jammed");
-		int jammed_length = strlen("_jammed");
+		int jammed_length = static_cast<int>(strlen("_jammed"));
 
 		char new_guns_aim_anm[100];
 		strncpy(new_guns_aim_anm, guns_aim_end_anm, jammed_position - guns_aim_end_anm);
@@ -347,7 +347,7 @@ void CWeaponBM16::PlayAnimIdle()
 			else if (guns_aim_start_anm && strstr(guns_aim_start_anm, "_jammed"))
 			{
 				char* jammed_position = strstr(guns_aim_start_anm, "_jammed");
-				int jammed_length = strlen("_jammed");
+				int jammed_length = static_cast<int>(strlen("_jammed"));
 
 				char new_guns_aim_anm[100];
 				strncpy(new_guns_aim_anm, guns_aim_start_anm, jammed_position - guns_aim_start_anm);
@@ -361,10 +361,10 @@ void CWeaponBM16::PlayAnimIdle()
 			}
 		}
 
-		if (const char* guns_aim_anm = GetAnimAimName())
+		if (const char* guns_aim_anm_name = GetAnimAimName())
 		{
 			string64 guns_aim_anm_full;
-			strconcat(sizeof(guns_aim_anm_full), guns_aim_anm_full, guns_aim_anm, "_", std::to_string(m_magazine.size()).c_str());
+			strconcat(sizeof(guns_aim_anm_full), guns_aim_anm_full, guns_aim_anm_name, "_", std::to_string(m_magazine.size()).c_str());
 
 			if (isHUDAnimationExist(guns_aim_anm_full))
 			{
@@ -374,7 +374,7 @@ void CWeaponBM16::PlayAnimIdle()
 			else if (guns_aim_anm_full && strstr(guns_aim_anm_full, "_jammed"))
 			{
 				char* jammed_position = strstr(guns_aim_anm_full, "_jammed");
-				int jammed_length = strlen("_jammed");
+				int jammed_length = static_cast<int>(strlen("_jammed"));
 
 				char new_guns_aim_anm[100];
 				strncpy(new_guns_aim_anm, guns_aim_anm_full, jammed_position - guns_aim_anm_full);
@@ -389,7 +389,7 @@ void CWeaponBM16::PlayAnimIdle()
 			else if (guns_aim_anm_full && strstr(guns_aim_anm_full, "_empty"))
 			{
 				char* empty_position = strstr(guns_aim_anm_full, "_empty");
-				int empty_length = strlen("_empty");
+				int empty_length = static_cast<int>(strlen("_empty"));
 
 				char new_guns_aim_anm[100];
 				strncpy(new_guns_aim_anm, guns_aim_anm_full, empty_position - guns_aim_anm_full);

@@ -320,7 +320,7 @@ int dump_byte_code(lua_State* L, const void* src, size_t size, void* ud)
     if (!src || !size || !ud)
         return -1;
     CMemoryWriter* dst = (CMemoryWriter*)ud;
-    dst->w(src, size);
+    dst->w(src, static_cast<u32>(size));
     return 0;
 }
 
@@ -330,7 +330,7 @@ int CScriptVarsTable::assign(lua_State* L, int index)
     int save_top = lua_gettop(L);
     is_array = false;
 
-    int count = lua_objlen(L, index); // сколько в array части таблицы элементов (непрерывный набор ключей от 1 до X)
+    int count = static_cast<int>(lua_objlen(L, index)); // сколько в array части таблицы элементов (непрерывный набор ключей от 1 до X)
     string16 tmp;
     // предварительное прочесывание как массива выстраивает индексы от 1 до count
     for (int i = 1; i <= count; i++)
@@ -401,7 +401,7 @@ void CScriptVarsTable::set(lua_State* L, int key_index, int value_index)
     switch (kt)
     {
     case LUA_TBOOLEAN: tk = lua_toboolean(L, key_index) ? "true" : "false"; break;
-    case LUA_TNUMBER: tk = itoa(lua_tointeger(L, key_index), tmp, 10); break;
+    case LUA_TNUMBER: tk = itoa(static_cast<int>(lua_tointeger(L, key_index)), tmp, 10); break;
     case LUA_TSTRING: // конвертирование не строковых значений в строки, поставит в тупик lua_next
         tk = lua_tostring(L, key_index);
         break;
@@ -503,9 +503,9 @@ void CScriptVarsTable::set(lua_State* L, LPCSTR k, int index, int key_type)
         }
         sv.size = 1;
         if (lua_gettop(L) > index)
-            sv.size = lua_tointeger(L, index + 1);
+            sv.size = static_cast<u32>(lua_tointeger(L, index + 1));
         else
-            sv.size = lua_objlen(L, index);
+            sv.size = static_cast<u32>(lua_objlen(L, index));
         void* dst = sv.smart_alloc(new_type, sv.size); // избежание утечек памяти
         memcpy_s(dst, sv.size, lua_touserdata(L, index), sv.size);
         break;

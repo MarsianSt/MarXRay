@@ -811,6 +811,7 @@ u32 CUICellContainer::GetCellsInRange(const Irect& rect, UI_CELLS_VEC& res)
 		for(int y=rect.y1;y<=rect.y2;++y)
 			res.push_back	(GetCellAt(Ivector2().set(x,y)));
 
+#pragma warning(suppress:4858) // std::unique's result is intentionally not erased: caller uses res.size()
 	std::unique				(res.begin(), res.end());
 	return res.size			();
 }

@@ -97,14 +97,14 @@ void CWeaponShotgun::OnAnimationEnd(u32 state)
 		} break;
 	}
 
-	if(!m_bTriStateReload || (m_bIsBoltRiffle && !(IsScopeAttached() && m_bOnlyTriStateWithScope) && !iAmmoElapsed && HaveCartridgeInInventory(iMagazineSize)) || state != eReload)
+	if(!m_bTriStateReload || (m_bIsBoltRiffle && !(IsScopeAttached() && m_bOnlyTriStateWithScope) && !iAmmoElapsed && HaveCartridgeInInventory(static_cast<u8>(iMagazineSize))) || state != eReload)
 		return inherited::OnAnimationEnd(state);
 
 	switch(m_sub_state)
 	{
 		case eSubstateReloadBegin:
 		{
-			m_sub_state = IsMisfire() ? eSubstateReloadEnd : eSubstateReloadInProcess;
+			m_sub_state = static_cast<u8>(IsMisfire() ? eSubstateReloadEnd : eSubstateReloadInProcess);
 			SwitchState(eReload);
 		}break;
 
@@ -128,7 +128,7 @@ void CWeaponShotgun::OnAnimationEnd(u32 state)
 
 void CWeaponShotgun::Reload() 
 {
-	if (!m_bTriStateReload || (m_bIsBoltRiffle && !(IsScopeAttached() && m_bOnlyTriStateWithScope) && !iAmmoElapsed && HaveCartridgeInInventory(iMagazineSize)))
+	if (!m_bTriStateReload || (m_bIsBoltRiffle && !(IsScopeAttached() && m_bOnlyTriStateWithScope) && !iAmmoElapsed && HaveCartridgeInInventory(static_cast<u8>(iMagazineSize))))
 	{
 		inherited::Reload();
 	}
@@ -150,7 +150,7 @@ void CWeaponShotgun::TriStateReload()
 
 void CWeaponShotgun::OnStateSwitch	(u32 S)
 {
-	if(!m_bIsCancelReloadNow && (!m_bTriStateReload || (m_bIsBoltRiffle && !(IsScopeAttached() && m_bOnlyTriStateWithScope) && !iAmmoElapsed && HaveCartridgeInInventory(iMagazineSize)) || S != eReload))
+	if(!m_bIsCancelReloadNow && (!m_bTriStateReload || (m_bIsBoltRiffle && !(IsScopeAttached() && m_bOnlyTriStateWithScope) && !iAmmoElapsed && HaveCartridgeInInventory(static_cast<u8>(iMagazineSize))) || S != eReload))
 	{
 		inherited::OnStateSwitch(S);
 		return;

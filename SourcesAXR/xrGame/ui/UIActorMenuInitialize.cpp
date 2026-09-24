@@ -124,7 +124,7 @@ void CUIActorMenu::Construct()
 	m_OutfitSlotHighlight		->Show(false);
 	m_DetectorSlotHighlight		= UIHelper::CreateStatic(uiXml, "detector_slot_highlight", this);
 	m_DetectorSlotHighlight		->Show(false);
-	if (m_QuickSlotsHighlight[0]	= UIHelper::CreateStatic(uiXml, "quick_slot_highlight", this, false))
+	if ((m_QuickSlotsHighlight[0]	= UIHelper::CreateStatic(uiXml, "quick_slot_highlight", this, false)))
 		m_QuickSlotsHighlight[0]->Show(false);
 
 	if (GameConstants::GetKnifeSlotEnabled())
@@ -193,7 +193,7 @@ void CUIActorMenu::Construct()
 	m_pTradePartnerBagList		= UIHelper::CreateDragDropListEx(uiXml, "dragdrop_partner_bag", this);
 	m_pTradePartnerList			= UIHelper::CreateDragDropListEx(uiXml, "dragdrop_partner_trade", this);
 	m_pDeadBodyBagList			= UIHelper::CreateDragDropListEx(uiXml, "dragdrop_deadbody_bag", this);
-	if (m_pQuickSlot				= UIHelper::CreateDragDropReferenceList(uiXml, "dragdrop_quick_slots", this, false))
+	if ((m_pQuickSlot				= UIHelper::CreateDragDropReferenceList(uiXml, "dragdrop_quick_slots", this, false)))
 	{
 		m_quick_vert_attrib			= uiXml.ReadAttrib		("dragdrop_quick_slots", 0, "horizontal", "");
 		b_quick_vert				= (0==stricmp(m_quick_vert_attrib, "false") || 0==stricmp(m_quick_vert_attrib, "0"));
@@ -535,7 +535,7 @@ void CUIActorMenu::Construct()
 
 	m_allowed_drops[iQuickSlot].push_back(iActorBag);
 	m_allowed_drops[iQuickSlot].push_back(iActorTrade);
-	//m_allowed_drops[iQuickSlot].push_back(iQuickSlot); // -- cari0us - нужно ли оно в ЗП, есть ли там баг?
+	//m_allowed_drops[iQuickSlot].push_back(iQuickSlot); // -- cari0us - пїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅ пїЅ пїЅпїЅ, пїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅ?
 
 	m_upgrade_selected					= NULL;
 	SetCurrentItem						(NULL);

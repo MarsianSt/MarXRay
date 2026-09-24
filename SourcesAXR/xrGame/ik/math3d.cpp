@@ -210,7 +210,7 @@ void vecmult(float y[],float x[],Matrix M)
  * y = x * M, with y[3] = 1
  */
 {
-    register	int i,j;
+    int i,j;
     float   	Y[3];
     
     for (i=0; i<3; i++) {

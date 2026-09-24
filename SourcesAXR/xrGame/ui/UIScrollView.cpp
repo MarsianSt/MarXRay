@@ -140,7 +140,7 @@ void CUIScrollView::Update				()
 
 	if (GameConstants::GetSmoothScrollEnabled())
 	{
-		const Fvector2 w_pos = { m_pad->GetWndPos().x, m_targetScrollPosition * 0.25 + m_pad->GetWndPos().y * 0.75 };
+		const Fvector2 w_pos = { static_cast<float>(m_pad->GetWndPos().x), static_cast<float>(m_targetScrollPosition * 0.25 + m_pad->GetWndPos().y * 0.75) };
 		m_pad->SetWndPos(w_pos);
 	}
 	

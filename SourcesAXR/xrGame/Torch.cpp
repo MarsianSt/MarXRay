@@ -267,7 +267,7 @@ void CTorch::UpdateUseAnim()
 	bool IsActorAlive = g_pGamePersistent->GetActorAliveStatus();
 	bool bActive = !m_switched_on;
 
-	if ((m_iActionTiming <= Device.dwTimeGlobal && !m_bSwitched) && IsActorAlive)
+	if ((static_cast<u32>(m_iActionTiming) <= Device.dwTimeGlobal && !m_bSwitched) && IsActorAlive)
 	{
 		m_iActionTiming = Device.dwTimeGlobal;
 		Switch(bActive);
@@ -277,7 +277,7 @@ void CTorch::UpdateUseAnim()
 
 	if (m_bActivated)
 	{
-		if ((m_iAnimLength <= Device.dwTimeGlobal) || !IsActorAlive)
+		if ((static_cast<u32>(m_iAnimLength) <= Device.dwTimeGlobal) || !IsActorAlive)
 		{
 			m_iAnimLength = Device.dwTimeGlobal;
 			m_iActionTiming = Device.dwTimeGlobal;

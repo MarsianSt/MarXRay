@@ -90,8 +90,8 @@ void CHudItem::Load(LPCSTR section)
 	m_strafe_offset[0][1] = READ_IF_EXISTS(pSettings, r_fvector3, section, "strafe_aim_hud_offset_pos", (Fvector{0.f, 0.f, 0.f}));
 	m_strafe_offset[1][1] = READ_IF_EXISTS(pSettings, r_fvector3, section, "strafe_aim_hud_offset_rot", (Fvector{0.f, 0.f, 3.5f}));
 
-	m_strafe_offset[2][0].set(READ_IF_EXISTS(pSettings, r_bool, section, "strafe_enabled", true), READ_IF_EXISTS(pSettings, r_float, section, "strafe_transition_time", 0.25f), 0.f);
-	m_strafe_offset[2][1].set(READ_IF_EXISTS(pSettings, r_bool, section, "strafe_aim_enabled", true), READ_IF_EXISTS(pSettings, r_float, section, "strafe_aim_transition_time", 0.15f), 0.f);
+	m_strafe_offset[2][0].set(static_cast<float>(READ_IF_EXISTS(pSettings, r_bool, section, "strafe_enabled", true)), READ_IF_EXISTS(pSettings, r_float, section, "strafe_transition_time", 0.25f), 0.f);
+	m_strafe_offset[2][1].set(static_cast<float>(READ_IF_EXISTS(pSettings, r_bool, section, "strafe_aim_enabled", true)), READ_IF_EXISTS(pSettings, r_float, section, "strafe_aim_transition_time", 0.15f), 0.f);
 
 	////////////////////////////////////////////
 	////////////////////////////////////////////
@@ -101,8 +101,8 @@ void CHudItem::Load(LPCSTR section)
 	m_lookout_offset[0][1] = READ_IF_EXISTS(pSettings, r_fvector3, section, "lookout_aim_hud_offset_pos", (Fvector{0.f, 0.f, 0.f}));
 	m_lookout_offset[1][1] = READ_IF_EXISTS(pSettings, r_fvector3, section, "lookout_aim_hud_offset_rot", (Fvector{0.f, 0.f, 15.f}));
 
-	m_lookout_offset[2][0].set(READ_IF_EXISTS(pSettings, r_bool, section, "lookout_enabled", true), READ_IF_EXISTS(pSettings, r_float, section, "lookout_transition_time", 0.25f), 0.f);
-	m_lookout_offset[2][1].set(READ_IF_EXISTS(pSettings, r_bool, section, "lookout_aim_enabled", true), READ_IF_EXISTS(pSettings, r_float, section, "lookout_aim_transition_time", 0.15f), 0.f);
+	m_lookout_offset[2][0].set(static_cast<float>(READ_IF_EXISTS(pSettings, r_bool, section, "lookout_enabled", true)), READ_IF_EXISTS(pSettings, r_float, section, "lookout_transition_time", 0.25f), 0.f);
+	m_lookout_offset[2][1].set(static_cast<float>(READ_IF_EXISTS(pSettings, r_bool, section, "lookout_aim_enabled", true)), READ_IF_EXISTS(pSettings, r_float, section, "lookout_aim_transition_time", 0.15f), 0.f);
 	////////////////////////////////////////////
 	////////////////////////////////////////////
 	m_jump_offset[0][0] = READ_IF_EXISTS(pSettings, r_fvector3, section, "jump_hud_offset_pos", (Fvector{0.f, 0.05f, 0.03f}));
@@ -111,8 +111,8 @@ void CHudItem::Load(LPCSTR section)
 	m_jump_offset[0][1] = READ_IF_EXISTS(pSettings, r_fvector3, section, "jump_aim_hud_offset_pos", (Fvector{0.f, 0.03f, 0.01f}));
 	m_jump_offset[1][1] = READ_IF_EXISTS(pSettings, r_fvector3, section, "jump_aim_hud_offset_rot", (Fvector{0.f, 2.5f, -3.f}));
 
-	m_jump_offset[2][0].set(READ_IF_EXISTS(pSettings, r_bool, section, "jump_enabled", true), READ_IF_EXISTS(pSettings, r_float, section, "jump_transition_time", 0.35f), 0.f);
-	m_jump_offset[2][1].set(READ_IF_EXISTS(pSettings, r_bool, section, "jump_aim_enabled", true), READ_IF_EXISTS(pSettings, r_float, section, "jump_aim_transition_time", 0.4f), 0.f);
+	m_jump_offset[2][0].set(static_cast<float>(READ_IF_EXISTS(pSettings, r_bool, section, "jump_enabled", true)), READ_IF_EXISTS(pSettings, r_float, section, "jump_transition_time", 0.35f), 0.f);
+	m_jump_offset[2][1].set(static_cast<float>(READ_IF_EXISTS(pSettings, r_bool, section, "jump_aim_enabled", true)), READ_IF_EXISTS(pSettings, r_float, section, "jump_aim_transition_time", 0.4f), 0.f);
 	////////////////////////////////////////////
 	////////////////////////////////////////////
 	m_fall_offset[0][0] = READ_IF_EXISTS(pSettings, r_fvector3, section, "fall_hud_offset_pos", (Fvector{0.f, -0.05f, 0.06f}));
@@ -131,12 +131,12 @@ void CHudItem::Load(LPCSTR section)
 	////////////////////////////////////////////
 	m_move_offset[0] = READ_IF_EXISTS(pSettings, r_fvector3, section, "stay_hud_offset_pos", (Fvector{0.f, -0.03f, 0.f}));
 	m_move_offset[1] = READ_IF_EXISTS(pSettings, r_fvector3, section, "stay_hud_offset_rot", (Fvector{0.f, 0.5f, -3.f}));
-	m_move_offset[2].set(READ_IF_EXISTS(pSettings, r_bool, section, "move_enabled", true), READ_IF_EXISTS(pSettings, r_float, section, "move_transition_time", 0.25f), 0.f);
+	m_move_offset[2].set(static_cast<float>(READ_IF_EXISTS(pSettings, r_bool, section, "move_enabled", true)), READ_IF_EXISTS(pSettings, r_float, section, "move_transition_time", 0.25f), 0.f);
 	////////////////////////////////////////////
 	////////////////////////////////////////////
 	m_walk_offset[0] = READ_IF_EXISTS(pSettings, r_fvector3, section, "walk_hud_offset_pos", (Fvector{-0.02f, -0.02f, -0.03f}));
 	m_walk_offset[1] = READ_IF_EXISTS(pSettings, r_fvector3, section, "walk_hud_offset_rot", (Fvector{0.f, 0.05f, -1.f}));
-	m_walk_offset[2].set(READ_IF_EXISTS(pSettings, r_bool, section, "walk_enabled", true), READ_IF_EXISTS(pSettings, r_float, section, "walk_transition_time", 0.25f), 0.f);
+	m_walk_offset[2].set(static_cast<float>(READ_IF_EXISTS(pSettings, r_bool, section, "walk_enabled", true)), READ_IF_EXISTS(pSettings, r_float, section, "walk_transition_time", 0.25f), 0.f);
 
 	//Загрузка параметров инерции --#SM+# Begin--
 	constexpr float PITCH_OFFSET_R = 0.0f; // Насколько сильно ствол смещается вбок (влево) при вертикальных поворотах камеры
@@ -983,7 +983,7 @@ void CHudItem::UpdateInertion(Fmatrix& trans)
 
         Fvector current_offset{inertion_data.m_pitch_offset_d, inertion_data.m_pitch_offset_r, inertion_data.m_pitch_offset_n};
         current_offset.mul(-pitch);
-        current_offset.mul(HudInertionAllowed());
+        current_offset.mul(static_cast<float>(HudInertionAllowed()));
 
         if (!current_offset.similar(current_pitch_offset, EPS))
             current_pitch_offset.lerp(current_pitch_offset, current_offset, tendto_speed * Device.fTimeDelta);
@@ -1075,8 +1075,8 @@ void CHudItem::UpdateHudAdditional(Fmatrix& trans)
 
 		if (dist <= 0.8 && !IsZoomed())
 		{
-			m_fColPosition = curr_offs.y + ((1 - dist - 0.2) * 5.0f);
-			m_fColRotation = curr_rot.x + ((1 - dist - 0.2) * 5.0f);
+			m_fColPosition = static_cast<float>(curr_offs.y + ((1 - dist - 0.2) * 5.0f));
+			m_fColRotation = static_cast<float>(curr_rot.x + ((1 - dist - 0.2) * 5.0f));
 		}
 		else
 		{
@@ -1086,13 +1086,13 @@ void CHudItem::UpdateHudAdditional(Fmatrix& trans)
 
 		if (m_fHudCollisionFactor < m_fColPosition)
 		{
-			m_fHudCollisionFactor += Device.fTimeDelta / 0.3;
+			m_fHudCollisionFactor += static_cast<float>(Device.fTimeDelta / 0.3);
 			if (m_fHudCollisionFactor > m_fColPosition)
 				m_fHudCollisionFactor = m_fColPosition;
 		}
 		else if (m_fHudCollisionFactor > m_fColPosition)
 		{
-			m_fHudCollisionFactor -= Device.fTimeDelta / 0.3;
+			m_fHudCollisionFactor -= static_cast<float>(Device.fTimeDelta / 0.3);
 			if (m_fHudCollisionFactor < m_fColPosition)
 				m_fHudCollisionFactor = m_fColPosition;
 		}
@@ -1202,10 +1202,10 @@ void CHudItem::UpdateHudAdditional(Fmatrix& trans)
             {
                 current_jump_offs.set(Fvector{});
                 current_jump_rot.set(Fvector{});
-                fStepPerUpd = Device.fTimeDelta / (fJumpMaxTime * 0.5);
+                fStepPerUpd = static_cast<float>(Device.fTimeDelta / (fJumpMaxTime * 0.5));
             }
 
-			float koef = iMovingState & mcLanding2 ? 1.3 : 1.0;
+			float koef = static_cast<float>(iMovingState & mcLanding2 ? 1.3 : 1.0);
             current_jump_offs.mul(koef);
             current_jump_rot.mul(koef);
             current_jump_rot.mul(-PI / 180.f); // Преобразуем углы в радианы
@@ -1357,13 +1357,13 @@ void CHudItem::UpdateHudAdditional(Fmatrix& trans)
                 current_walk_rot.set(Fvector{});
             }
 
-            auto pda = smart_cast<CPda*>(this);
+            auto pda_item = smart_cast<CPda*>(this);
             auto missile = smart_cast<CMissile*>(this);
 
             current_walk_offs.mul(!IsZoomed());
             current_walk_rot.mul(!IsZoomed());
-            current_walk_offs.mul(!pda && !missile);
-            current_walk_rot.mul(!pda && !missile);
+            current_walk_offs.mul(!pda_item && !missile);
+            current_walk_rot.mul(!pda_item && !missile);
             current_walk_offs.mul(koef);
             current_walk_rot.mul(koef);
             current_walk_rot.mul(-PI / 180.f); // Преобразуем углы в радианы
@@ -1656,7 +1656,7 @@ void CHudItem::TimeLockAnimation()
 		string128 anm_time_param;
 		xr_strconcat(anm_time_param, "lock_time_", m_current_motion.c_str(), "_end");
 		const float time = READ_IF_EXISTS(pSettings, r_float, HudSection(), anm_time_param, 0) * 1000.f; // Читаем с конфига время анимации (например, lock_time_end_anm_reload)
-		const float current_time = Device.dwTimeGlobal - m_dwMotionStartTm;
+		const float current_time = static_cast<float>(Device.dwTimeGlobal - m_dwMotionStartTm);
 
 		if (time && current_time >= time)
 		{

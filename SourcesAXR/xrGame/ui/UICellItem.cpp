@@ -69,22 +69,22 @@ void CUICellItem::init()
 		is_xml_ready		= true;
 	}
 		
-	if (m_text				= UIHelper::CreateStatic(uiXml, "cell_item_text", this, false))
+	if ((m_text				= UIHelper::CreateStatic(uiXml, "cell_item_text", this, false)))
 		m_text->Show		( false );
 
-	if (m_custom_text		= UIHelper::CreateStatic(uiXml, "cell_item_custom_text", this, false))
+	if ((m_custom_text		= UIHelper::CreateStatic(uiXml, "cell_item_custom_text", this, false)))
 	{
 		m_custom_text_pos	= m_custom_text->GetWndPos();
 		m_custom_text->Show	(false);
 	}
 	
-	if (m_qmark				= UIHelper::CreateStatic(uiXml, "cell_item_quest_mark", this, false))
+	if ((m_qmark				= UIHelper::CreateStatic(uiXml, "cell_item_quest_mark", this, false)))
 	{
 		m_qmark_pos			= m_qmark->GetWndPos();
 		m_qmark->Show		( false );
 	}
 	
-	if (m_upgrade			= UIHelper::CreateStatic(uiXml, "cell_item_upgrade", this, false))
+	if ((m_upgrade			= UIHelper::CreateStatic(uiXml, "cell_item_upgrade", this, false)))
 	{
 		m_upgrade_pos		= m_upgrade->GetWndPos();
 		m_upgrade->Show		( false );
@@ -99,9 +99,9 @@ void CUICellItem::init()
 	if (m_pConditionState)
 		m_pConditionState->Show(false);
 
-	if (m_pPortionsState	= UIHelper::CreateProgressBar(uiXml, "portions_progess_bar", this, false))
+	if ((m_pPortionsState	= UIHelper::CreateProgressBar(uiXml, "portions_progess_bar", this, false)))
 		m_pPortionsState->Show(false);
-	if (m_pChargeState		= UIHelper::CreateProgressBar(uiXml, "charge_level_progess_bar", this, false))
+	if ((m_pChargeState		= UIHelper::CreateProgressBar(uiXml, "charge_level_progess_bar", this, false)))
 		m_pChargeState->Show(false);
 }
 

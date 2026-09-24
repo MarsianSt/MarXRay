@@ -193,7 +193,7 @@ void ShowHudEditor(bool& show)
 			if (auto WpnMag = smart_cast<CWeaponMagazined*>(Actor()->inventory().ActiveItem()))
 				EditBonesTransform(WpnMag, drag_intensity);
 
-			for (int i = 0; i < Wpn->m_weapon_attaches.size(); i++)
+			for (int i = 0; i < static_cast<int>(Wpn->m_weapon_attaches.size()); i++)
 			{
 				auto mesh = Wpn->m_weapon_attaches[i];
 
@@ -311,8 +311,8 @@ void EditBonesTransform(CWeaponMagazined* WpnMag, float drag_intensity)
 		{
 			u32 mode = transform->GetTransformMode();
 
-			// ========== Общие параметры ==========
-			// Ось вращения
+			// ========== пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ ==========
+			// пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 			Fvector rot_axis = transform->GetRotationAxis();
 			string128 rot_angle_param{};
 			xr_sprintf(rot_angle_param, "%s_rot_axis", bone_name.c_str());
@@ -323,7 +323,7 @@ void EditBonesTransform(CWeaponMagazined* WpnMag, float drag_intensity)
 				changed = true;
 			}
 
-			// Скорость вращения
+			// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 			float rot_speed_deg = rad2deg(transform->GetRotationSpeed());
 			string128 rot_speed_param{};
 			xr_sprintf(rot_speed_param, "%s_rot_speed", bone_name.c_str());
@@ -334,7 +334,7 @@ void EditBonesTransform(CWeaponMagazined* WpnMag, float drag_intensity)
 				changed = true;
 			}
 
-			// Скорость сдвига
+			// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
 			float trans_speed = transform->GetTranslationSpeed();
 			string128 trans_speed_param{};
 			xr_sprintf(trans_speed_param, "%s_trans_speed", bone_name.c_str());
@@ -348,7 +348,7 @@ void EditBonesTransform(CWeaponMagazined* WpnMag, float drag_intensity)
 			ImGui::Separator();
 			int modes_count = WpnMag->GetFireModesCount();
 
-			// ========== Параметры в зависимости от режима ==========
+			// ========== пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ ==========
 			if (mode == CWeaponBoneTransform::eModeFiremode)
 			{
 				auto& rot_angles = transform->GetRotationAngles();
@@ -363,7 +363,7 @@ void EditBonesTransform(CWeaponMagazined* WpnMag, float drag_intensity)
 
 					ImGui::Text(group_name);
 
-					// Угол поворота
+					// пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 					float angle_deg = rad2deg(rot_angles[i]);
 					string128 angle_name;
 					xr_sprintf(angle_name, "%s_rot_angle_mode_%d", bone_name.c_str(), i);
@@ -374,7 +374,7 @@ void EditBonesTransform(CWeaponMagazined* WpnMag, float drag_intensity)
 						changed = true;
 					}
 
-					// Сдвиг
+					// пїЅпїЅпїЅпїЅпїЅ
 					Fvector offset = trans_offsets[i];
 					string128 offset_name;
 					xr_sprintf(offset_name, "%s_trans_offset_mode_%d", bone_name.c_str(), i);
@@ -393,7 +393,7 @@ void EditBonesTransform(CWeaponMagazined* WpnMag, float drag_intensity)
 				auto& rot_angles = transform->GetRotationAngles();
 				auto& trans_offsets = transform->GetTranslationOffsets();
 
-				// Угол поворота
+				// пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 				float angle_deg = rad2deg(rot_angles[0]);
 				string128 angle_name;
 				xr_sprintf(angle_name, "%s_rot_angle", bone_name.c_str());
@@ -404,7 +404,7 @@ void EditBonesTransform(CWeaponMagazined* WpnMag, float drag_intensity)
 					changed = true;
 				}
 
-				// Сдвиг
+				// пїЅпїЅпїЅпїЅпїЅ
 				Fvector offset = trans_offsets[0];
 				string128 offset_name;
 				xr_sprintf(offset_name, "%s_trans_offset", bone_name.c_str());

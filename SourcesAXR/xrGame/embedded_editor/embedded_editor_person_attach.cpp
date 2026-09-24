@@ -69,7 +69,7 @@ void EditWeaponParameters(CWeapon* weapon, float drag_intensity)
 
 			bones_names_cstr.reserve(accel->size());
 
-			for (int i = 0; i < accel->size(); ++i)
+			for (int i = 0; i < static_cast<int>(accel->size()); ++i)
 				bones_names_cstr.push_back(accel->at(i).first.c_str());
 
 			auto it = std::find(bones_names_cstr.begin(), bones_names_cstr.end(), weapon->strap_bone0());
@@ -80,9 +80,9 @@ void EditWeaponParameters(CWeapon* weapon, float drag_intensity)
 			static bool bone_changed_2 = false;
 
 			if (it != bones_names_cstr.end() && !bone_changed_1)
-				selected_bone_1 = std::distance(bones_names_cstr.begin(), it);
+				selected_bone_1 = static_cast<int>(std::distance(bones_names_cstr.begin(), it));
 
-			if (ImGui::Combo(bone0_option, &selected_bone_1, bones_names_cstr.data(), bones_names_cstr.size()))
+			if (ImGui::Combo(bone0_option, &selected_bone_1, bones_names_cstr.data(), static_cast<int>(bones_names_cstr.size())))
 			{
 				weapon->SetStrapBone0(accel->at(selected_bone_1).first.c_str());
 				weapon->SetStrapBone0_ID(smart_cast<IKinematics*>(Actor()->Visual())->LL_BoneID(weapon->strap_bone0()));
@@ -90,9 +90,9 @@ void EditWeaponParameters(CWeapon* weapon, float drag_intensity)
 			}
 
 			if (it != bones_names_cstr.end() && !bone_changed_2)
-				selected_bone_2 = std::distance(bones_names_cstr.begin(), it2);
+				selected_bone_2 = static_cast<int>(std::distance(bones_names_cstr.begin(), it2));
 
-			if (ImGui::Combo(bone1_option, &selected_bone_2, bones_names_cstr.data(), bones_names_cstr.size()))
+			if (ImGui::Combo(bone1_option, &selected_bone_2, bones_names_cstr.data(), static_cast<int>(bones_names_cstr.size())))
 			{
 				weapon->SetStrapBone1(accel->at(selected_bone_2).first.c_str());
 				weapon->SetStrapBone1_ID(smart_cast<IKinematics*>(Actor()->Visual())->LL_BoneID(weapon->strap_bone1()));
@@ -123,16 +123,16 @@ void EditWeaponParameters(CWeapon* weapon, float drag_intensity)
 		ImGui::DragFloat3("torch_omni_world_attach_offset 0", (float*)&weapon->flashlight_omni_world_attach_offset, drag_intensity, NULL, NULL, "%.6f");
 	}
 
-	for (int i = 0; i < weapon->m_weapon_attaches.size(); i++)
+	for (int i = 0; i < static_cast<int>(weapon->m_weapon_attaches.size()); i++)
 	{
 		auto mesh = weapon->m_weapon_attaches[i];
 
-		string256 pos_name, orient_name;
-		strconcat(sizeof(pos_name), pos_name, mesh->m_section.c_str(), "_world_position");
-		strconcat(sizeof(orient_name), orient_name, mesh->m_section.c_str(), "_world_orientation");
+		string256 pos_name_attach, orient_name_attach;
+		strconcat(sizeof(pos_name_attach), pos_name_attach, mesh->m_section.c_str(), "_world_position");
+		strconcat(sizeof(orient_name_attach), orient_name_attach, mesh->m_section.c_str(), "_world_orientation");
 
-		ImGui::DragFloat3(pos_name, (float*)&mesh->world_attach_pos[0], drag_intensity, NULL, NULL, "%.6f");
-		ImGui::DragFloat3(orient_name, (float*)&mesh->world_attach_pos[1], drag_intensity, NULL, NULL, "%.6f");
+		ImGui::DragFloat3(pos_name_attach, (float*)&mesh->world_attach_pos[0], drag_intensity, NULL, NULL, "%.6f");
+		ImGui::DragFloat3(orient_name_attach, (float*)&mesh->world_attach_pos[1], drag_intensity, NULL, NULL, "%.6f");
 	}
 }
 
@@ -172,7 +172,7 @@ void SaveAttachesCfg(LPCSTR parent_section, CWeapon* parent_wpn)
 
 	CInifile pAttachesCfg(fname, false, true, true);
 
-	for (int i = 0; i < parent_wpn->m_weapon_attaches.size(); i++)
+	for (int i = 0; i < static_cast<int>(parent_wpn->m_weapon_attaches.size()); i++)
 	{
 		auto mesh = parent_wpn->m_weapon_attaches[i];
 
@@ -214,7 +214,7 @@ void SaveToFile(CAttachmentOwner* owner)
 
 	CInifile pAttachesCfg(fname, false, false, true);
 
-	for (int i = 0; i < owner->GetAttachedItems().size(); i++)
+	for (int i = 0; i < static_cast<int>(owner->GetAttachedItems().size()); i++)
 	{
 		auto attached_item = owner->GetAttachedItems().at(i);
 
@@ -501,7 +501,7 @@ void ShowPersonAttachEditor(bool& show)
 
 		if (CAttachmentOwner* owner = smart_cast<CAttachmentOwner*>(Actor()))
 		{
-			for (int i = 0; i < owner->GetAttachedItems().size(); i++)
+			for (int i = 0; i < static_cast<int>(owner->GetAttachedItems().size()); i++)
 			{
 				auto attached_item = owner->GetAttachedItems().at(i);
 
@@ -526,7 +526,7 @@ void ShowPersonAttachEditor(bool& show)
 
 					bones_names_cstr.reserve(accel->size());
 
-					for (int j = 0; j < accel->size(); ++j)
+					for (int j = 0; j < static_cast<int>(accel->size()); ++j)
 						bones_names_cstr.push_back(accel->at(j).first.c_str());
 
 					auto it = std::find(bones_names_cstr.begin(), bones_names_cstr.end(), attached_item->bone_name());
@@ -535,7 +535,7 @@ void ShowPersonAttachEditor(bool& show)
 					static std::vector<bool> is_changed(owner->GetAttachedItems().size(), false);
 
 					if (it != bones_names_cstr.end() && !is_changed[i])
-						selected_bones[i] = std::distance(bones_names_cstr.begin(), it);
+						selected_bones[i] = static_cast<int>(std::distance(bones_names_cstr.begin(), it));
 
 					if (ImGui::Combo("attach_bone_name", &selected_bones[i], bones_names_cstr.data(), bones_names_cstr.size()))
 					{

@@ -136,7 +136,7 @@ void CUIDiaryWnd::SendMessage(CUIWindow *pWnd, s16 msg, void* pData)
 			for (const std::string& part : splitParts)
 			{
 				string4096				pp;
-				xr_sprintf				(pp, "%s", part);
+				xr_sprintf				(pp, "%s", part.c_str());
 				caption					+= CStringTable().translate(pp).c_str();
 				caption					+= "/";
 			}

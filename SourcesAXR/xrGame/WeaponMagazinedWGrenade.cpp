@@ -774,7 +774,7 @@ bool CWeaponMagazinedWGrenade::PlayAnimAimEnd()
 	else if (guns_aim_end_anm && strstr(guns_aim_end_anm, "_jammed"))
 	{
 		char* jammed_position = strstr(guns_aim_end_anm, "_jammed");
-		int jammed_length = strlen("_jammed");
+		int jammed_length = static_cast<int>(strlen("_jammed"));
 
 		char new_guns_aim_end_anm[100];
 		strncpy(new_guns_aim_end_anm, guns_aim_end_anm, jammed_position - guns_aim_end_anm);
@@ -791,7 +791,7 @@ bool CWeaponMagazinedWGrenade::PlayAnimAimEnd()
 	else if (strstr(guns_aim_end_anm, "_empty"))
 	{
 		char* empty_position = strstr(guns_aim_end_anm, "_empty");
-		int empty_length = strlen("_empty");
+		int empty_length = static_cast<int>(strlen("_empty"));
 
 		char new_guns_aim_end_anm[100];
 		strncpy(new_guns_aim_end_anm, guns_aim_end_anm, empty_position - guns_aim_end_anm);
@@ -834,7 +834,7 @@ void CWeaponMagazinedWGrenade::PlayAnimIdle()
 				else if (guns_aim_start_anm && strstr(guns_aim_start_anm, "_jammed"))
 				{
 					char* jammed_position = strstr(guns_aim_start_anm, "_jammed");
-					int jammed_length = strlen("_jammed");
+					int jammed_length = static_cast<int>(strlen("_jammed"));
 
 					char new_guns_aim_start_anm[100];
 					strncpy(new_guns_aim_start_anm, guns_aim_start_anm, jammed_position - guns_aim_start_anm);
@@ -849,7 +849,7 @@ void CWeaponMagazinedWGrenade::PlayAnimIdle()
 				else if (guns_aim_start_anm && strstr(guns_aim_start_anm, "_empty"))
 				{
 					char* empty_position = strstr(guns_aim_start_anm, "_empty");
-					int empty_length = strlen("_empty");
+					int empty_length = static_cast<int>(strlen("_empty"));
 
 					char new_guns_aim_start_anm[100];
 					strncpy(new_guns_aim_start_anm, guns_aim_start_anm, empty_position - guns_aim_start_anm);
@@ -876,7 +876,7 @@ void CWeaponMagazinedWGrenade::PlayAnimIdle()
 				else if (guns_aim_anm_full && strstr(guns_aim_anm_full, "_jammed"))
 				{
 					char* jammed_position = strstr(guns_aim_anm_full, "_jammed");
-					int jammed_length = strlen("_jammed");
+					int jammed_length = static_cast<int>(strlen("_jammed"));
 
 					char new_guns_aim_anm[100];
 					strncpy(new_guns_aim_anm, guns_aim_anm_full, jammed_position - guns_aim_anm_full);
@@ -891,7 +891,7 @@ void CWeaponMagazinedWGrenade::PlayAnimIdle()
 				else if (guns_aim_anm_full && strstr(guns_aim_anm_full, "_empty"))
 				{
 					char* empty_position = strstr(guns_aim_anm_full, "_empty");
-					int empty_length = strlen("_empty");
+					int empty_length = static_cast<int>(strlen("_empty"));
 
 					char new_guns_aim_anm[100];
 					strncpy(new_guns_aim_anm, guns_aim_anm_full, empty_position - guns_aim_anm_full);
@@ -1613,7 +1613,7 @@ bool CWeaponMagazinedWGrenade::GetBriefInfo( II_BriefInfo& info )
 	if(!inherited::GetBriefInfo(info))
 		return false;
 */
-	string32	int_str, fire_mode, ammo = "";
+	string32	int_str, ammo = "";
 	int	ae = GetAmmoElapsed();
 	xr_sprintf(int_str, "%d", ae);
 	info.cur_ammo._set(int_str);
