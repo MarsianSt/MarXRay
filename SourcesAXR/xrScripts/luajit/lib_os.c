@@ -7,6 +7,7 @@
 */
 
 #include <errno.h>
+#include <stdlib.h>
 #include <time.h>
 
 #define lib_os_c
@@ -91,7 +92,11 @@ LJLIB_CF(os_tmpname)
     lj_err_caller(L, LJ_ERR_OSUNIQF);
 #else
   char buf[L_tmpnam];
+#if _MSC_VER >= 1400
+  if (tmpnam_s(buf, L_tmpnam) != 0)
+#else
   if (tmpnam(buf) == NULL)
+#endif
     lj_err_caller(L, LJ_ERR_OSUNIQF);
 #endif
   lua_pushstring(L, buf);
@@ -104,7 +109,19 @@ LJLIB_CF(os_getenv)
 #if LJ_TARGET_CONSOLE
   lua_pushnil(L);
 #else
-  lua_pushstring(L, getenv(luaL_checkstring(L, 1)));  /* if NULL push nil */
+  const char *name = luaL_checkstring(L, 1);
+#if _MSC_VER >= 1400
+  char *value = NULL;
+  size_t value_size = 0;
+  if (_dupenv_s(&value, &value_size, name) != 0 || value == NULL) {
+    lua_pushnil(L);
+  } else {
+    lua_pushstring(L, value);
+    free(value);
+  }
+#else
+  lua_pushstring(L, getenv(name));  /* if NULL push nil */
+#endif
 #endif
   return 1;
 }
@@ -173,19 +190,23 @@ LJLIB_CF(os_date)
   const char *s = luaL_optstring(L, 1, "%c");
   time_t t = luaL_opt(L, (time_t)luaL_checknumber, 2, time(NULL));
   struct tm *stm;
-#if LJ_TARGET_POSIX
+#if LJ_TARGET_POSIX || _MSC_VER >= 1400
   struct tm rtm;
 #endif
   if (*s == '!') {  /* UTC? */
     s++;  /* Skip '!' */
 #if LJ_TARGET_POSIX
     stm = gmtime_r(&t, &rtm);
+#elif _MSC_VER >= 1400
+    stm = gmtime_s(&rtm, &t) == 0 ? &rtm : NULL;
 #else
     stm = gmtime(&t);
 #endif
   } else {
 #if LJ_TARGET_POSIX
     stm = localtime_r(&t, &rtm);
+#elif _MSC_VER >= 1400
+    stm = localtime_s(&rtm, &t) == 0 ? &rtm : NULL;
 #else
     stm = localtime(&t);
 #endif

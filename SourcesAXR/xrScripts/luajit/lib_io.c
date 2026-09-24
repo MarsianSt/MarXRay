@@ -8,6 +8,7 @@
 
 #include <errno.h>
 #include <stdio.h>
+#include <string.h>
 
 #define lib_io_c
 #define LUA_LIB
@@ -43,6 +44,30 @@ typedef struct IOFileUD {
 #define IOSTDF_IOF(L, id)	((IOFileUD *)uddata(IOSTDF_UD(L, (id))))
 
 /* -- Open/close helpers -------------------------------------------------- */
+
+static FILE *lj_fopen(const char *fname, const char *mode)
+{
+#if _MSC_VER >= 1400
+  FILE *fp = NULL;
+  if (fopen_s(&fp, fname, mode) != 0)
+    return NULL;
+  return fp;
+#else
+  return fopen(fname, mode);
+#endif
+}
+
+static FILE *lj_tmpfile(void)
+{
+#if _MSC_VER >= 1400
+  FILE *fp = NULL;
+  if (tmpfile_s(&fp) != 0)
+    return NULL;
+  return fp;
+#else
+  return tmpfile();
+#endif
+}
 
 static IOFileUD *io_tofilep(lua_State *L)
 {
@@ -84,9 +109,16 @@ static IOFileUD *io_file_open(lua_State *L, const char *mode)
 {
   const char *fname = strdata(lj_lib_checkstr(L, 1));
   IOFileUD *iof = io_file_new(L);
-  iof->fp = fopen(fname, mode);
-  if (iof->fp == NULL)
+  iof->fp = lj_fopen(fname, mode);
+  if (iof->fp == NULL) {
+#if _MSC_VER >= 1400
+    char errbuf[256];
+    strerror_s(errbuf, sizeof(errbuf), errno);
+    luaL_argerror(L, 1, lj_strfmt_pushf(L, "%s: %s", fname, errbuf));
+#else
     luaL_argerror(L, 1, lj_strfmt_pushf(L, "%s: %s", fname, strerror(errno)));
+#endif
+  }
   return iof;
 }
 
@@ -124,7 +156,11 @@ static int io_file_close(lua_State *L, IOFileUD *iof)
 static int io_file_readnum(lua_State *L, FILE *fp)
 {
   lua_Number d;
+#if _MSC_VER >= 1400
+  if (fscanf_s(fp, LUA_NUMBER_SCAN, &d) == 1) {
+#else
   if (fscanf(fp, LUA_NUMBER_SCAN, &d) == 1) {
+#endif
     if (LJ_DUALNUM) {
       int32_t i = lj_num2int(d);
       if (d == (lua_Number)i && !tvismzero((cTValue *)&d)) {
@@ -406,7 +442,7 @@ LJLIB_CF(io_open)
   GCstr *s = lj_lib_optstr(L, 2);
   const char *mode = s ? strdata(s) : "r";
   IOFileUD *iof = io_file_new(L);
-  iof->fp = fopen(fname, mode);
+  iof->fp = lj_fopen(fname, mode);
   return iof->fp != NULL ? 1 : luaL_fileresult(L, 0, fname);
 }
 
@@ -436,7 +472,7 @@ LJLIB_CF(io_tmpfile)
 #if LJ_TARGET_PS3 || LJ_TARGET_PS4 || LJ_TARGET_PSVITA
   iof->fp = NULL; errno = ENOSYS;
 #else
-  iof->fp = tmpfile();
+  iof->fp = lj_tmpfile();
 #endif
   return iof->fp != NULL ? 1 : luaL_fileresult(L, 0, NULL);
 }
