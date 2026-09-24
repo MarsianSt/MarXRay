@@ -759,7 +759,7 @@ LPCSTR CScriptGameObject::get_smart_cover_description	() const {
 
 void CScriptGameObject::set_visual_name(LPCSTR visual)
 {
-	if (strcmp(visual, object().cNameVisual().c_str()) == 0)
+	if (xr_strcmp(visual, object().cNameVisual().c_str()) == 0)
 		return;
 
 	NET_Packet P;

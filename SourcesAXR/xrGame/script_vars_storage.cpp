@@ -283,7 +283,7 @@ int script_vars_dump(lua_State* L, CScriptVarsTable* svt, bool unpack) // дам
             LPCSTR key = *it->first;
             SCRIPT_VAR& sv = it->second;
             if (sv.is_key_boolean())
-                lua_pushboolean(L, 0 == strcmp(key, "true"));
+                lua_pushboolean(L, 0 == xr_strcmp(key, "true"));
             else if (sv.is_key_numeric())
                 lua_pushinteger(L, atoi(key));
             else

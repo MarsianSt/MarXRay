@@ -165,7 +165,7 @@ void nextTexture(char* tex, int texSize, int offset)
 		return;
 	size_t index = 0;
 	for (size_t i = 0; i != files->size(); i++)
-		if (strcmp((*files)[i], fn) == 0) {
+		if (xr_strcmp((*files)[i], fn) == 0) {
 			index = i;
 			break;
 		}
