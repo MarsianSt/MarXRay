@@ -699,34 +699,6 @@ void CMapListHelper::Load()
 		FS.update_path				(map_cfg_fn, "$game_levels$", (*fit).name.c_str());
 		LoadMapInfo					(map_cfg_fn, (*fit).name);
 	}
-	//scan all not laoded archieves
-	LPCSTR tmp_entrypoint			= "temporary_gamedata\\";
-	FS_Path* game_levels			= FS.get_path("$game_levels$");
-	xr_string prev_root				= game_levels->m_Root;
-	game_levels->_set_root			(tmp_entrypoint);
-
-	CLocatorAPI::archives_it it		= FS.m_archives.begin();
-	CLocatorAPI::archives_it it_e	= FS.m_archives.end();
-
-	for(;it!=it_e;++it)
-	{
-		CLocatorAPI::archive& A		= *it;
-		if(A.hSrcFile)				continue;
-
-		LPCSTR ln					= A.header->r_string("header", "level_name");
-		LPCSTR lv					= A.header->r_string("header", "level_ver");
-		FS.LoadArchive				(A, tmp_entrypoint);
-
-		string_path					map_cfg_fn;
-		FS.update_path				(map_cfg_fn, "$game_levels$", ln);
-
-		
-		xr_strcat					(map_cfg_fn,"\\level.ltx");
-		LoadMapInfo					(map_cfg_fn, ln, lv);
-		FS.unload_archive			(A);
-	}
-	game_levels->_set_root			(prev_root.c_str());
-
 
 	R_ASSERT2	(m_storage.size(), "unable to fill map list");
 	R_ASSERT2	(m_weathers.size(), "unable to fill weathers list");

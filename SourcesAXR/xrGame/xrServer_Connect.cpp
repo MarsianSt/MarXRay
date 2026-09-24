@@ -20,21 +20,10 @@
 LPCSTR xrServer::get_map_download_url(LPCSTR level_name, LPCSTR level_version)
 {
 	R_ASSERT(level_name && level_version);
-	LPCSTR ret_url = "";
-	CInifile* level_ini = pApp->GetArchiveHeader(level_name, level_version);
-	if (!level_ini)
-	{
-		if(!IsGameTypeSingle())
-			LogInfo("! Warning: level [%s][%s] has not header ltx", level_name, level_version);
+	if(!IsGameTypeSingle())
+		LogInfo("! Warning: level [%s][%s] has not header ltx", level_name, level_version);
 
-		return ret_url;
-	}
-
-	ret_url = level_ini->r_string_wb("header", "link").c_str();
-	if (!ret_url)
-		ret_url = "";
-	
-	return ret_url;
+	return "";
 }
 
 xrServer::EConnect xrServer::Connect(shared_str &session_name, GameDescriptionData & game_descr)

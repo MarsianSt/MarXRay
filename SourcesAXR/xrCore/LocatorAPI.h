@@ -31,43 +31,6 @@ public:
 
 		shared_str real_file_path;
 	};
-	struct	archive
-	{
-		shared_str				path;
-		void					*hSrcFile, *hSrcMap;
-		u32						size;
-		CInifile*				header;
-		u32						vfs_idx;
-		u32						modif = 0;
-		archive():hSrcFile(NULL),hSrcMap(NULL),header(NULL),size(0),vfs_idx(u32(-1)){}
-		void					open();
-		void					close();
-	};
-
-	// IMPORTNT: don't replace u32 with size_t for this struct
-	// (Letter A in the first word is forgotten intentionally,
-	//  size_t will blow up the engine compatibility with it's resources)
-	struct XRCORE_API archive_file_header
-	{
-		u16  size; // size of following members:
-		u32  size_real;
-		u32  size_compr;
-		u32  crc;
-		//char name[]; // there's a string with variable size between crc and ptr
-		string_path name; // but we use fixed-size string for simplicity
-		u32  ptr;
-
-		// Used in file name string size calculation
-		static constexpr auto ELEMENTS_SIZE = sizeof(size_real) + sizeof(size_compr) + sizeof(crc) + sizeof(ptr);
-
-		archive_file_header(IReader& reader);
-		archive_file_header(IWriter& writer, pcstr file_name, u32 real_size, u32 compressed_size, u32 crc_sum, u32 pointer);
-	};
-
-    DEFINE_VECTOR				(archive,archives_vec,archives_it);
-    archives_vec				m_archives;
-	void						LoadArchive		(archive& A, LPCSTR entrypoint=NULL);
-
 private:
 	struct	file_pred
 	{	
@@ -92,7 +55,6 @@ private:
 	u64							m_auth_code		;
 
 	void						Register		(LPCSTR name, u32 vfs, u32 crc, u32 ptr, u32 size_real, u32 size_compressed, u32 modif);
-	void						ProcessArchive	(LPCSTR path);
 	void						MountZDB		();
 	bool						select_zdb_archive(LPCSTR filename) const;
 	void						ProcessExternalAddons(LPCSTR base_path);
@@ -216,9 +178,6 @@ public:
     LPCSTR						update_path			(string_path& dest, LPCSTR initial, LPCSTR src);
 
 	int							file_list			(FS_FileSet& dest, LPCSTR path, u32 flags=FS_ListFiles, LPCSTR mask=0);
-
-	bool						load_all_unloaded_archives();
-	void						unload_archive		(archive& A);
 
 	void						auth_generate		(xr_vector<shared_str>&	ignore, xr_vector<shared_str>&	important);
 	u64							auth_get			();

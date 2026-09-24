@@ -14,7 +14,6 @@
 #include "FS_internal.h"
 #include "stream_reader.h"
 #include "file_stream_reader.h"
-#include "Crypto/trivial_encryptor.h"
 #include "xrFS.h"
 #include <filesystem>
 #include <algorithm>
@@ -275,210 +274,6 @@ void CLocatorAPI::Register		(LPCSTR name, u32 vfs, u32 crc, u32 ptr, u32 size_re
 	}
 }
 
-IReader* open_chunk(void* ptr, u32 ID, pcstr archiveName, u32 archiveSize, bool shouldDecrypt = false)
-{
-	BOOL			res;
-	u32				dwType, dwSize;
-	DWORD			read_byte;
-	u32 pt			= SetFilePointer(ptr,0,0,FILE_BEGIN); VERIFY(pt!=INVALID_SET_FILE_POINTER);
-	while (true){
-		res			= ReadFile	(ptr,&dwType,4,&read_byte,0); 
-		if(read_byte==0)
-			return NULL;
-//.		VERIFY(res&&(read_byte==4));
-
-		res			= ReadFile	(ptr,&dwSize,4,&read_byte,0); 
-		if(read_byte==0)
-			return NULL;
-
-//.		VERIFY(res&&(read_byte==4));
-
-		if ((dwType&(~CFS_CompressMark)) == ID) {
-			u8* src_data	= xr_alloc<u8>(dwSize);
-			res				= ReadFile	(ptr,src_data,dwSize,&read_byte,0); VERIFY(res&&(read_byte==dwSize));
-			if (dwType&CFS_CompressMark) {
-				u8*	dest = nullptr;
-				unsigned dest_sz = 0;
-
-				if (shouldDecrypt) // Try WW key first
-					g_trivial_encryptor.decode(src_data, dwSize, src_data);
-
-				bool result = _decompressLZ(&dest, &dest_sz, src_data, dwSize, archiveSize);
-
-				if (!result && shouldDecrypt)
-				{
-					// Let's try to decode with RU key
-					g_trivial_encryptor.encode(src_data, dwSize, src_data); // rollback
-					g_trivial_encryptor.decode(src_data, dwSize, src_data, trivial_encryptor::key_flag::russian);
-					result = _decompressLZ(&dest, &dest_sz, src_data, dwSize, archiveSize);
-				}
-				R_ASSERT2(result, make_string("Can't decompress archive %s", archiveName));
-
-				xr_free			(src_data);
-				return xr_new<CTempReader>(dest,dest_sz,0);
-			} else {
-				return xr_new<CTempReader>(src_data,dwSize,0);
-			}
-		}else{ 
-			pt		= SetFilePointer(ptr,dwSize,0,FILE_CURRENT); 
-			if (pt==INVALID_SET_FILE_POINTER) return 0;
-		}
-	}
-	return 0;
-};
-
-
-void CLocatorAPI::LoadArchive(archive& A, LPCSTR entrypoint)
-{
-	ZoneScoped;
-
-	// Create base path
-	string_path					fs_entry_point;
-	bool shouldDecrypt			= false;
-	fs_entry_point[0]			= 0;
-	if(A.header)
-	{
-
-		shared_str read_path	= A.header->r_string("header","entry_point");
-		if(0==stricmp(read_path.c_str(),"gamedata"))
-		{
-			read_path				= "$fs_root$";
-			PathPairIt P			= pathes.find(read_path.c_str()); 
-			if(P!=pathes.end())
-			{
-				FS_Path* root			= P->second;
-//				R_ASSERT3				(root, "path not found ", read_path.c_str());
-				xr_strcpy				(fs_entry_point, sizeof(fs_entry_point), root->m_Path);
-			}
-			xr_strcat					(fs_entry_point,"gamedata\\");
-		}
-		else
-		{
-			string256			alias_name;
-			alias_name[0]		= 0;
-			R_ASSERT2			(*read_path.c_str()=='$', read_path.c_str());
-
-			int count			= sscanf(read_path.c_str(),"%[^\\]s", alias_name);
-			R_ASSERT2			(count==1,read_path.c_str());
-
-			PathPairIt P		= pathes.find(alias_name); 
-
-			if(P!=pathes.end())
-			{
-				FS_Path* root		= P->second;
-	//			R_ASSERT3			(root, "path not found ", alias_name);
-				xr_strcpy			(fs_entry_point, sizeof(fs_entry_point), root->m_Path);
-			}
-			xr_strcat			(fs_entry_point, sizeof(fs_entry_point), read_path.c_str()+xr_strlen(alias_name)+1);
-		}
-
-	}
-	else
-	{
-        if (!strstr(A.path.c_str(), ".xdb"))
-        {
-#ifdef DEBUG
-            LogInfo("Assuming that [%s] is encrypted SoC archive", A.path.c_str());
-#endif
-            shouldDecrypt = true;
-        }
-
-        auto P = pathes.find("$fs_root$");
-        if (P != pathes.end())
-        {
-            FS_Path* root = P->second;
-            // R_ASSERT3 (root, "path not found ", read_path.c_str());
-            xr_strcpy(fs_entry_point, sizeof fs_entry_point, root->m_Path);
-        }
-        xr_strcat(fs_entry_point, "gamedata\\");
-	}
-
-	if(entrypoint)
-		xr_strcpy				(fs_entry_point, sizeof(fs_entry_point), entrypoint);
-
-	// Read FileSystem
-	A.open();
-    IReader* hdr = open_chunk(A.hSrcFile, 1, A.path.c_str(), A.size, shouldDecrypt);
-
-    R_ASSERT(hdr);
-
-    while (!hdr->eof())
-    {
-        archive_file_header header{ *hdr };
-
-        string_path full;
-        strconcat(full, fs_entry_point, header.name);
-        Register(full, A.vfs_idx, header.crc, header.ptr, header.size_real, header.size_compr, A.modif);
-    }
-    hdr->close();
-}
-
-void CLocatorAPI::archive::open()
-{
-	struct stat file_info;
-
-	// Open the file
-	if (hSrcFile && hSrcMap)
-		return;
-
-	hSrcFile = CreateFile(*path, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, nullptr, OPEN_EXISTING, 0, nullptr);
-	R_ASSERT(hSrcFile != INVALID_HANDLE_VALUE);
-	hSrcMap = CreateFileMapping(hSrcFile, nullptr, PAGE_READONLY, 0, 0, nullptr);
-	R_ASSERT(hSrcMap != INVALID_HANDLE_VALUE);
-	stat(*path, &file_info);
-	modif = file_info.st_mtime;
-	size = file_info.st_size;
-	R_ASSERT(size > 0);
-}
-
-void CLocatorAPI::archive::close()
-{
-	CloseHandle		(hSrcMap);
-	hSrcMap			= NULL;
-	CloseHandle		(hSrcFile);
-	hSrcFile		= NULL;
-}
-
-void CLocatorAPI::ProcessArchive(LPCSTR _path)
-{
-	ZoneScoped;
-
-	// find existing archive
-	shared_str path				= _path;
-
-	for (archives_it it=m_archives.begin(); it!=m_archives.end(); ++it)
-		if (it->path==path)	
-				return;
-
-	m_archives.push_back		(archive());
-	archive& A					= m_archives.back();
-	A.vfs_idx					= m_archives.size()-1;
-	A.path						= path;
-
-	A.open						();
-
-	// Read header
-	BOOL bProcessArchiveLoading = TRUE;
-
-//	DUMMY_STUFF	*g_temporary_stuff_subst	= NULL;
-//	g_temporary_stuff_subst					= g_temporary_stuff;
-//	g_temporary_stuff						= NULL;
-
-	IReader* hdr				= open_chunk(A.hSrcFile, CFS_HeaderChunkID, A.path.c_str(), A.size);
-	if(hdr)
-	{
-		A.header				= xr_new<CInifile>(hdr,"archive_header");
-		hdr->close				();
-		bProcessArchiveLoading	= A.header->r_bool("header","auto_load");
-	}
-//	g_temporary_stuff			= g_temporary_stuff_subst;
-	
-	if(bProcessArchiveLoading || strstr(Core.Params, "-auto_load_arch"))
-		LoadArchive				(A);
-	else
-		A.close					();
-}
-
 void CLocatorAPI::MountZDB()
 {
 	ZoneScoped;
@@ -609,44 +404,6 @@ void CLocatorAPI::prefetch_zdb(const xr_vector<shared_str>& names)
 	xrFS::instance().prefetch_virtual(paths);
 }
 
-void CLocatorAPI::unload_archive(CLocatorAPI::archive& A)
-{
-	files_it	I 	= m_files.begin();
-	for (; I!=m_files.end(); ++I)
-	{
-		const file& entry = *I;
-		if(entry.vfs==A.vfs_idx)
-		{
-#ifndef MASTER_GOLD
-			LogInfo("unregistering file [%s]", I->name);
-#endif // #ifndef MASTER_GOLD
-			char* str		= LPSTR(I->name);
-			xr_free			(str);
-			m_files.erase	(I);
-			break;
-		}
-	}	
-	A.close();
-}
-
-bool CLocatorAPI::load_all_unloaded_archives()
-{
-	archives_it it		= m_archives.begin();
-	archives_it it_e	= m_archives.end();
-	bool res = false;
-	for(;it!=it_e;++it)
-	{
-		archive& A = *it;
-		if(A.hSrcFile==NULL)
-		{
-			LoadArchive(A);
-			res = true;
-		}
-	}
-	return res;
-}
-
-
 void CLocatorAPI::ProcessOne(LPCSTR path, void* _F, bool bNoRecurse)
 {
 	ZoneScoped;
@@ -675,10 +432,7 @@ void CLocatorAPI::ProcessOne(LPCSTR path, void* _F, bool bNoRecurse)
 		Register	(N,0xffffffff,0,0,F.size,F.size,(u32)F.time_write);
 		Recurse		(N, bNoRecurse);
 	} else {
-		if (!m_Flags.is(flLoadingAddons) && strext(N) && (0==strncmp(strext(N),".db",3) || 0==strncmp(strext(N),".xdb",4))  )
-			ProcessArchive	(N);
-		else												
-			Register		(N,0xffffffff,0,0,F.size,F.size,(u32)F.time_write);
+		Register		(N,0xffffffff,0,0,F.size,F.size,(u32)F.time_write);
 	}
 }
 
@@ -984,7 +738,7 @@ void CLocatorAPI::_initialize	(u32 flags, LPCSTR target_folder, LPCSTR fs_name)
 	MountZDB();
 
 	u32	M2			= Memory.mem_usage();
-	LogInfo("FS: %d files cached %d archives, %dKb memory used.",m_files.size(),m_archives.size(), (M2-M1)/1024);
+	LogInfo("FS: %d files cached, %dKb memory used.",m_files.size(), (M2-M1)/1024);
 
 	m_Flags.set		(flReady,TRUE);
 
@@ -1036,13 +790,6 @@ void CLocatorAPI::_destroy		()
 		xr_delete	(p_it->second);
     }
 	pathes.clear	();
-	for				(archives_it a_it=m_archives.begin(); a_it!=m_archives.end(); a_it++)
-    {
-
-		xr_delete	(a_it->header);
-		a_it->close	();
-    }
-    m_archives.clear	();
 }
 
 const CLocatorAPI::file* CLocatorAPI::exist			(const char* fn)
@@ -1300,95 +1047,48 @@ void CLocatorAPI::file_from_cache	(T *&R, LPCSTR fname, const u32 &fname_size, c
 void CLocatorAPI::file_from_archive	(IReader *&R, LPCSTR fname, const file &desc)
 {
 	// zdb virtual FS entry: decompress on the fly via xrFS
-	if (desc.vfs == ZDB_VFS)
+	if (desc.vfs != ZDB_VFS)
 	{
-		std::vector<char> data;
-		if (!xrFS::instance().read_virtual(fname, data))
-		{
-			R = 0;
-			return;
-		}
-		u8* dest				= xr_alloc<u8>(data.size());
-		memcpy					(dest, data.data(), data.size());
-		R						= xr_new<CTempReader>(dest, (int)data.size(), 0);
+		R = 0;
 		return;
 	}
 
-	// Archived one
-	archive& A					= m_archives[desc.vfs];
-	u32 start					= (desc.ptr/dwAllocGranularity)*dwAllocGranularity;
-	u32 end						= (desc.ptr+desc.size_compressed)/dwAllocGranularity;
-	if ((desc.ptr+desc.size_compressed)%dwAllocGranularity)	end+=1;
-	end							*= dwAllocGranularity;
-	if (end>A.size)				end = A.size;
-	u32 sz						= (end-start);
-	u8* ptr						= (u8*)MapViewOfFile(A.hSrcMap, FILE_MAP_READ, 0, start, sz); VERIFY3(ptr,"cannot create file mapping on file",fname);
-
-	string512					temp;
-	xr_sprintf					(temp, sizeof(temp),"%s:%s",*A.path,fname);
-
-#ifdef FS_DEBUG
-	register_file_mapping		(ptr,sz,temp);
-#endif // DEBUG
-
-	u32 ptr_offs				= desc.ptr-start;
-	if (desc.size_real == desc.size_compressed) {
-		R						= xr_new<CPackReader>(ptr,ptr+ptr_offs,desc.size_real);
+	std::vector<char> data;
+	if (!xrFS::instance().read_virtual(fname, data))
+	{
+		R = 0;
 		return;
 	}
-
-	// Compressed
-	u8*							dest = xr_alloc<u8>(desc.size_real);
-	rtc_decompress				(dest,desc.size_real,ptr+ptr_offs,desc.size_compressed);
-	R							= xr_new<CTempReader>(dest,desc.size_real,0);
-	UnmapViewOfFile				(ptr);
-
-#ifdef FS_DEBUG
-	unregister_file_mapping		(ptr,sz);
-#endif // DEBUG
+	u8* dest				= xr_alloc<u8>(data.size());
+	memcpy					(dest, data.data(), data.size());
+	R						= xr_new<CTempReader>(dest, (int)data.size(), 0);
 }
 
 void CLocatorAPI::file_from_archive	(CStreamReader *&R, LPCSTR fname, const file &desc)
 {
 	// zdb virtual FS entry: decompress fully, serve from a page-file backed
 	// mapping (CStreamReader only unmaps views; handle closed in _destroy)
-	if (desc.vfs == ZDB_VFS)
+	if (desc.vfs != ZDB_VFS)
 	{
-		std::vector<char> data;
-		if (!xrFS::instance().read_virtual(fname, data))
-		{
-			R = 0;
-			return;
-		}
-		HANDLE hMap				= CreateFileMappingW(INVALID_HANDLE_VALUE, nullptr, PAGE_READWRITE, 0, (DWORD)data.size(), nullptr);
-		R_ASSERT				(hMap);
-		u8* pv					= (u8*)MapViewOfFile(hMap, FILE_MAP_WRITE, 0, 0, 0);
-		R_ASSERT				(pv);
-		memcpy					(pv, data.data(), data.size());
-		UnmapViewOfFile			(pv);
-		R						= xr_new<CStreamReader>();
-		R->construct			(hMap, 0, (u32)data.size(), (u32)data.size(), BIG_FILE_READER_WINDOW_SIZE);
-		m_zdb_stream_maps.push_back(reinterpret_cast<void*>(hMap));
+		R = 0;
 		return;
 	}
 
-	archive						&A = m_archives[desc.vfs];
-	R_ASSERT2					(
-		desc.size_compressed == desc.size_real,
-		make_string(
-			"cannot use stream reading for compressed data %s, do not compress data to be streamed",
-			fname
-		)
-	);
-
-	R							= xr_new<CStreamReader>();
-	R->construct				(
-		A.hSrcMap,
-		desc.ptr,
-		desc.size_compressed,
-		A.size,
-		BIG_FILE_READER_WINDOW_SIZE
-	);
+	std::vector<char> data;
+	if (!xrFS::instance().read_virtual(fname, data))
+	{
+		R = 0;
+		return;
+	}
+	HANDLE hMap				= CreateFileMappingW(INVALID_HANDLE_VALUE, nullptr, PAGE_READWRITE, 0, (DWORD)data.size(), nullptr);
+	R_ASSERT				(hMap);
+	u8* pv					= (u8*)MapViewOfFile(hMap, FILE_MAP_WRITE, 0, 0, 0);
+	R_ASSERT				(pv);
+	memcpy					(pv, data.data(), data.size());
+	UnmapViewOfFile			(pv);
+	R						= xr_new<CStreamReader>();
+	R->construct			(hMap, 0, (u32)data.size(), (u32)data.size(), BIG_FILE_READER_WINDOW_SIZE);
+	m_zdb_stream_maps.push_back(reinterpret_cast<void*>(hMap));
 }
 
 void CLocatorAPI::copy_file_to_build	(IWriter *W, IReader *r)
@@ -1967,46 +1667,6 @@ BOOL CLocatorAPI::can_modify_file(LPCSTR path, LPCSTR name)
 	string_path			temp;       
     update_path			(temp,path,name);
 	return can_modify_file(temp);
-}
-
-CLocatorAPI::archive_file_header::archive_file_header(IReader& reader)
-{
-    size = reader.r_u16();
-    size_real = reader.r_u32();
-    size_compr = reader.r_u32();
-    crc = reader.r_u32();
-
-    const size_t name_length = size - ELEMENTS_SIZE;
-    VERIFY(name_length < sizeof(name));
-
-    reader.r(&name, name_length);
-    name[name_length] = 0;
-
-    ptr = reader.r_u32();
-}
-
-CLocatorAPI::archive_file_header::archive_file_header(IWriter& writer,
-    pcstr file_name, u32 real_size, u32 compressed_size, u32 crc_sum, u32 pointer
-)
-    : size_real(real_size),
-      size_compr(compressed_size),
-      crc(crc_sum),
-      ptr(pointer)
-{
-    const size_t file_name_size = (xr_strlen(file_name) + 0) * sizeof(char);
-    const size_t buffer_size = file_name_size + ELEMENTS_SIZE;
-    VERIFY(buffer_size <= size_t(u16(-1)));
-    size = u16(buffer_size);
-
-    writer.w_u16(size);
-    writer.w_u32(size_real);
-    writer.w_u32(size_compr);
-    writer.w_u32(crc);
-
-    writer.w(file_name, file_name_size);
-    xr_strcpy(name, file_name);
-
-    writer.w_u32(ptr);
 }
 
 void CLocatorAPI::ProcessExternalAddons(LPCSTR base_path)
