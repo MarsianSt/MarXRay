@@ -234,22 +234,6 @@ IC BOOL material_callback(collide::rq_result& result, LPVOID params)
 }
 #endif
 
-#if 0
-static LPCSTR state_to_string (const CLensFlare::LFState &state)
-{
-	switch (state) {
-		case CLensFlare::lfsNone : return("none");
-		case CLensFlare::lfsIdle : return("idle");
-		case CLensFlare::lfsHide : return("hide");
-		case CLensFlare::lfsShow : return("show");
-		default : NODEFAULT;
-	}
-#ifdef DEBUG
-	return			(0);
-#endif // DEBUG
-}
-#endif
-
 static Fvector2 RayDeltas[CLensFlare::MAX_RAYS] = 
 {
 	{ 0,		0 },
@@ -297,7 +281,6 @@ void CLensFlare::OnFrame(shared_str id)
         }
     break;
     }
-//	LogInfo("%6d : [%s] -> [%s]", Device.dwFrame, state_to_string(previous_state), state_to_string(m_State));
     clamp(m_StateBlend,0.f,1.f);
 
     if ((m_Current==0)||(LightColor.magnitude_rgb()==0.f)){bRender=false; return;}
