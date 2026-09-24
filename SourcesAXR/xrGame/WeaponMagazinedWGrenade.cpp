@@ -774,11 +774,12 @@ bool CWeaponMagazinedWGrenade::PlayAnimAimEnd()
 	else if (guns_aim_end_anm && strstr(guns_aim_end_anm, "_jammed"))
 	{
 		char* jammed_position = strstr(guns_aim_end_anm, "_jammed");
-		int jammed_length = static_cast<int>(strlen("_jammed"));
+		int jammed_length = static_cast<int>(sizeof("_jammed") - 1);
+		const size_t prefix = static_cast<size_t>(jammed_position - guns_aim_end_anm);
 
 		char new_guns_aim_end_anm[100];
-		strncpy(new_guns_aim_end_anm, guns_aim_end_anm, jammed_position - guns_aim_end_anm);
-		strcpy(new_guns_aim_end_anm + (jammed_position - guns_aim_end_anm), guns_aim_end_anm + (jammed_position - guns_aim_end_anm) + jammed_length);
+		memcpy(new_guns_aim_end_anm, guns_aim_end_anm, prefix);
+		memcpy(new_guns_aim_end_anm + prefix, guns_aim_end_anm + prefix + jammed_length, xr_strlen(guns_aim_end_anm + prefix + jammed_length) + 1);
 
 		if (isHUDAnimationExist(new_guns_aim_end_anm))
 		{
@@ -791,11 +792,12 @@ bool CWeaponMagazinedWGrenade::PlayAnimAimEnd()
 	else if (strstr(guns_aim_end_anm, "_empty"))
 	{
 		char* empty_position = strstr(guns_aim_end_anm, "_empty");
-		int empty_length = static_cast<int>(strlen("_empty"));
+		int empty_length = static_cast<int>(sizeof("_empty") - 1);
+		const size_t prefix = static_cast<size_t>(empty_position - guns_aim_end_anm);
 
 		char new_guns_aim_end_anm[100];
-		strncpy(new_guns_aim_end_anm, guns_aim_end_anm, empty_position - guns_aim_end_anm);
-		strcpy(new_guns_aim_end_anm + (empty_position - guns_aim_end_anm), guns_aim_end_anm + (empty_position - guns_aim_end_anm) + empty_length);
+		memcpy(new_guns_aim_end_anm, guns_aim_end_anm, prefix);
+		memcpy(new_guns_aim_end_anm + prefix, guns_aim_end_anm + prefix + empty_length, xr_strlen(guns_aim_end_anm + prefix + empty_length) + 1);
 
 		if (isHUDAnimationExist(new_guns_aim_end_anm))
 		{
@@ -834,11 +836,12 @@ void CWeaponMagazinedWGrenade::PlayAnimIdle()
 				else if (guns_aim_start_anm && strstr(guns_aim_start_anm, "_jammed"))
 				{
 					char* jammed_position = strstr(guns_aim_start_anm, "_jammed");
-					int jammed_length = static_cast<int>(strlen("_jammed"));
+					int jammed_length = static_cast<int>(sizeof("_jammed") - 1);
+					const size_t prefix = static_cast<size_t>(jammed_position - guns_aim_start_anm);
 
 					char new_guns_aim_start_anm[100];
-					strncpy(new_guns_aim_start_anm, guns_aim_start_anm, jammed_position - guns_aim_start_anm);
-					strcpy(new_guns_aim_start_anm + (jammed_position - guns_aim_start_anm), guns_aim_start_anm + (jammed_position - guns_aim_start_anm) + jammed_length);
+					memcpy(new_guns_aim_start_anm, guns_aim_start_anm, prefix);
+					memcpy(new_guns_aim_start_anm + prefix, guns_aim_start_anm + prefix + jammed_length, xr_strlen(guns_aim_start_anm + prefix + jammed_length) + 1);
 
 					if (isHUDAnimationExist(new_guns_aim_start_anm))
 					{
@@ -849,11 +852,12 @@ void CWeaponMagazinedWGrenade::PlayAnimIdle()
 				else if (guns_aim_start_anm && strstr(guns_aim_start_anm, "_empty"))
 				{
 					char* empty_position = strstr(guns_aim_start_anm, "_empty");
-					int empty_length = static_cast<int>(strlen("_empty"));
+					int empty_length = static_cast<int>(sizeof("_empty") - 1);
+					const size_t prefix = static_cast<size_t>(empty_position - guns_aim_start_anm);
 
 					char new_guns_aim_start_anm[100];
-					strncpy(new_guns_aim_start_anm, guns_aim_start_anm, empty_position - guns_aim_start_anm);
-					strcpy(new_guns_aim_start_anm + (empty_position - guns_aim_start_anm), guns_aim_start_anm + (empty_position - guns_aim_start_anm) + empty_length);
+					memcpy(new_guns_aim_start_anm, guns_aim_start_anm, prefix);
+					memcpy(new_guns_aim_start_anm + prefix, guns_aim_start_anm + prefix + empty_length, xr_strlen(guns_aim_start_anm + prefix + empty_length) + 1);
 
 					if (isHUDAnimationExist(new_guns_aim_start_anm))
 					{
@@ -876,11 +880,12 @@ void CWeaponMagazinedWGrenade::PlayAnimIdle()
 				else if (guns_aim_anm_full && strstr(guns_aim_anm_full, "_jammed"))
 				{
 					char* jammed_position = strstr(guns_aim_anm_full, "_jammed");
-					int jammed_length = static_cast<int>(strlen("_jammed"));
+					int jammed_length = static_cast<int>(sizeof("_jammed") - 1);
+					const size_t prefix = static_cast<size_t>(jammed_position - guns_aim_anm_full);
 
 					char new_guns_aim_anm[100];
-					strncpy(new_guns_aim_anm, guns_aim_anm_full, jammed_position - guns_aim_anm_full);
-					strcpy(new_guns_aim_anm + (jammed_position - guns_aim_anm_full), guns_aim_anm_full + (jammed_position - guns_aim_anm_full) + jammed_length);
+					memcpy(new_guns_aim_anm, guns_aim_anm_full, prefix);
+					memcpy(new_guns_aim_anm + prefix, guns_aim_anm_full + prefix + jammed_length, xr_strlen(guns_aim_anm_full + prefix + jammed_length) + 1);
 
 					if (isHUDAnimationExist(new_guns_aim_anm))
 					{
@@ -891,11 +896,12 @@ void CWeaponMagazinedWGrenade::PlayAnimIdle()
 				else if (guns_aim_anm_full && strstr(guns_aim_anm_full, "_empty"))
 				{
 					char* empty_position = strstr(guns_aim_anm_full, "_empty");
-					int empty_length = static_cast<int>(strlen("_empty"));
+					int empty_length = static_cast<int>(sizeof("_empty") - 1);
+					const size_t prefix = static_cast<size_t>(empty_position - guns_aim_anm_full);
 
 					char new_guns_aim_anm[100];
-					strncpy(new_guns_aim_anm, guns_aim_anm_full, empty_position - guns_aim_anm_full);
-					strcpy(new_guns_aim_anm + (empty_position - guns_aim_anm_full), guns_aim_anm_full + (empty_position - guns_aim_anm_full) + empty_length);
+					memcpy(new_guns_aim_anm, guns_aim_anm_full, prefix);
+					memcpy(new_guns_aim_anm + prefix, guns_aim_anm_full + prefix + empty_length, xr_strlen(guns_aim_anm_full + prefix + empty_length) + 1);
 
 					if (isHUDAnimationExist(new_guns_aim_anm))
 					{
