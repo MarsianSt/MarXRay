@@ -876,9 +876,6 @@ void SndShockEffector::Update()
 #define DELTA_ANGLE_Z	0.5f * PI / 180
 #define ANGLE_SPEED		1.5f	
 
-const float	_base_fov		= 170.f;
-const float	_max_fov_add	= 30.f;
-
 CControllerPsyHitCamEffector::CControllerPsyHitCamEffector(ECamEffectorType type, const Fvector &src_pos, 
 														   const Fvector &target_pos, float time, 
 														   float base_fov, float dest_fov)
@@ -931,7 +928,6 @@ BOOL CControllerPsyHitCamEffector::ProcessCam(SCamEffectorInfo& info, float m_fF
 
 	Mdef.c.mad	(m_position_source, m_direction, cur_dist);
 	info.fFov = m_base_fov + (m_dest_fov-m_base_fov)*perc_past;
-	//info.fFov = _base_fov - _max_fov_add*perc_past;
 
 	m_time_current	+= Device.fTimeDelta;
 	

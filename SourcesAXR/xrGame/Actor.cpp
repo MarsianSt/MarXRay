@@ -85,12 +85,6 @@
 #include "CustomDetector.h"
 #include "CustomBackpack.h"
 
-const u32		patch_frames	= 50;
-const float		respawn_delay	= 1.f;
-const float		respawn_auto	= 7.f;
-
-static float IReceived = 0;
-static float ICoincidenced = 0;
 extern float cammera_into_collision_shift ;
 
 u32	death_camera_mode = READ_IF_EXISTS(pAdvancedSettings, r_u32, "gameplay", "death_camera_mode", 1);
@@ -99,11 +93,6 @@ string32		ACTOR_DEFS::g_quick_use_slots[4]={NULL, NULL, NULL, NULL};
 //skeleton
 
 extern bool g_block_all_except_movement;
-
-static Fbox		bbStandBox;
-static Fbox		bbCrouchBox;
-static Fvector	vFootCenter;
-static Fvector	vFootExt;
 
 Flags32			psActorFlags=
 {
@@ -1815,7 +1804,6 @@ void CActor::RenderIndicator			(Fvector dpos, float r1, float r2, const ui_shade
 };
 
 static float mid_size = 0.097f;
-static float fontsize = 15.0f;
 static float upsize	= 0.33f;
 void CActor::RenderText				(LPCSTR Text, Fvector dpos, float* pdup, u32 color)
 {

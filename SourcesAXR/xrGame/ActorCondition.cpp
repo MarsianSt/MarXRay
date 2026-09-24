@@ -1522,7 +1522,6 @@ bool CActorCondition::PlayHitSound(SHit* pHDS)
 	{
 		case ALife::eHitTypeTelepatic:
 			return false;
-			break;
 		case ALife::eHitTypeShock:
 		case ALife::eHitTypeStrike:
 		case ALife::eHitTypeWound:
@@ -1531,14 +1530,12 @@ bool CActorCondition::PlayHitSound(SHit* pHDS)
 		case ALife::eHitTypeWound_2:
 //		case ALife::eHitTypePhysicStrike:
 			return true;
-			break;
 
 		case ALife::eHitTypeRadiation:
 		case ALife::eHitTypeBurn:
 		case ALife::eHitTypeLightBurn:
 		case ALife::eHitTypeChemicalBurn:
 			return (pHDS->damage()>0.017f); //field zone threshold
-			break;
 		default:
 			return true;
 	}

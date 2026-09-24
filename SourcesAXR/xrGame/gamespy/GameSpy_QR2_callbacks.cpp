@@ -283,7 +283,7 @@ int __cdecl callback_count(qr2_key_type keytype, void *userdata)
 	case key_player:
 		{
 			return pServer->GetPlayersCount();
-		}break;
+		}
 	case key_team:
 		{
 			if (!pServer->game) return 0;
@@ -300,11 +300,10 @@ int __cdecl callback_count(qr2_key_type keytype, void *userdata)
 					R_ASSERT(0);
 					return 0;
 			}
-		}break;
+		}
 	default:
 		return 0;
 	}
-	//return 0;
 };
 
 void __cdecl callback_adderror(qr2_error_t error, gsi_char *errmsg, void *userdata)

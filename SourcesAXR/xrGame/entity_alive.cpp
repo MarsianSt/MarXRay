@@ -510,12 +510,12 @@ ALife::ERelationType CEntityAlive::tfGetRelationType	(const CEntityAlive *tpEnti
 	int relation = MONSTER_COMMUNITY::relation(this->monster_community->index(), tpEntityAlive->monster_community->index());
 
 	switch(relation) {
-		case 1:		return(ALife::eRelationTypeFriend);		break;
-		case 0:		return(ALife::eRelationTypeNeutral);	break;
-		case -1:	return(ALife::eRelationTypeEnemy);		break;
-		case -2:	return(ALife::eRelationTypeWorstEnemy);	break;
+		case 1:		return(ALife::eRelationTypeFriend);
+		case 0:		return(ALife::eRelationTypeNeutral);
+		case -1:	return(ALife::eRelationTypeEnemy);
+		case -2:	return(ALife::eRelationTypeWorstEnemy);
 		
-		default:	return(ALife::eRelationTypeDummy);		break;
+		default:	return(ALife::eRelationTypeDummy);
 	}
 };
 

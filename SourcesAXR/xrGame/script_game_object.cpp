@@ -865,15 +865,6 @@ bool CScriptGameObject::Use(CScriptGameObject* obj)
 		if (!pOtherOwner)
 			return ret;
 
-		/*
-		CEntityAlive* e = smart_cast<CEntityAlive*>(pOtherOwner);
-		if (e && e->g_Alive())
-		{
-			actor->RunTalkDialog(pOtherOwner, false);
-			return true;
-		}
-		*/
-
 		ActorMenu.SetActor(pActorInv);
 		ActorMenu.SetPartner(pOtherOwner);
 

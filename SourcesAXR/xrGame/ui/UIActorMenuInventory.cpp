@@ -2319,7 +2319,6 @@ void CUIActorMenu::RefreshConsumableCells()
 		CEatableItem* eitm = smart_cast<CEatableItem*>((CEatableItem*)ci->m_pData);
 		if (eitm)
 		{
-			Fvector2 cp = GetUICursor().GetCursorPosition(); // XXX: This is unused
 			CUIDragDropListEx* invlist = GetListByType(iActorBag);
 
 			CUICellItem* parent = invlist->RemoveItem(ci, true);

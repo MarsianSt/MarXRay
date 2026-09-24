@@ -610,12 +610,12 @@ std::string	CPhysicsShellHolder::dump(EDumpType type) const
 {
 	switch(type)
 	{
-	case	base:				return dbg_object_base_dump_string( this );						break;   
-	case	poses:				return dbg_object_poses_dump_string( this );					break;
-	case	vis_geom:			return dbg_object_visual_geom_dump_string( this );				break;
-	case	props:				return dbg_object_props_dump_string( this );					break;
-	case	full:				return dbg_object_full_dump_string( this);						break;
-	case	full_capped:		return dbg_object_full_capped_dump_string( this );				break;
+	case	base:				return dbg_object_base_dump_string( this );
+	case	poses:				return dbg_object_poses_dump_string( this );
+	case	vis_geom:			return dbg_object_visual_geom_dump_string( this );
+	case	props:				return dbg_object_props_dump_string( this );
+	case	full:				return dbg_object_full_dump_string( this);
+	case	full_capped:		return dbg_object_full_capped_dump_string( this );
 	default: NODEFAULT;			return std::string("fail!");
 	}
 
