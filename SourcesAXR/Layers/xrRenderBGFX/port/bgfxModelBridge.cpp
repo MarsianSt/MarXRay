@@ -71,7 +71,7 @@ extern "C" void bgfxSubmitSkinnedFrame(const bgfxDynamicVisualEntry* entries,
 		case MT_PARTICLE_GROUP:		// CParticleGroup
 			// Game particle objects (CParticlesObject::renderable_Render ->
 			// add_Visual) arrive through this accumulator, not the level's
-			// Visuals array. They submit into their own view (kView=6).
+			// Visuals array. They submit into the sky view (kView=2).
 			bgfxDrawParticleVisual(v);
 			++drawn;
 			break;

@@ -11,6 +11,7 @@
 
 #include "..\..\xrEngine\Render.h"
 #include "port\bgfxModelBridge.h"
+#include "port\bgfxDetails.h"
 
 class bgfxRenderTarget : public IRender_Target
 {
@@ -149,8 +150,9 @@ public:
     {
         bgfxLoadGeometry();
         bgfxLoadVisuals(fs);
+        bgfxDetailsLoad();
     }
-    virtual void level_Unload() override {}
+    virtual void level_Unload() override { bgfxDetailsUnload(); }
 
     virtual HRESULT shader_compile(LPCSTR, DWORD const*, UINT, LPCSTR, LPCSTR, DWORD, void*&) override
     {
@@ -231,6 +233,7 @@ public:
         bgfxRenderEnvironmentSky();
         bgfxRenderSceneObjects();
         bgfxRenderWorld();
+        bgfxDetailsRender();    // grass / detail objects (level.details)
         bgfxRenderDynamic(0);   // world dynamics: flush CPU-side visuals to the port
         // R2 combine (flares over scene) + R2 forward (rain/thunder after sorted).
         bgfxRenderEnvironmentFx();

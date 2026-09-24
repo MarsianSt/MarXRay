@@ -2,7 +2,6 @@
 #pragma hdrstop
 
 #include "ModelPool.h"
-#include "bgfxStubParticles.h"
 
 #ifndef _EDITOR
 	#include "../../../xrEngine/IGame_Persistent.h"

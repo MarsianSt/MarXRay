@@ -140,8 +140,11 @@
     <ClInclude Include="port\Animation.h" />
     <ClInclude Include="port\AnimationKeyCalculate.h" />
     <ClInclude Include="port\bgfxD3DX.h" />
+    <ClInclude Include="port\bgfxDetails.h" />
+    <ClInclude Include="port\DetailFormat.h" />
     <ClInclude Include="port\bgfxGpuCompat.h" />
     <ClInclude Include="port\bgfxModelBridge.h" />
+    <ClInclude Include="port\bgfxBlenderParticle.h" />
     <ClInclude Include="port\bgfxParticleRender.h" />
     <ClInclude Include="port\bgfxRenderCompat.h" />
     <ClInclude Include="port\bgfxResourceManager.h" />
@@ -239,6 +242,9 @@
     <ClCompile Include="port/bgfxRenderCompat.cpp">
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="port/bgfxDetails.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include="port/bgfxResourceManager.cpp">
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
     </ClCompile>
@@ -273,6 +279,9 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="port/ParticleGroup.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="port/bgfxBlenderParticle.cpp">
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="port/bgfxParticleRender.cpp">

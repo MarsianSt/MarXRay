@@ -3,6 +3,7 @@
 
 #include "ParticleEffect.h"
 #include "bgfxParticleRender.h"
+#include "bgfxBlenderParticle.h"
 
 using namespace PAPI;
 using namespace PS;
@@ -182,7 +183,7 @@ BOOL CParticleEffect::Compile(CPEDef* def)
 	if (def)
 	{
 		shader = def->m_CachedShader;
-		m_BlendMode = bgfxParticles::BlendFromShaderName(def->m_ShaderName.c_str());
+		m_BlendMode = bgfxBlenderParticle::BlendModeForShader(def->m_ShaderName.c_str());
 	}
 
 	return TRUE;
