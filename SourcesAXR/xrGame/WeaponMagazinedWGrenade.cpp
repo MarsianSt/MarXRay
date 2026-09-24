@@ -180,8 +180,8 @@ void CWeaponMagazinedWGrenade::OnShot		()
 		else if (strstr(sndName, "_Indoor"))
 		{
 			char newSndName[256];
-			strcpy(newSndName, sndName);
-			newSndName[strlen(sndName) - strlen("Indoor")] = '\0';
+			xr_strcpy(newSndName, sizeof(newSndName), sndName);
+			newSndName[xr_strlen(sndName) - sizeof("Indoor") - 1] = '\0';
 
 			if (m_sounds.FindSoundItem(newSndName, false))
 				m_sounds.PlaySound(newSndName, get_LastFP(), H_Root(), !!GetHUDmode(), false, (u8)-1);
@@ -372,8 +372,8 @@ void CWeaponMagazinedWGrenade::OnEvent(NET_Packet& P, u16 type)
 					else if (strstr(sndName, "_Indoor"))
 					{
 						char newSndName[256];
-						strcpy(newSndName, sndName);
-						newSndName[strlen(sndName) - strlen("_Indoor")] = '\0';
+						xr_strcpy(newSndName, sizeof(newSndName), sndName);
+						newSndName[xr_strlen(sndName) - sizeof("_Indoor") - 1] = '\0';
 
 						if (m_sounds.FindSoundItem(newSndName, false))
 							m_sounds.PlaySound(newSndName, get_LastFP(), H_Root(), !!GetHUDmode(), false, (u8)-1);
@@ -1144,8 +1144,8 @@ void  CWeaponMagazinedWGrenade::PlayAnimModeSwitch()
 	else if (guns_switch_anm && strstr(guns_switch_anm, "_jammed"))
 	{
 		char new_guns_switch_anm[256];
-		strcpy(new_guns_switch_anm, guns_switch_anm);
-		new_guns_switch_anm[strlen(guns_switch_anm) - strlen("_jammed")] = '\0';
+		xr_strcpy(new_guns_switch_anm, sizeof(new_guns_switch_anm), guns_switch_anm);
+		new_guns_switch_anm[xr_strlen(guns_switch_anm) - sizeof("_jammed") - 1] = '\0';
 
 		if (isHUDAnimationExist(new_guns_switch_anm))
 		{
@@ -1158,8 +1158,8 @@ void  CWeaponMagazinedWGrenade::PlayAnimModeSwitch()
 	else if (guns_switch_anm && strstr(guns_switch_anm, "_empty"))
 	{
 		char new_guns_switch_anm[256];
-		strcpy(new_guns_switch_anm, guns_switch_anm);
-		new_guns_switch_anm[strlen(guns_switch_anm) - strlen("_empty")] = '\0';
+		xr_strcpy(new_guns_switch_anm, sizeof(new_guns_switch_anm), guns_switch_anm);
+		new_guns_switch_anm[xr_strlen(guns_switch_anm) - sizeof("_empty") - 1] = '\0';
 
 		if (isHUDAnimationExist(new_guns_switch_anm))
 			PlayHUDMotionNew(new_guns_switch_anm, true, GetState());
@@ -1215,8 +1215,8 @@ void CWeaponMagazinedWGrenade::PlayAnimFireMode()
 		else if (guns_firemode_anm && strstr(guns_firemode_anm, "_jammed"))
 		{
 			char new_guns_firemode_anm[256];
-			strcpy(new_guns_firemode_anm, guns_firemode_anm);
-			new_guns_firemode_anm[strlen(guns_firemode_anm) - strlen("_jammed")] = '\0';
+			xr_strcpy(new_guns_firemode_anm, sizeof(new_guns_firemode_anm), guns_firemode_anm);
+			new_guns_firemode_anm[xr_strlen(guns_firemode_anm) - sizeof("_jammed") - 1] = '\0';
 
 			if (isHUDAnimationExist(new_guns_firemode_anm))
 			{
@@ -1227,8 +1227,8 @@ void CWeaponMagazinedWGrenade::PlayAnimFireMode()
 		else if (guns_firemode_anm && strstr(guns_firemode_anm, "_empty"))
 		{
 			char new_guns_firemode_anm[256];
-			strcpy(new_guns_firemode_anm, guns_firemode_anm);
-			new_guns_firemode_anm[strlen(guns_firemode_anm) - strlen("_empty")] = '\0';
+			xr_strcpy(new_guns_firemode_anm, sizeof(new_guns_firemode_anm), guns_firemode_anm);
+			new_guns_firemode_anm[xr_strlen(guns_firemode_anm) - sizeof("_empty") - 1] = '\0';
 
 			if (isHUDAnimationExist(new_guns_firemode_anm))
 			{
@@ -1251,8 +1251,8 @@ void CWeaponMagazinedWGrenade::PlayAnimFireMode()
 	else if (guns_aim_anm_full && strstr(guns_aim_anm_full, "_jammed"))
 	{
 		char new_guns_aim_anm[256];
-		strcpy(new_guns_aim_anm, guns_aim_anm_full);
-		new_guns_aim_anm[strlen(guns_aim_anm_full) - strlen("_jammed")] = '\0';
+		xr_strcpy(new_guns_aim_anm, sizeof(new_guns_aim_anm), guns_aim_anm_full);
+		new_guns_aim_anm[xr_strlen(guns_aim_anm_full) - sizeof("_jammed") - 1] = '\0';
 
 		if (isHUDAnimationExist(new_guns_aim_anm))
 		{
@@ -1265,8 +1265,8 @@ void CWeaponMagazinedWGrenade::PlayAnimFireMode()
 	else if (guns_aim_anm_full && strstr(guns_aim_anm_full, "_empty"))
 	{
 		char new_guns_aim_anm[256];
-		strcpy(new_guns_aim_anm, guns_aim_anm_full);
-		new_guns_aim_anm[strlen(guns_aim_anm_full) - strlen("_empty")] = '\0';
+		xr_strcpy(new_guns_aim_anm, sizeof(new_guns_aim_anm), guns_aim_anm_full);
+		new_guns_aim_anm[xr_strlen(guns_aim_anm_full) - sizeof("_empty") - 1] = '\0';
 
 		if (isHUDAnimationExist(new_guns_aim_anm))
 		{
@@ -1299,8 +1299,8 @@ void CWeaponMagazinedWGrenade::PlayAnimLaserSwitch()
 	else if (guns_device_switch_anm && strstr(guns_device_switch_anm, "_jammed"))
 	{
 		char new_guns_aim_anm[256];
-		strcpy(new_guns_aim_anm, guns_device_switch_anm);
-		new_guns_aim_anm[strlen(guns_device_switch_anm) - strlen("_jammed")] = '\0';
+		xr_strcpy(new_guns_aim_anm, sizeof(new_guns_aim_anm), guns_device_switch_anm);
+		new_guns_aim_anm[xr_strlen(guns_device_switch_anm) - sizeof("_jammed") - 1] = '\0';
 
 		if (isHUDAnimationExist(new_guns_aim_anm))
 		{
@@ -1313,8 +1313,8 @@ void CWeaponMagazinedWGrenade::PlayAnimLaserSwitch()
 	else if (guns_device_switch_anm && strstr(guns_device_switch_anm, "_empty"))
 	{
 		char new_guns_aim_anm[256];
-		strcpy(new_guns_aim_anm, guns_device_switch_anm);
-		new_guns_aim_anm[strlen(guns_device_switch_anm) - strlen("_empty")] = '\0';
+		xr_strcpy(new_guns_aim_anm, sizeof(new_guns_aim_anm), guns_device_switch_anm);
+		new_guns_aim_anm[xr_strlen(guns_device_switch_anm) - sizeof("_empty") - 1] = '\0';
 
 		if (isHUDAnimationExist(new_guns_aim_anm))
 		{
@@ -1347,8 +1347,8 @@ void CWeaponMagazinedWGrenade::PlayAnimFlashlightSwitch()
 	else if (guns_device_switch_anm && strstr(guns_device_switch_anm, "_jammed"))
 	{
 		char new_guns_aim_anm[256];
-		strcpy(new_guns_aim_anm, guns_device_switch_anm);
-		new_guns_aim_anm[strlen(guns_device_switch_anm) - strlen("_jammed")] = '\0';
+		xr_strcpy(new_guns_aim_anm, sizeof(new_guns_aim_anm), guns_device_switch_anm);
+		new_guns_aim_anm[xr_strlen(guns_device_switch_anm) - sizeof("_jammed") - 1] = '\0';
 
 		if (isHUDAnimationExist(new_guns_aim_anm))
 		{
@@ -1361,8 +1361,8 @@ void CWeaponMagazinedWGrenade::PlayAnimFlashlightSwitch()
 	else if (guns_device_switch_anm && strstr(guns_device_switch_anm, "_empty"))
 	{
 		char new_guns_aim_anm[256];
-		strcpy(new_guns_aim_anm, guns_device_switch_anm);
-		new_guns_aim_anm[strlen(guns_device_switch_anm) - strlen("_empty")] = '\0';
+		xr_strcpy(new_guns_aim_anm, sizeof(new_guns_aim_anm), guns_device_switch_anm);
+		new_guns_aim_anm[xr_strlen(guns_device_switch_anm) - sizeof("_empty") - 1] = '\0';
 
 		if (isHUDAnimationExist(new_guns_aim_anm))
 		{
@@ -1411,8 +1411,8 @@ void CWeaponMagazinedWGrenade::PlayAnimDeviceSwitch()
 	else if (guns_device_switch_anm && strstr(guns_device_switch_anm, "_jammed"))
 	{
 		char new_guns_device_switch_anm[256];
-		strcpy(new_guns_device_switch_anm, guns_device_switch_anm);
-		new_guns_device_switch_anm[strlen(guns_device_switch_anm) - strlen("_jammed")] = '\0';
+		xr_strcpy(new_guns_device_switch_anm, sizeof(new_guns_device_switch_anm), guns_device_switch_anm);
+		new_guns_device_switch_anm[xr_strlen(guns_device_switch_anm) - sizeof("_jammed") - 1] = '\0';
 
 		if (isHUDAnimationExist(new_guns_device_switch_anm))
 		{
@@ -1429,8 +1429,8 @@ void CWeaponMagazinedWGrenade::PlayAnimDeviceSwitch()
 	else if (guns_device_switch_anm && strstr(guns_device_switch_anm, "_empty"))
 	{
 		char new_guns_device_switch_anm[256];
-		strcpy(new_guns_device_switch_anm, guns_device_switch_anm);
-		new_guns_device_switch_anm[strlen(guns_device_switch_anm) - strlen("_empty")] = '\0';
+		xr_strcpy(new_guns_device_switch_anm, sizeof(new_guns_device_switch_anm), guns_device_switch_anm);
+		new_guns_device_switch_anm[xr_strlen(guns_device_switch_anm) - sizeof("_empty") - 1] = '\0';
 
 		if (isHUDAnimationExist(new_guns_device_switch_anm))
 		{
