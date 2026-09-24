@@ -117,6 +117,8 @@ namespace
 	bgfx_uniform_handle_t		s_grassInt	= BGFX_INVALID_HANDLE;
 	bgfx_uniform_handle_t		s_bendersPos	= BGFX_INVALID_HANDLE;
 	bgfx_uniform_handle_t		s_bendersSetup	= BGFX_INVALID_HANDLE;
+	bgfx_uniform_handle_t		s_fogParams	= BGFX_INVALID_HANDLE;
+	bgfx_uniform_handle_t		s_fogColor	= BGFX_INVALID_HANDLE;
 	bgfx_vertex_layout_t		s_layoutDesc	= {};
 	bgfx_vertex_layout_handle_t	s_layout	= BGFX_INVALID_HANDLE;
 	bool				s_layoutReady	= false;
@@ -456,8 +458,46 @@ namespace
 		s_grassInt     = bgfx_create_uniform("u_grassInt", BGFX_UNIFORM_TYPE_VEC4, 1);
 		s_bendersPos   = bgfx_create_uniform("benders_pos", BGFX_UNIFORM_TYPE_VEC4, kMaxBenders * 2);
 		s_bendersSetup = bgfx_create_uniform("benders_setup", BGFX_UNIFORM_TYPE_VEC4, 1);
+		s_fogParams    = bgfx_create_uniform("u_fogParams", BGFX_UNIFORM_TYPE_VEC4, 1);
+		s_fogColor     = bgfx_create_uniform("u_fogColor", BGFX_UNIFORM_TYPE_VEC4, 1);
 		LogInfo("[BGFX] Grass program created: %u", s_prog.idx);
 		return true;
+	}
+
+	// Vanilla X-Ray distance fog, mirroring bgfxRenderCompat's world fog.
+	void SetFogUniforms()
+	{
+		float params[4] = { 0.f, 0.f, 0.f, 0.f };
+		float fogColor[4] = { 0.f, 0.f, 0.f, 0.f };
+		if (g_pGamePersistent)
+		{
+			CEnvDescriptorMixer* env = g_pGamePersistent->Environment().CurrentEnv;
+			if (env)
+			{
+				float n = env->fog_near;
+				float f = env->fog_far;
+				float r = 0.f;
+				if (f - n <= 0.001f)
+				{
+					n = 0.f;
+					f = 0.f;
+				}
+				else
+					r = 1.f / (f - n);
+				params[0] = -n * r;
+				params[1] = n;
+				params[2] = f;
+				params[3] = r;
+				fogColor[0] = env->fog_color.x;
+				fogColor[1] = env->fog_color.y;
+				fogColor[2] = env->fog_color.z;
+				fogColor[3] = env->fog_density;
+			}
+		}
+		if (bgfxIsValid(s_fogParams))
+			bgfx_set_uniform(s_fogParams, params, 1);
+		if (bgfxIsValid(s_fogColor))
+			bgfx_set_uniform(s_fogColor, fogColor, 1);
 	}
 
 	// =========================================================================
@@ -588,6 +628,7 @@ namespace
 			bgfx_set_transient_index_buffer(&tib, 0, nI);
 			if (bgfxIsValid(s_sampler))
 				bgfx_set_texture(0, s_sampler, tex, UINT32_MAX);
+			SetFogUniforms();
 			bgfx_submit(0, s_prog, 0, BGFX_DISCARD_ALL);
 
 			done += batch;

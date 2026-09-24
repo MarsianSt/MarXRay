@@ -1,5 +1,5 @@
 $input a_position, a_normal, a_tangent, a_bitangent, a_texcoord0, a_texcoord2
-$output v_texcoord0
+$output v_texcoord0, v_fogDepth
 #include <bgfx_shader.sh>
 
 uniform vec4 u_bones[255];
@@ -25,6 +25,8 @@ void main()
         dot(u_bones[i2 + 1], p),
         dot(u_bones[i2 + 2], p));
     vec3 sk = p0 * w0 + p1 * w1 + p2 * (1.0 - w0 - w1);
+    vec4 viewPos = mul(u_modelView, vec4(sk, 1.0));
     gl_Position = mul(u_modelViewProj, vec4(sk, 1.0));
     v_texcoord0 = a_texcoord0;
+    v_fogDepth = length(viewPos.xyz);
 }

@@ -537,6 +537,8 @@ namespace
 	xr_vector<WorldTexEntry> g_worldTextures;
 	bgfx_uniform_handle_t   g_worldSampler = BGFX_INVALID_HANDLE;
 	bgfx_uniform_handle_t   g_worldAlphaCtrl = BGFX_INVALID_HANDLE;
+	bgfx_uniform_handle_t   g_worldFogParams = BGFX_INVALID_HANDLE;
+	bgfx_uniform_handle_t   g_worldFogColor = BGFX_INVALID_HANDLE;
 	bgfx_uniform_handle_t   g_worldMaskSampler = BGFX_INVALID_HANDLE;
 	bgfx_uniform_handle_t   g_worldDtSamplers[4] = { BGFX_INVALID_HANDLE, BGFX_INVALID_HANDLE, BGFX_INVALID_HANDLE, BGFX_INVALID_HANDLE };
 	bgfx_uniform_handle_t   g_worldDtScale = BGFX_INVALID_HANDLE;
@@ -935,6 +937,8 @@ namespace
 			return;
 		g_worldSampler = bgfx_create_uniform("u_texture", BGFX_UNIFORM_TYPE_SAMPLER, 1);
 		g_worldAlphaCtrl = bgfx_create_uniform("u_alphaCtrl", BGFX_UNIFORM_TYPE_VEC4, 1);
+		g_worldFogParams = bgfx_create_uniform("u_fogParams", BGFX_UNIFORM_TYPE_VEC4, 1);
+		g_worldFogColor = bgfx_create_uniform("u_fogColor", BGFX_UNIFORM_TYPE_VEC4, 1);
 		g_worldMaskSampler = bgfx_create_uniform("u_mask", BGFX_UNIFORM_TYPE_SAMPLER, 1);
 		for (int i = 0; i < 4; ++i)
 		{
@@ -944,6 +948,45 @@ namespace
 		}
 		g_worldDtScale = bgfx_create_uniform("u_dtScale", BGFX_UNIFORM_TYPE_VEC4, 1);
 		g_worldTexturesReady = true;
+	}
+
+	// Vanilla X-Ray distance fog (screenspace_fog.h SSFX_CALC_FOG): view-space
+	// distance feeds fog_params = (-n*r, n, f, r), r = 1/(f-n), and the shader
+	// lerps towards fog_color by saturate(d*r - n*r). Both are pushed per submit
+	// because BGFX_DISCARD_ALL resets bindings after every draw.
+	void bgfxSetFogUniforms()
+	{
+		float params[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
+		float fogColor[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
+		if (g_pGamePersistent)
+		{
+			CEnvDescriptorMixer* env = g_pGamePersistent->Environment().CurrentEnv;
+			if (env)
+			{
+				float n = env->fog_near;
+				float f = env->fog_far;
+				float r = 0.0f;
+				if (f - n <= 0.001f)
+				{
+					n = 0.0f;
+					f = 0.0f;
+				}
+				else
+					r = 1.0f / (f - n);
+				params[0] = -n * r;
+				params[1] = n;
+				params[2] = f;
+				params[3] = r;
+				fogColor[0] = env->fog_color.x;
+				fogColor[1] = env->fog_color.y;
+				fogColor[2] = env->fog_color.z;
+				fogColor[3] = env->fog_density;
+			}
+		}
+		if (bgfxIsValid(g_worldFogParams))
+			bgfx_set_uniform(g_worldFogParams, params, 1);
+		if (bgfxIsValid(g_worldFogColor))
+			bgfx_set_uniform(g_worldFogColor, fogColor, 1);
 	}
 
 	// Returns the bgfx texture handle for a diffuse texture name (0xFFFF if
@@ -1328,6 +1371,7 @@ namespace
 			prog = s_worldTerrainProgram;
 		if (treeXform)
 			bgfx_set_transform(treeXform, 1);
+		bgfxSetFogUniforms();
 		bgfx_submit(0, prog, 0, BGFX_DISCARD_ALL);
 		if (treeXform)
 		{
@@ -1485,6 +1529,7 @@ namespace
 		bgfx_set_state(WORLD_STATE, 0);
 		bgfx_set_transient_vertex_buffer(0, &tvb, 0, 4);
 		bgfx_set_index_buffer(s_worldLodIbh, 0, 6);
+		bgfxSetFogUniforms();
 		bgfx_submit(0, s_worldProgram, 0, BGFX_DISCARD_ALL);
 		++dg.drawn;
 	}
@@ -2052,6 +2097,7 @@ extern "C"
 			| BGFX_STATE_DEPTH_TEST_LESS
 			| BGFX_STATE_MSAA;
 		bgfx_set_state(st, 0);
+		bgfxSetFogUniforms();
 		bgfx_submit(viewId, prog, 0, BGFX_DISCARD_ALL);
 		return true;
 	}

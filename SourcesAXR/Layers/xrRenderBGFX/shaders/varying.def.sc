@@ -14,3 +14,4 @@ vec2 v_texcoord0 : TEXCOORD0 = vec2(0.0, 0.0);
 vec2 v_texcoord1 : TEXCOORD1 = vec2(0.0, 0.0);
 vec3 v_worldPos  : TEXCOORD2 = vec3(0.0, 0.0, 0.0);
 vec3 v_dir       : TEXCOORD3 = vec3(0.0, 0.0, 0.0);
+float v_fogDepth : TEXCOORD4 = 0.0;

@@ -1,7 +1,9 @@
-$input v_color0, v_texcoord0
+$input v_color0, v_texcoord0, v_fogDepth
 #include <bgfx_shader.sh>
 
 uniform vec4 u_grassAlpha;
+uniform vec4 u_fogParams;
+uniform vec4 u_fogColor;
 
 SAMPLER2D(u_texture, 0);
 
@@ -10,5 +12,8 @@ void main()
     vec4 base = texture2D(u_texture, v_texcoord0);
     if (u_grassAlpha.y > 0.5 && base.w < u_grassAlpha.x)
         discard;
-    gl_FragColor = vec4(base.rgb * v_color0.rgb, base.w * v_color0.a);
+    vec4 c = vec4(base.rgb * v_color0.rgb, base.w * v_color0.a);
+    float fog = saturate(v_fogDepth * u_fogParams.w + u_fogParams.x);
+    c.rgb = mix(c.rgb, u_fogColor.rgb, fog);
+    gl_FragColor = c;
 }

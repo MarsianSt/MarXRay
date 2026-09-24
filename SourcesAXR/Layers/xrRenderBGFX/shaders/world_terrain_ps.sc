@@ -1,9 +1,11 @@
-﻿$input v_texcoord0, v_texcoord1
+﻿$input v_texcoord0, v_texcoord1, v_fogDepth
 
 #include <bgfx_shader.sh>
 
 uniform vec4 u_alphaCtrl;
 uniform vec4 u_dtScale;
+uniform vec4 u_fogParams;
+uniform vec4 u_fogColor;
 
 SAMPLER2D(u_texture, 0);
 SAMPLER2D(u_mask,   1);
@@ -27,5 +29,7 @@ void main()
                  + texture2D(u_dt3, uv).rgb * mask.a;
         color = 2.0 * base.rgb * det;
     }
+    float fog = saturate(v_fogDepth * u_fogParams.w + u_fogParams.x);
+    color = mix(color, u_fogColor.rgb, fog);
     gl_FragColor = vec4(color, 1.0);
 }
