@@ -244,6 +244,8 @@ bool CWeapon::bChangeNVSecondVPStatus()
 
 		return true;
 	}
+
+	return false;
 }
 
 shared_str CWeapon::GetNameWithAttachment()

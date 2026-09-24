@@ -882,8 +882,6 @@ bool CScriptGameObject::Use(CScriptGameObject* obj)
 
 		return true;
 	}
-
-	return false;
 }
 
 void CScriptGameObject::StartTrade(CScriptGameObject* obj)
