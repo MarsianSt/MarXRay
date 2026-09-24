@@ -26,7 +26,7 @@ extern "C"
 
 namespace
 {
-    const bgfx_view_id_t kSkyView = 2;
+    const bgfx_view_id_t kSkyView = 0;
 
     Fvector3 hbox_verts[24] =
     {
