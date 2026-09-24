@@ -23,6 +23,11 @@
 #include "Text_Console.h"
 #include <process.h>
 #include <locale.h>
+#pragma warning(push)
+#pragma warning(disable:4995)
+#include <filesystem>
+#include <system_error>
+#pragma warning(pop)
 
 #include "xrSash.h"
 
@@ -782,6 +787,167 @@ struct damn_keys_filter {
 
 #include "xr_ioc_cmd.h"
 
+namespace
+{
+	const char kFsGameFileName[] = "fsgame.ltx";
+
+	const char* find_fsltx_argument(const char* command_line)
+	{
+		const char* option = command_line;
+		while ((option = strstr(option, "-fsltx")) != NULL)
+		{
+			const char after = option[6];
+			const bool left_boundary = (option == command_line) || option[-1] == ' ' || option[-1] == '\t';
+			const bool right_boundary = after == '\0' || after == ' ' || after == '\t';
+			if (left_boundary && right_boundary)
+				return option + 6;
+			option += 6;
+		}
+		return NULL;
+	}
+
+	bool parse_explicit_fsgame(const char* command_line, string_path& fsgame)
+	{
+		if (!command_line)
+			return false;
+
+		const char* value = find_fsltx_argument(command_line);
+		if (!value)
+			return false;
+
+		while (*value == ' ' || *value == '\t')
+			++value;
+
+		if (*value == '\0')
+		{
+			CHECK_OR_EXIT(false, "The -fsltx option requires an explicit fsgame.ltx path.");
+			return false;
+		}
+
+		const char* begin = value;
+		const char* end = NULL;
+		if (*value == '"')
+		{
+			begin = ++value;
+			end = strchr(begin, '"');
+			if (!end || (end[1] != '\0' && end[1] != ' ' && end[1] != '\t'))
+			{
+				CHECK_OR_EXIT(false, "The -fsltx path must be a single quoted or unquoted command-line argument.");
+				return false;
+			}
+		}
+		else
+		{
+			end = value;
+			while (*end != '\0' && *end != ' ' && *end != '\t')
+				++end;
+		}
+
+		const size_t length = static_cast<size_t>(end - begin);
+		if (length == 0 || length >= sizeof(string_path))
+		{
+			CHECK_OR_EXIT(false, make_string("The -fsltx path length is %u bytes; string_path capacity is %u bytes.", static_cast<unsigned int>(length), static_cast<unsigned int>(sizeof(string_path))));
+			return false;
+		}
+
+		memcpy(fsgame, begin, length);
+		fsgame[length] = '\0';
+		return true;
+	}
+
+	std::filesystem::path find_fsgame_from_executable(HINSTANCE hInstance)
+	{
+		char module_file[sizeof(string_path)] = {};
+		SetLastError(ERROR_SUCCESS);
+		const DWORD length = GetModuleFileNameA(hInstance, module_file, static_cast<DWORD>(sizeof(module_file)));
+		const DWORD module_error = GetLastError();
+		if (length == 0)
+		{
+			CHECK_OR_EXIT(false, make_string("Unable to determine the executable path: GetModuleFileNameA failed with Win32 error %lu.", module_error));
+			return std::filesystem::path();
+		}
+		if (length >= sizeof(module_file) || module_file[length] != '\0')
+		{
+			CHECK_OR_EXIT(false, make_string("Unable to determine the executable path: GetModuleFileNameA returned %lu bytes for a %u-byte buffer; the path is truncated or not null-terminated (Win32 error %lu).", length, static_cast<unsigned int>(sizeof(module_file)), module_error));
+			return std::filesystem::path();
+		}
+
+		std::error_code ec;
+		std::filesystem::path executable = std::filesystem::absolute(std::filesystem::path(module_file), ec);
+		if (ec)
+		{
+			CHECK_OR_EXIT(false, make_string("Unable to make the executable path absolute ('%s'): %s (error_code %d).", module_file, ec.message().c_str(), ec.value()));
+			return std::filesystem::path();
+		}
+		executable = executable.lexically_normal();
+		const std::filesystem::path executable_dir = executable.parent_path();
+		if (executable_dir.empty() || !executable.has_filename())
+		{
+			CHECK_OR_EXIT(false, make_string("Unable to determine the executable directory from path '%s'.", module_file));
+			return std::filesystem::path();
+		}
+
+		std::error_code last_error;
+		std::filesystem::path ancestor = executable_dir;
+		for (;;)
+		{
+			const std::filesystem::path candidate = ancestor / kFsGameFileName;
+			ec.clear();
+			if (std::filesystem::is_regular_file(candidate, ec))
+				return candidate.lexically_normal();
+			if (ec)
+				last_error = ec;
+
+			const std::filesystem::path parent = ancestor.parent_path();
+			if (parent.empty() || parent == ancestor || !parent.has_root_path())
+				break;
+			ancestor = parent;
+		}
+
+		const std::filesystem::path bin_candidate = executable_dir / "bin" / kFsGameFileName;
+		ec.clear();
+		if (std::filesystem::is_regular_file(bin_candidate, ec))
+			return bin_candidate.lexically_normal();
+		if (ec)
+			last_error = ec;
+
+		ec.clear();
+		const std::filesystem::path cwd_candidate = std::filesystem::absolute(std::filesystem::path(kFsGameFileName), ec);
+		if (!ec)
+		{
+			std::error_code file_error;
+			if (std::filesystem::is_regular_file(cwd_candidate, file_error))
+				return cwd_candidate.lexically_normal();
+			if (file_error)
+				last_error = file_error;
+		}
+		else
+		{
+			last_error = ec;
+		}
+
+		const std::string error_message = last_error ? last_error.message() : "no such file or directory";
+		const int error_value = last_error ? last_error.value() : ERROR_FILE_NOT_FOUND;
+		CHECK_OR_EXIT(false, make_string("Unable to locate fsgame.ltx. Searched ancestors of executable directory '%s', executable bin directory '%s', and the current working directory. Last filesystem error: %s (error_code %d).", executable_dir.string().c_str(), bin_candidate.string().c_str(), error_message.c_str(), error_value));
+		return std::filesystem::path();
+	}
+
+	void resolve_fsgame_path(const char* command_line, HINSTANCE hInstance, string_path& fsgame)
+	{
+		if (parse_explicit_fsgame(command_line, fsgame))
+			return;
+
+		const std::filesystem::path resolved = find_fsgame_from_executable(hInstance);
+		const std::string resolved_string = resolved.string();
+		if (resolved.empty() || resolved_string.empty() || resolved_string.size() >= sizeof(string_path))
+		{
+			CHECK_OR_EXIT(false, make_string("Resolved fsgame.ltx path is empty or exceeds string_path capacity of %u bytes.", static_cast<unsigned int>(sizeof(string_path))));
+			return;
+		}
+		xr_strcpy(fsgame, resolved_string.c_str());
+	}
+}
+
 int APIENTRY WinMain_impl(HINSTANCE hInstance,
                      HINSTANCE hPrevInstance,
                      char *    lpCmdLine,
@@ -842,14 +1008,8 @@ int APIENTRY WinMain_impl(HINSTANCE hInstance,
 	g_sLaunchOnExit_app[0]		= NULL;
 	g_sLaunchOnExit_params[0]	= NULL;
 
-	LPCSTR						fsgame_ltx_name = "-fsltx ";
 	string_path					fsgame = "";
-	//MessageBox(0, lpCmdLine, "my cmd string", MB_OK);
-	if (strstr(lpCmdLine, fsgame_ltx_name)) {
-		int						sz = xr_strlen(fsgame_ltx_name);
-		sscanf					(strstr(lpCmdLine,fsgame_ltx_name)+sz,"%[^ ] ",fsgame);
-		//MessageBox(0, fsgame, "using fsltx", MB_OK);
-	}
+	resolve_fsgame_path			(lpCmdLine, hInstance, fsgame);
 
 //	g_temporary_stuff			= &trivial_encryptor::decode;
 	
