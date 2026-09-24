@@ -17,7 +17,7 @@ namespace
 {
 	const float		kWallmarkTTL	= 50.f;	// ps_r__WallmarkTTL default
 	const float		kDistFadeSqr	= 100.f * 100.f;
-	const float		kSsaClip	= 3.5f * 0.25f;	// r_ssaDISCARD/4
+	const float		kSsaClip	= 0.f;	// r_ssaDISCARD is never assigned in this codebase (=0), so DX does no SSA culling; keep it off or wallmarks vanish beyond ~16cm
 
 	struct Vertex
 	{
