@@ -1,6 +1,7 @@
 ﻿#include "stdafx.h"
 
 #include "../Include/xrRender/DrawUtils.h"
+#include "../xrCore/TaskManager.h"
 #include "render.h"
 #include "IGame_Persistent.h"
 #include "xr_IOConsole.h"
@@ -44,6 +45,10 @@ void CRenderDevice::Destroy	(void) {
 	//HW.DestroyDevice			();
 
 	ChangeDisplaySettings(NULL, 0);
+
+	// No MT frame task may still reference seqFrameMT/seqParallel while clearing.
+	if (CTaskManager::IsRunning())
+		CTaskManager::WaitAll();
 
 	seqRender.R.clear			();
 	seqAppActivate.R.clear		();

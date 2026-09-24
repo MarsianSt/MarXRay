@@ -682,9 +682,6 @@ copy /Y "..\..\SDK\binaries\jpeg62.dll" "$(OutDir)"</Command>
     </ClCompile>
     <ClCompile Include="stream_reader.cpp" />
     <ClCompile Include="string_concatenations.cpp" />
-    <ClCompile Include="Threading\Event.cpp">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
-    </ClCompile>
     <ClCompile Include="xrCore.cpp" />
     <ClCompile Include="xrDebug.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
@@ -841,7 +838,6 @@ copy /Y "..\..\SDK\binaries\jpeg62.dll" "$(OutDir)"</Command>
     <ClInclude Include="string_concatenations.h" />
     <ClInclude Include="string_concatenations_inline.h" />
     <ClInclude Include="SubAlloc.hpp" />
-    <ClInclude Include="Threading\Event.hpp" />
     <ClInclude Include="vector.h" />
     <ClInclude Include="xalloc.h" />
     <ClInclude Include="xrCore.h" />

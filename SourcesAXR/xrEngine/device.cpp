@@ -13,6 +13,7 @@
 #include "x_ray.h"
 #include "render.h"
 #include "IGame_Level.h"
+#include "../xrCore/TaskManager.h"
 
 // must be defined before include of FS_impl.h
 #define INCLUDE_FROM_ENGINE
@@ -157,30 +158,6 @@ void CRenderDevice::End		(void)
 #	endif // #ifdef INGAME_EDITOR
 }
 
-
-void CRenderDevice::SecondaryThreadProc(void* context)
-{
-	set_current_thread_name("X-RAY Secondary thread");
-
-	auto& device = *static_cast<CRenderDevice*>(context);
-
-	while (true)
-	{
-		device.syncProcessFrame.Wait();
-		if (device.mt_bMustExit)
-		{
-			device.mt_bMustExit = FALSE;
-			device.syncThreadExit.Set();
-			return;
-		}
-		for (u32 pit = 0; pit < device.seqParallel.size(); pit++)
-			device.seqParallel[pit]();
-
-		device.seqParallel.clear();
-		device.seqFrameMT.Process(rp_Frame);
-		device.syncFrameDone.Set();
-	}
-}
 
 #include "igame_level.h"
 void CRenderDevice::PreCache	(u32 amount, bool b_draw_loadscreen, bool b_wait_user_input)
@@ -411,12 +388,19 @@ void CRenderDevice::on_idle		()
 		mView_saved = mView;
 		mProject_saved = mProject;
 
-		// *** Resume threads
-		// Capture end point - thread must run only ONE cycle
-		// Release start point - allow thread to run
+		// *** Schedule MT frame work
+		// Hand the accumulated parallel delegates to the task manager as one
+		// sequential batch; it runs concurrently with this thread's rendering.
 		if (Render->currentViewPort == MAIN_VIEWPORT)
 		{
-			syncProcessFrame.Set();
+			xr_vector<fastdelegate::FastDelegate0<> > batch;
+			batch.swap(seqParallel);
+			CTaskManager::AddTask([this, batch = std::move(batch)]()
+			{
+				for (auto& f : batch)
+					f();
+				seqFrameMT.Process(rp_Frame);
+			});
 			Sleep(0);
 		}
 
@@ -494,7 +478,7 @@ void CRenderDevice::on_idle		()
 
 	ImGui::EndFrame();
 
-	syncFrameDone.Wait(); // wait until secondary thread finish its job
+	CTaskManager::WaitAll(); // wait until the MT frame task finishes its job
 
 	if (!b_is_Active)
 		Sleep		(1);
@@ -537,12 +521,6 @@ void CRenderDevice::Run			()
 		Timer_MM_Delta		= time_system-time_local;
 	}
 
-	// Start all threads
-//	InitializeCriticalSection	(&mt_csEnter);
-//	InitializeCriticalSection	(&mt_csLeave);
-	mt_bMustExit				= FALSE;
-	std::thread second_thread	(SecondaryThreadProc, this);
-
 	// Message cycle
 	seqAppStart.Process			(rp_AppStart);
 
@@ -553,11 +531,8 @@ void CRenderDevice::Run			()
 
 	seqAppEnd.Process		(rp_AppEnd);
 
-	// Stop Balance-Thread
-	mt_bMustExit			= TRUE;
-	syncProcessFrame.Set	();
-	syncThreadExit.Wait		();
-	second_thread.join		();
+	// Drain any MT frame work still in flight before leaving Run().
+	CTaskManager::WaitAll();
 //	DeleteCriticalSection	(&mt_csEnter);
 //	DeleteCriticalSection	(&mt_csLeave);
 }

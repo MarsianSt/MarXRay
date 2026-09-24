@@ -303,9 +303,6 @@
     <ClCompile Include="blackbox\TLHELPProcessInfo.cpp">
       <Filter>Debug core\BlackBox</Filter>
     </ClCompile>
-    <ClCompile Include="Threading\Event.cpp">
-      <Filter>Threading</Filter>
-    </ClCompile>
     <ClCompile Include="Crypto\trivial_encryptor.cpp">
       <Filter>Crypto</Filter>
     </ClCompile>
@@ -626,9 +623,6 @@
     </ClInclude>
     <ClInclude Include="xr_map.h">
       <Filter>Math</Filter>
-    </ClInclude>
-    <ClInclude Include="Threading\Event.hpp">
-      <Filter>Threading</Filter>
     </ClInclude>
     <ClInclude Include="Math\Random32.hpp">
       <Filter>Math</Filter>
