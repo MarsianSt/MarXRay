@@ -232,20 +232,6 @@ SThunderboltCollection* manager::thunderbolt_collection	(xr_vector<SThunderboltC
 
 CLensFlareDescriptor*   manager::add_flare				(xr_vector<CLensFlareDescriptor*>& collection, shared_str const& id)
 {
-#if 0
-//	return						(m_suns->get_flare(id));
-	typedef xr_vector<CLensFlareDescriptor*>	container_type;
-	container_type::iterator	i = collection.begin();
-	container_type::iterator	e = collection.end();
-	for ( ; i != e; ++i)
-		if ((*i)->section == id)
-			return				(*i);
-
-	NODEFAULT;
-#ifdef DEBUG
-	return						(0);
-#endif // #ifdef DEBUG
-#endif // #if 0
 	return						(inherited::add_flare(collection, id));
 }
 
