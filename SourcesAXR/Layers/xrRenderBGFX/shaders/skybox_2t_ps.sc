@@ -18,7 +18,8 @@ void main()
     vec3 sky = tint * mix(s0, s1, v_color0.a);
     sky *= 0.33;
     // Horizon fog: blend to weather fog_color at grazing angles.
-    float fog = pow(1.0 - saturate(dir.y), 8.0);
+    // Narrow band (power 32): only the horizon line, not the whole skybox faces.
+    float fog = pow(1.0 - saturate(dir.y), 32.0);
     sky = mix(sky, u_fogColor.rgb, fog);
     gl_FragColor = vec4(sky, 1.0);
 }
