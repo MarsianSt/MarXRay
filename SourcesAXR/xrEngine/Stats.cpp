@@ -385,13 +385,8 @@ void CStats::Show()
 		F2.SetColor	(color_rgba(255,16,16,191));
 		F2.OutSet	(200,0);
 		F2.SetHeightI	(f_base_size);
-#if 0
-		for (u32 it=0; it<errors.size(); it++)
-			F2.OutNext("%s",errors[it].c_str());
-#else
 		for (u32 it=(u32)_max(int(0),(int)errors.size() - g_ErrorLineCount); it<errors.size(); it++)
 			F2.OutNext("%s",errors[it].c_str());
-#endif
 		F2.OnRender	();
 	}
 #endif
