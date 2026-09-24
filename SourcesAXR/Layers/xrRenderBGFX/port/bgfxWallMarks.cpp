@@ -353,9 +353,9 @@ void Clear()
 
 void Render()
 {
-	if (s_items.empty())
-		return;
 	if (!EnsureProgram() || !bgfxIsValid(s_prog))
+		return;
+	if (s_items.empty())
 		return;
 
 	struct Batch
