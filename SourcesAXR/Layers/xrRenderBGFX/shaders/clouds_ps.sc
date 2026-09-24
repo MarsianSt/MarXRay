@@ -16,8 +16,9 @@ void main()
     vec4 c = vec4(v_color1.rgb * scale, v_color1.a);
     vec4 col = c * (s0 + s1);
     // Horizon fog: blend rgb to weather fog_color at grazing view angles, keep alpha.
+    // Narrow band (power 32): only the horizon line.
     vec3 vd = v_worldPos - u_invView[3].xyz;
-    float fog = pow(1.0 - saturate(vd.y / length(vd)), 8.0);
+    float fog = pow(1.0 - saturate(vd.y / length(vd)), 32.0);
     col.rgb = mix(col.rgb, u_fogColor.rgb, fog);
     gl_FragColor = col;
 }
