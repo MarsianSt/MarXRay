@@ -368,17 +368,24 @@ size_t xrFS::mount_zdb_many(const std::vector<std::string>& archive_paths,
     // Each task owns its own MountedArchive, so nothing is shared yet; input
     // order is preserved by slotting results into `ready[i]`.
     std::vector<std::shared_ptr<MountedArchive>> ready(N);
-    CTaskManager::AddTaskRange(
-        [&](uint32_t a, uint32_t b, uint32_t)
+    auto parseRange = [&](uint32_t a, uint32_t b)
+    {
+        for (uint32_t i = a; i < b; ++i)
         {
-            for (uint32_t i = a; i < b; ++i)
-            {
-                auto arc = std::make_shared<MountedArchive>();
-                if (arc->open(archive_paths[i]) && arc->parse_index())
-                    ready[i] = std::move(arc);
-            }
-        }, N, 1);
-    CTaskManager::WaitAll();
+            auto arc = std::make_shared<MountedArchive>();
+            if (arc->open(archive_paths[i]) && arc->parse_index())
+                ready[i] = std::move(arc);
+        }
+    };
+    if (CTaskManager::IsInsideTask()) {
+        // Nested call (inside a worker task): run inline to avoid a scheduler
+        // deadlock - the pool is already busy with the outer task.
+        parseRange(0, N);
+    } else {
+        CTaskManager::AddTaskRange(
+            [&](uint32_t a, uint32_t b, uint32_t) { parseRange(a, b); }, N, 1);
+        CTaskManager::WaitAll();
+    }
 
     // Step 2 (serial): commit the parsed archives and publish the flat index.
     size_t mounted = 0;
@@ -565,17 +572,24 @@ void xrFS::prefetch_virtual(const std::vector<std::string>& vpaths) const
     // Parallel decode (mmap views are read-only; per-slot buffers are private).
     std::vector<std::vector<char>> slots(n);
     std::atomic<bool> allOk{true};
-    CTaskManager::AddTaskRange(
-        [&](uint32_t start, uint32_t end, uint32_t)
+    auto decodeRange = [&](uint32_t start, uint32_t end)
+    {
+        for (uint32_t i = start; i < end; ++i)
         {
-            for (uint32_t i = start; i < end; ++i)
-            {
-                const FlatIndex::Rec* r = flat->find(keys[i]);
-                if (r && !flat->archive_of(*r)->extract(r->e, slots[i]))
-                    allOk.store(false, std::memory_order_relaxed);
-            }
-        }, n, 1);
-    CTaskManager::WaitAll();
+            const FlatIndex::Rec* r = flat->find(keys[i]);
+            if (r && !flat->archive_of(*r)->extract(r->e, slots[i]))
+                allOk.store(false, std::memory_order_relaxed);
+        }
+    };
+    if (CTaskManager::IsInsideTask()) {
+        // Nested call (inside a worker task): run inline to avoid a scheduler
+        // deadlock - the pool is already busy with the outer task.
+        decodeRange(0, n);
+    } else {
+        CTaskManager::AddTaskRange(
+            [&](uint32_t a, uint32_t b, uint32_t) { decodeRange(a, b); }, n, 1);
+        CTaskManager::WaitAll();
+    }
     if (!allOk.load(std::memory_order_relaxed)) return;
 
     for (uint32_t i = 0; i < n; ++i)
@@ -615,46 +629,53 @@ bool xrFS::read_virtual_many(const std::vector<std::string>& vpaths,
     // root overrides the archive entry; otherwise the prefetch cache is used
     // first, then the archive. Multi-frame entries nested-extract sequentially
     // via the IsInsideTask() guard, so no scheduler deadlock.
-    CTaskManager::AddTaskRange(
-        [&](uint32_t start, uint32_t end, uint32_t)
+    auto readRange = [&](uint32_t start, uint32_t end)
+    {
+        for (uint32_t i = start; i < end; ++i)
         {
-            for (uint32_t i = start; i < end; ++i)
+            const std::string& key = keys[i];
+            if (!droot.empty())
             {
-                const std::string& key = keys[i];
-                if (!droot.empty())
+                std::error_code ec;
+                std::filesystem::path dp = vfs_disk_path(droot, key);
+                if (std::filesystem::is_regular_file(dp, ec) && !ec)
                 {
-                    std::error_code ec;
-                    std::filesystem::path dp = vfs_disk_path(droot, key);
-                    if (std::filesystem::is_regular_file(dp, ec) && !ec)
-                    {
-                        if (read_file(dp.string(), results[i])) continue;
-                        allOk.store(false, std::memory_order_relaxed);
-                        continue;
-                    }
-                }
-                {
-                    auto& shard = m_cacheShards[cache_shard_index(key)];
-                    std::lock_guard<std::mutex> cm(shard.mtx);
-                    auto cit = shard.map.find(key);
-                    if (cit != shard.map.end())
-                    {
-                        results[i] = cit->second;
-                        continue;
-                    }
-                }
-                const FlatIndex::Rec* r = flat ? flat->find(key) : nullptr;
-                if (r)
-                {
-                    if (!flat->archive_of(*r)->extract(r->e, results[i]))
-                        allOk.store(false, std::memory_order_relaxed);
-                }
-                else
-                {
+                    if (read_file(dp.string(), results[i])) continue;
                     allOk.store(false, std::memory_order_relaxed);
+                    continue;
                 }
             }
-        }, count, 1);
-    CTaskManager::WaitAll();
+            {
+                auto& shard = m_cacheShards[cache_shard_index(key)];
+                std::lock_guard<std::mutex> cm(shard.mtx);
+                auto cit = shard.map.find(key);
+                if (cit != shard.map.end())
+                {
+                    results[i] = cit->second;
+                    continue;
+                }
+            }
+            const FlatIndex::Rec* r = flat ? flat->find(key) : nullptr;
+            if (r)
+            {
+                if (!flat->archive_of(*r)->extract(r->e, results[i]))
+                    allOk.store(false, std::memory_order_relaxed);
+            }
+            else
+            {
+                allOk.store(false, std::memory_order_relaxed);
+            }
+        }
+    };
+    if (CTaskManager::IsInsideTask()) {
+        // Nested call (inside a worker task): run inline to avoid a scheduler
+        // deadlock - the pool is already busy with the outer task.
+        readRange(0, count);
+    } else {
+        CTaskManager::AddTaskRange(
+            [&](uint32_t a, uint32_t b, uint32_t) { readRange(a, b); }, count, 1);
+        CTaskManager::WaitAll();
+    }
     return allOk.load(std::memory_order_relaxed);
 }
 
@@ -844,17 +865,24 @@ bool xrFS::read_files_parallel(
     results.resize(count);
     std::atomic<bool> allOk{true};
 
-    CTaskManager::AddTaskRange(
-        [&](u32 start, u32 end, u32) {
-            for (u32 i = start; i < end; ++i) {
-                if (!read_file(paths[i], results[i])) {
-                    allOk.store(false, std::memory_order_relaxed);
-                }
+    auto readRange = [&](u32 start, u32 end) {
+        for (u32 i = start; i < end; ++i) {
+            if (!read_file(paths[i], results[i])) {
+                allOk.store(false, std::memory_order_relaxed);
             }
-        },
-        count, 1
-    );
-    CTaskManager::WaitAll();
+        }
+    };
+    if (CTaskManager::IsInsideTask()) {
+        // Nested call (inside a worker task): run inline to avoid a scheduler
+        // deadlock - the pool is already busy with the outer task.
+        readRange(0, count);
+    } else {
+        CTaskManager::AddTaskRange(
+            [&](u32 a, u32 b, u32) { readRange(a, b); },
+            count, 1
+        );
+        CTaskManager::WaitAll();
+    }
 
     return allOk.load(std::memory_order_relaxed);
 }
