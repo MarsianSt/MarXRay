@@ -9,4 +9,7 @@ public:
     virtual void clear() override;
     virtual bool empty() override;
     virtual wm_shader GenerateWallmark() override;
+
+private:
+    xr_vector<xr_string> m_marks;
 };

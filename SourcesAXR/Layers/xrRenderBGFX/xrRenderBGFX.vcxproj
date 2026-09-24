@@ -141,6 +141,7 @@
     <ClInclude Include="port\AnimationKeyCalculate.h" />
     <ClInclude Include="port\bgfxD3DX.h" />
     <ClInclude Include="port\bgfxDetails.h" />
+    <ClInclude Include="port\bgfxWallMarks.h" />
     <ClInclude Include="port\DetailFormat.h" />
     <ClInclude Include="port\bgfxGpuCompat.h" />
     <ClInclude Include="port\bgfxModelBridge.h" />
@@ -243,6 +244,9 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="port/bgfxDetails.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="port/bgfxWallMarks.cpp">
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="port/bgfxResourceManager.cpp">

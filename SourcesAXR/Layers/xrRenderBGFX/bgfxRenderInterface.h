@@ -10,8 +10,10 @@
 #endif
 
 #include "..\..\xrEngine\Render.h"
+#include "bgfxUIShader.h"
 #include "port\bgfxModelBridge.h"
 #include "port\bgfxDetails.h"
+#include "port\bgfxWallMarks.h"
 
 class bgfxRenderTarget : public IRender_Target
 {
@@ -188,9 +190,27 @@ public:
         bgfxAddDynamicVisual(V, &m_transform._11, m_hud, m_invisible);
     }
     virtual void add_Geometry(IRenderVisual* V) override { (void)V; }
-    virtual void add_StaticWallmark(const wm_shader& S, const Fvector& P, float s, CDB::TRI* T, Fvector* V) override {}
-    virtual void add_StaticWallmark(IWallMarkArray* pArray, const Fvector& P, float s, CDB::TRI* T, Fvector* V) override {}
-    virtual void clear_static_wallmarks() override {}
+    virtual void add_StaticWallmark(const wm_shader& S, const Fvector& P, float s, CDB::TRI* T, Fvector* V) override
+    {
+        if (!T || !V || T->suppress_wm)
+            return;
+        bgfxUIShader* sh = (bgfxUIShader*)&*S;
+        if (!sh)
+            return;
+        bgfx_texture_handle_t tex = sh->GetTexture();
+        if (!bgfxIsValid(tex))
+            return;
+        bgfxWallMarks::AddWallmark(T, V, P, tex, s);
+    }
+    virtual void add_StaticWallmark(IWallMarkArray* pArray, const Fvector& P, float s, CDB::TRI* T, Fvector* V) override
+    {
+        if (!pArray || !T || !V || T->suppress_wm)
+            return;
+        wm_shader S = pArray->GenerateWallmark();
+        add_StaticWallmark(S, P, s, T, V);
+    }
+    virtual void clear_static_wallmarks() override { bgfxWallMarks::Clear(); }
+    // Blood on animated meshes (skeleton wallmarks) is not implemented yet.
     virtual void add_SkeletonWallmark(const Fmatrix* xf, IKinematics* obj, IWallMarkArray* pArray, const Fvector& start, const Fvector& dir, float size) override {}
 
     // Object specific
@@ -234,6 +254,7 @@ public:
         bgfxRenderSceneObjects();
         bgfxRenderWorld();
         bgfxDetailsRender();    // grass / detail objects (level.details)
+        bgfxWallMarks::Render();    // bullet holes / blood on level geometry
         bgfxRenderDynamic(0);   // world dynamics: flush CPU-side visuals to the port
         // R2 combine (flares over scene) + R2 forward (rain/thunder after sorted).
         bgfxRenderEnvironmentFx();
