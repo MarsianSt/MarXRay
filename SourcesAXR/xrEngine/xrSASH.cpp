@@ -11,7 +11,6 @@ xrSASH::xrSASH() : m_bInited(false),
 	m_bRunning(false), m_bReinitEngine(false),
 	m_bExecutingConsoleCommand(false)
 {
-	;
 }
 
 xrSASH::~xrSASH()
