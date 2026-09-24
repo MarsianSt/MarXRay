@@ -31,7 +31,7 @@ unsigned short int mbhMulti2WideDumb
 		return 0;
 
 	if ( WideStr || WidePos )
-		VERIFY2( ( ( WideStrSize > 0 ) && ( WideStrSize < 0xFFFF ) ) , make_string( "'WideStrSize'=%hu" , WideStrSize ) );
+		VERIFY2( ( ( WideStrSize > 0 ) && ( WideStrSize < 0xFFFF ) ) , make_string( "'WideStrSize'=%hu" , WideStrSize ) )
 
 	while ( ( b1	= MultiStr[ spos++ ] ) != 0x00 ) {
 
@@ -78,7 +78,7 @@ ENGINE_API unsigned short int mbhMulti2Wide
 		return 0;
 
 	if ( WideStr || WidePos )
-		VERIFY2( ( ( WideStrSize > 0 ) && ( WideStrSize < 0xFFFF ) ) , make_string( "'WideStrSize'=%hu" , WideStrSize ) );
+		VERIFY2( ( ( WideStrSize > 0 ) && ( WideStrSize < 0xFFFF ) ) , make_string( "'WideStrSize'=%hu" , WideStrSize ) )
 
 	while ( ( b1 = MultiStr[ spos ] ) != 0x00 ) {
 
