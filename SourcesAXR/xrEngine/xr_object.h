@@ -169,6 +169,10 @@ virtual	const IObjectPhysicsCollision	*physics_collision	()					{ return  0; }
 
 	//---------------------------------------------------------------------
 										CObject				();
+#pragma warning(push)
+#pragma warning(disable : 4315) // CObject is pack(4) while its bases need 8-aligned this; repacking would change object layout
+									CObject				(const CObject&) = default;
+#pragma warning(pop)
 	virtual								~CObject			();
 
 	virtual void						Load				(LPCSTR section);
