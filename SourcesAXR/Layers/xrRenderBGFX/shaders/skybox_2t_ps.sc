@@ -1,4 +1,4 @@
-$input v_color0, v_dir
+$input v_color0, v_dir, v_worldPos
 
 #include <bgfx_shader.sh>
 
@@ -17,9 +17,11 @@ void main()
     vec3 tint = v_color0.rgb * (scale * 2.0);
     vec3 sky = tint * mix(s0, s1, v_color0.a);
     sky *= 0.33;
-    // Horizon fog: blend to weather fog_color at grazing angles.
-    // Narrow band (power 32): only the horizon line, not the whole skybox faces.
-    float fog = pow(1.0 - saturate(dir.y), 32.0);
+    // Horizon fog: true view-ray height (v_dir interpolates badly on box faces).
+    // Narrow band (power 32): only the horizon line.
+    vec3 vd = v_worldPos - u_invView[3].xyz;
+    float h = vd.y / max(length(vd), 0.001);
+    float fog = pow(1.0 - saturate(h), 32.0);
     sky = mix(sky, u_fogColor.rgb, fog);
     gl_FragColor = vec4(sky, 1.0);
 }
