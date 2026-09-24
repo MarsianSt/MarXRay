@@ -150,26 +150,26 @@ void CUIMapLocationHint::SetInfoTask(CGameTask* task)
 		m_info["t_icon"]->Show( true );
 		float w = m_info["t_time"]->GetWidth();
 
-		Fvector2 pos = m_info["t_icon"]->GetWndPos();
-		pos.x = m_posx_icon;
-		m_info["t_icon"]->SetWndPos( pos );
+		Fvector2 wnd_pos = m_info["t_icon"]->GetWndPos();
+		wnd_pos.x = m_posx_icon;
+		m_info["t_icon"]->SetWndPos( wnd_pos );
 		
-		pos	  = m_info["t_caption"]->GetWndPos();
-		pos.x = m_posx_caption;
-		m_info["t_caption"]->SetWndPos( pos );
+		wnd_pos	  = m_info["t_caption"]->GetWndPos();
+		wnd_pos.x = m_posx_caption;
+		m_info["t_caption"]->SetWndPos( wnd_pos );
 		m_info["t_caption"]->SetWidth( w );
 
-		pos   = m_info["t_time"]->GetWndPos();
-		pos.x = m_posx_caption;
-		m_info["t_time"]->SetWndPos( pos );
+		wnd_pos   = m_info["t_time"]->GetWndPos();
+		wnd_pos.x = m_posx_caption;
+		m_info["t_time"]->SetWndPos( wnd_pos );
 		
-		pos   = m_info["t_time_rem"]->GetWndPos();
-		pos.x = m_posx_caption;
-		m_info["t_time_rem"]->SetWndPos( pos );
+		wnd_pos   = m_info["t_time_rem"]->GetWndPos();
+		wnd_pos.x = m_posx_caption;
+		m_info["t_time_rem"]->SetWndPos( wnd_pos );
 
-		pos   = m_info["t_hint_text"]->GetWndPos();
-		pos.y = _max( pos.y, m_info["t_icon"]->GetWndPos().y + m_info["t_icon"]->GetWndSize().y + 7 );
-		m_info["t_hint_text"]->SetWndPos( pos );
+		wnd_pos   = m_info["t_hint_text"]->GetWndPos();
+		wnd_pos.y = _max( wnd_pos.y, m_info["t_icon"]->GetWndPos().y + m_info["t_icon"]->GetWndSize().y + 7 );
+		m_info["t_hint_text"]->SetWndPos( wnd_pos );
 	}
 
 	pos.x = m_info["t_hint_text"]->GetWndPos().x + m_info["t_hint_text"]->GetWndSize().x + 20.0f;

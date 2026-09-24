@@ -142,7 +142,7 @@ Fvector CTraderAnimation::sound_position()
 	IKinematics* kinematics = smart_cast<IKinematics*>(m_trader->Visual());
 
 	Fmatrix l_tMatrix;
-	l_tMatrix.mul_43(m_trader->XFORM(), kinematics->LL_GetBoneInstance(m_head).mTransform);
+	l_tMatrix.mul_43(m_trader->XFORM(), kinematics->LL_GetBoneInstance(static_cast<u16>(m_head)).mTransform);
 
 	return l_tMatrix.c;
 }

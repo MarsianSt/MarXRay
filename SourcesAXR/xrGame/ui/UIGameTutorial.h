@@ -114,7 +114,7 @@ public:
 		using namespace std::chrono;
 		auto now = steady_clock::now();
 		auto duration = now.time_since_epoch();
-		return duration_cast<milliseconds>(duration).count();
+		return static_cast<float>(duration_cast<milliseconds>(duration).count());
 	}
 };
 

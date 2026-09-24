@@ -90,8 +90,8 @@ void CUISequenceSimpleItem::Load(CUIXml* xml, int idx)
 	for(int idx_=0; idx_<actions_count; ++idx_)
 	{
 		SActionItem& itm			= m_actions[idx_];
-		LPCSTR str					= xml->ReadAttrib("action", idx_, "id");
-		itm.m_action				= action_name_to_id(str);
+		LPCSTR action_str			= xml->ReadAttrib("action", idx_, "id");
+		itm.m_action				= action_name_to_id(action_str);
 		itm.m_bfinalize				= !!xml->ReadAttribInt("action", idx_, "finalize", FALSE);
 		itm.m_functor				= xml->Read(xml->GetLocalRoot(), "action", idx_, "");
 	}

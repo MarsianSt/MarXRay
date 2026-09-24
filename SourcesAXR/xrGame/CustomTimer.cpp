@@ -194,7 +194,7 @@ bool CTimerManager::StartTimer(std::string name, ALife::_TIME_ID start_time, ETi
 				(*timer).setMode(mode);
 
 			if (start_time > 0)
-				(*timer).setValue(start_time);
+				(*timer).setValue(static_cast<int>(start_time));
 
 			(*timer).StartCustomTimer();
 

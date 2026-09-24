@@ -113,8 +113,8 @@ void CUIGameLog::Update()
 	{
 		// Delete elements
 		{
-			for (const auto& it : toDelList)
-				RemoveWindow(it);
+			for (const auto& del_it : toDelList)
+				RemoveWindow(del_it);
 		}
 		if (GameConstants::GetSmoothScrollEnabled())
 			ForceScrollPosition();
@@ -122,8 +122,8 @@ void CUIGameLog::Update()
 		toDelList.clear();
 	}
 
-	/* dsh: не могу понять, для чего это нужно. Но из-за этого, в
-	   некоторых случаях, не показываются некоторые сообщения.
+	/* dsh: пїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ. пїЅпїЅ пїЅпїЅ-пїЅпїЅ пїЅпїЅпїЅпїЅпїЅ, пїЅ
+	   пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ.
 
 	Frect visible_rect;
 	GetAbsoluteRect	(visible_rect);

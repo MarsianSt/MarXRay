@@ -43,7 +43,7 @@ void CVisualBulletSystem::Load(LPCSTR section)
 	if (!m_bVisualBulletSystem || !m_pWeapon)
 		return;
 
-	bullet_system_mode = READ_IF_EXISTS(pSettings, r_u32, section, "visual_bullet_mode", 0);
+	bullet_system_mode = static_cast<u8>(READ_IF_EXISTS(pSettings, r_u32, section, "visual_bullet_mode", 0));
 
 	bullet_bones_in_model.clear();
 	bullet_bones_sets.clear();
@@ -75,7 +75,7 @@ void CVisualBulletSystem::Load(LPCSTR section)
 		{
 			m_bProtectaMode = READ_IF_EXISTS(pSettings, r_bool, section, "protecta_mode", false);
 
-			for (int i = 0; i < m_pWeapon->m_ammoTypes.size(); ++i)
+			for (int i = 0; i < static_cast<int>(m_pWeapon->m_ammoTypes.size()); ++i)
 			{
 				LPCSTR paramName = make_string("bullet_bones_set_%d", i).c_str();
 				bullet_bones_sets.push_back(pSettings->r_string(section, paramName));
@@ -85,7 +85,7 @@ void CVisualBulletSystem::Load(LPCSTR section)
 		{
 			m_bAmmoTypesVisuals = READ_IF_EXISTS(pSettings, r_bool, section, "ammo_types_visuals", false);
 
-			for (int i = 0; i < m_pWeapon->m_ammoTypes.size(); ++i)
+			for (int i = 0; i < static_cast<int>(m_pWeapon->m_ammoTypes.size()); ++i)
 			{
 				LPCSTR paramName = make_string("bullet_bones_set_%d", i).c_str();
 				bullet_bones_sets.push_back(pSettings->r_string(section, paramName));
@@ -165,7 +165,7 @@ void CVisualBulletSystem::ReloadShotgun(const bool forced, const bool unload_mod
 	}
 
 	const auto& bones_to_show = bullet_bones_sets[unload_mode ? cur_ammo_type : id];
-	u8 bullets_to_show = m_pWeapon->GetAmmoElapsed();
+	u8 bullets_to_show = static_cast<u8>(m_pWeapon->GetAmmoElapsed());
 
 	if (!forced && current_bullet_bones == bones_to_show)
 		return;
@@ -263,12 +263,12 @@ void CVisualBulletSystem::ReloadRevolver(const bool forced, const bool unload_mo
 			m_pWeapon->HudItemData()->set_bone_visible(bullet_bones_in_model[i].c_str(), false, TRUE);
 	}
 
-	u8 bullets_to_show = unload_mode ? m_pWeaponMagazined->GetAmmoElapsed() : m_pWeaponMagazined->GetAmmoMagSize();
+	u8 bullets_to_show = static_cast<u8>(unload_mode ? m_pWeaponMagazined->GetAmmoElapsed() : m_pWeaponMagazined->GetAmmoMagSize());
 
 	if (!m_pWeapon->unlimited_ammo() && !unload_mode)
 	{
 		u8 available = m_pWeaponMagazined->GetAvailableCartridgesToLoad(true);
-		bullets_to_show = (available >= bullets_to_show) ? bullets_to_show : (available + m_pWeaponMagazined->GetAmmoElapsed());
+		bullets_to_show = static_cast<u8>((available >= bullets_to_show) ? bullets_to_show : (available + m_pWeaponMagazined->GetAmmoElapsed()));
 	}
 
 	xr_string temp = bullet_bones_sets[unload_mode ? cur_ammo_type : id].c_str();
@@ -313,12 +313,12 @@ void CVisualBulletSystem::ReloadMagazined(const bool forced, const bool unload_m
 	if (!m_pWeaponMagazined)
 		return;
 
-	u8 bullets_to_show = unload_mode ? m_pWeaponMagazined->GetAmmoElapsed() : m_pWeaponMagazined->GetAmmoMagSize();
+	u8 bullets_to_show = static_cast<u8>(unload_mode ? m_pWeaponMagazined->GetAmmoElapsed() : m_pWeaponMagazined->GetAmmoMagSize());
 
 	if (!m_pWeapon->unlimited_ammo() && !unload_mode)
 	{
 		u8 available = m_pWeaponMagazined->GetAvailableCartridgesToLoad(true);
-		bullets_to_show = (available >= bullets_to_show) ? bullets_to_show : (available + m_pWeaponMagazined->GetAmmoElapsed());
+		bullets_to_show = static_cast<u8>((available >= bullets_to_show) ? bullets_to_show : (available + m_pWeaponMagazined->GetAmmoElapsed()));
 	}
 
 	for (size_t i = 0; i < bullet_bones_in_model.size(); ++i)
@@ -334,16 +334,16 @@ void CVisualBulletSystem::ReloadMagazined(const bool forced, const bool unload_m
 		if (shell_bones_sets.size())
 		{
 			xr_string temp = shell_bones_sets[0].c_str();
-			for (int i = 0, count = _GetItemCount(temp.c_str()); i < count; ++i)
+			for (int item_i = 0, item_count = _GetItemCount(temp.c_str()); item_i < item_count; ++item_i)
 			{
 				string64 bone_name;
-				_GetItem(temp.c_str(), i, bone_name);
+				_GetItem(temp.c_str(), item_i, bone_name);
 
 				u16 spring_bone_id = m_pWeapon->HudItemData()->m_model->LL_BoneID(bone_name);
 
 				if (spring_bone_id != BI_NONE)
 				{
-					bool spring_visible = !(bullets_to_show && i <= bullets_to_show);
+					bool spring_visible = !(bullets_to_show && item_i <= bullets_to_show);
 					m_pWeaponMagazined->HudItemData()->set_bone_visible(bone_name, spring_visible);
 				}
 				else
@@ -353,10 +353,10 @@ void CVisualBulletSystem::ReloadMagazined(const bool forced, const bool unload_m
 
 		if (feeder_bone_prefix && *feeder_bone_prefix)
 		{
-			for (int i = 0; i <= m_pWeaponMagazined->GetAmmoMagSize(); ++i)
+			for (int feeder_i = 0; feeder_i <= m_pWeaponMagazined->GetAmmoMagSize(); ++feeder_i)
 			{
 				string64 bone_name{};
-				strconcat(sizeof(bone_name), bone_name, feeder_bone_prefix, std::to_string(i).c_str());
+				strconcat(sizeof(bone_name), bone_name, feeder_bone_prefix, std::to_string(feeder_i).c_str());
 
 				u16 feeder_bone_id = m_pWeapon->HudItemData()->m_model->LL_BoneID(bone_name);
 

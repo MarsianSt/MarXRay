@@ -533,17 +533,17 @@ void CMapLocation::UpdateSpot(CUICustomMap* map, CMapSpot* sp )
 			{
 				LogInfo("! Error. Path from actor to selected map spot does not contain level changer :(");
 				LogInfo("Path:");
-				xr_vector<u32>::iterator it			= map_point_path.begin();
-				xr_vector<u32>::iterator it_e		= map_point_path.end();
-				for(; it!=it_e;++it){
-					//					LogInfo("%d-%s",(*it),ai().game_graph().vertex(*it));
-					LogInfo("[%d] level[%s]",(*it),*ai().game_graph().header().level(ai().game_graph().vertex(*it)->level_id()).name());
+				xr_vector<u32>::iterator mp_it			= map_point_path.begin();
+				xr_vector<u32>::iterator mp_it_e		= map_point_path.end();
+				for(; mp_it!=mp_it_e;++mp_it){
+					//					LogInfo("%d-%s",(*mp_it),ai().game_graph().vertex(*mp_it));
+					LogInfo("[%d] level[%s]",(*mp_it),*ai().game_graph().header().level(ai().game_graph().vertex(*mp_it)->level_id()).name());
 				}
 				LogInfo("- Available LevelChangers:");
-				xr_vector<CLevelChanger*>::iterator lit,lit_e;
-				lit_e							= g_lchangers.end();
-				for(lit=g_lchangers.begin();lit!=lit_e; ++lit){
-					GameGraph::_GRAPH_ID gid = (*lit)->ai_location().game_vertex_id();
+				xr_vector<CLevelChanger*>::iterator lch_it,lch_it_e;
+				lch_it_e							= g_lchangers.end();
+				for(lch_it=g_lchangers.begin();lch_it!=lch_it_e; ++lch_it){
+					GameGraph::_GRAPH_ID gid = (*lch_it)->ai_location().game_vertex_id();
 					LogInfo("[%d]",gid);
 					Fvector p = ai().game_graph().vertex(gid)->level_point();
 					LogInfo("lch_name=%s pos=%f %f %f",*ai().game_graph().header().level(ai().game_graph().vertex(gid)->level_id()).name(), p.x, p.y, p.z);
@@ -560,16 +560,16 @@ void CMapLocation::UpdateSpot(CUICustomMap* map, CMapSpot* sp )
 			}
 			else
 			{
-				xr_vector<u32>::reverse_iterator it = map_point_path.rbegin();
-				xr_vector<u32>::reverse_iterator it_e = map_point_path.rend();
-				for(; (it!=it_e)&&(!bDone) ;++it)
+				xr_vector<u32>::reverse_iterator r_it = map_point_path.rbegin();
+				xr_vector<u32>::reverse_iterator r_it_e = map_point_path.rend();
+				for(; (r_it!=r_it_e)&&(!bDone) ;++r_it)
 				{
-					if(*ai().game_graph().header().level(ai().game_graph().vertex(*it)->level_id()).name()==Level().name())
+					if(*ai().game_graph().header().level(ai().game_graph().vertex(*r_it)->level_id()).name()==Level().name())
 						break;
 				}
-				if(it!=it_e)
+				if(r_it!=r_it_e)
 				{
-					Fvector p = ai().game_graph().vertex(*it)->level_point();
+					Fvector p = ai().game_graph().vertex(*r_it)->level_point();
 					if(Actor()->Position().distance_to_sqr(p)>45.0f*45.0f)
 					{
 						Fvector2 position;

@@ -546,7 +546,7 @@ void AddEffectorEditor(CActor* A, int type, const shared_str& sect_name, float f
 		else
 			xr_sprintf(pp_key, "pp_eff_name_%d", pp_index);
 
-		if (eff->pp_effects.size() <= (pp_index-1))
+		if (static_cast<int>(eff->pp_effects.size()) <= (pp_index-1))
 			break;
 
 		LPCSTR params = eff->pp_effects[pp_index - 1].c_str();
@@ -581,7 +581,7 @@ void AddEffectorEditor(CActor* A, int type, const shared_str& sect_name, float f
 			else
 				xr_sprintf(cam_key, "cam_eff_name_%d", cam_index);
 
-			if (eff->cam_effects.size() <= (cam_index - 1))
+			if (static_cast<int>(eff->cam_effects.size()) <= (cam_index - 1))
 				break;
 
 			LPCSTR params = eff->cam_effects[cam_index - 1].c_str();
@@ -619,7 +619,7 @@ void AddEffectorEditor(CActor* A, int type, const shared_str& sect_name, float f
 			else
 				xr_sprintf(cam_key, "cam_eff_name_%d", cam_index);
 
-			if (eff->cam_effects.size() <= (cam_index - 1))
+			if (static_cast<int>(eff->cam_effects.size()) <= (cam_index - 1))
 				break;
 
 			available_effects.push_back(cam_key);

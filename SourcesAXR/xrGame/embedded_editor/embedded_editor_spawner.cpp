@@ -31,7 +31,7 @@ LPCSTR m_sSelectedName = nullptr, m_sSelectedSection = nullptr;
 static int objects_type{10}, objects_count{1};
 char* m_sSearchText = new char[512]{};
 
-// Отображение текста с переносом
+// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 void DrawTextWithEllipsis(const char* text, float maxWidth)
 {
 	const char* ellipsis = "...";
@@ -190,7 +190,7 @@ void FillSectionsList()
 {
 	for (auto sect : pSettings->sections())
 	{
-		// Игнорируем мультиплеерные предметы
+		// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 		const std::string& sectionName = sect->Name.c_str();
 
 		if (std::regex_search(sectionName, std::regex("(^|_)mp($|_)")))
@@ -267,7 +267,7 @@ void DrawObjectsList(xr_string searchTextLower, int mode)
 	const float iconAreaWidth = maxIconWidth + padding * 2;
 	const float iconAreaHeight = maxIconHeight + padding * 2;
 	const float cellWidth = iconAreaWidth;
-	const float cellHeight = iconAreaHeight + textLineHeight * 2 + padding * 2; // До 2 строк текста
+	const float cellHeight = iconAreaHeight + textLineHeight * 2 + padding * 2; // пїЅпїЅ 2 пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
 	const int columns = std::max(1, (int)((ImGui::GetContentRegionAvail().x - ImGui::GetStyle().ScrollbarSize) / cellWidth));
 
 	ImGui::PushStyleVar(ImGuiStyleVar_CellPadding, { 0, padding });
@@ -303,7 +303,7 @@ void DrawObjectsList(xr_string searchTextLower, int mode)
 			shared_str displayName = toUtf8(name.c_str()).c_str();
 			ImVec2 itemStartPos = ImGui::GetCursorScreenPos();
 
-			// Невидимая кнопка
+			// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
 			if (ImGui::InvisibleButton(("##btn_" + section).c_str(), ImVec2(cellWidth, cellHeight)))
 			{
 				m_sSelectedName = displayName.c_str();
@@ -315,7 +315,7 @@ void DrawObjectsList(xr_string searchTextLower, int mode)
 
 			ImGui::SetCursorScreenPos(itemStartPos);
 
-			// Область для иконки
+			// пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
 			ImVec2 iconAreaStart = ImVec2(itemStartPos.x, itemStartPos.y);
 			ImVec2 iconAreaSize = ImVec2(cellWidth, iconAreaHeight);
 
@@ -337,7 +337,7 @@ void DrawObjectsList(xr_string searchTextLower, int mode)
 				ImVec2 uv1((x + w) / surfaceParams.w, (y + h) / surfaceParams.h);
 				ImVec2 iconSize(w / iconsKx, h / iconsKx);
 
-				// Центрирование иконки в области
+				// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 				float iconX = iconAreaStart.x + (iconAreaSize.x - iconSize.x) * 0.5f;
 				float iconY = iconAreaStart.y + (iconAreaSize.y - iconSize.y) * 0.5f;
 
@@ -348,14 +348,14 @@ void DrawObjectsList(xr_string searchTextLower, int mode)
 				const char* text = "N";
 				ImVec2 textSize = ImGui::CalcTextSize(text);
 
-				// Центрирование текста "N" в области иконки
+				// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ "N" пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
 				float textX = iconAreaStart.x + (iconAreaSize.x - textSize.x) * 0.5f;
 				float textY = iconAreaStart.y + (iconAreaSize.y - textSize.y) * 0.5f;
 
 				drawList->AddText(ImVec2(textX, textY), ImGui::GetColorU32(ImGuiCol_Text), text);
 			}
 
-			// Область текста
+			// пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
 			ImVec2 textAreaStart = ImVec2(itemStartPos.x, itemStartPos.y + iconAreaHeight);
 			ImVec2 textAreaSize = ImVec2(cellWidth, cellHeight - iconAreaHeight);
 
@@ -368,11 +368,11 @@ void DrawObjectsList(xr_string searchTextLower, int mode)
 
 				ImVec2 textSize = ImGui::CalcTextSize(displayName.c_str(), nullptr, false, textAvailableWidth);
 
-				// Центрирование текста по горизонтали
+				// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 				float textOffsetX = (cellWidth - textSize.x) * 0.5f;
-				textOffsetX = std::max(textOffsetX, padding); // Не меньше padding
+				textOffsetX = std::max(textOffsetX, padding); // пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ padding
 
-				// Центрирование текста по вертикали
+				// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 				float textOffsetY = (textAreaSize.y - textSize.y) * 0.5f;
 				textOffsetY = std::max(textOffsetY, 0.0f);
 
@@ -386,7 +386,7 @@ void DrawObjectsList(xr_string searchTextLower, int mode)
 
 			ImVec2 itemEndPos = ImVec2(itemStartPos.x + cellWidth, itemStartPos.y + cellHeight);
 
-			// Рамки
+			// пїЅпїЅпїЅпїЅпїЅ
 			if (isHovered)
 			{
 				drawList->AddRect(itemStartPos, itemEndPos, ImGui::GetColorU32(ImGuiCol_ButtonHovered), 0.0f, 0, 2.0f);
@@ -428,7 +428,7 @@ void ShowSpawner(bool& show)
 
 	ImGui::SetNextItemWidth(350);
 
-	// Поиск
+	// пїЅпїЅпїЅпїЅпїЅ
 	ImGui::InputText(toUtf8(CStringTable().translate("st_spawner_search").c_str()).c_str(), m_sSearchText, 512);
 	xr_string searchTextLower = m_sSearchText;
 	ToLowerUtf8RU(searchTextLower);
@@ -442,7 +442,7 @@ void ShowSpawner(bool& show)
 
 	ImGui::BeginChild(toUtf8(CStringTable().translate("st_spawner_spawn_options").c_str()).c_str(), ImVec2(400, 450), true);
 	{
-		//Название 
+		//пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ 
 		if (m_sSelectedName)
 		{
 			ImGui::SetWindowFontScale(1.5f);
@@ -450,7 +450,7 @@ void ShowSpawner(bool& show)
 			ImGui::SetWindowFontScale(1.0f);
 		}
 
-		//Иконка
+		//пїЅпїЅпїЅпїЅпїЅпїЅ
 		if (m_sSelectedSection)
 		{
 			bool m_bHasIcon = (pSettings->line_exist(m_sSelectedSection, "inv_grid_x") &&
@@ -471,7 +471,7 @@ void ShowSpawner(bool& show)
 			}
 		}
 
-		//Описание
+		//пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 		if (m_sSelectedSection && pSettings->line_exist(m_sSelectedSection, "description"))
 		{
 			LPCSTR item_descr{};
@@ -489,7 +489,7 @@ void ShowSpawner(bool& show)
 
 		ImGui::Separator();
 
-		//Количество
+		//пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 		ImGui::SliderInt(toUtf8(CStringTable().translate("st_spawner_spawn_count").c_str()).c_str(), (int*)&objects_count, 1, 50);
 
 		if (ImGui::Button(toUtf8(CStringTable().translate("st_spawner_spawn_button").c_str()).c_str()))
@@ -558,5 +558,5 @@ void ShowSpawner(bool& show)
 	ImGui::SetNextItemWidth(350);
 	ImGui::SetNextWindowPos(ImVec2(0.0f, 420.0f), ImGuiCond_Once);
 
-	if (ImGui::Combo(toUtf8(CStringTable().translate("st_spawner_objects_type").c_str()).c_str(), &objects_type, items_types_cstr.data(), items_types_cstr.size())) {}
+	if (ImGui::Combo(toUtf8(CStringTable().translate("st_spawner_objects_type").c_str()).c_str(), &objects_type, items_types_cstr.data(), static_cast<int>(items_types_cstr.size()))) {}
 }

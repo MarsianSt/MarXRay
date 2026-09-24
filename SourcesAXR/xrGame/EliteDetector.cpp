@@ -180,9 +180,9 @@ void CUIArtefactDetectorElite::Draw()
 	xr_vector<SDrawOneItem>::const_iterator it_e = m_items_to_draw.end();
 	for(;it!=it_e;++it)
 	{
-		Fvector					p = (*it).pos;
+		Fvector					item_pos = (*it).pos;
 		Fvector					pt3d;
-		M.transform_tiny		(pt3d,p);
+		M.transform_tiny		(pt3d,item_pos);
 		float kz				= wrk_sz.y / m_parent->GetAfDetectRadius();
 		pt3d.x					*= kz;
 		pt3d.z					*= kz;

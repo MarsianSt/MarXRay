@@ -499,7 +499,7 @@ void ShowPostprocessEditor(bool& show)
 	for (size_t i = 0; i < m_effects.size(); i++)
 	{
 		if (ImGui::Selectable(m_effects[i].section.c_str(), m_current_effect == i))
-			m_current_effect = i;
+			m_current_effect = static_cast<int>(i);
 	}
 	ImGui::EndChild();
 
@@ -573,7 +573,7 @@ void ShowPostprocessEditor(bool& show)
 
         for (size_t i = 0; i < eff.pp_effects.size(); i++)
         {
-            ImGui::PushID(i);
+            ImGui::PushID(static_cast<int>(i));
             char buf[256];
             strncpy(buf, eff.pp_effects[i].c_str(), sizeof(buf));
 
@@ -644,7 +644,7 @@ void ShowPostprocessEditor(bool& show)
 
         for (size_t i = 0; i < eff.cam_effects.size(); i++)
         {
-            ImGui::PushID(i + 1000);
+            ImGui::PushID(static_cast<int>(i + 1000));
             char buf[256];
             strncpy(buf, eff.cam_effects[i].c_str(), sizeof(buf));
 

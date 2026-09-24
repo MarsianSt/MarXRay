@@ -112,7 +112,7 @@ void CParticlesObject::Play		(bool bHudMode)
 {
 	IParticleCustom* V			= smart_cast<IParticleCustom*>(renderable.visual);
 
-	R_ASSERT					(V, "Attempt to play a null IParticleCustom!");
+	R_ASSERT2					(V, "Attempt to play a null IParticleCustom!");
 
 	if(bHudMode)
 		V->SetHudMode			(bHudMode);
@@ -128,7 +128,7 @@ void CParticlesObject::play_at_pos(const Fvector& pos, BOOL xform)
 {
 	IParticleCustom* V			= smart_cast<IParticleCustom*>(renderable.visual);
 
-	R_ASSERT					(V, "Attempt to play a null IParticleCustom!");
+	R_ASSERT2					(V, "Attempt to play a null IParticleCustom!");
 
 	Fmatrix m; m.translate		(pos); 
 	V->UpdateParent				(m, m_zero_vel,xform);

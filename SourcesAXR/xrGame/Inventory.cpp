@@ -1526,9 +1526,9 @@ void CInventory::SetSlotsBlocked(u32 mask, bool bBlock)
 		if(mask & ((u32)1<<i))
 		{
 			if (bBlock)
-				BlockSlot(i);
+				BlockSlot(static_cast<u16>(i));
 			else
-				UnblockSlot(i);
+				UnblockSlot(static_cast<u16>(i));
 		}
 	}
 	

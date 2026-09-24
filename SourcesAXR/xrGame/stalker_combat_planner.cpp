@@ -375,23 +375,23 @@ void CStalkerCombatPlanner::add_actions			()
 	add_operator			(eWorldOperatorDetourEnemy,				action);
 
 	{
-		CStalkerSearchPlanner	*action = xr_new<CStalkerSearchPlanner>			(m_object,"search enemy planner");
-		add_condition			(action,eWorldPropertyCriticallyWounded,false);
-		add_condition			(action,eWorldPropertyDangerGrenade,	false);
-		add_condition			(action,eWorldPropertyUseSuddenness,	false);
-		add_condition			(action,eWorldPropertyReadyToKill,		true);
-		add_condition			(action,eWorldPropertySeeEnemy,			false);
-		add_condition			(action,eWorldPropertyInCover,			false);
-		add_condition			(action,eWorldPropertyLookedOut,		true);
-		add_condition			(action,eWorldPropertyPositionHolded,	true);
-		add_condition			(action,eWorldPropertyEnemyDetoured,	true);
-		add_condition			(action,eWorldPropertyPanic,			false);
-		add_condition			(action,eWorldPropertyEnemyWounded,		false);
-		add_condition			(action,eWorldPropertyPlayerOnThePath,	false);
-		add_condition			(action,eWorldPropertyShouldThrowGrenade,false);
-		add_condition			(action,eWorldPropertyTooFarToKillEnemy,false);
-		add_effect				(action,eWorldPropertyPureEnemy,		false);
-		add_operator			(eWorldOperatorSearchEnemy,				action);
+		CStalkerSearchPlanner	*search_action = xr_new<CStalkerSearchPlanner>			(m_object,"search enemy planner");
+		add_condition			(search_action,eWorldPropertyCriticallyWounded,false);
+		add_condition			(search_action,eWorldPropertyDangerGrenade,	false);
+		add_condition			(search_action,eWorldPropertyUseSuddenness,	false);
+		add_condition			(search_action,eWorldPropertyReadyToKill,		true);
+		add_condition			(search_action,eWorldPropertySeeEnemy,			false);
+		add_condition			(search_action,eWorldPropertyInCover,			false);
+		add_condition			(search_action,eWorldPropertyLookedOut,		true);
+		add_condition			(search_action,eWorldPropertyPositionHolded,	true);
+		add_condition			(search_action,eWorldPropertyEnemyDetoured,	true);
+		add_condition			(search_action,eWorldPropertyPanic,			false);
+		add_condition			(search_action,eWorldPropertyEnemyWounded,		false);
+		add_condition			(search_action,eWorldPropertyPlayerOnThePath,	false);
+		add_condition			(search_action,eWorldPropertyShouldThrowGrenade,false);
+		add_condition			(search_action,eWorldPropertyTooFarToKillEnemy,false);
+		add_effect				(search_action,eWorldPropertyPureEnemy,		false);
+		add_operator			(eWorldOperatorSearchEnemy,				search_action);
 	}
 
 	action					= xr_new<CStalkerActionKillEnemy>(m_object,"kill_if_not_visible");

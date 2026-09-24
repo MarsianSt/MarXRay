@@ -1072,9 +1072,9 @@ void CCar::Init()
 					i->second.CDamagableHealthItem::Init(float(atof(*item.second)),2);
 			else 
 			{
-				xr_map   <u16,SDoor>::iterator i=m_doors.find(index);
-				R_ASSERT3(i!=m_doors.end(),"only wheel and doors bones allowed for damage defs",*item.first);
-				i->second.CDamagableHealthItem::Init(float(atof(*item.second)),1);
+				xr_map   <u16,SDoor>::iterator door_it=m_doors.find(index);
+				R_ASSERT3(door_it!=m_doors.end(),"only wheel and doors bones allowed for damage defs",*item.first);
+				door_it->second.CDamagableHealthItem::Init(float(atof(*item.second)),1);
 			}
 
 		}

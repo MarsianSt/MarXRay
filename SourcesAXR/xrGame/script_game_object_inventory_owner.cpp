@@ -2009,7 +2009,7 @@ LPCSTR CScriptGameObject::Weapon_GetAmmoSection(u8 ammo_type)
 		return "";
 	}
 
-	if (weapon->m_ammoTypes.empty() || ammo_type + 1 > weapon->m_ammoTypes.size())
+	if (weapon->m_ammoTypes.empty() || ammo_type + 1 > static_cast<int>(weapon->m_ammoTypes.size()))
 		return "";
 
 	return weapon->m_ammoTypes[ammo_type].c_str();

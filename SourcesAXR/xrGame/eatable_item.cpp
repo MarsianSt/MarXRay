@@ -96,7 +96,7 @@ bool CEatableItem::Useful() const
 {
 	if(!inherited::Useful()) return false;
 
-	//проверить не все ли еще съедено
+	//пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 	if(m_iPortionsNum == 0 && !m_bUnlimited) return false;
 
 	return true;
@@ -215,7 +215,7 @@ void CEatableItem::StartAnimation()
 	LPCSTR cur_section = (anim_sect_exo && pSettings->section_exist(anim_sect_exo) && has_lss) ? anim_sect_exo : anim_sect;
 
 	bool m_bSingleHanded = READ_IF_EXISTS(pSettings, r_bool, cur_section, "single_handed_anim", false);
-	int m_iAnimHandsCnt = m_bSingleHanded ? 1 : 2;
+	int anim_hands_cnt = m_bSingleHanded ? 1 : 2;
 
 	g_block_all_except_movement = true;
 	g_actor_allow_ladder = false;
@@ -231,22 +231,22 @@ void CEatableItem::StartAnimation()
 
 		LPCSTR attach_visual = READ_IF_EXISTS(pSettings, r_string, cur_section, "item_visual", nullptr);
 		
-		// - cari0us - ВАЖНО !!! Названия аргументов и прочих штук в данном случае не должны начинаться с "anim_", 
-		// иначе движок может воспринимать их как анимацию по какой-то причине; Потому переименовал в "use_anm_speed_k"
+		// - cari0us - пїЅпїЅпїЅпїЅпїЅ !!! пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ "anim_", 
+		// пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅ-пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ; пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ "use_anm_speed_k"
 		float anim_speed = 1.0f;
 		if (pSettings->line_exist(cur_section, "anim_speed"))
-			anim_speed = pSettings->r_float(cur_section, "anim_speed");	// желательно избавиться в будущем
+			anim_speed = pSettings->r_float(cur_section, "anim_speed");	// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 		else
 			anim_speed = READ_IF_EXISTS(pSettings, r_float, cur_section, "use_anm_speed_k", 1.0f);
 
 		if (pSettings->line_exist(cur_section, anim_name))
 		{
-			g_player_hud->script_anim_play(m_iAnimHandsCnt, cur_section, anim_name, false, anim_speed, attach_visual);
+			g_player_hud->script_anim_play(static_cast<u8>(anim_hands_cnt), cur_section, anim_name, false, anim_speed, attach_visual);
 			m_iAnimLength = Device.dwTimeGlobal + g_player_hud->motion_length_script(cur_section, anim_name, anim_speed);
 		}
 		else
 		{
-			g_player_hud->script_anim_play(m_iAnimHandsCnt, cur_section, "anm_use", false, anim_speed, attach_visual);
+			g_player_hud->script_anim_play(static_cast<u8>(anim_hands_cnt), cur_section, "anm_use", false, anim_speed, attach_visual);
 			m_iAnimLength = Device.dwTimeGlobal + g_player_hud->motion_length_script(cur_section, "anm_use", anim_speed);
 		}
 
@@ -313,7 +313,7 @@ void CEatableItem::UpdateUseAnim(CActor* actor)
 
 	if (m_bActivated)
 	{
-		if (m_iAnimLength <= Device.dwTimeGlobal || !IsActorAlive)
+		if (static_cast<u32>(m_iAnimLength) <= Device.dwTimeGlobal || !IsActorAlive)
 		{
 			if (actor->inventory().GetPrevActiveSlot() == BACKPACK_SLOT)
 				actor->inventory().SetPrevActiveSlot(NO_ACTIVE_SLOT);

@@ -206,13 +206,13 @@ void CUIMapWnd::Show(bool status)
 	{
 		m_GlobalMap->Show				(true);
 		m_GlobalMap->WorkingArea().set	(ActiveMapRect());
-		GameMaps::iterator	it			= m_GameMaps.begin();
-		GameMaps::iterator	it_e		= m_GameMaps.end();
-		for(;it!=it_e;++it)
+		GameMaps::iterator	map_it			= m_GameMaps.begin();
+		GameMaps::iterator	map_it_e		= m_GameMaps.end();
+		for(;map_it!=map_it_e;++map_it)
 		{
-			m_GlobalMap->AttachChild		(it->second);
-			it->second->Show				(true);
-			it->second->WorkingArea().set	(ActiveMapRect());
+			m_GlobalMap->AttachChild		(map_it->second);
+			map_it->second->Show			(true);
+			map_it->second->WorkingArea().set	(ActiveMapRect());
 		}
 
 		if(	m_view_actor )

@@ -58,7 +58,7 @@ void CALifeGraphRegistry::update			(CSE_ALifeDynamicObject *object)
 
 		if (g_start_game_vertex_id)
 		{
-			m_actor->m_tGraphID = g_start_game_vertex_id;
+			m_actor->m_tGraphID = static_cast<GameGraph::_GRAPH_ID>(g_start_game_vertex_id);
 			m_actor->o_Position = g_start_position;
 		}
 	}

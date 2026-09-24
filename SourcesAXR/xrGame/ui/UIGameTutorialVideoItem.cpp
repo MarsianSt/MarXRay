@@ -142,7 +142,7 @@ void CUISequenceVideoItem::Update()
 		}
 	}else return;
 
-	u32 sync_tm				= (0==m_sound._handle()) ? GetTime() : (m_sound._feedback()?m_sound._feedback()->play_time() : m_sync_time);
+	u32 sync_tm				= static_cast<u32>((0==m_sound._handle()) ? GetTime() : (m_sound._feedback()?m_sound._feedback()->play_time() : m_sync_time));
 	m_sync_time				= sync_tm;
 	// processing A&V
 
@@ -201,7 +201,7 @@ void CUISequenceVideoItem::Start()
 	m_flags.set					(etiNeedStart,TRUE);
 
 	m_sync_time					= 0;
-	m_time_start				= GetTime() + iFloor(m_delay*1000.f);
+	m_time_start				= static_cast<u32>(GetTime() + iFloor(m_delay*1000.f));
 	m_flags.set					(etiDelayed,TRUE);
 
 	if (m_flags.test(etiBackVisible)){

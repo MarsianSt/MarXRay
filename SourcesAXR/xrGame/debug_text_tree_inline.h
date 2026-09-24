@@ -123,11 +123,11 @@ void   text_tree::output (int current_indent, int indent, Columns& columns, OutF
 		func(buffer.data(), num_siblings);
 	}
 
-	for ( Children::iterator i=children.begin(); i!=children.end(); ++i )
+	for ( Children::iterator child_it=children.begin(); child_it!=children.end(); ++child_it )
 	{
-		if ( (*i)->shown )
+		if ( (*child_it)->shown )
 		{
-			(*i)->output(current_indent+indent, indent, columns, func);
+			(*child_it)->output(current_indent+indent, indent, columns, func);
 		}			
 	}
 }

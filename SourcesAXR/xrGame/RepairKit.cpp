@@ -17,7 +17,7 @@
 
 CRepairKit::CRepairKit()
 {
-	m_iPortionsNum = -1;
+	m_iPortionsNum = static_cast<u32>(-1);
 	m_iUseFor = 0;
 	m_fRestoreCondition = 0.0f;
 	m_bUnlimited = false;

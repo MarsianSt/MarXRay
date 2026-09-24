@@ -111,7 +111,7 @@ void CSE_ALifeObject::spawn_supplies		(LPCSTR ini_string)
 						if (W->m_scope_status == ALife::eAddonAttachable)
 						{
 							W->m_addon_flags.set(CSE_ALifeItemWeapon::eWeaponAddonScope, bScope);
-							W->cur_scope = cur_scope;
+							W->cur_scope = static_cast<u8>(cur_scope);
 						}
 						if (W->m_silencer_status == ALife::eAddonAttachable)
 							W->m_addon_flags.set(CSE_ALifeItemWeapon::eWeaponAddonSilencer, bSilencer);
@@ -214,7 +214,7 @@ void CSE_ALifeObject::spawn_supplies		(LPCSTR ini_string)
 							if (W->m_scope_status == ALife::eAddonAttachable)
 							{
 								W->m_addon_flags.set(CSE_ALifeItemWeapon::eWeaponAddonScope, bScope);
-								W->cur_scope = cur_scope;
+								W->cur_scope = static_cast<u8>(cur_scope);
 							}
 							if (W->m_silencer_status == ALife::eAddonAttachable)
 								W->m_addon_flags.set(CSE_ALifeItemWeapon::eWeaponAddonSilencer, bSilencer);

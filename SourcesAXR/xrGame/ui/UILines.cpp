@@ -354,7 +354,7 @@ void CUILines::Draw(float x, float y)
 	//if (m_text.empty())
 		//return;
 
-#pragma todo("DANCE MANIAC: Font scaling crash hack.");
+#pragma todo("DANCE MANIAC: Font scaling crash hack.")
 	if (!m_pFont)
 		m_pFont = UI().Font().pFontLetterica16Russian;
 

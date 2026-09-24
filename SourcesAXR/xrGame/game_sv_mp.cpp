@@ -1061,8 +1061,8 @@ void game_sv_mp::OnVoteStart				(LPCSTR VoteCommand, ClientID sender)
 			string256 LevelName;
 			string256 LevelVersion;
 			sscanf_s(CommandParams, "%255s %255s",
-				LevelName, sizeof(LevelName),
-				LevelVersion, sizeof(LevelVersion)
+				LevelName, static_cast<unsigned>(sizeof(LevelName)),
+				LevelVersion, static_cast<unsigned>(sizeof(LevelVersion))
 			);
 #ifdef DEBUG
 			LogInfo("--- Starting vote for changing level to: %s[%s]", LevelName, LevelVersion);
@@ -2255,11 +2255,11 @@ void	game_sv_mp::OnPlayerChangeName		(NET_Packet& P, ClientID sender)
 	{
 		LogInfo( "Player \"%s\" try to change name on \"%s\" at public server.", ps->getName(), NewName );
 
-		NET_Packet			P;
-		GenerateGameMessage (P);
-		P.w_u32				(GAME_EVENT_SERVER_STRING_MESSAGE);
-		P.w_stringZ			("Server is public. Can\'t change player name!");
-		m_server->SendTo	( sender, P );
+		NET_Packet			P_msg;
+		GenerateGameMessage (P_msg);
+		P_msg.w_u32			(GAME_EVENT_SERVER_STRING_MESSAGE);
+		P_msg.w_stringZ		("Server is public. Can\'t change player name!");
+		m_server->SendTo	( sender, P_msg );
 		return;
 	}
 
@@ -2270,15 +2270,15 @@ void	game_sv_mp::OnPlayerChangeName		(NET_Packet& P, ClientID sender)
 	
 	if (pClient->owner)
 	{
-		NET_Packet			P;
-		GenerateGameMessage(P);
-		P.w_u32(GAME_EVENT_PLAYER_NAME);
-		P.w_u16(pClient->owner->ID);
-		P.w_s16(ps->team);
-		P.w_stringZ(old_name.c_str());
-		P.w_stringZ(ps->getName());
+		NET_Packet			P_name;
+		GenerateGameMessage(P_name);
+		P_name.w_u32(GAME_EVENT_PLAYER_NAME);
+		P_name.w_u16(pClient->owner->ID);
+		P_name.w_s16(ps->team);
+		P_name.w_stringZ(old_name.c_str());
+		P_name.w_stringZ(ps->getName());
 		//---------------------------------------------------
-		real_sender tmp_functor(m_server, &P);
+		real_sender tmp_functor(m_server, &P_name);
 		m_server->ForEachClientDoSender(tmp_functor);
 		//---------------------------------------------------
 		pClient->owner->set_name_replace(ps->getName());

@@ -367,15 +367,15 @@ BOOL			CLevel::Connect2Server				(LPCSTR options)
 		u32 CurTime = GetTickCount();
 		if (CurTime > EndTime)
 		{
-			NET_Packet	P;
-			P.B.count = 0;
-			P.r_pos = 0;
+			NET_Packet	P_net;
+			P_net.B.count = 0;
+			P_net.r_pos = 0;
 
-			P.w_u8(0);
-			P.w_u8(0);
-			P.w_stringZ("Data verification failed. Cheater?");
+			P_net.w_u8(0);
+			P_net.w_u8(0);
+			P_net.w_stringZ("Data verification failed. Cheater?");
 
-			OnConnectResult(&P);			
+			OnConnectResult(&P_net);			
 		}
 		if (net_isFails_Connect())
 		{

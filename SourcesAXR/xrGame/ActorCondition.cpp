@@ -1479,8 +1479,8 @@ void CActorCondition::UpdateTutorialThresholds()
 		xr_strcpy(cb_name,"_G.on_actor_psy");
 	}
 
-	if (b && !m_condition_flags.test(eCriticalFrostbiteReached) && GetFrostbite() > _cFrostbite && (!fis_zero(m_fV_Frostbite))) {
-		m_condition_flags.set			(eCriticalFrostbiteReached, TRUE);
+	if (b && !m_condition_flags.test(static_cast<u16>(eCriticalFrostbiteReached)) && GetFrostbite() > _cFrostbite && (!fis_zero(m_fV_Frostbite))) {
+		m_condition_flags.set			(static_cast<u16>(eCriticalFrostbiteReached), TRUE);
 		b = false;
 		xr_strcpy(cb_name, "_G.on_actor_frostbite");
 	}

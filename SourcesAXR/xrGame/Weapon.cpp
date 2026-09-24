@@ -238,7 +238,7 @@ bool CWeapon::bChangeNVSecondVPStatus()
 				current_actor->Cameras().AddCamEffector(e);
 
 				// Dance Maniac: If use cam effector - set m_switch_time by camera effect life time
-				m_switch_time = Device.dwTimeGlobal + (e->GetAnimatorLength() * 1000.f);
+				m_switch_time = Device.dwTimeGlobal + static_cast<u32>(e->GetAnimatorLength() * 1000.f);
 			}
 		}
 
@@ -266,12 +266,12 @@ int CWeapon::GetScopeX()
 	if (bUseAltScope)
 	{
 		if (m_eScopeStatus != ALife::eAddonPermanent && IsScopeAttached())
-			return (pSettings->r_s32(GetNameWithAttachment(), "scope_x") * UI().get_icons_kx());
+			return static_cast<int>(pSettings->r_s32(GetNameWithAttachment(), "scope_x") * UI().get_icons_kx());
 		else
 			return 0;
 	}
 	else
-		return (pSettings->r_s32(m_scopes[m_cur_scope], "scope_x") * UI().get_icons_kx());
+		return static_cast<int>(pSettings->r_s32(m_scopes[m_cur_scope], "scope_x") * UI().get_icons_kx());
 }
 
 int CWeapon::GetScopeY()
@@ -279,12 +279,12 @@ int CWeapon::GetScopeY()
 	if (bUseAltScope)
 	{
 		if (m_eScopeStatus != ALife::eAddonPermanent && IsScopeAttached())
-			return (pSettings->r_s32(GetNameWithAttachment(), "scope_y") * UI().get_icons_kx());
+			return static_cast<int>(pSettings->r_s32(GetNameWithAttachment(), "scope_y") * UI().get_icons_kx());
 		else
 			return 0;
 	}
 	else
-		return (pSettings->r_s32(m_scopes[m_cur_scope], "scope_y") * UI().get_icons_kx());
+		return static_cast<int>(pSettings->r_s32(m_scopes[m_cur_scope], "scope_y") * UI().get_icons_kx());
 }
 
 CWeapon::~CWeapon		()
@@ -3254,7 +3254,7 @@ void _inertion(float& _val_cur, const float& _val_trgt, const float& _friction)
 
 float _lerp(const float& _val_a, const float& _val_b, const float& _factor)
 {
-	return (_val_a * (1.0 - _factor)) + (_val_b * _factor);
+	return static_cast<float>((_val_a * (1.0 - _factor)) + (_val_b * _factor));
 }
 
 void CWeapon::SetAmmoElapsed(int ammo_count)

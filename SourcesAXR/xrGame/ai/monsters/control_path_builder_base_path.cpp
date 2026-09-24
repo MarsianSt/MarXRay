@@ -19,19 +19,19 @@ bool CControlPathBuilderBase::target_point_need_update()
 		return true;
 	else if (m_state == eStatePathValid) {
 		
-		// если путь ещё не завершен
+		// пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 		if (!m_man->path_builder().is_path_end(m_distance_to_path_end)) {
 
-			if (m_target_actual && !global_failed()) return false;  // если global_failed - игнорировать актуальность
+			if (m_target_actual && !global_failed()) return false;  // пїЅпїЅпїЅпїЅ global_failed - пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 
-			// если первый раз строим
+			// пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
 			if (m_last_time_target_set == 0) return true;
 
-			// если время движения по пути не вышло, не перестраивать
+			// пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅ, пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 			return (m_last_time_target_set + m_time < time());
 		}
 	
-		//return (!m_target_actual); // логический конец пути
+		//return (!m_target_actual); // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ
 		return (true);
 	//} else if ((m_state & eStateWaitParamsApplied) == eStateWaitParamsApplied) {
 	//	return false;
@@ -41,24 +41,24 @@ bool CControlPathBuilderBase::target_point_need_update()
 		return true;
 	} else if ((m_state & eStatePathEnd) == eStatePathEnd) {
 		if (m_target_set.node() != m_object->ai_location().level_vertex_id())
-			return true; // физический конец пути
+			return true; // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ
 	}
 
 	return false;
 }
 
 //////////////////////////////////////////////////////////////////////////
-// Нахождение m_target_found
-// На входе есть установленные нода и позиция m_target_set
+// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ m_target_found
+// пїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ m_target_set
 void CControlPathBuilderBase::find_target_point_set()
 {
 	m_target_found.set(m_target_set.position(),m_target_set.node());
 	
 	//---------------------------------------------------
-	// Быстрые тесты
+	// пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ
 
 	if (m_target_type == eMoveToTarget) {
-		// 1. быстрый тест на достижимость цели
+		// 1. пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ
 		Fvector new_position = m_target_found.position();
 		if (m_man->path_builder().valid_and_accessible( new_position, m_target_found.node())) 
 		{ 
@@ -66,11 +66,11 @@ void CControlPathBuilderBase::find_target_point_set()
 			return;
 		}
 		m_target_found.set_position( new_position );
-		// 2. быстрый тест на недостижимость цели (выбрать случайную позицию)
+		// 2. пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ (пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ)
 		if (!m_man->path_builder().accessible(m_target_found.position())) {
-			Fvector new_position = m_target_found.position();
-			m_target_found.set_node( m_man->path_builder().restrictions().accessible_nearest(m_target_found.position(), new_position ) );
-			m_target_found.set_position( new_position );
+			Fvector accessible_position = m_target_found.position();
+			m_target_found.set_node( m_man->path_builder().restrictions().accessible_nearest(m_target_found.position(), accessible_position ) );
+			m_target_found.set_position( accessible_position );
 			Fvector	pos_random;	
 			Fvector dir;		
 			dir.random_dir			();
@@ -85,7 +85,7 @@ void CControlPathBuilderBase::find_target_point_set()
 	m_target_found.set_node (u32(-1));
 	
 	//---------------------------------------------------
-	// I. Выбрать позицию
+	// I. пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 
 	if (m_target_type == eRetreatFromTarget) {
 		Fvector	dir;
@@ -95,14 +95,14 @@ void CControlPathBuilderBase::find_target_point_set()
 		m_target_found.set_position( Fvector( m_target_found.position() ).mad	(m_object->Position(), dir, pmt_find_point_dist) );
 	}
 
-	// проверить позицию на accessible
+	// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ accessible
 	if (!m_man->path_builder().accessible(m_target_found.position())) {
 		Fvector new_position = m_target_found.position();
 		m_target_found.set_node ( m_man->path_builder().restrictions().accessible_nearest( Fvector().set( m_target_found.position() ), new_position ) );
 		m_target_found.set_position( new_position );
 	}
 	
-	// если новая позиция = позиции монстра - выбрать рандомную валидную позицию
+	// пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ = пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ - пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 	for (u32 i = 0; i < pmt_find_random_pos_attempts; i++ ) {
 		if (m_target_found.position().similar(m_object->Position(), 0.5f)) {
 			
@@ -123,7 +123,7 @@ void CControlPathBuilderBase::find_target_point_set()
 		return;
 	}
 	//---------------------------------------------------
-	// II. Выбрана позиция, ищем ноду
+	// II. пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ
 	
 	find_node();
 }
@@ -132,7 +132,7 @@ void CControlPathBuilderBase::find_target_point_set()
 // if path FAILED
 void CControlPathBuilderBase::find_target_point_failed() 
 {
-	// если новая позиция = позиции монстра - выбрать рандомную валидную позицию
+	// пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ = пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ - пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 	for (u32 i = 0; i < pmt_find_random_pos_attempts; i++ ) {
 		Fvector	pos_random;	
 		Fvector dir;		
@@ -147,7 +147,7 @@ void CControlPathBuilderBase::find_target_point_failed()
 	if (m_target_found.node() != u32(-1)) return;
 
 	//---------------------------------------------------
-	// II. Выбрана позиция, ищем ноду
+	// II. пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ
 	find_node();
 }
 
@@ -155,24 +155,24 @@ void CControlPathBuilderBase::find_target_point_failed()
 
 void CControlPathBuilderBase::find_node()
 {
-	// нода в прямой видимости?
+	// пїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ?
 	m_man->path_builder().restrictions().add_border		(m_object->Position(), m_target_found.position());
 	m_target_found.set_node	( ai().level_graph().check_position_in_direction(m_object->ai_location().level_vertex_id(),m_object->Position(),m_target_found.position()) );
 	m_man->path_builder().restrictions().remove_border	();
 
 	if (ai().level_graph().valid_vertex_id(m_target_found.node()) && m_man->path_builder().accessible(m_target_found.node())) {
-		// корректировка позиции
+		// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 		Fvector new_position=m_target_found.position();
 		m_man->path_builder().fix_position(Fvector().set(m_target_found.position()), m_target_found.node(), new_position);
 		m_target_found.set_position( new_position );
 		return;
 	}
 
-	// искать ноду по прямому запросу
+	// пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 	if (ai().level_graph().valid_vertex_position(m_target_found.position())) {
 		m_target_found.set_node ( ai().level_graph().vertex_id(m_target_found.position()) );
 		if (ai().level_graph().valid_vertex_id(m_target_found.node()) && m_man->path_builder().accessible(m_target_found.node())) {
-			// корректировка позиции
+			// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 			Fvector new_position = m_target_found.position();
 			m_man->path_builder().fix_position(Fvector().set(m_target_found.position()), m_target_found.node(), new_position );
 			m_target_found.set_position( new_position );
@@ -180,11 +180,11 @@ void CControlPathBuilderBase::find_node()
 		}
 	}
 
-	// находим с помощью каверов
+	// пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 	if (m_cover_info.use_covers) {
 		m_cover_approach->setup	(m_target_found.position(), m_cover_info.min_dist, m_cover_info.max_dist, m_cover_info.deviation);
 		const CCoverPoint	*point = ai().cover_manager().best_cover(m_object->Position(),m_cover_info.radius,*m_cover_approach);
-		// нашли кавер?	
+		// пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ?	
 		if (point) {
 			m_target_found.set_node(point->m_level_vertex_id);
 			m_target_found.set_position	( point->m_position );	
@@ -192,7 +192,7 @@ void CControlPathBuilderBase::find_node()
 		}
 	}
 
-	// нода не найдена. на следующем этапе будет использован селектор
+	// пїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ. пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 	m_target_found.set_node		( m_man->path_builder().find_nearest_vertex(m_object->ai_location().level_vertex_id(),m_target_found.position(),30.f) );
 	m_target_found.set_position ( ai().level_graph().vertex_position(m_target_found.node()) );
 }

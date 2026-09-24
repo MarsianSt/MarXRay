@@ -237,9 +237,9 @@ void CAgentEnemyManager::assign_enemies			()
 		(*I).m_probability				*= 1.f - best; 
 
 		// recovering sort order
-		for (u32 i=0, n = m_enemies.size() - 1; i<n; ++i)
-			if (m_enemies[i + 1] < m_enemies[i])
-				std::swap				(m_enemies[i],m_enemies[i + 1]);
+		for (u32 k=0, n_limit = m_enemies.size() - 1; k<n_limit; ++k)
+			if (m_enemies[k + 1] < m_enemies[k])
+				std::swap				(m_enemies[k],m_enemies[k + 1]);
 			else
 				break;
 	}
@@ -479,12 +479,12 @@ void CAgentEnemyManager::assign_wounded			()
 				J									&= (assigned ^ squad_mask_type(-1));
 				for ( ; J; J &= J - 1) {
 					squad_mask_type					K = (J & (J - 1)) ^ J;
-					CAgentMemberManager::iterator	i = object().get_member().member(K);
-					float							distance_sqr = (*i)->object().Position().distance_to_sqr((*I).m_object->Position());
+					CAgentMemberManager::iterator	member_it = object().get_member().member(K);
+					float							distance_sqr = (*member_it)->object().Position().distance_to_sqr((*I).m_object->Position());
 					if (distance_sqr < best_distance_sqr) {
 						best_distance_sqr			= distance_sqr;
 						enemy						= &*I;
-						processor					= &(*i)->object();
+						processor					= &(*member_it)->object();
 					}
 				}
 			}
