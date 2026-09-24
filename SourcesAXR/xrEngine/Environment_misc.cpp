@@ -6,11 +6,45 @@
 #include "thunderbolt.h"
 #include "rain.h"
 #include "x_ray.h"
+#include "../xrCore/TaskManager.h"
 
 #include "IGame_Level.h"
 #include "IGame_Persistent.h"
 #include "../xrServerEntities/object_broker.h"
 #include "../xrServerEntities/LevelGameDef.h"
+
+namespace
+{
+	constexpr u32 c_env_sort_min_groups = 2;
+	constexpr u32 c_env_sort_min_elements = 64;
+
+	void sort_env_vecs(xr_vector<CEnvironment::EnvVec*>& groups)
+	{
+		u32 element_count = 0;
+		for (CEnvironment::EnvVec* env : groups)
+			element_count += static_cast<u32>(env->size());
+
+		if (CTaskManager::IsInsideTask() || !CTaskManager::IsRunning() ||
+			groups.size() < c_env_sort_min_groups || element_count < c_env_sort_min_elements)
+		{
+			for (CEnvironment::EnvVec* env : groups)
+				std::sort(env->begin(), env->end(), CEnvironment::sort_env_etl_pred);
+			return;
+		}
+
+		CTaskManager::AddTaskRange(
+			[&groups](uint32_t start, uint32_t end, uint32_t)
+			{
+				for (uint32_t index = start; index < end; ++index)
+				{
+					CEnvironment::EnvVec& env = *groups[index];
+					std::sort(env.begin(), env.end(), CEnvironment::sort_env_etl_pred);
+				}
+			},
+			static_cast<uint32_t>(groups.size()), 1);
+		CTaskManager::WaitAll();
+	}
+}
 
 void CEnvModifier::load	(IReader* fs, u32 version)
 {
@@ -1178,14 +1212,17 @@ void CEnvironment::load_weathers		()
 	}
 
 	// sorting weather envs
+	xr_vector<EnvVec*> groups;
+	groups.reserve(WeatherCycles.size());
 	EnvsMapIt _I=WeatherCycles.begin();
 	EnvsMapIt _E=WeatherCycles.end();
 	for (; _I!=_E; _I++)
-	{
+		groups.push_back(&_I->second);
+	sort_env_vecs(groups);
+	_I=WeatherCycles.begin();
+	_E=WeatherCycles.end();
+	for (; _I!=_E; _I++)
 		R_ASSERT3	(_I->second.size()>1,"Environment in weather must >=2",*_I->first);
-
-		std::sort(_I->second.begin(),_I->second.end(),sort_env_etl_pred);
-	}
 	R_ASSERT2	(!WeatherCycles.empty(),"Empty weathers.");
 	SetWeather	((*WeatherCycles.begin()).first.c_str());
 }
@@ -1285,12 +1322,17 @@ void CEnvironment::load_weather_effects	()
 	}										
 
 	// sorting weather envs
+	xr_vector<EnvVec*> groups;
+	groups.reserve(WeatherFXs.size());
 	EnvsMapIt _I=WeatherFXs.begin();
 	EnvsMapIt _E=WeatherFXs.end();
-	for (; _I!=_E; _I++){
+	for (; _I!=_E; _I++)
+		groups.push_back(&_I->second);
+	sort_env_vecs(groups);
+	_I=WeatherFXs.begin();
+	_E=WeatherFXs.end();
+	for (; _I!=_E; _I++)
 		R_ASSERT3	(_I->second.size()>1,"Environment in weather must >=2",*_I->first);
-		std::sort	(_I->second.begin(),_I->second.end(),sort_env_etl_pred);
-	}
 }
 
 void CEnvironment::load		()
