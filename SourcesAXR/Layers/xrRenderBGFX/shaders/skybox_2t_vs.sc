@@ -1,5 +1,5 @@
 $input a_position, a_color0, a_texcoord2
-$output v_color0, v_dir, v_worldPos
+$output v_color0, v_dir
 #include <bgfx_shader.sh>
 
 void main()
@@ -9,5 +9,4 @@ void main()
     gl_Position.z = gl_Position.w;
     v_color0 = a_color0;
     v_dir = a_texcoord2.xyz;
-    v_worldPos = mul(u_model[0], tpos).xyz;
 }
