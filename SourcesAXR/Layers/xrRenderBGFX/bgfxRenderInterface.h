@@ -13,6 +13,7 @@
 #include "bgfxUIShader.h"
 #include "port\bgfxModelBridge.h"
 #include "port\bgfxDetails.h"
+#include "port\bgfxHDR.h"
 #include "port\bgfxWallMarks.h"
 
 class bgfxRenderTarget : public IRender_Target
@@ -258,6 +259,7 @@ public:
         bgfxRenderDynamic(0);   // world dynamics: flush CPU-side visuals to the port
         // R2 combine (flares over scene) + R2 forward (rain/thunder after sorted).
         bgfxRenderEnvironmentFx();
+        bgfxHDR::CombinePass((u16)Device.dwWidth, (u16)Device.dwHeight);
         if (currentViewPort == MAIN_VIEWPORT)
             bgfxRenderHudPass();    // actor hands + weapon (see bgfxRenderCompat)
         bgfxClearDynamic();

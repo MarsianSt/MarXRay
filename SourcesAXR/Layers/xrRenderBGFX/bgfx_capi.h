@@ -361,6 +361,7 @@ typedef struct bgfx_caps {
 
 // Texture flags (combined with sampler flags in bgfx_create_texture_2d)
 #define BGFX_TEXTURE_NONE                         UINT64_C(0x0000000000000000)
+#define BGFX_TEXTURE_RT                           UINT64_C(0x0000001000000000)
 #define BGFX_TEXTURE_U_CLAMP                      UINT64_C(0x0000000000000002)
 #define BGFX_TEXTURE_V_CLAMP                      UINT64_C(0x0000000000000008)
 #define BGFX_TEXTURE_MIN_POINT                    UINT64_C(0x0000000000000040)
@@ -480,6 +481,7 @@ void bgfx_set_view_rect(uint16_t _id, uint16_t _x, uint16_t _y, uint16_t _width,
 void bgfx_set_view_clear(uint16_t _id, uint16_t _flags, uint32_t _rgba, float _depth, uint8_t _stencil);
 void bgfx_set_view_mode(uint16_t _id, bgfx_view_mode_t _mode);
 void bgfx_set_view_transform(uint16_t _id, const void* _view, const void* _proj);
+void bgfx_set_view_order(uint16_t _id, uint16_t _num, const bgfx_view_id_t* _order);
 void bgfx_touch(uint16_t _id);
 void bgfx_reset_view(uint16_t _id);
 
@@ -553,9 +555,15 @@ void bgfx_set_uniform(bgfx_uniform_handle_t _handle, const void* _value, uint16_
 void bgfx_submit(bgfx_view_id_t _id, bgfx_program_handle_t _program, uint32_t _depth, uint8_t _flags);
 
 // Texture functions
+bool bgfx_is_texture_valid(uint16_t _depth, bool _cubeMap, uint16_t _numLayers, bgfx_texture_format_t _format, uint64_t _flags);
 bgfx_texture_handle_t bgfx_create_texture_2d(uint16_t _width, uint16_t _height, bool _hasMips, uint16_t _numLayers, bgfx_texture_format_t _format, uint64_t _flags, const bgfx_memory_t* _mem, uint64_t _external);
 void bgfx_destroy_texture(bgfx_texture_handle_t _handle);
 void bgfx_update_texture_2d(bgfx_texture_handle_t _handle, uint16_t _layer, uint8_t _mip, uint16_t _x, uint16_t _y, uint16_t _width, uint16_t _height, const bgfx_memory_t* _mem, uint16_t _pitch);
+
+// Framebuffer functions
+bgfx_frame_buffer_handle_t bgfx_create_frame_buffer_from_handles(uint8_t _num, const bgfx_texture_handle_t* _handles, bool _destroyTexture);
+void bgfx_destroy_frame_buffer(bgfx_frame_buffer_handle_t _handle);
+void bgfx_set_view_frame_buffer(bgfx_view_id_t _id, bgfx_frame_buffer_handle_t _handle);
 
 static bool bgfxIsValid(bgfx_handle_t _handle) { return _handle.idx != UINT16_MAX; }
 

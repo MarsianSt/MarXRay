@@ -1627,7 +1627,7 @@ namespace
 		}
 		case MT_PARTICLE_EFFECT:
 		case MT_PARTICLE_GROUP:
-			// Particles submit into the sky view (kView=2). Draw them only in
+			// Particles submit into the HDR scene FX view (kView=6). Draw them only in
 			// the base pass: the decal pass re-walks the visuals with a fresh
 			// frame marker and would otherwise submit them twice.
 			if (!s_worldDecalPass)

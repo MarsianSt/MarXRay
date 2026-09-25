@@ -12,7 +12,7 @@ bool bgfxLoadWorldTexture(LPCSTR texName, bgfx_texture_handle_t& outTex,
 namespace bgfxParticles
 {
 
-const bgfx_view_id_t kView = 2;
+const bgfx_view_id_t kView = 6;
 
 enum BlendMode
 {

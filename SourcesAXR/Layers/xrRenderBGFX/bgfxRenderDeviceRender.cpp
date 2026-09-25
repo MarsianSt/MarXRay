@@ -3,6 +3,7 @@
 #include "bgfxRenderDeviceRender.h"
 #include "bgfxRenderInterface.h"
 #include "bgfxImGuiRender.h"
+#include "port\bgfxHDR.h"
 #include "bgfx_capi.h"
 
 #include <imgui.h>
@@ -104,9 +105,7 @@ namespace
     XrCallbackInterface s_xrCallback = { &s_xrCallbackVtbl, nullptr };
 }
 
-// View id for sky/clouds submits (bgfxEnvironmentRender kSkyView).
-// Map: 0 = world, 1 = intro video, 2 = sky, 3 = HUD, 4 = game UI, 5 = ImGui.
-const bgfx_view_id_t kBgfxSkyViewId = 2;
+// View map: 0 = HDR scene, 1 = intro video, 2 = combine, 3 = HUD, 4 = game UI, 5 = ImGui, 6 = scene FX.
 
 bgfxRenderDeviceRender::bgfxRenderDeviceRender()
     : m_bInitialized(false)
@@ -152,6 +151,8 @@ void bgfxRenderDeviceRender::updateGamma()
 
 void bgfxRenderDeviceRender::OnDeviceDestroy(BOOL bKeepTextures)
 {
+    if (m_bInitialized)
+        bgfxHDR::DestroyHDRTarget();
 }
 
 void bgfxRenderDeviceRender::ValidateHW()
@@ -167,6 +168,7 @@ void bgfxRenderDeviceRender::Reset(HWND hWnd, u32 &dwWidth, u32 &dwHeight, float
 {
     if (m_bInitialized)
     {
+        bgfxHDR::DestroyHDRTarget();
         bgfx_reset(dwWidth, dwHeight, BGFX_RESET_NONE, BGFX_TEXTURE_FORMAT_COUNT);
     }
     m_width = dwWidth;
@@ -181,6 +183,9 @@ void bgfxRenderDeviceRender::Reset(HWND hWnd, u32 &dwWidth, u32 &dwHeight, float
 
     g_bgfxRenderTarget.m_width = m_width;
     g_bgfxRenderTarget.m_height = m_height;
+
+    if (m_bInitialized)
+        bgfxHDR::CreateHDRTarget((uint16_t)m_width, (uint16_t)m_height);
 
     // Write the actual size back to the engine (out-params)
     dwWidth = m_width;
@@ -321,32 +326,39 @@ void bgfxRenderDeviceRender::Begin()
     if (!m_bInitialized)
         return;
 
-    bgfx_set_view_rect(0, 0, 0, (uint16_t)m_width, (uint16_t)m_height);
-    bgfx_set_view_clear(0, BGFX_CLEAR_COLOR | BGFX_CLEAR_DEPTH, 0x000000ff, 1.0f, 0);
-    // Preserve submission order within the UI view (dialogs must draw over menu).
-    bgfx_set_view_mode(0, BGFX_VIEW_MODE_SEQUENTIAL);
-    bgfx_touch(0);
+    const bool hdrReady = bgfxHDR::RecreateOnResize((uint16_t)m_width, (uint16_t)m_height) && bgfxHDR::BindScene();
+    if (!hdrReady)
+    {
+        LogError("[BGFX] HDR scene target unavailable; using direct backbuffer");
+        bgfx_set_view_frame_buffer(bgfxHDR::kSceneView, BGFX_INVALID_HANDLE);
+        bgfx_set_view_frame_buffer(bgfxHDR::kSceneFxView, BGFX_INVALID_HANDLE);
+        bgfx_set_view_rect(bgfxHDR::kSceneView, 0, 0, (uint16_t)m_width, (uint16_t)m_height);
+        bgfx_set_view_clear(bgfxHDR::kSceneView, BGFX_CLEAR_COLOR | BGFX_CLEAR_DEPTH, 0x000000ff, 1.0f, 0);
+        bgfx_set_view_mode(bgfxHDR::kSceneView, BGFX_VIEW_MODE_SEQUENTIAL);
+        bgfx_touch(bgfxHDR::kSceneView);
+    }
 
-    // View 1 (no clear) renders after all view 0 submits — the intro video
-    // must draw on top of the UI "back" quad that covers the screen.
+    bgfx_set_view_frame_buffer(1, BGFX_INVALID_HANDLE);
     bgfx_set_view_rect(1, 0, 0, (uint16_t)m_width, (uint16_t)m_height);
+    bgfx_set_view_clear(1, BGFX_CLEAR_NONE, 0, 1.0f, 0);
+    bgfx_set_view_mode(1, BGFX_VIEW_MODE_SEQUENTIAL);
     bgfx_touch(1);
 
-    // View 2 (no clear) carries sky/clouds submits (kBgfxSkyViewId). It runs
-    // after the world view, so it shares the world depth buffer content.
-    bgfx_set_view_rect(kBgfxSkyViewId, 0, 0, (uint16_t)m_width, (uint16_t)m_height);
-    bgfx_set_view_clear(kBgfxSkyViewId, BGFX_CLEAR_NONE, 0, 1.0f, 0);
-    bgfx_set_view_mode(kBgfxSkyViewId, BGFX_VIEW_MODE_SEQUENTIAL);
-    bgfx_touch(kBgfxSkyViewId);
+    bgfx_set_view_frame_buffer(bgfxHDR::kCombineView, BGFX_INVALID_HANDLE);
+    bgfx_set_view_rect(bgfxHDR::kCombineView, 0, 0, (uint16_t)m_width, (uint16_t)m_height);
+    bgfx_set_view_clear(bgfxHDR::kCombineView, BGFX_CLEAR_NONE, 0, 1.0f, 0);
+    bgfx_set_view_mode(bgfxHDR::kCombineView, BGFX_VIEW_MODE_SEQUENTIAL);
+    bgfx_touch(bgfxHDR::kCombineView);
 
-    // View 3 (HUD hands/weapon, depth-cleared) is configured by the render
-    // interface (bgfxRenderHudPass). View 4 (no clear) renders after it and
-    // carries the game UI, which must stay on top of the HUD (the engine draws
-    // it via HUD().RenderUI() after Render->Render()).
+    bgfx_set_view_frame_buffer(3, BGFX_INVALID_HANDLE);
+    bgfx_set_view_frame_buffer(4, BGFX_INVALID_HANDLE);
     bgfx_set_view_rect(4, 0, 0, (uint16_t)m_width, (uint16_t)m_height);
     bgfx_set_view_clear(4, BGFX_CLEAR_NONE, 0, 1.0f, 0);
     bgfx_set_view_mode(4, BGFX_VIEW_MODE_SEQUENTIAL);
     bgfx_touch(4);
+
+    const bgfx_view_id_t order[] = { 0, bgfxHDR::kSceneFxView, bgfxHDR::kCombineView, 1, 3, 4, 5 };
+    bgfx_set_view_order(0, 7, order);
 }
 
 void bgfxRenderDeviceRender::Clear()
@@ -368,9 +380,8 @@ void bgfxRenderDeviceRender::ClearTarget()
 
 void bgfxRenderDeviceRender::SetCacheXform(Fmatrix &mView, Fmatrix &mProject)
 {
-    bgfx_set_view_transform(0, mView.m, mProject.m);
-    // Sky view follows the world camera until it gets its own far-plane setup.
-    bgfx_set_view_transform(kBgfxSkyViewId, mView.m, mProject.m);
+    bgfx_set_view_transform(bgfxHDR::kSceneView, mView.m, mProject.m);
+    bgfx_set_view_transform(bgfxHDR::kSceneFxView, mView.m, mProject.m);
 }
 
 void bgfxRenderDeviceRender::OnAssetsChanged()
@@ -420,6 +431,7 @@ bool bgfxRenderDeviceRender::InitBGFX(HWND hWnd, u32 width, u32 height)
 
     m_bInitialized = true;
     LogInfo("[BGFX] Initialized: %dx%d, renderer: %s", width, height, bgfx_get_renderer_name(bgfx_get_renderer_type()));
+    bgfxHDR::CreateHDRTarget((uint16_t)width, (uint16_t)height);
 
     return true;
 }
@@ -428,6 +440,7 @@ void bgfxRenderDeviceRender::ShutdownBGFX()
 {
     if (m_bInitialized)
     {
+        bgfxHDR::DestroyHDRTarget();
         bgfx_shutdown();
         m_bInitialized = false;
     }
