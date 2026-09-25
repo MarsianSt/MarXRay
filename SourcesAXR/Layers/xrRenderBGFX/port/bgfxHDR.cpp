@@ -5,6 +5,9 @@
 #include "../bgfxShaderCompiler.h"
 #include "../../../xrEngine/device.h"
 #include "../../../xrEngine/x_ray.h"
+#include "../../../xrEngine/IGame_Persistent.h"
+#include "../../../xrEngine/Environment.h"
+#include "../../../xrEngine/DiscordRichPresense.h"
 
 #include <cstring>
 #include <vector>
@@ -17,7 +20,16 @@ namespace
     bgfx_program_handle_t s_combineProgram = BGFX_INVALID_HANDLE;
     bgfx_uniform_handle_t s_hdrSampler = BGFX_INVALID_HANDLE;
     bgfx_uniform_handle_t s_tonemapSampler = BGFX_INVALID_HANDLE;
+    bgfx_uniform_handle_t s_hdrDepthSampler = BGFX_INVALID_HANDLE;
     bgfx_uniform_handle_t s_exposure = BGFX_INVALID_HANDLE;
+    // SSFX_HEIGHT_FOG globals (game_unpacked/shaders/r3/screenspace_fog.h:11).
+    // u_invProj / u_invView are NOT here on purpose: bgfx_shader.sh already declares
+    // them as predefined per-view uniforms, fed by bgfx_set_view_transform on kCombineView.
+    bgfx_uniform_handle_t s_fogParams = BGFX_INVALID_HANDLE;
+    bgfx_uniform_handle_t s_fogColor = BGFX_INVALID_HANDLE;
+    bgfx_uniform_handle_t s_lowlandFogParams = BGFX_INVALID_HANDLE;
+    bgfx_uniform_handle_t s_sunDir = BGFX_INVALID_HANDLE;
+    bgfx_uniform_handle_t s_sunColor = BGFX_INVALID_HANDLE;
     bgfx_vertex_layout_t s_combineLayout = {};
     bool s_combineLayoutReady = false;
     uint16_t s_width = 0;
@@ -121,12 +133,30 @@ namespace
             bgfx_destroy_uniform(s_hdrSampler);
         if (bgfxIsValid(s_tonemapSampler))
             bgfx_destroy_uniform(s_tonemapSampler);
+        if (bgfxIsValid(s_hdrDepthSampler))
+            bgfx_destroy_uniform(s_hdrDepthSampler);
         if (bgfxIsValid(s_exposure))
             bgfx_destroy_uniform(s_exposure);
+        if (bgfxIsValid(s_fogParams))
+            bgfx_destroy_uniform(s_fogParams);
+        if (bgfxIsValid(s_fogColor))
+            bgfx_destroy_uniform(s_fogColor);
+        if (bgfxIsValid(s_lowlandFogParams))
+            bgfx_destroy_uniform(s_lowlandFogParams);
+        if (bgfxIsValid(s_sunDir))
+            bgfx_destroy_uniform(s_sunDir);
+        if (bgfxIsValid(s_sunColor))
+            bgfx_destroy_uniform(s_sunColor);
         s_combineProgram = BGFX_INVALID_HANDLE;
         s_hdrSampler = BGFX_INVALID_HANDLE;
         s_tonemapSampler = BGFX_INVALID_HANDLE;
+        s_hdrDepthSampler = BGFX_INVALID_HANDLE;
         s_exposure = BGFX_INVALID_HANDLE;
+        s_fogParams = BGFX_INVALID_HANDLE;
+        s_fogColor = BGFX_INVALID_HANDLE;
+        s_lowlandFogParams = BGFX_INVALID_HANDLE;
+        s_sunDir = BGFX_INVALID_HANDLE;
+        s_sunColor = BGFX_INVALID_HANDLE;
         s_combineLayoutReady = false;
     }
 
@@ -272,7 +302,9 @@ namespace
     bool EnsureCombineProgram()
     {
         if (bgfxIsValid(s_combineProgram) && bgfxIsValid(s_hdrSampler) && bgfxIsValid(s_tonemapSampler) &&
-            bgfxIsValid(s_exposure))
+            bgfxIsValid(s_hdrDepthSampler) && bgfxIsValid(s_exposure) && bgfxIsValid(s_fogParams) &&
+            bgfxIsValid(s_fogColor) && bgfxIsValid(s_lowlandFogParams) && bgfxIsValid(s_sunDir) &&
+            bgfxIsValid(s_sunColor))
             return true;
 
         if (!s_combineLayoutReady)
@@ -317,8 +349,16 @@ namespace
 
         s_hdrSampler = bgfx_create_uniform("s_hdr", BGFX_UNIFORM_TYPE_SAMPLER, 1);
         s_tonemapSampler = bgfx_create_uniform("s_tonemap", BGFX_UNIFORM_TYPE_SAMPLER, 1);
+        s_hdrDepthSampler = bgfx_create_uniform("s_hdrDepth", BGFX_UNIFORM_TYPE_SAMPLER, 1);
         s_exposure = bgfx_create_uniform("u_exposure", BGFX_UNIFORM_TYPE_VEC4, 1);
-        if (!bgfxIsValid(s_hdrSampler) || !bgfxIsValid(s_tonemapSampler) || !bgfxIsValid(s_exposure))
+        s_fogParams = bgfx_create_uniform("u_fogParams", BGFX_UNIFORM_TYPE_VEC4, 1);
+        s_fogColor = bgfx_create_uniform("u_fogColor", BGFX_UNIFORM_TYPE_VEC4, 1);
+        s_lowlandFogParams = bgfx_create_uniform("u_lowlandFogParams", BGFX_UNIFORM_TYPE_VEC4, 1);
+        s_sunDir = bgfx_create_uniform("u_sunDir", BGFX_UNIFORM_TYPE_VEC4, 1);
+        s_sunColor = bgfx_create_uniform("u_sunColor", BGFX_UNIFORM_TYPE_VEC4, 1);
+        if (!bgfxIsValid(s_hdrSampler) || !bgfxIsValid(s_tonemapSampler) || !bgfxIsValid(s_hdrDepthSampler) ||
+            !bgfxIsValid(s_exposure) || !bgfxIsValid(s_fogParams) || !bgfxIsValid(s_fogColor) ||
+            !bgfxIsValid(s_lowlandFogParams) || !bgfxIsValid(s_sunDir) || !bgfxIsValid(s_sunColor))
         {
             LogError("[BGFX] Combine uniforms create failed");
             DestroyCombineProgram();
@@ -366,6 +406,80 @@ namespace
         bgfx_set_uniform(s_lumMiddleGray, _middleGray, 1);
         bgfx_submit(_view, s_lumProgram, 0, BGFX_DISCARD_ALL);
         return true;
+    }
+
+    // SSFX_HEIGHT_FOG globals, 1:1 with the Anomaly R_constant_setup binders in
+    // SourcesAXR/Layers/xrRender/Blender_Recorder_StandartBinding.cpp:
+    //   fog_params         cl_fog_params         :170-181  (-n*r, n, f, r)
+    //   fog_color          cl_fog_color          :184-194  (rgb, density)
+    //   lowland_fog_params cl_lowland_fog_params :198-208  (height, density, base height, 0)
+    //   Ldynamic_dir/color r2_rendertarget_phase_combine.cpp:155-166 -> the combine
+    //     pass evaluates screenspace_fog.h against the view-space sun, so
+    //     u_sunDir = normalize(Device.mView * CEnvDescriptor::sun_dir) and
+    //     u_sunColor = CEnvDescriptor::sun_color. CurrentEnv is a CEnvDescriptorMixer,
+    //     which derives from CEnvDescriptor (Environment.h:258), so both live there.
+    void SetFogUniforms()
+    {
+        float params[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
+        float fogColor[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
+        float lowland[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
+        float sunDir[4] = { 0.0f, -1.0f, 0.0f, 0.0f };
+        float sunColor[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
+
+        CEnvDescriptorMixer* env = g_pGamePersistent
+            ? g_pGamePersistent->Environment().CurrentEnv
+            : nullptr;
+        if (env)
+        {
+            float n = env->fog_near;
+            float f = env->fog_far;
+            float r = 0.0f;
+            if (f - n <= 0.001f)
+            {
+                n = 0.0f;
+                f = 0.0f;
+            }
+            else
+                r = 1.0f / (f - n);
+            params[0] = -n * r;
+            params[1] = n;
+            params[2] = f;
+            params[3] = r;
+
+            fogColor[0] = env->fog_color.x;
+            fogColor[1] = env->fog_color.y;
+            fogColor[2] = env->fog_color.z;
+            fogColor[3] = env->fog_density;
+
+            lowland[0] = env->lowland_fog_height;
+            lowland[1] = env->lowland_fog_density;
+            lowland[2] = g_discord.LowlandFogBaseHeight;
+            lowland[3] = 0.0f;
+
+            Fvector vd;
+            Device.mView.transform_dir(vd, env->sun_dir);
+            vd.normalize_safe();
+            sunDir[0] = vd.x;
+            sunDir[1] = vd.y;
+            sunDir[2] = vd.z;
+            sunDir[3] = 0.0f;
+
+            sunColor[0] = env->sun_color.x;
+            sunColor[1] = env->sun_color.y;
+            sunColor[2] = env->sun_color.z;
+            sunColor[3] = 0.0f;
+        }
+
+        if (bgfxIsValid(s_fogParams))
+            bgfx_set_uniform(s_fogParams, params, 1);
+        if (bgfxIsValid(s_fogColor))
+            bgfx_set_uniform(s_fogColor, fogColor, 1);
+        if (bgfxIsValid(s_lowlandFogParams))
+            bgfx_set_uniform(s_lowlandFogParams, lowland, 1);
+        if (bgfxIsValid(s_sunDir))
+            bgfx_set_uniform(s_sunDir, sunDir, 1);
+        if (bgfxIsValid(s_sunColor))
+            bgfx_set_uniform(s_sunColor, sunColor, 1);
     }
 }
 
@@ -541,7 +655,13 @@ namespace bgfxHDR
         bgfx_set_view_rect(kCombineView, 0, 0, _width, _height);
         bgfx_set_view_clear(kCombineView, BGFX_CLEAR_NONE, 0, 1.0f, 0);
         bgfx_set_view_mode(kCombineView, BGFX_VIEW_MODE_SEQUENTIAL);
-        bgfx_set_view_transform(kCombineView, s_identity, s_identity);
+        // combine_vs.sc emits clip space straight from a_position, so the camera
+        // transform does not move the fullscreen triangle. It is still needed here:
+        // the fog block rebuilds the view-space position with u_invProj and the world
+        // position with u_invView, which are the predefined bgfx per-view uniforms
+        // driven by this call (renderer.h:170 InvView / InvProj). Same pattern as the
+        // world pass in bgfxRenderDeviceRender::SetCacheXform and bgfxParticleRender.cpp:85.
+        bgfx_set_view_transform(kCombineView, Device.mView.m, Device.mProject.m);
         bgfx_touch(kCombineView);
 
         bgfx_transient_vertex_buffer_t tvb;
@@ -553,8 +673,10 @@ namespace bgfxHDR
         const float exposure[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
         bgfx_set_state(BGFX_STATE_WRITE_RGB | BGFX_STATE_WRITE_A, 0);
         bgfx_set_transient_vertex_buffer(0, &tvb, 0, 3);
+        SetFogUniforms();
         bgfx_set_texture(0, s_hdrSampler, s_hdrColor, 0);
         bgfx_set_texture(1, s_tonemapSampler, tonemap, 0);
+        bgfx_set_texture(2, s_hdrDepthSampler, s_hdrDepth, 0);
         bgfx_set_uniform(s_exposure, exposure, 1);
         bgfx_submit(kCombineView, s_combineProgram, 0, BGFX_DISCARD_ALL);
         return true;
