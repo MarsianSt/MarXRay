@@ -9,13 +9,6 @@ void DestroySounds(SoundVec& lst)
 	for (SoundIt it=lst.begin(); lst.end() != it; ++it)	
 		it->destroy();
 }
-/*
-void DestroyMarks(ShaderVec& lst)
-{
-	for (ShaderIt it=lst.begin(); lst.end() != it; ++it)
-		it->destroy();
-}
-*/
 
 void DestroyPSs(PSVec& lst)
 {
@@ -81,7 +74,6 @@ SGameMtlPair::~SGameMtlPair()
 	DestroySounds	(StepSounds);
 	DestroySounds	(CollideSounds);
 	DestroyPSs		(CollideParticles);
-//	DestroyMarks	(CollideMarks);
 	//RenderFactory->DestroyGameMtlPair(m_pCollideMarks);
 	//m_pCollideMarks->
 }
