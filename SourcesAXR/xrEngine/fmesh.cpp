@@ -3,18 +3,6 @@
 
 #include "fmesh.h"
 
-//BOOL ValidateIndices(u32 vCount, u32 iCount, u16* pIndices)
-//{
-//	if (vCount>65535)	return FALSE;
-//	if (iCount%3)		return FALSE;
-//
-//	for (u32 I=0; I<iCount; I++)
-//	{
-//		if (u32(pIndices[I])>=vCount)	return FALSE;
-//	}
-//	return TRUE;
-//}
-
 //static u32 dwPositionPart[8] =
 //{
 //	0,	// no position
