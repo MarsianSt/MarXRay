@@ -174,25 +174,8 @@ manager::suns_ids_type const& manager::suns_ids	() const
 	return					(m_suns_ids);
 }
 
-struct predicate {
-	shared_str	m_id;
-
-	IC			predicate	(shared_str const& id) :
-		m_id	(id)
-	{
-	}
-
-	IC	bool	operator()	(sun* const& sun) const
-	{
-		return	(sun->id()._get() == m_id._get());
-	}
-}; // struct predicate
-
 CLensFlareDescriptor* manager::get_flare	(shared_str const& id) const
 {
-//	container_type::const_iterator	found = std::find_if(m_suns.begin(), m_suns.end(), predicate(id));
-//	VERIFY							(found != m_suns.end());
-//	return							((*found)->);
 	return							(0);
 }
 
