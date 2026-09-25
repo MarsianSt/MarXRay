@@ -272,14 +272,6 @@ bool bfDoFile(CLuaVirtualMachine *tpLuaVM, LPCSTR caScriptName, LPCSTR caNameSpa
 
 	if (bCall) {
 		lua_call	(tpLuaVM,0,0);
-//		int			l_iErrorCode = lua_pcall(tpLuaVM,0,0,0);
-//		if (l_iErrorCode) {
-//#ifdef DEBUG
-//			bfPrintOutput	(tpLuaVM,caScriptName,l_iErrorCode);
-//			vfPrintError	(tpLuaVM,l_iErrorCode);
-//#endif
-//			return	(false);
-//		}
 	}
 	else
 		lua_insert		(tpLuaVM,-4);
