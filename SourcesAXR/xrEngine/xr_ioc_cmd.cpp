@@ -474,53 +474,6 @@ public:
 };
 
 //-----------------------------------------------------------------------
-/*
-#ifdef	DEBUG
-extern  INT	g_bDR_LM_UsePointsBBox;
-extern	INT	g_bDR_LM_4Steps;
-extern	INT g_iDR_LM_Step;
-extern	Fvector	g_DR_LM_Min, g_DR_LM_Max;
-
-class CCC_DR_ClearPoint : public IConsole_Command
-{
-public:
-	CCC_DR_ClearPoint(LPCSTR N) : IConsole_Command(N) { bEmptyArgsHandled = TRUE; };
-	virtual void Execute(LPCSTR args) {
-		g_DR_LM_Min.x = 1000000.0f;
-		g_DR_LM_Min.z = 1000000.0f;
-
-		g_DR_LM_Max.x = -1000000.0f;
-		g_DR_LM_Max.z = -1000000.0f;
-
-		LogInfo("Local BBox (%f, %f) - (%f, %f)", g_DR_LM_Min.x, g_DR_LM_Min.z, g_DR_LM_Max.x, g_DR_LM_Max.z);
-	}
-};
-
-class CCC_DR_TakePoint : public IConsole_Command
-{
-public:
-	CCC_DR_TakePoint(LPCSTR N) : IConsole_Command(N)	{ bEmptyArgsHandled = TRUE; };
-	virtual void Execute(LPCSTR args) {
-		Fvector CamPos =  Device.vCameraPosition;
-
-		if (g_DR_LM_Min.x > CamPos.x)	g_DR_LM_Min.x = CamPos.x;
-		if (g_DR_LM_Min.z > CamPos.z)	g_DR_LM_Min.z = CamPos.z;
-
-		if (g_DR_LM_Max.x < CamPos.x)	g_DR_LM_Max.x = CamPos.x;
-		if (g_DR_LM_Max.z < CamPos.z)	g_DR_LM_Max.z = CamPos.z;
-
-		LogInfo("Local BBox (%f, %f) - (%f, %f)", g_DR_LM_Min.x, g_DR_LM_Min.z, g_DR_LM_Max.x, g_DR_LM_Max.z);
-	}
-};
-
-class CCC_DR_UsePoints : public CCC_Integer
-{
-public:
-	CCC_DR_UsePoints(LPCSTR N, int* V, int _min=0, int _max=999) : CCC_Integer(N, V, _min, _max)	{};
-	virtual void	Save	(IWriter *F)	{};
-};
-#endif
-*/
 
 ENGINE_API BOOL r2_sun_static = TRUE;
 ENGINE_API BOOL r2_advanced_pp = FALSE;	//	advanced post process and effects
