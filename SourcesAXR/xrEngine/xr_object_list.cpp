@@ -557,9 +557,9 @@ void CObjectList::relcase_unregister	(int* ID)
 
 void CObjectList::dump_list(Objects& v, LPCSTR reason)
 {
+#ifdef DEBUG
 	Objects::iterator it = v.begin();
 	Objects::iterator it_e = v.end();
-#ifdef DEBUG
 	LogInfo("----------------dump_list [%s]",reason);
 	for(;it!=it_e;++it)
 		LogInfo("%x - name [%s] ID[%d] parent[%s] getDestroy()=[%s]", 
@@ -568,6 +568,9 @@ void CObjectList::dump_list(Objects& v, LPCSTR reason)
 			(*it)->ID(), 
 			((*it)->H_Parent())?(*it)->H_Parent()->cName().c_str():"", 
 			((*it)->getDestroy())?"yes":"no" );
+#else
+	(void)v;
+	(void)reason;
 #endif // #ifdef DEBUG
 }
 
