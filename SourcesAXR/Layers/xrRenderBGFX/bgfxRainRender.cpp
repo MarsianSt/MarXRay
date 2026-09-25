@@ -24,13 +24,13 @@
 #include <vector>
 
 // Rain/snow streaks, ported 1:1 from dxRainRender::Render (dxRainRender.cpp:66).
-// Submits into the sky/particle view (kBgfxSkyViewId=2) from
+// Submits into the HDR scene FX view (6) from
 // CEnvironment::RenderLast() -> bgfxRenderEnvironmentFx().
 // Splash particles (owner.particle_active + dm\rain.dm) are stage 2 and not
 // drawn here yet.
 namespace
 {
-    const bgfx_view_id_t kRainView = 2;
+    const bgfx_view_id_t kRainView = 6;
     const u32 kMaxQuadsPerSubmit = 1024;
 
     struct RainVertex
