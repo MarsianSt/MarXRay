@@ -19,7 +19,6 @@
 using editor::environment::levels::manager;
 
 static LPCSTR s_default_weather_id	= "[default]";
-static LPCSTR s_level_section_id	= "levels";
 
 manager::manager					(::editor::environment::weathers::manager* weathers) :
 	m_weathers						(*weathers),
