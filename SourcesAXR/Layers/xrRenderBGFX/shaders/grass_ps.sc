@@ -13,7 +13,6 @@ void main()
     if (u_grassAlpha.y > 0.5 && base.w < u_grassAlpha.x)
         discard;
     vec4 c = vec4(base.rgb * v_color0.rgb, base.w * v_color0.a);
-    float fog = saturate(v_fogDepth * u_fogParams.w + u_fogParams.x);
-    c.rgb = mix(c.rgb, u_fogColor.rgb, fog);
+    // Forward fog removed: single SSFX screenspace layer in combine (Anomaly).
     gl_FragColor = c;
 }

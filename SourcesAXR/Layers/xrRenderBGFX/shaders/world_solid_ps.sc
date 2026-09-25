@@ -13,7 +13,7 @@ void main()
     vec4 c = texture2D(u_texture, v_texcoord0);
     if (u_alphaCtrl.y > 0.5 && c.a < u_alphaCtrl.x)
         discard;
-    float fog = saturate(v_fogDepth * u_fogParams.w + u_fogParams.x);
-    c.rgb = mix(c.rgb, u_fogColor.rgb, fog);
+    // Forward fog removed: screenspace SSFX fog in combine is the single layer
+    // (as in Anomaly); keeping both gives 2f-f^2 overfog.
     gl_FragColor = c;
 }

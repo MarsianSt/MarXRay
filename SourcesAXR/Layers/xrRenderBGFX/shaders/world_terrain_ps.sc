@@ -29,7 +29,6 @@ void main()
                  + texture2D(u_dt3, uv).rgb * mask.a;
         color = 2.0 * base.rgb * det;
     }
-    float fog = saturate(v_fogDepth * u_fogParams.w + u_fogParams.x);
-    color = mix(color, u_fogColor.rgb, fog);
+    // Forward fog removed: single SSFX screenspace layer in combine (Anomaly).
     gl_FragColor = vec4(color, 1.0);
 }
