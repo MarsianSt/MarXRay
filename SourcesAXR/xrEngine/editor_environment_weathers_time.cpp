@@ -23,15 +23,6 @@
 using editor::environment::weathers::time;
 using editor::environment::weathers::weather;
 
-static inline editor::color create_color(float const& r, float const& g, float const& b)
-{
-	editor::color			result;
-	result.r				= r;
-	result.g				= g;
-	result.b				= b;
-	return					(result);
-}
-
 time::time					(
 		editor::environment::manager* manager,
 		weather const* weather,
