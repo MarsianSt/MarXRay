@@ -364,20 +364,6 @@ void CSheduler::ProcessStep()
 		item.dwTimeOfLastExecute = dwTime;
 		ItemsProcessed.emplace_back(std::move(item));
 
-#if 0 //def DEBUG
-		auto itemName = item.Object->shedule_Name().c_str();
-		const u32 delta_ms = dwTime - item.dwTimeForExecute;
-		const u32 execTime = eTimer.GetElapsed_ms();
-		VERIFY3(item.Object->dbg_update_shedule == item.Object->dbg_startframe,
-			"Broken sequence of calls to 'shedule_Update'", itemName);
-
-		if (delta_ms > 3 * dwUpdate)
-			LogInfo("! xrSheduler: failed to shedule object [%s] (%dms)", itemName, delta_ms);
-
-		if (execTime > 15)
-			LogInfo("* xrSheduler: too much time consumed by object [%s] (%dms)", itemName, execTime);
-#endif
-
 		if (i % 3 != 3 - 1)
 			continue;
 
