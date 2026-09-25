@@ -273,8 +273,6 @@ ENGINE_API void GetMonitorResolution(u32& horizontal, u32& vertical)
 	}
 }
 
-//#define MOVE_CURRENT_FRAME_COUNTR // This is to determine, if the second vp bugs are happening because there were no frame step
-
 bool CRenderDevice::bMainMenuActive()
 {
 	return  g_pGamePersistent && g_pGamePersistent->m_pMainMenu && g_pGamePersistent->m_pMainMenu->IsActive();
@@ -343,19 +341,12 @@ void CRenderDevice::on_idle		()
 	Statistic->RenderTOTAL_Real.FrameStart();
 	Statistic->RenderTOTAL_Real.Begin();
 
-#ifdef MOVE_CURRENT_FRAME_COUNTR
-	u32 stored_cur_frame = dwFrame;
-#endif
-
 	Sleep(0);
 
 	u32 t_width = Device.dwWidth, t_height = Device.dwHeight;
 
 	for (size_t i = 0; i < Render->viewPortsThisFrame.size(); i++)
 	{
-#ifdef MOVE_CURRENT_FRAME_COUNTR
-		dwFrame += 1;
-#endif
 		Render->currentViewPort = Render->viewPortsThisFrame[i];
 		Render->needPresenting = (Render->currentViewPort == MAIN_VIEWPORT) ? true : false;
 
@@ -469,10 +460,6 @@ void CRenderDevice::on_idle		()
 		if (frameTime < updateDelta)
 			Sleep(((DWORD)(updateDelta - frameTime)));
 	}
-
-#ifdef MOVE_CURRENT_FRAME_COUNTR
-	dwFrame += stored_cur_frame;
-#endif
 
 	m_pRender->PresentFrame();
 
