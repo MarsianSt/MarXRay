@@ -239,11 +239,15 @@ namespace bgfxHDR
         {
             float x, y, z, u, v;
         };
+        // Fullscreen triangle covering the whole viewport (old verts covered
+        // only half the screen, hypotenuse along the diagonal -> black half).
+        // U=(x+1)/2, V=(1-y)/2 (V down, matches previous mapping); out-of-range
+        // UVs are clamped by the HDR texture U_CLAMP|V_CLAMP flags.
         const Vertex vertices[3] =
         {
-            { -1.0f,  1.0f, 0.0f, 0.0f, 0.0f },
-            {  1.0f,  1.0f, 0.0f, 1.0f, 0.0f },
             { -1.0f, -1.0f, 0.0f, 0.0f, 1.0f },
+            {  3.0f, -1.0f, 0.0f, 2.0f, 1.0f },
+            { -1.0f,  3.0f, 0.0f, 0.0f, -1.0f },
         };
 
         bgfx_set_view_frame_buffer(kCombineView, BGFX_INVALID_HANDLE);
