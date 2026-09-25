@@ -1170,8 +1170,8 @@ void CEnvironment::load_weathers		()
 
 		for (const char* file : *file_list)
 		{
-			const size_t length = strlen(file);
-			R_ASSERT2(length >= 4 && !strcmp(".ltx", file + (length - 4)), make_string("Something strange with file [%s]", file));
+			const size_t length = xr_strlen(file);
+			R_ASSERT2(length >= 4 && !xr_strcmp(".ltx", file + (length - 4)), make_string("Something strange with file [%s]", file));
 			string256 identifier{};
 			strncpy_s(identifier, file, length - 4);
 
