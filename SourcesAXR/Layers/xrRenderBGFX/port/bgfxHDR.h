@@ -7,11 +7,16 @@ namespace bgfxHDR
     const bgfx_view_id_t kSceneView = 0;
     const bgfx_view_id_t kCombineView = 2;
     const bgfx_view_id_t kSceneFxView = 6;
+    const bgfx_view_id_t kLuminance64View = 7;
+    const bgfx_view_id_t kLuminance8View = 8;
+    const bgfx_view_id_t kLuminance1View = 9;
 
     bool CreateHDRTarget(uint16_t _width, uint16_t _height);
     void DestroyHDRTarget();
     bool RecreateOnResize(uint16_t _width, uint16_t _height);
     bool IsReady();
     bool BindScene();
+    bool LuminancePass();
     bool CombinePass(uint16_t _width, uint16_t _height);
+    bgfx_texture_handle_t GetTonemapTexture();
 }

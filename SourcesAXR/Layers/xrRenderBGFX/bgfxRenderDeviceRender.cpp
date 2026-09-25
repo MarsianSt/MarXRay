@@ -357,8 +357,9 @@ void bgfxRenderDeviceRender::Begin()
     bgfx_set_view_mode(4, BGFX_VIEW_MODE_SEQUENTIAL);
     bgfx_touch(4);
 
-    const bgfx_view_id_t order[] = { 0, bgfxHDR::kSceneFxView, bgfxHDR::kCombineView, 1, 3, 4, 5 };
-    bgfx_set_view_order(0, 7, order);
+    const bgfx_view_id_t order[] = { 0, bgfxHDR::kSceneFxView, bgfxHDR::kLuminance64View,
+        bgfxHDR::kLuminance8View, bgfxHDR::kLuminance1View, bgfxHDR::kCombineView, 1, 3, 4, 5 };
+    bgfx_set_view_order(0, 10, order);
 }
 
 void bgfxRenderDeviceRender::Clear()

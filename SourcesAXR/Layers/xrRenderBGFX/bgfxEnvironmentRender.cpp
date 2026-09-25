@@ -3,6 +3,7 @@
 #include "bgfx_capi.h"
 #include "bgfxShaderCompiler.h"
 #include "bgfxUIShader.h"
+#include "port/bgfxHDR.h"
 
 // Real particle-systems library (port/PSLibrary.cpp). Declared on the
 // interface type only so this non-port TU does not pull the port stdafx.
@@ -112,8 +113,6 @@ namespace
     bgfx_vertex_layout_t s_cloudsLayout = {};
     bool s_cloudsLayoutReady = false;
 
-    bgfx_texture_handle_t s_tonemapTex = BGFX_INVALID_HANDLE;
-
     bool s_envReady = false;
 
     std::map<std::string, bgfx_texture_handle_t> s_cubeCache;
@@ -189,14 +188,6 @@ namespace
                 LogError("[BGFX] Clouds program build failed");
         }
 
-        if (!bgfxIsValid(s_tonemapTex))
-        {
-            u8 mid[4] = { 128, 128, 128, 255 };
-            s_tonemapTex = bgfx_create_texture_2d(1, 1, false, 1, BGFX_TEXTURE_FORMAT_RGBA8,
-                BGFX_TEXTURE_U_CLAMP | BGFX_TEXTURE_V_CLAMP | BGFX_TEXTURE_MIN_POINT | BGFX_TEXTURE_MAG_POINT,
-                bgfx_copy(mid, 4), 0);
-        }
-
         s_envReady = bgfxIsValid(s_skyProg) && bgfxIsValid(s_cloudsProg);
     }
 
@@ -211,7 +202,6 @@ namespace
         if (bgfxIsValid(s_clouds1)) { bgfx_destroy_uniform(s_clouds1); s_clouds1 = BGFX_INVALID_HANDLE; }
         if (bgfxIsValid(s_cloudsTonemap)) { bgfx_destroy_uniform(s_cloudsTonemap); s_cloudsTonemap = BGFX_INVALID_HANDLE; }
         if (bgfxIsValid(s_cloudsTime)) { bgfx_destroy_uniform(s_cloudsTime); s_cloudsTime = BGFX_INVALID_HANDLE; }
-        if (bgfxIsValid(s_tonemapTex)) { bgfx_destroy_texture(s_tonemapTex); s_tonemapTex = BGFX_INVALID_HANDLE; }
         for (auto& e : s_cubeCache)
             if (bgfxIsValid(e.second))
                 bgfx_destroy_texture(e.second);
@@ -481,7 +471,8 @@ void bgfxEnvironmentRender::RenderSky(CEnvironment &env)
 
     EnsureEnvResources();
 
-    if (bgfxIsValid(s_skyProg) && bgfxIsValid(s_tonemapTex) && bgfxIsValid(mix->sky_a) && bgfxIsValid(mix->sky_b))
+    bgfx_texture_handle_t tonemapTex = bgfxHDR::GetTonemapTexture();
+    if (bgfxIsValid(s_skyProg) && bgfxIsValid(tonemapTex) && bgfxIsValid(mix->sky_a) && bgfxIsValid(mix->sky_b))
     {
         Fmatrix mR;
         mR.identity();
@@ -515,7 +506,7 @@ void bgfxEnvironmentRender::RenderSky(CEnvironment &env)
             bgfx_set_transient_index_buffer(&tib, 0, 60);
             bgfx_set_texture(0, s_sky0, mix->sky_a, 0);
             bgfx_set_texture(1, s_sky1, mix->sky_b, 0);
-            bgfx_set_texture(2, s_skyTonemap, s_tonemapTex, 0);
+            bgfx_set_texture(2, s_skyTonemap, tonemapTex, 0);
             bgfx_submit(kSkyView, s_skyProg, 0, BGFX_DISCARD_ALL);
             bgfx_set_transform(s_identityXform, 1);
         }
@@ -536,7 +527,8 @@ void bgfxEnvironmentRender::RenderClouds(CEnvironment &env)
 
     EnsureEnvResources();
 
-    if (!bgfxIsValid(s_cloudsProg) || !bgfxIsValid(s_tonemapTex) || !bgfxIsValid(mix->clouds_a) || !bgfxIsValid(mix->clouds_b))
+    bgfx_texture_handle_t tonemapTex = bgfxHDR::GetTonemapTexture();
+    if (!bgfxIsValid(s_cloudsProg) || !bgfxIsValid(tonemapTex) || !bgfxIsValid(mix->clouds_a) || !bgfxIsValid(mix->clouds_b))
         return;
 
     u32 nV = (u32)env.CloudsVerts.size();
@@ -590,7 +582,7 @@ void bgfxEnvironmentRender::RenderClouds(CEnvironment &env)
     bgfx_set_transient_index_buffer(&tib, 0, nI);
     bgfx_set_texture(0, s_clouds0, mix->clouds_a, 0);
     bgfx_set_texture(1, s_clouds1, mix->clouds_b, 0);
-    bgfx_set_texture(2, s_cloudsTonemap, s_tonemapTex, 0);
+    bgfx_set_texture(2, s_cloudsTonemap, tonemapTex, 0);
     bgfx_submit(kSkyView, s_cloudsProg, 0, BGFX_DISCARD_ALL);
 }
 
