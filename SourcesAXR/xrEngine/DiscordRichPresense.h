@@ -7,10 +7,10 @@ public:
 	{
 		void Default()
 		{
-			strcpy_s(Detail, "");
-			strcpy_s(State, "");
-			strcpy_s(LargeImageKey, "main_picture");
-			strcpy_s(LargeImageText, "");
+			xr_strcpy(Detail, "");
+			xr_strcpy(State, "");
+			xr_strcpy(LargeImageKey, "main_picture");
+			xr_strcpy(LargeImageText, "");
 		}
 		char Detail[128];
 		char State[128];
