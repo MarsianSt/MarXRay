@@ -3,6 +3,8 @@
 
 #include "bgfxHDR.h"
 #include "../bgfxShaderCompiler.h"
+#include "../../../xrEngine/device.h"
+#include "../../../xrEngine/x_ray.h"
 
 #include <cstring>
 #include <vector>
@@ -14,6 +16,7 @@ namespace
     bgfx_texture_handle_t s_hdrDepth = BGFX_INVALID_HANDLE;
     bgfx_program_handle_t s_combineProgram = BGFX_INVALID_HANDLE;
     bgfx_uniform_handle_t s_hdrSampler = BGFX_INVALID_HANDLE;
+    bgfx_uniform_handle_t s_tonemapSampler = BGFX_INVALID_HANDLE;
     bgfx_uniform_handle_t s_exposure = BGFX_INVALID_HANDLE;
     bgfx_vertex_layout_t s_combineLayout = {};
     bool s_combineLayoutReady = false;
@@ -21,6 +24,36 @@ namespace
     uint16_t s_height = 0;
     bgfx_texture_format_t s_colorFormat = BGFX_TEXTURE_FORMAT_RGBA16F;
     bgfx_texture_format_t s_depthFormat = BGFX_TEXTURE_FORMAT_D24;
+
+    bgfx_frame_buffer_handle_t s_lum64Fb = BGFX_INVALID_HANDLE;
+    bgfx_frame_buffer_handle_t s_lum8Fb = BGFX_INVALID_HANDLE;
+    bgfx_frame_buffer_handle_t s_lum1Fb[2] = { BGFX_INVALID_HANDLE, BGFX_INVALID_HANDLE };
+    bgfx_texture_handle_t s_lum64 = BGFX_INVALID_HANDLE;
+    bgfx_texture_handle_t s_lum8 = BGFX_INVALID_HANDLE;
+    bgfx_texture_handle_t s_lum1[2] = { BGFX_INVALID_HANDLE, BGFX_INVALID_HANDLE };
+    bgfx_program_handle_t s_lumProgram = BGFX_INVALID_HANDLE;
+    bgfx_uniform_handle_t s_lumImage = BGFX_INVALID_HANDLE;
+    bgfx_uniform_handle_t s_lumPrev = BGFX_INVALID_HANDLE;
+    bgfx_uniform_handle_t s_lumMiddleGray = BGFX_INVALID_HANDLE;
+    bgfx_uniform_handle_t s_lumParams = BGFX_INVALID_HANDLE;
+    bgfx_vertex_layout_t s_lumLayout = {};
+    bool s_lumLayoutReady = false;
+    bool s_lumTonemapIndex = false;
+    float s_luminanceAdapt = 0.5f;
+
+    // Defaults mirror SourcesAXR/Layers/xrRender/xrRender_console.cpp:276-279; xrRender is not linked into BGFX.
+    constexpr float kTonemapMiddleGray = 0.95f;
+    constexpr float kTonemapAdaptation = 1.0f;
+    constexpr float kTonemapLowLum = 0.0035f;
+    constexpr float kTonemapAmount = 0.7f;
+
+    const float s_identity[16] =
+    {
+        1.0f, 0.0f, 0.0f, 0.0f,
+        0.0f, 1.0f, 0.0f, 0.0f,
+        0.0f, 0.0f, 1.0f, 0.0f,
+        0.0f, 0.0f, 0.0f, 1.0f,
+    };
 
     void DestroyTextures()
     {
@@ -32,16 +65,67 @@ namespace
         s_hdrDepth = BGFX_INVALID_HANDLE;
     }
 
+    void DestroyLuminanceTargets()
+    {
+        if (bgfxIsValid(s_lum64Fb))
+            bgfx_destroy_frame_buffer(s_lum64Fb);
+        if (bgfxIsValid(s_lum8Fb))
+            bgfx_destroy_frame_buffer(s_lum8Fb);
+        for (u32 i = 0; i < 2; ++i)
+            if (bgfxIsValid(s_lum1Fb[i]))
+                bgfx_destroy_frame_buffer(s_lum1Fb[i]);
+        s_lum64Fb = BGFX_INVALID_HANDLE;
+        s_lum8Fb = BGFX_INVALID_HANDLE;
+        for (u32 i = 0; i < 2; ++i)
+            s_lum1Fb[i] = BGFX_INVALID_HANDLE;
+        for (u32 i = 0; i < 2; ++i)
+            if (bgfxIsValid(s_lum1[i]))
+                bgfx_destroy_texture(s_lum1[i]);
+        if (bgfxIsValid(s_lum64))
+            bgfx_destroy_texture(s_lum64);
+        if (bgfxIsValid(s_lum8))
+            bgfx_destroy_texture(s_lum8);
+        s_lum64 = BGFX_INVALID_HANDLE;
+        s_lum8 = BGFX_INVALID_HANDLE;
+        for (u32 i = 0; i < 2; ++i)
+            s_lum1[i] = BGFX_INVALID_HANDLE;
+        s_lumTonemapIndex = false;
+        s_luminanceAdapt = 0.5f;
+    }
+
+    void DestroyLuminancePrograms()
+    {
+        if (bgfxIsValid(s_lumProgram))
+            bgfx_destroy_program(s_lumProgram);
+        if (bgfxIsValid(s_lumImage))
+            bgfx_destroy_uniform(s_lumImage);
+        if (bgfxIsValid(s_lumPrev))
+            bgfx_destroy_uniform(s_lumPrev);
+        if (bgfxIsValid(s_lumMiddleGray))
+            bgfx_destroy_uniform(s_lumMiddleGray);
+        if (bgfxIsValid(s_lumParams))
+            bgfx_destroy_uniform(s_lumParams);
+        s_lumProgram = BGFX_INVALID_HANDLE;
+        s_lumImage = BGFX_INVALID_HANDLE;
+        s_lumPrev = BGFX_INVALID_HANDLE;
+        s_lumMiddleGray = BGFX_INVALID_HANDLE;
+        s_lumParams = BGFX_INVALID_HANDLE;
+        s_lumLayoutReady = false;
+    }
+
     void DestroyCombineProgram()
     {
         if (bgfxIsValid(s_combineProgram))
             bgfx_destroy_program(s_combineProgram);
         if (bgfxIsValid(s_hdrSampler))
             bgfx_destroy_uniform(s_hdrSampler);
+        if (bgfxIsValid(s_tonemapSampler))
+            bgfx_destroy_uniform(s_tonemapSampler);
         if (bgfxIsValid(s_exposure))
             bgfx_destroy_uniform(s_exposure);
         s_combineProgram = BGFX_INVALID_HANDLE;
         s_hdrSampler = BGFX_INVALID_HANDLE;
+        s_tonemapSampler = BGFX_INVALID_HANDLE;
         s_exposure = BGFX_INVALID_HANDLE;
         s_combineLayoutReady = false;
     }
@@ -52,9 +136,143 @@ namespace
             BGFX_TEXTURE_RT | BGFX_TEXTURE_U_CLAMP | BGFX_TEXTURE_V_CLAMP);
     }
 
+    bgfx_program_handle_t BuildProgram(const char* _vs, const char* _ps)
+    {
+        std::vector<uint8_t> vsBlob;
+        std::vector<uint8_t> psBlob;
+        if (!bgfxShaderCompileFile(_vs, 'v', vsBlob) || !bgfxShaderCompileFile(_ps, 'f', psBlob) ||
+            vsBlob.empty() || psBlob.empty())
+            return BGFX_INVALID_HANDLE;
+        bgfx_shader_handle_t vsh = bgfx_create_shader(bgfx_copy(vsBlob.data(), (uint32_t)vsBlob.size()));
+        bgfx_shader_handle_t fsh = bgfx_create_shader(bgfx_copy(psBlob.data(), (uint32_t)psBlob.size()));
+        if (!bgfxIsValid(vsh) || !bgfxIsValid(fsh))
+        {
+            if (bgfxIsValid(vsh))
+                bgfx_destroy_shader(vsh);
+            if (bgfxIsValid(fsh))
+                bgfx_destroy_shader(fsh);
+            return BGFX_INVALID_HANDLE;
+        }
+        bgfx_program_handle_t program = bgfx_create_program(vsh, fsh, true);
+        if (!bgfxIsValid(program))
+        {
+            bgfx_destroy_shader(vsh);
+            bgfx_destroy_shader(fsh);
+            return BGFX_INVALID_HANDLE;
+        }
+        return program;
+    }
+
+    bool EnsureLuminanceLayout()
+    {
+        if (s_lumLayoutReady)
+            return true;
+        bgfx_vertex_layout_begin(&s_lumLayout, bgfx_get_renderer_type());
+        bgfx_vertex_layout_add(&s_lumLayout, BGFX_ATTRIB_POSITION, 3, BGFX_ATTRIB_TYPE_FLOAT, false, false);
+        bgfx_vertex_layout_add(&s_lumLayout, BGFX_ATTRIB_TEXCOORD0, 2, BGFX_ATTRIB_TYPE_FLOAT, false, false);
+        bgfx_vertex_layout_end(&s_lumLayout);
+        s_lumLayoutReady = true;
+        return true;
+    }
+
+    bool EnsureLuminancePrograms()
+    {
+        if (bgfxIsValid(s_lumProgram) && bgfxIsValid(s_lumImage) && bgfxIsValid(s_lumPrev) &&
+            bgfxIsValid(s_lumMiddleGray) && bgfxIsValid(s_lumParams))
+            return EnsureLuminanceLayout();
+        EnsureLuminanceLayout();
+        s_lumProgram = BuildProgram("luminance_vs.sc", "luminance_ps.sc");
+        if (!bgfxIsValid(s_lumProgram))
+        {
+            LogError("[BGFX] Luminance program build failed");
+            DestroyLuminancePrograms();
+            return false;
+        }
+        s_lumImage = bgfx_create_uniform("s_image", BGFX_UNIFORM_TYPE_SAMPLER, 1);
+        s_lumPrev = bgfx_create_uniform("s_prev", BGFX_UNIFORM_TYPE_SAMPLER, 1);
+        s_lumMiddleGray = bgfx_create_uniform("u_middleGray", BGFX_UNIFORM_TYPE_VEC4, 1);
+        s_lumParams = bgfx_create_uniform("u_luminanceParams", BGFX_UNIFORM_TYPE_VEC4, 1);
+        if (!bgfxIsValid(s_lumImage) || !bgfxIsValid(s_lumPrev) || !bgfxIsValid(s_lumMiddleGray) ||
+            !bgfxIsValid(s_lumParams))
+        {
+            LogError("[BGFX] Luminance uniforms create failed");
+            DestroyLuminancePrograms();
+            return false;
+        }
+        LogInfo("[BGFX] Luminance program created: %u", s_lumProgram.idx);
+        return true;
+    }
+
+    bool CreateLuminanceTargets()
+    {
+        DestroyLuminanceTargets();
+        const uint64_t flags = BGFX_TEXTURE_RT | BGFX_TEXTURE_U_CLAMP | BGFX_TEXTURE_V_CLAMP;
+        bgfx_texture_format_t format = BGFX_TEXTURE_FORMAT_RGBA16F;
+        if (!IsTextureSupported(format))
+            format = BGFX_TEXTURE_FORMAT_RGBA32F;
+        if (!IsTextureSupported(format))
+        {
+            LogError("[BGFX] Luminance target format unavailable");
+            return false;
+        }
+        const bgfx_texture_format_t oneFormat = IsTextureSupported(BGFX_TEXTURE_FORMAT_R32F)
+            ? BGFX_TEXTURE_FORMAT_R32F : format;
+
+        s_lum64 = bgfx_create_texture_2d(64, 64, false, 1, format, flags, nullptr, 0);
+        s_lum8 = bgfx_create_texture_2d(8, 8, false, 1, format, flags, nullptr, 0);
+        if (oneFormat == BGFX_TEXTURE_FORMAT_R32F)
+        {
+            const float initial = 127.0f / 255.0f;
+            for (u32 i = 0; i < 2; ++i)
+                s_lum1[i] = bgfx_create_texture_2d(1, 1, false, 1, oneFormat, flags,
+                    bgfx_copy(&initial, sizeof(initial)), 0);
+        }
+        else
+        {
+            const float initial[4] = { 127.0f / 255.0f, 0.0f, 0.0f, 1.0f };
+            for (u32 i = 0; i < 2; ++i)
+                s_lum1[i] = bgfx_create_texture_2d(1, 1, false, 1, oneFormat, flags,
+                    bgfx_copy(initial, sizeof(initial)), 0);
+        }
+        if (!bgfxIsValid(s_lum64) || !bgfxIsValid(s_lum8) || !bgfxIsValid(s_lum1[0]) || !bgfxIsValid(s_lum1[1]))
+        {
+            LogError("[BGFX] Luminance target texture create failed");
+            DestroyLuminanceTargets();
+            return false;
+        }
+        bgfx_texture_handle_t a64[] = { s_lum64 };
+        bgfx_texture_handle_t a8[] = { s_lum8 };
+        bgfx_texture_handle_t a1[] = { s_lum1[0] };
+        bgfx_texture_handle_t a2[] = { s_lum1[1] };
+        s_lum64Fb = bgfx_create_frame_buffer_from_handles(1, a64, true);
+        s_lum8Fb = bgfx_create_frame_buffer_from_handles(1, a8, true);
+        s_lum1Fb[0] = bgfx_create_frame_buffer_from_handles(1, a1, true);
+        s_lum1Fb[1] = bgfx_create_frame_buffer_from_handles(1, a2, true);
+        if (!bgfxIsValid(s_lum64Fb) || !bgfxIsValid(s_lum8Fb) || !bgfxIsValid(s_lum1Fb[0]) || !bgfxIsValid(s_lum1Fb[1]))
+        {
+            LogError("[BGFX] Luminance framebuffer create failed");
+            DestroyLuminanceTargets();
+            return false;
+        }
+        s_lumTonemapIndex = false;
+        s_luminanceAdapt = 0.5f;
+        LogInfo("[BGFX] Luminance targets created: 64x64 -> 8x8 -> 1x1 format=%d one=%d", (int)format, (int)oneFormat);
+        return true;
+    }
+
+    bool EnsureLuminanceTargets()
+    {
+        if (bgfxIsValid(s_lum64Fb) && bgfxIsValid(s_lum8Fb) && bgfxIsValid(s_lum1Fb[0]) &&
+            bgfxIsValid(s_lum1Fb[1]) && bgfxIsValid(s_lum64) && bgfxIsValid(s_lum8) &&
+            bgfxIsValid(s_lum1[0]) && bgfxIsValid(s_lum1[1]))
+            return true;
+        return CreateLuminanceTargets();
+    }
+
     bool EnsureCombineProgram()
     {
-        if (bgfxIsValid(s_combineProgram) && bgfxIsValid(s_hdrSampler) && bgfxIsValid(s_exposure))
+        if (bgfxIsValid(s_combineProgram) && bgfxIsValid(s_hdrSampler) && bgfxIsValid(s_tonemapSampler) &&
+            bgfxIsValid(s_exposure))
             return true;
 
         if (!s_combineLayoutReady)
@@ -91,13 +309,16 @@ namespace
         s_combineProgram = bgfx_create_program(vsh, fsh, true);
         if (!bgfxIsValid(s_combineProgram))
         {
+            bgfx_destroy_shader(vsh);
+            bgfx_destroy_shader(fsh);
             LogError("[BGFX] Combine program create failed");
             return false;
         }
 
         s_hdrSampler = bgfx_create_uniform("s_hdr", BGFX_UNIFORM_TYPE_SAMPLER, 1);
+        s_tonemapSampler = bgfx_create_uniform("s_tonemap", BGFX_UNIFORM_TYPE_SAMPLER, 1);
         s_exposure = bgfx_create_uniform("u_exposure", BGFX_UNIFORM_TYPE_VEC4, 1);
-        if (!bgfxIsValid(s_hdrSampler) || !bgfxIsValid(s_exposure))
+        if (!bgfxIsValid(s_hdrSampler) || !bgfxIsValid(s_tonemapSampler) || !bgfxIsValid(s_exposure))
         {
             LogError("[BGFX] Combine uniforms create failed");
             DestroyCombineProgram();
@@ -105,6 +326,45 @@ namespace
         }
 
         LogInfo("[BGFX] Combine program created: %u", s_combineProgram.idx);
+        return true;
+    }
+
+    bool SubmitLuminancePass(bgfx_view_id_t _view, bgfx_frame_buffer_handle_t _fb,
+        uint16_t _width, uint16_t _height, float _pass, bgfx_texture_handle_t _source,
+        bgfx_texture_handle_t _previous, float _sourceWidth, float _sourceHeight,
+        const float _middleGray[4])
+    {
+        bgfx_set_view_frame_buffer(_view, _fb);
+        bgfx_set_view_rect(_view, 0, 0, _width, _height);
+        bgfx_set_view_clear(_view, BGFX_CLEAR_NONE, 0, 1.0f, 0);
+        bgfx_set_view_mode(_view, BGFX_VIEW_MODE_SEQUENTIAL);
+        bgfx_set_view_transform(_view, s_identity, s_identity);
+        bgfx_touch(_view);
+
+        bgfx_transient_vertex_buffer_t tvb;
+        bgfx_alloc_transient_vertex_buffer(&tvb, 3, &s_lumLayout);
+        if (!tvb.data)
+            return false;
+        struct Vertex
+        {
+            float x, y, z, u, v;
+        };
+        const Vertex vertices[3] =
+        {
+            { -1.0f, -1.0f, 0.0f, 0.0f, 1.0f },
+            {  3.0f, -1.0f, 0.0f, 2.0f, 1.0f },
+            { -1.0f,  3.0f, 0.0f, 0.0f, -1.0f },
+        };
+        std::memcpy(tvb.data, vertices, sizeof(vertices));
+
+        const float params[4] = { _pass, _sourceWidth, _sourceHeight, 0.0f };
+        bgfx_set_state(BGFX_STATE_WRITE_RGB | BGFX_STATE_WRITE_A, 0);
+        bgfx_set_transient_vertex_buffer(0, &tvb, 0, 3);
+        bgfx_set_texture(0, s_lumImage, _source, 0);
+        bgfx_set_texture(1, s_lumPrev, _previous, 0);
+        bgfx_set_uniform(s_lumParams, params, 1);
+        bgfx_set_uniform(s_lumMiddleGray, _middleGray, 1);
+        bgfx_submit(_view, s_lumProgram, 0, BGFX_DISCARD_ALL);
         return true;
     }
 }
@@ -117,7 +377,7 @@ namespace bgfxHDR
             return false;
 
         if (bgfxIsValid(s_hdrFb) && s_width == _width && s_height == _height)
-            return EnsureCombineProgram();
+            return EnsureLuminanceTargets() && EnsureCombineProgram();
 
         DestroyHDRTarget();
 
@@ -176,8 +436,11 @@ namespace bgfxHDR
         LogInfo("[BGFX] HDR target created: %ux%u color=%d depth=%d fb=%u",
             _width, _height, (int)s_colorFormat, (int)s_depthFormat, s_hdrFb.idx);
 
-        if (!EnsureCombineProgram())
+        if (!CreateLuminanceTargets() || !EnsureCombineProgram())
+        {
+            DestroyHDRTarget();
             return false;
+        }
         return true;
     }
 
@@ -186,17 +449,18 @@ namespace bgfxHDR
         if (bgfxIsValid(s_hdrFb))
             bgfx_destroy_frame_buffer(s_hdrFb);
         s_hdrFb = BGFX_INVALID_HANDLE;
-        s_hdrColor = BGFX_INVALID_HANDLE;
-        s_hdrDepth = BGFX_INVALID_HANDLE;
+        DestroyTextures();
         s_width = 0;
         s_height = 0;
         DestroyCombineProgram();
+        DestroyLuminancePrograms();
+        DestroyLuminanceTargets();
     }
 
     bool RecreateOnResize(uint16_t _width, uint16_t _height)
     {
         if (bgfxIsValid(s_hdrFb) && s_width == _width && s_height == _height)
-            return EnsureCombineProgram();
+            return EnsureLuminanceTargets() && EnsureCombineProgram();
         return CreateHDRTarget(_width, _height);
     }
 
@@ -223,26 +487,49 @@ namespace bgfxHDR
         return true;
     }
 
+    bool LuminancePass()
+    {
+        if (!IsReady() || !EnsureLuminanceTargets() || !EnsureLuminancePrograms())
+            return false;
+
+        const float deltaTime = Device.fTimeDelta > 0.0f ? Device.fTimeDelta : 0.0f;
+        s_luminanceAdapt = 0.9f * s_luminanceAdapt + 0.1f * deltaTime * kTonemapAdaptation;
+        const float none[3] = { 1.0f, 0.0f, 1.0f };
+        const float full[3] = { kTonemapMiddleGray, 1.0f, kTonemapLowLum };
+        const float middleGray[4] =
+        {
+            none[0] + (full[0] - none[0]) * kTonemapAmount,
+            none[1] + (full[1] - none[1]) * kTonemapAmount,
+            none[2] + (full[2] - none[2]) * kTonemapAmount,
+            s_luminanceAdapt,
+        };
+
+        const u32 previous = s_lumTonemapIndex ? 1u : 0u;
+        const u32 current = previous ^ 1u;
+        if (!SubmitLuminancePass(kLuminance64View, s_lum64Fb, 64, 64, 0.0f,
+            s_hdrColor, s_lum1[previous], float(s_width), float(s_height), middleGray) ||
+            !SubmitLuminancePass(kLuminance8View, s_lum8Fb, 8, 8, 1.0f,
+            s_lum64, s_lum1[previous], 64.0f, 64.0f, middleGray) ||
+            !SubmitLuminancePass(kLuminance1View, s_lum1Fb[current], 1, 1, 2.0f,
+            s_lum8, s_lum1[previous], 8.0f, 8.0f, middleGray))
+            return false;
+
+        s_lumTonemapIndex = current != 0;
+        return true;
+    }
+
     bool CombinePass(uint16_t _width, uint16_t _height)
     {
         if (!IsReady() || !EnsureCombineProgram() || _width == 0 || _height == 0)
             return false;
+        const bgfx_texture_handle_t tonemap = GetTonemapTexture();
+        if (!bgfxIsValid(tonemap))
+            return false;
 
-        const float identity[16] =
-        {
-            1.0f, 0.0f, 0.0f, 0.0f,
-            0.0f, 1.0f, 0.0f, 0.0f,
-            0.0f, 0.0f, 1.0f, 0.0f,
-            0.0f, 0.0f, 0.0f, 1.0f,
-        };
         struct Vertex
         {
             float x, y, z, u, v;
         };
-        // Fullscreen triangle covering the whole viewport (old verts covered
-        // only half the screen, hypotenuse along the diagonal -> black half).
-        // U=(x+1)/2, V=(1-y)/2 (V down, matches previous mapping); out-of-range
-        // UVs are clamped by the HDR texture U_CLAMP|V_CLAMP flags.
         const Vertex vertices[3] =
         {
             { -1.0f, -1.0f, 0.0f, 0.0f, 1.0f },
@@ -254,7 +541,7 @@ namespace bgfxHDR
         bgfx_set_view_rect(kCombineView, 0, 0, _width, _height);
         bgfx_set_view_clear(kCombineView, BGFX_CLEAR_NONE, 0, 1.0f, 0);
         bgfx_set_view_mode(kCombineView, BGFX_VIEW_MODE_SEQUENTIAL);
-        bgfx_set_view_transform(kCombineView, identity, identity);
+        bgfx_set_view_transform(kCombineView, s_identity, s_identity);
         bgfx_touch(kCombineView);
 
         bgfx_transient_vertex_buffer_t tvb;
@@ -267,8 +554,17 @@ namespace bgfxHDR
         bgfx_set_state(BGFX_STATE_WRITE_RGB | BGFX_STATE_WRITE_A, 0);
         bgfx_set_transient_vertex_buffer(0, &tvb, 0, 3);
         bgfx_set_texture(0, s_hdrSampler, s_hdrColor, 0);
+        bgfx_set_texture(1, s_tonemapSampler, tonemap, 0);
         bgfx_set_uniform(s_exposure, exposure, 1);
         bgfx_submit(kCombineView, s_combineProgram, 0, BGFX_DISCARD_ALL);
         return true;
+    }
+
+    bgfx_texture_handle_t GetTonemapTexture()
+    {
+        const u32 index = s_lumTonemapIndex ? 1u : 0u;
+        if (bgfxIsValid(s_lum1[index]))
+            return s_lum1[index];
+        return BGFX_INVALID_HANDLE;
     }
 }
