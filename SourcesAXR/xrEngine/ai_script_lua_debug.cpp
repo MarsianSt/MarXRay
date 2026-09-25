@@ -96,33 +96,5 @@ LPCSTR Script::cafEventToString(int iEventCode)
 
 bool Script::bfListLevelVars(CLuaVirtualMachine *tpLuaVirtualMachine, int iStackLevel)
 {
-//	lua_Debug	l_tDebugInfo;
-//	int			i;
-//	const char	*name;
-//
-//	if (lua_getstack(tpLuaVirtualMachine, iStackLevel, &l_tDebugInfo) == 0)
-//		return	(false);  /* failure: no such level in the stack */
-//	LogInfo("  Event			: %d",cafEventToString(l_tDebugInfo.event));
-//	LogInfo("  Name			: %s",l_tDebugInfo.name);
-//	LogInfo("  Name what		: %s",l_tDebugInfo.namewhat);
-//	LogInfo("  What			: %s",l_tDebugInfo.what);
-//	LogInfo("  Source			: %s",l_tDebugInfo.source);
-//	LogInfo("  Source (short)	: %s",l_tDebugInfo.short_src);
-//	LogInfo("  Current line	: %d",l_tDebugInfo.currentline);
-//	LogInfo("  Nups			: %d",l_tDebugInfo.nups);
-//	LogInfo("  Line defined	: %d",l_tDebugInfo.linedefined);
-//	i			= 1;
-//	while (NULL != (name = lua_getlocal(tpLuaVirtualMachine, &l_tDebugInfo, i++))) {
-//		LogInfo("    local   %d %s", i-1, name);
-//		lua_pop	(tpLuaVirtualMachine, 1);  /* remove variable value */
-//	}
-//
-//	lua_getinfo	(tpLuaVirtualMachine, "f", &l_tDebugInfo);  /* retrieves function */
-//	i = 1;
-//	while (NULL != (name = lua_getupvalue(tpLuaVirtualMachine, -1, i++))) {
-//		LogInfo("    upvalue %d %s", i-1, name);
-//		lua_pop	(tpLuaVirtualMachine, 1);  /* remove upvalue value */
-//	}
-//	return		(true);
 	return		(false);
 }
