@@ -357,9 +357,14 @@ void bgfxRenderDeviceRender::Begin()
     bgfx_set_view_mode(4, BGFX_VIEW_MODE_SEQUENTIAL);
     bgfx_touch(4);
 
+    // Frame order: scene -> scene FX -> luminance -> bloom (build/H/V) -> combine -> leftovers.
+    // The bloom views sit between the luminance chain and the combine so bgfxHDR::BloomPass
+    // reads the HDR target of this frame and combine_bloom() reads this frame's rt_Bloom_1.
     const bgfx_view_id_t order[] = { 0, bgfxHDR::kSceneFxView, bgfxHDR::kLuminance64View,
-        bgfxHDR::kLuminance8View, bgfxHDR::kLuminance1View, bgfxHDR::kCombineView, 1, 3, 4, 5 };
-    bgfx_set_view_order(0, 10, order);
+        bgfxHDR::kLuminance8View, bgfxHDR::kLuminance1View,
+        bgfxHDR::kBloomBuildView, bgfxHDR::kBloomBlurHView, bgfxHDR::kBloomBlurVView,
+        bgfxHDR::kCombineView, 1, 3, 4, 5 };
+    bgfx_set_view_order(0, sizeof(order) / sizeof(order[0]), order);
 }
 
 void bgfxRenderDeviceRender::Clear()
