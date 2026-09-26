@@ -26,41 +26,30 @@ uniform vec4 u_sunColor;
 // bgfx_set_view_transform on kCombineView), i.e. the mirror of the Anomaly m_inv_V that
 // combine_1.ps:194 uses to turn the view-space position into a world-space one.
 
-// settings_screenspace_FOG.h, hardcoded exactly as in the reference.
-// G_FOG_HEIGHT / G_FOG_HEIGHT_INTENSITY are dead code under
-// G_USE_PARAMS_FROM_WEATHER (the branch we port, weather-driven values).
-//   #define G_FOG_HEIGHT            8.0f
-//   #define G_FOG_HEIGHT_INTENSITY  1.0f
-#define G_FOG_HEIGHT_DENSITY       1.3
-#define G_FOG_SUNCOLOR_INTENSITY   0.1
 
-// game_unpacked/shaders/r3/screenspace_fog.h:11 SSFX_HEIGHT_FOG, ported 1:1
-// (G_USE_PARAMS_FROM_WEATHER active). HLSL inout param -> explicit return.
-vec3 SSFX_HEIGHT_FOG(vec3 P, float World_Py, vec3 color)
+// game_unpacked/shaders/r3/common_functions.h:387-407 compute_height_fog, ported 1:1
+// (HLSL float3 param -> explicit return, m_v2w -> u_view).
+float compute_height_fog(vec3 P_view)
 {
-    // Get Sun dir
-    vec3 Sun = saturate(dot(normalize(u_sunDir.xyz), -normalize(P)));
+    //Settings
+    float height = u_lowlandFogParams.x;    //Fog height
+    float density = u_lowlandFogParams.y;    //Fog density (keep it low, it's exponential fog without any distance attenuation)
+    float base_height = u_lowlandFogParams.z; //Fog base height (base height of lowland fog, for current level)
 
-    // Apply sun color
-    Sun = lerp(u_fogColor.rgb, u_sunColor.rgb, Sun);
+    //Transform view space position into world space
+    vec3 P_world = mul(u_view, vec4(P_view, 1.0)).xyz;
 
-    // Distance Fog ( Default Anomaly Fog )
-    float fog = saturate(length(P) * u_fogParams.w + u_fogParams.x);
+    //Calculate height factor
+    float height_factor = base_height + height - P_world.y;
 
-    // Height Fog
-    float fogheight = smoothstep(u_lowlandFogParams.x, -u_lowlandFogParams.x, World_Py) * u_lowlandFogParams.y;
+    //Get length of view space position
+    float P_dist = length(P_view.xyz) * height_factor;
 
-    // Add the height fog to the distance fog
-    float fogresult = saturate(fog + fogheight * (fog * G_FOG_HEIGHT_DENSITY));
+    //Calculate exponential fog
+    float fog = 1.0 - exp(-P_dist * density);
 
-    // Blend factor to mix sun color and fog color. Adjust intensity to.
-    float FogBlend = fogheight * G_FOG_SUNCOLOR_INTENSITY;
-
-    // Final fog color
-    vec3 FOG_COLOR = lerp(u_fogColor.rgb, Sun, FogBlend);
-
-    // Apply fog to color
-    return lerp(color, FOG_COLOR, fogresult);
+    //Output
+    return saturate(fog);
 }
 
 // game_unpacked/shaders/r3/srgb.h:7-53, cheap gamma (pow 2.2 in, pow 1/2.2 out).
@@ -120,7 +109,16 @@ void main()
     vec3 P = texture2D(s_position, tc).xyz;
     vec3 WorldP = mul(u_view, vec4(P, 1.0)).xyz;
 
-    c = SSFX_HEIGHT_FOG(P, WorldP.y, c);
+    // game_unpacked/shaders/r3/combine_1.ps:196-202, the active branch
+    // (LOWLAND_FOG_TYPE != 1): vanilla distance fog, then the exponential lowland fog.
+    float distance = length(P);
+    float fog = saturate(distance * u_fogParams.w + u_fogParams.x);
+    c = lerp(c, u_fogColor.rgb, fog);
+    c = lerp(c, u_fogColor.rgb, compute_height_fog(P));
+
+    // combine_1.ps:204 - computed, but deliberately not written into the backbuffer
+    // alpha: that would break the UI compositing which runs after this pass.
+    float skyblend = saturate(fog * fog);
 
     float scale = texture2D(s_tonemap, vec2(0.5, 0.5)).x;
     vec3 x = c * u_exposure.x * scale;
