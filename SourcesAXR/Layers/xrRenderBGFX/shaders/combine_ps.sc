@@ -4,7 +4,7 @@ $input v_texcoord0
 
 SAMPLER2D(s_hdr, 0);
 SAMPLER2D(s_tonemap, 1);
-SAMPLER2D(s_hdrDepth, 2);
+SAMPLER2D(s_position, 2);
 // r2_RT_bloom1, the target the R4 vertical gaussian leaves behind
 // (archive_sourse/Layers/xrRenderPC_R4/blender_bloom_build.cpp:22-35 element 2,
 // r4_rendertarget_phase_bloom.cpp:317-322). Bound from bgfxHDR::GetBloomTexture.
@@ -22,10 +22,9 @@ uniform vec4 u_lowlandFogParams;
 uniform vec4 u_sunDir;
 uniform vec4 u_sunColor;
 
-// u_invProj / u_invView are the bgfx predefined per-view uniforms (declared by
-// <bgfx_shader.sh>, fed by bgfx_set_view_transform on kCombineView), so they are
-// used here without re-declaring. They mirror the Anomaly m_inv_P / m_inv_V that
-// combine_1.ps:194 uses to rebuild WorldP from the view-space position.
+// u_view is the bgfx predefined per-view uniform (declared by <bgfx_shader.sh>, fed by
+// bgfx_set_view_transform on kCombineView), i.e. the mirror of the Anomaly m_inv_V that
+// combine_1.ps:194 uses to turn the view-space position into a world-space one.
 
 // settings_screenspace_FOG.h, hardcoded exactly as in the reference.
 // G_FOG_HEIGHT / G_FOG_HEIGHT_INTENSITY are dead code under
@@ -114,14 +113,12 @@ void main()
     vec2 tc = v_texcoord0;
     vec3 c = texture2D(s_hdr, tc).rgb;
 
-    // Anomaly reads P.xyz from the G-buffer position target; the screenspace
-    // equivalent is the view-space position rebuilt from the HDR depth buffer.
-    // combine_1.ps:194 does mul(m_inv_V, float4(P.xyz, 1)) for WorldP.y.
-    float depth = texture2D(s_hdrDepth, tc).x;
-    vec4 ndc = vec4(tc.x * 2.0 - 1.0, 1.0 - tc.y * 2.0, depth, 1.0);
-    vec4 viewPos = mul(u_invProj, ndc);
-    vec3 P = viewPos.xyz / viewPos.w;
-    vec3 WorldP = mul(u_invView, vec4(P, 1.0)).xyz;
+    // Position G-buffer (attachment 1 of the scene FB): the view-space position written
+    // by every world/particle/wallmark PS, the direct equivalent of the Anomaly gbuf
+    // position that combine_1.ps:194 reads. Sky and clouds do not write it, so P stays
+    // 0 there and the depth attachment is only needed for the depth test.
+    vec3 P = texture2D(s_position, tc).xyz;
+    vec3 WorldP = mul(u_view, vec4(P, 1.0)).xyz;
 
     c = SSFX_HEIGHT_FOG(P, WorldP.y, c);
 

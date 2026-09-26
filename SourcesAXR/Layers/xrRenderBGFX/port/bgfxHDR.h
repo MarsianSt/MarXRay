@@ -24,4 +24,7 @@ namespace bgfxHDR
     bool CombinePass(uint16_t _width, uint16_t _height);
     bgfx_texture_handle_t GetTonemapTexture();
     bgfx_texture_handle_t GetBloomTexture();
+    // Position G-buffer (Anomaly gbuf position): view-space position written by
+    // every world/particle/wallmark PS into attachment 1 of the scene FB.
+    bgfx_texture_handle_t GetPositionTexture();
 }

@@ -15,3 +15,7 @@ vec2 v_texcoord1 : TEXCOORD1 = vec2(0.0, 0.0);
 vec3 v_worldPos  : TEXCOORD2 = vec3(0.0, 0.0, 0.0);
 vec3 v_dir       : TEXCOORD3 = vec3(0.0, 0.0, 0.0);
 float v_fogDepth : TEXCOORD4 = 0.0;
+// View-space position written into the position G-buffer attachment (SV_TARGET1).
+// Anomaly r3 carries the same thing in gbuf position (combine_1.ps:194-201 reads P.xyz
+// straight from it); the bgfx port keeps P_view on a dedicated RGBA16F attachment.
+vec3  v_viewPos  : TEXCOORD5 = vec3(0.0, 0.0, 0.0);

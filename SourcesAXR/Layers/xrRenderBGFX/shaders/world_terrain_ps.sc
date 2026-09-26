@@ -1,4 +1,4 @@
-﻿$input v_texcoord0, v_texcoord1, v_fogDepth
+﻿$input v_texcoord0, v_texcoord1, v_viewPos
 
 #include <bgfx_shader.sh>
 
@@ -29,6 +29,8 @@ void main()
                  + texture2D(u_dt3, uv).rgb * mask.a;
         color = 2.0 * base.rgb * det;
     }
-    // Forward fog removed: single SSFX screenspace layer in combine (Anomaly).
-    gl_FragColor = vec4(color, 1.0);
+    // Forward fog removed: single fog layer in combine (Anomaly).
+    gl_FragData[0] = vec4(color, 1.0);
+    // Position G-buffer (Anomaly gbuf position): view-space position.
+    gl_FragData[1] = vec4(v_viewPos, 1.0);
 }

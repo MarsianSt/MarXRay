@@ -1,5 +1,5 @@
 $input a_position, a_normal, a_texcoord0
-$output v_texcoord0, v_fogDepth
+$output v_texcoord0, v_fogDepth, v_viewPos
 #include <bgfx_shader.sh>
 
 uniform vec4 u_bones[255];
@@ -16,4 +16,6 @@ void main()
     gl_Position = mul(u_modelViewProj, vec4(sk, 1.0));
     v_texcoord0 = a_texcoord0;
     v_fogDepth = length(viewPos.xyz);
+    // Position G-buffer: view-space position, consumed by combine_ps (AXR gbuf P.xyz).
+    v_viewPos = viewPos.xyz;
 }
