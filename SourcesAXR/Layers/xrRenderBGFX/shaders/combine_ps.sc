@@ -118,12 +118,17 @@ void main()
     // equivalent is the view-space position rebuilt from the HDR depth buffer.
     // combine_1.ps:194 does mul(m_inv_V, float4(P.xyz, 1)) for WorldP.y.
     float depth = texture2D(s_hdrDepth, tc).x;
-    vec4 ndc = vec4(tc.x * 2.0 - 1.0, 1.0 - tc.y * 2.0, depth, 1.0);
-    vec4 viewPos = mul(u_invProj, ndc);
-    vec3 P = viewPos.xyz / viewPos.w;
-    vec3 WorldP = mul(u_invView, vec4(P, 1.0)).xyz;
+    // Sky (far plane, depth ~1.0) stays clear so clouds are always visible;
+    // fog applies only to geometry. Threshold 0.9999 keeps distant objects fogged.
+    if (depth < 0.9999)
+    {
+        vec4 ndc = vec4(tc.x * 2.0 - 1.0, 1.0 - tc.y * 2.0, depth, 1.0);
+        vec4 viewPos = mul(u_invProj, ndc);
+        vec3 P = viewPos.xyz / viewPos.w;
+        vec3 WorldP = mul(u_invView, vec4(P, 1.0)).xyz;
 
-    c = SSFX_HEIGHT_FOG(P, WorldP.y, c);
+        c = SSFX_HEIGHT_FOG(P, WorldP.y, c);
+    }
 
     float scale = texture2D(s_tonemap, vec2(0.5, 0.5)).x;
     vec3 x = c * u_exposure.x * scale;
