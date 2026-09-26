@@ -102,6 +102,7 @@ namespace
     bgfx_uniform_handle_t s_sky0 = BGFX_INVALID_HANDLE;
     bgfx_uniform_handle_t s_sky1 = BGFX_INVALID_HANDLE;
     bgfx_uniform_handle_t s_skyTonemap = BGFX_INVALID_HANDLE;
+    bgfx_uniform_handle_t s_skyFogColor = BGFX_INVALID_HANDLE;
     bgfx_vertex_layout_t s_skyLayout = {};
     bool s_skyLayoutReady = false;
 
@@ -109,6 +110,7 @@ namespace
     bgfx_uniform_handle_t s_clouds0 = BGFX_INVALID_HANDLE;
     bgfx_uniform_handle_t s_clouds1 = BGFX_INVALID_HANDLE;
     bgfx_uniform_handle_t s_cloudsTonemap = BGFX_INVALID_HANDLE;
+    bgfx_uniform_handle_t s_cloudsFogColor = BGFX_INVALID_HANDLE;
     bgfx_uniform_handle_t s_cloudsTime = BGFX_INVALID_HANDLE;
     bgfx_vertex_layout_t s_cloudsLayout = {};
     bool s_cloudsLayoutReady = false;
@@ -167,6 +169,7 @@ namespace
                 s_sky0 = bgfx_create_uniform("s_sky0", BGFX_UNIFORM_TYPE_SAMPLER, 1);
                 s_sky1 = bgfx_create_uniform("s_sky1", BGFX_UNIFORM_TYPE_SAMPLER, 1);
                 s_skyTonemap = bgfx_create_uniform("s_tonemap", BGFX_UNIFORM_TYPE_SAMPLER, 1);
+                s_skyFogColor = bgfx_create_uniform("u_fogColor", BGFX_UNIFORM_TYPE_VEC4, 1);
                 LogInfo("[BGFX] Sky program created: %u", s_skyProg.idx);
             }
             else
@@ -181,6 +184,7 @@ namespace
                 s_clouds0 = bgfx_create_uniform("s_clouds0", BGFX_UNIFORM_TYPE_SAMPLER, 1);
                 s_clouds1 = bgfx_create_uniform("s_clouds1", BGFX_UNIFORM_TYPE_SAMPLER, 1);
                 s_cloudsTonemap = bgfx_create_uniform("s_tonemap", BGFX_UNIFORM_TYPE_SAMPLER, 1);
+                s_cloudsFogColor = bgfx_create_uniform("u_fogColor", BGFX_UNIFORM_TYPE_VEC4, 1);
                 s_cloudsTime = bgfx_create_uniform("u_cloudsTime", BGFX_UNIFORM_TYPE_VEC4, 1);
                 LogInfo("[BGFX] Clouds program created: %u", s_cloudsProg.idx);
             }
@@ -197,10 +201,12 @@ namespace
         if (bgfxIsValid(s_sky0)) { bgfx_destroy_uniform(s_sky0); s_sky0 = BGFX_INVALID_HANDLE; }
         if (bgfxIsValid(s_sky1)) { bgfx_destroy_uniform(s_sky1); s_sky1 = BGFX_INVALID_HANDLE; }
         if (bgfxIsValid(s_skyTonemap)) { bgfx_destroy_uniform(s_skyTonemap); s_skyTonemap = BGFX_INVALID_HANDLE; }
+        if (bgfxIsValid(s_skyFogColor)) { bgfx_destroy_uniform(s_skyFogColor); s_skyFogColor = BGFX_INVALID_HANDLE; }
         if (bgfxIsValid(s_cloudsProg)) { bgfx_destroy_program(s_cloudsProg); s_cloudsProg = BGFX_INVALID_HANDLE; }
         if (bgfxIsValid(s_clouds0)) { bgfx_destroy_uniform(s_clouds0); s_clouds0 = BGFX_INVALID_HANDLE; }
         if (bgfxIsValid(s_clouds1)) { bgfx_destroy_uniform(s_clouds1); s_clouds1 = BGFX_INVALID_HANDLE; }
         if (bgfxIsValid(s_cloudsTonemap)) { bgfx_destroy_uniform(s_cloudsTonemap); s_cloudsTonemap = BGFX_INVALID_HANDLE; }
+        if (bgfxIsValid(s_cloudsFogColor)) { bgfx_destroy_uniform(s_cloudsFogColor); s_cloudsFogColor = BGFX_INVALID_HANDLE; }
         if (bgfxIsValid(s_cloudsTime)) { bgfx_destroy_uniform(s_cloudsTime); s_cloudsTime = BGFX_INVALID_HANDLE; }
         for (auto& e : s_cubeCache)
             if (bgfxIsValid(e.second))
@@ -209,6 +215,21 @@ namespace
         s_skyLayoutReady = false;
         s_cloudsLayoutReady = false;
         s_envReady = false;
+    }
+
+    // Horizon fog color from weather (same fog_color as world fog).
+    void SetEnvFogColor(bgfx_uniform_handle_t uniform, CEnvDescriptorMixer* E)
+    {
+        float fogColor[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
+        if (E)
+        {
+            fogColor[0] = E->fog_color.x;
+            fogColor[1] = E->fog_color.y;
+            fogColor[2] = E->fog_color.z;
+            fogColor[3] = E->fog_density;
+        }
+        if (bgfxIsValid(uniform))
+            bgfx_set_uniform(uniform, fogColor, 1);
     }
 
     bool SkyTexNameEmpty(const shared_str& n)
@@ -507,6 +528,7 @@ void bgfxEnvironmentRender::RenderSky(CEnvironment &env)
             bgfx_set_texture(0, s_sky0, mix->sky_a, 0);
             bgfx_set_texture(1, s_sky1, mix->sky_b, 0);
             bgfx_set_texture(2, s_skyTonemap, tonemapTex, 0);
+            SetEnvFogColor(s_skyFogColor, E);
             bgfx_submit(kSkyView, s_skyProg, 0, BGFX_DISCARD_ALL);
             bgfx_set_transform(s_identityXform, 1);
         }
@@ -583,6 +605,7 @@ void bgfxEnvironmentRender::RenderClouds(CEnvironment &env)
     bgfx_set_texture(0, s_clouds0, mix->clouds_a, 0);
     bgfx_set_texture(1, s_clouds1, mix->clouds_b, 0);
     bgfx_set_texture(2, s_cloudsTonemap, tonemapTex, 0);
+    SetEnvFogColor(s_cloudsFogColor, E);
     bgfx_submit(kSkyView, s_cloudsProg, 0, BGFX_DISCARD_ALL);
 }
 
