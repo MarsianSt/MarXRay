@@ -38,6 +38,10 @@ void main()
     gl_FragData[0] = vec4(color, 1.0);
     // Position G-buffer (Anomaly gbuf position): view-space position.
     gl_FragData[1] = vec4(v_viewPos, 1.0);
-    // Packed G-buffer, AXR f_deffer::position (gbuffer_stage.h:7).
-    gl_FragData[2] = gbuf_pack_gbuffer(normalize(v_viewNormal), v_viewPos.z, u_gbufHemi.x);
+    // Packed G-buffer, AXR f_deffer::position (gbuffer_stage.h:7). The reference
+    // reads the terrain hemi from D.w, i.e. the per-vertex I.Nh.w
+    // (deffer_terrain_flat_d.vs:19 → deffer_terrain_mid_flat.ps:56), which the
+    // port does not bind; the hemi is the normal's world-space up factor
+    // (gbuf_pack.h, calc_model_hemi_r1).
+    gl_FragData[2] = gbuf_pack_gbuffer(normalize(v_viewNormal), v_viewPos.z, gbuf_calc_hemi(v_viewNormal));
 }

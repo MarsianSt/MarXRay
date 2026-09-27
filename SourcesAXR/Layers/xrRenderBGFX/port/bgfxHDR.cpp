@@ -28,15 +28,6 @@ namespace
     bgfx_uniform_handle_t s_positionSampler = BGFX_INVALID_HANDLE;
     bgfx_uniform_handle_t s_bloomSampler = BGFX_INVALID_HANDLE;
     bgfx_uniform_handle_t s_exposure = BGFX_INVALID_HANDLE;
-    // Environment hemi fed to every G-buffer writer. The reference resolves hemi
-    // from the vertex (deffer_base_flat.ps:37), the lightmap
-    // (deffer_base_flat.ps:23-26 + get_hemi(), common_functions.h:129-137), the
-    // hemi cube (deffer_model_flat.vs:19-30) or a per-blade constant
-    // (deffer_grass.vs:115); none of those sources is reachable from this port,
-    // so stage 1 substitutes the environment hemi colour, the same source
-    // calc_model_hemi_r1() reads (common_functions.h:99-101). Stage 2 owns the
-    // real per-pixel source.
-    bgfx_uniform_handle_t s_gbufHemi = BGFX_INVALID_HANDLE;
     // AXR r3 fog globals (game_unpacked/shaders/r3 -> Blender_Recorder_StandartBinding.cpp).
     // u_view is NOT here on purpose: bgfx_shader.sh already declares it as a predefined
     // per-view uniform, fed by bgfx_set_view_transform on kCombineView (it mirrors the
@@ -877,8 +868,9 @@ namespace
     //                  view space, which is the space accum_sun.ps works in
     //                  (Ldynamic_dir); u_sunColor = CEnvDescriptor::sun_color
     //   u_hemiColor  = CEnvDescriptor::hemi_color, i.e. L_hemi_color, the source
-    //                  calc_model_hemi_r1() reads (common_functions.h:99-101) and
-    //                  the one BindScene already sampled for u_gbufHemi
+    //                  calc_model_hemi_r1() reads (common_functions.h:99-101); the
+    //                  writers' G-buffer hemi is the bare up factor max(0, Nw.y)
+    //                  that this colour scales (gbuf_pack.h)
     //   u_ambient    = CEnvDescriptor::ambient, i.e. L_ambient (hmodel.h:129), with
     //                  .w = CEnvDescriptorMixer::weight, i.e. the env_color.w of
     //                  hmodel.h:105 - the factor the two ambient cubes are
@@ -1157,9 +1149,6 @@ namespace bgfxHDR
         DestroyTextures();
         s_width = 0;
         s_height = 0;
-        if (bgfxIsValid(s_gbufHemi))
-            bgfx_destroy_uniform(s_gbufHemi);
-        s_gbufHemi = BGFX_INVALID_HANDLE;
         s_gbufDebugClock = 0.0f;
         DestroyCombineProgram();
         DestroyResolveProgram();
@@ -1195,30 +1184,11 @@ namespace bgfxHDR
         if (!IsReady() || !EnsureCombineProgram())
             return false;
 
-        if (!bgfxIsValid(s_gbufHemi))
-            s_gbufHemi = bgfx_create_uniform("u_gbufHemi", BGFX_UNIFORM_TYPE_VEC4, 1);
-
-        // Environment hemi, the stage-1 stand-in for every hemi source the
-        // reference resolves per pixel (see gbuf_pack.h). calc_model_hemi_r1()
-        // (common_functions.h:99-101) returns max(0, Nw.y) * L_hemi_color, so an
-        // up-facing normal sees the descriptor's hemi colour directly; the
-        // writers have no world normal at hand in the fragment stage, so the
-        // scalar is the grey level of that colour.
-        float hemi[4] = { 1.0f, 0.0f, 0.0f, 0.0f };
-        CEnvDescriptorMixer* hemiEnv = g_pGamePersistent
-            ? g_pGamePersistent->Environment().CurrentEnv
-            : nullptr;
-        if (hemiEnv)
-        {
-            const float grey = (hemiEnv->hemi_color.x + hemiEnv->hemi_color.y + hemiEnv->hemi_color.z)
-                * (1.0f / 3.0f);
-            hemi[0] = grey < 0.0f ? 0.0f : (grey > 1.0f ? 1.0f : grey);
-        }
-        // bgfx snapshots uniform values at submit time and they are per-frame
-        // global state, so setting this once here covers every program that
-        // draws into the scene FB during the frame, whatever module submitted it.
-        if (bgfxIsValid(s_gbufHemi))
-            bgfx_set_uniform(s_gbufHemi, hemi, 1);
+        // The G-buffer writers take their hemi per pixel from the normal now
+        // (gbuf_pack.h, gbuf_calc_hemi = max(0, Nw.y), the scalar half of
+        // calc_model_hemi_r1(), common_functions.h:99-101); the descriptor's
+        // hemi colour that used to scale it is applied by the resolve from
+        // u_hemiColor. So there is no frame-wide hemi constant left to set here.
 
         bgfx_set_view_frame_buffer(kSceneView, s_hdrFb);
         bgfx_set_view_frame_buffer(kSceneFxView, s_hdrFb);

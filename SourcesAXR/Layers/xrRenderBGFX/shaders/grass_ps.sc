@@ -23,8 +23,13 @@ void main()
     gl_FragData[0] = c;
     // Position G-buffer (Anomaly gbuf position): view-space position.
     gl_FragData[1] = vec4(v_viewPos, 1.0);
-    // Packed G-buffer, AXR f_deffer::position (gbuffer_stage.h:7). Hemi comes
-    // from u_gbufHemi because the reference's per-blade constant c0.w
-    // (deffer_grass.vs:115) is not bound by the port.
-    gl_FragData[2] = gbuf_pack_gbuffer(normalize(v_viewNormal), v_viewPos.z, u_gbufHemi.x);
+    // Packed G-buffer, AXR f_deffer::position (gbuffer_stage.h:7). The reference
+    // gives every blade clamp(c0.w, 0.05f, 1.0f) (deffer_grass.vs:115), a
+    // per-blade constant the port does not bind - and the reference itself notes
+    // it as "Some spots are bugged (Full black)" and offers v_hemi(N) as the
+    // fix, so the hemi here is per pixel from the normal (gbuf_pack.h,
+    // calc_model_hemi_r1): a leaf lit from the sky side keeps its value while the
+    // leaves turned away from it drop to L_ambient, instead of every blade
+    // sharing one frame-wide constant.
+    gl_FragData[2] = gbuf_pack_gbuffer(normalize(v_viewNormal), v_viewPos.z, gbuf_calc_hemi(v_viewNormal));
 }

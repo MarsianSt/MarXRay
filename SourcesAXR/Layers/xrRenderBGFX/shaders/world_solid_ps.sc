@@ -27,5 +27,8 @@ void main()
     gl_FragData[1] = vec4(v_viewPos, 1.0);
     // Packed G-buffer, AXR f_deffer::position (gbuffer_stage.h:7):
     // XY = packed normal, Z = view-space z, W = hemi.
-    gl_FragData[2] = gbuf_pack_gbuffer(normalize(v_viewNormal), v_viewPos.z, u_gbufHemi.x);
+    // The reference's per-vertex I.Nh.w (deffer_base_flat.vs:25 → ps:41) is not
+    // bound, so the hemi is the normal's world-space up factor
+    // (gbuf_pack.h, calc_model_hemi_r1).
+    gl_FragData[2] = gbuf_pack_gbuffer(normalize(v_viewNormal), v_viewPos.z, gbuf_calc_hemi(v_viewNormal));
 }

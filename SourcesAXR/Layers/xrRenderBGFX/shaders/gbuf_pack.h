@@ -94,18 +94,51 @@ float gbuf_unpack_hemi(float mtl_hemi)
 //   xmaterial like the other static geometry.
 // Every G-buffer writer below exposes it as GBUF_MTL for stage 3.
 //
-// Hemi sources in the reference:
-//   static / decal  deffer_base_flat.ps:37      h = I.position.w = v_static.Nh.w (vertex)
-//                  deffer_base_flat.vs:16       O.position = float4(Pe, I.Nh.w)
-//   models          deffer_model_flat.vs:19-30 hemi cube, sat(dot(face, abs(Nw)))
-//   grass           deffer_grass.vs:115         clamp(c0.w, 0.05f, 1.0f) (per-blade const)
-//   particle        deffer_particle.vs:22       0.2h (constant)
-// The lightmap alternative (USE_LM_HEMI, deffer_base_flat.ps:23-26 with
-// get_hemi() = lm.a, common_functions.h:129-137) and the per-blade/hemi-cube
-// constant arrays are not bound by this port - no lightmaps are loaded and the
-// R4 constant buffers are absent - so stage 1 feeds the environment hemi colour
-// (the same source calc_model_hemi_r1() uses, common_functions.h:99-101) to
-// everything but particles, which keep the AXR constant. Stage 2 replaces this.
-uniform vec4 u_gbufHemi;
+// Hemi, the .w every writer below packs. In the reference it is a bare 0..1
+// scalar, not a colour: gbuf_unpack_hemi (gbuffer_stage.h:83-86) divides the
+// packed byte by 254.8, and hmodel.h:109 spends it as
+//   float hscale = h;  ->  env_d *= light.xxx  (hmodel.h:125)
+// i.e. it is the scale of the ambient term, with the colour applied on top by
+// the caller. Where the reference gets it per draw class:
+//   static / terrain  deffer_base_flat.vs:25     O.position = float4(Pe, I.Nh.w)
+//                     deffer_terrain_flat_d.vs:19 same, read back as D.w in
+//                                               deffer_terrain_mid_flat.ps:56
+//                     -> per vertex, baked into the level mesh
+//   models            deffer_base_flat.ps:29-40 the hemi-cube block
+//                     (deffer_model_flat.vs:19-30, sat(dot(face, abs(Nw)))) is
+//                     commented out, so this class also reads I.position.w
+//   grass             deffer_grass.vs:115        clamp(c0.w, 0.05f, 1.0f) - a
+//                                                per-blade constant, flagged
+//                                                there as "Some spots are
+//                                                bugged (Full black)"
+//   particle          deffer_particle.vs:22      .2h, a flat constant
+//   with lightmaps    deffer_base_flat.ps:22-27  get_hemi(s_hemi) (USE_LM_HEMI)
+//
+// None of those sources is reachable here: no lightmaps are loaded, the R4
+// constant arrays are absent, and the per-vertex I.Nh.w byte is not bound.
+// What every one of them multiplies is the descriptor's hemi colour, i.e.
+// calc_model_hemi_r1 (common_functions.h:99-101):
+//
+//   float3 calc_model_hemi_r1( float3 norm_w )
+//   { return max(0,norm_w.y)*L_hemi_color; }
+//
+// so the colour factor belongs to the caller - which is exactly where the
+// resolve already has it, deferred_light_ps.sc `cubeD * u_hemiColor.rgb * hemi
+// + u_ambient.rgb`, CEnvDescriptor::hemi_color = L_hemi_color - and the G-buffer
+// carries the bare up factor max(0, Nw.y). That is 1.0 facing up and 0.0 facing
+// down, per pixel, in world space, and its ceiling is the same 1.0 the previous
+// per-frame constant (saturate(grey(hemi_color))) had, so nothing brightens.
+//
+// The reference computes norm_w in the lighting pass, where the normal is
+// already unprojected (hmodel.h:47-48 mul(m_inv_V, normal)). The writers only
+// hold v_viewNormal, so the same unprojection happens here: u_invView is the
+// bgfx predefined per-view matrix, the mirror of AXR m_inv_V, and it is the very
+// one the resolve multiplies the G-buffer normal with (deferred_light_ps.sc,
+// hmodel.h:48) - both sides therefore see the same vector.
+float gbuf_calc_hemi(vec3 viewNormal)
+{
+    vec3 nw = mul(u_invView, vec4(normalize(viewNormal), 0.0)).xyz;
+    return max(nw.y, 0.0);
+}
 
 #endif // GBUF_PACK_H_HEADER_GUARD

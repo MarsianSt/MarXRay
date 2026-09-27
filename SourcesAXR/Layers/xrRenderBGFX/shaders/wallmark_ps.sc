@@ -23,8 +23,9 @@ void main()
     // Position G-buffer (Anomaly gbuf position): view-space position. The mark
     // blends with DestColor/SrcColor, which also scales this attachment.
     gl_FragData[1] = vec4(v_viewPos, 1.0);
-    // Packed G-buffer, AXR f_deffer::position (gbuffer_stage.h:7). Hemi comes
-    // from u_gbufHemi because the reference's decal hemi (I.Nh.w,
-    // deffer_base_flat.ps:37) is not available on a mark quad.
-    gl_FragData[2] = gbuf_pack_gbuffer(normalize(v_viewNormal), v_viewPos.z, u_gbufHemi.x);
+    // Packed G-buffer, AXR f_deffer::position (gbuffer_stage.h:7). The reference's
+    // decal hemi is the static one, I.Nh.w (deffer_base_flat.ps:41), which a mark
+    // quad has no vertex data for; the hemi is the normal's world-space up factor
+    // (gbuf_pack.h, calc_model_hemi_r1).
+    gl_FragData[2] = gbuf_pack_gbuffer(normalize(v_viewNormal), v_viewPos.z, gbuf_calc_hemi(v_viewNormal));
 }

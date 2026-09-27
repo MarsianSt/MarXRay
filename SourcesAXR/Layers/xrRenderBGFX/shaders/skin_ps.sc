@@ -18,8 +18,10 @@ void main()
     gl_FragData[0] = c;
     // Position G-buffer (Anomaly gbuf position): view-space position.
     gl_FragData[1] = vec4(v_viewPos, 1.0);
-    // Packed G-buffer, AXR f_deffer::position (gbuffer_stage.h:7). Hemi comes
-    // from u_gbufHemi because the reference's hemi cube
-    // (deffer_model_flat.vs:19-30) is an R4 constant the port does not bind.
-    gl_FragData[2] = gbuf_pack_gbuffer(normalize(v_viewNormal), v_viewPos.z, u_gbufHemi.x);
+    // Packed G-buffer, AXR f_deffer::position (gbuffer_stage.h:7). For models the
+    // reference's hemi-cube block (deffer_model_flat.vs:19-30) is commented out
+    // in deffer_base_flat.ps:29-40, so this class too reads the per-vertex
+    // I.position.w, which the port does not bind; the hemi is the normal's
+    // world-space up factor (gbuf_pack.h, calc_model_hemi_r1).
+    gl_FragData[2] = gbuf_pack_gbuffer(normalize(v_viewNormal), v_viewPos.z, gbuf_calc_hemi(v_viewNormal));
 }

@@ -19,9 +19,9 @@ void main()
     // a_normal carries the D3DCOLOR bytes verbatim from the source vertex
     // declaration (bgfxRenderCompat.cpp repacks them unchanged), so only
     // unpack_bx2() is left to do. Its .w is the reference hemi I.Nh.w
-    // (deffer_base_flat.ps:37 h = I.position.w) and rides along unused in stage
-    // 1, which reads the environment hemi from u_gbufHemi instead - see
-    // gbuf_pack.h for why the vertex/lightmap sources are not reachable yet.
+    // (deffer_base_flat.ps:41 h = I.position.w) and rides along unused: the
+    // writers take the hemi per pixel from the normal instead - see gbuf_pack.h
+    // for why the vertex/lightmap sources are not reachable yet.
     vec3 Nw = normalize(unpack_bx2(a_normal.xyz));
     v_viewNormal = mul((mat3)u_modelView, Nw);
 }
