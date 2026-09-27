@@ -1,6 +1,7 @@
 $input a_position, a_normal, a_tangent, a_bitangent, a_texcoord0, a_texcoord2
-$output v_texcoord0, v_viewPos
+$output v_texcoord0, v_viewPos, v_viewNormal
 #include <bgfx_shader.sh>
+#include <gbuf_pack.h>
 
 uniform vec4 u_bones[255];
 
@@ -36,4 +37,8 @@ void main()
     v_texcoord0 = a_texcoord0;
     // Position G-buffer: view-space position, consumed by combine_ps (AXR gbuf P.xyz).
     v_viewPos = viewPos.xyz;
+    // a_normal.xyz is the bx2 packed object normal, a_normal.w the skin weight
+    // (FSkinned.cpp:247). See skin1w_vs.sc for the reference lines.
+    vec3 Nw = normalize(unpack_bx2(a_normal.xyz));
+    v_viewNormal = mul((mat3)u_modelView, Nw);
 }

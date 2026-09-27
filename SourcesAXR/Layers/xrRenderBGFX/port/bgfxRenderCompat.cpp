@@ -475,11 +475,60 @@ namespace
 		}
 		return -1;
 	}
-	int worldUvOffset(const xr_vector<D3DVERTEXELEMENT9>& dcl)
-	{
-		int t = 0;
-		return worldUvOffset(dcl, t);
-	}
+    int worldUvOffset(const xr_vector<D3DVERTEXELEMENT9>& dcl)
+    {
+        int t = 0;
+        return worldUvOffset(dcl, t);
+    }
+
+    // Byte offset and type of the per-vertex normal in a vertex declaration, or
+    // -1. The AXR static geometry carries it as a D3DCOLOR: that is the
+    // v_static.Nh semantic (common_iostructs.h:267-275, "nx, ny, nz, hemi
+    // occlusion"), which the reference reads with unpack_D3DCOLOR() and then
+    // unpack_bx2() (common_functions.h:114-115) at deffer_base_flat.vs:13-14.
+    // Its .w is the reference hemi, deffer_base_flat.ps:37
+    // h = I.position.w = I.Nh.w, and is carried through the repack untouched.
+    // Declarations that use a plain float normal (FLOD.cpp:21-22) are converted
+    // into the same D3DCOLOR byte layout here so one vertex layout serves all of
+    // them. UBYTE4N is already the bx2 packing the shader expects.
+    int worldNormalOffset(const xr_vector<D3DVERTEXELEMENT9>& dcl, int& outType)
+    {
+        for (const D3DVERTEXELEMENT9& e : dcl)
+        {
+            if (e.Stream != 0 || e.Usage != D3DDECLUSAGE_NORMAL || e.UsageIndex != 0)
+                continue;
+            switch (e.Type)
+            {
+            case D3DDECLTYPE_D3DCOLOR:
+            case D3DDECLTYPE_FLOAT2:
+            case D3DDECLTYPE_FLOAT3:
+            case D3DDECLTYPE_FLOAT4:
+            case D3DDECLTYPE_UBYTE4N:
+                outType = e.Type;
+                return e.Offset;
+            default:
+                continue;
+            }
+        }
+        return -1;
+    }
+
+    // Encodes a normalized normal into the D3DCOLOR byte order the reference
+    // shader sees: unpack_D3DCOLOR() is a bgra swizzle (common_functions.h:114)
+    // and a D3DCOLOR's memory bytes are B, G, R, A, so byte 0 carries what the
+    // shader calls Nh.x. wByte is the hemi byte, 0..255.
+    void packBx2Normal(float x, float y, float z, u32 wByte, u8 out[4])
+    {
+        const float enc[3] = { x, y, z };
+        for (int i = 0; i < 3; ++i)
+        {
+            const float v = enc[i] * 0.5f + 0.5f;
+            const long b = (long)(v * 255.0f + 0.5f);
+            out[i] = (u8)(b < 0 ? 0 : (b > 255 ? 255 : b));
+        }
+        out[3] = (u8)(wByte > 255 ? 255 : wByte);
+    }
+
 
 	// IEEE 754 half -> float (used to expand FLOAT16_2 lightmap UVs).
 	float unpackHalf(u16 h)
@@ -1020,18 +1069,26 @@ namespace
 		if (s_worldUploaded)
 			return;
 
-		bgfx_vertex_layout_begin(&s_worldLayoutDesc, BGFX_RENDERER_TYPE_DIRECT3D11);
-		bgfx_vertex_layout_add(&s_worldLayoutDesc, BGFX_ATTRIB_POSITION, 3, BGFX_ATTRIB_TYPE_FLOAT, false, false);
-		bgfx_vertex_layout_add(&s_worldLayoutDesc, BGFX_ATTRIB_TEXCOORD0, 2, BGFX_ATTRIB_TYPE_FLOAT, false, false);
-		bgfx_vertex_layout_end(&s_worldLayoutDesc);
-		s_worldLayout = bgfx_create_vertex_layout(&s_worldLayoutDesc);
+        bgfx_vertex_layout_begin(&s_worldLayoutDesc, BGFX_RENDERER_TYPE_DIRECT3D11);
+        bgfx_vertex_layout_add(&s_worldLayoutDesc, BGFX_ATTRIB_POSITION, 3, BGFX_ATTRIB_TYPE_FLOAT, false, false);
+        // D3DCOLOR normal (nx, ny, nz packed bx2, w = hemi), the vertex format
+        // the AXR deffer shaders read as v_static.Nh (common_iostructs.h:267-275).
+        // WorldProgram's world_solid_vs.sc / world_decal_vs.sc unpack it with the
+        // reference's unpack_bx2() and hand the eye-space normal to the packed
+        // G-buffer attachment.
+        bgfx_vertex_layout_add(&s_worldLayoutDesc, BGFX_ATTRIB_NORMAL, 4, BGFX_ATTRIB_TYPE_UINT8, true, false);
+        bgfx_vertex_layout_add(&s_worldLayoutDesc, BGFX_ATTRIB_TEXCOORD0, 2, BGFX_ATTRIB_TYPE_FLOAT, false, false);
+        bgfx_vertex_layout_end(&s_worldLayoutDesc);
+        s_worldLayout = bgfx_create_vertex_layout(&s_worldLayoutDesc);
 
-		bgfx_vertex_layout_begin(&s_worldTerrainLayoutDesc, BGFX_RENDERER_TYPE_DIRECT3D11);
-		bgfx_vertex_layout_add(&s_worldTerrainLayoutDesc, BGFX_ATTRIB_POSITION, 3, BGFX_ATTRIB_TYPE_FLOAT, false, false);
-		bgfx_vertex_layout_add(&s_worldTerrainLayoutDesc, BGFX_ATTRIB_TEXCOORD0, 2, BGFX_ATTRIB_TYPE_FLOAT, false, false);
-		bgfx_vertex_layout_add(&s_worldTerrainLayoutDesc, BGFX_ATTRIB_TEXCOORD1, 2, BGFX_ATTRIB_TYPE_FLOAT, false, false);
-		bgfx_vertex_layout_end(&s_worldTerrainLayoutDesc);
-		s_worldTerrainLayout = bgfx_create_vertex_layout(&s_worldTerrainLayoutDesc);
+        bgfx_vertex_layout_begin(&s_worldTerrainLayoutDesc, BGFX_RENDERER_TYPE_DIRECT3D11);
+        bgfx_vertex_layout_add(&s_worldTerrainLayoutDesc, BGFX_ATTRIB_POSITION, 3, BGFX_ATTRIB_TYPE_FLOAT, false, false);
+        bgfx_vertex_layout_add(&s_worldTerrainLayoutDesc, BGFX_ATTRIB_NORMAL, 4, BGFX_ATTRIB_TYPE_UINT8, true, false);
+        bgfx_vertex_layout_add(&s_worldTerrainLayoutDesc, BGFX_ATTRIB_TEXCOORD0, 2, BGFX_ATTRIB_TYPE_FLOAT, false, false);
+        bgfx_vertex_layout_add(&s_worldTerrainLayoutDesc, BGFX_ATTRIB_TEXCOORD1, 2, BGFX_ATTRIB_TYPE_FLOAT, false, false);
+        bgfx_vertex_layout_end(&s_worldTerrainLayoutDesc);
+        s_worldTerrainLayout = bgfx_create_vertex_layout(&s_worldTerrainLayoutDesc);
+
 
 		s_worldVbh.assign(s_vbList.size(), bgfx_vertex_buffer_handle_t{ 0xFFFF });
 		s_worldIbh.assign(s_ibList.size(), bgfx_index_buffer_handle_t{ 0xFFFF });
@@ -1043,9 +1100,12 @@ namespace
 			if (!vb || vb->data.empty() || vb->vCount == 0 || vb->vStride == 0)
 				continue;
 
-			int posOff = (i < (u32)s_dcl.size()) ? worldPosOffset(s_dcl[i]) : -1;
-			int uvType = 0;
-			int uvOff = (i < (u32)s_dcl.size()) ? worldUvOffset(s_dcl[i], uvType) : -1;
+		int posOff = (i < (u32)s_dcl.size()) ? worldPosOffset(s_dcl[i]) : -1;
+		int uvType = 0;
+		int uvOff = (i < (u32)s_dcl.size()) ? worldUvOffset(s_dcl[i], uvType) : -1;
+		int nrmType = 0;
+		int nrmOff = (i < (u32)s_dcl.size()) ? worldNormalOffset(s_dcl[i], nrmType) : -1;
+
 
 			// Diag: dump the declaration elements for this vertex buffer.
 			{
@@ -1105,28 +1165,55 @@ namespace
 
 			const bool hasUv1GT = (uvOff1 >= 0);
 			const bool uv1TypeOk = (uvType1 == D3DDECLTYPE_FLOAT2 || uvType1 == D3DDECLTYPE_SHORT2 || uvType1 == D3DDECLTYPE_FLOAT16_2);
-			const bool hasUv1 = hasUv1GT && uv1TypeOk;
-			LogInfo("WORLD VB[%u] uv1typeOk=%d", i, uv1TypeOk ? 1 : 0);
-			const u32 vstride = hasUv1 ? 28 : 20;
-			s_worldVbHasUv1[i] = hasUv1 ? 1 : 0;
+		const bool hasUv1 = hasUv1GT && uv1TypeOk;
+		LogInfo("WORLD VB[%u] uv1typeOk=%d", i, uv1TypeOk ? 1 : 0);
+		// Repacked stride: position(12) + packed D3DCOLOR normal(4) + uv0(8)
+		// [+ lightmap uv1(8)], matching s_worldLayoutDesc / s_worldTerrainLayoutDesc.
+		const u32 vstride = hasUv1 ? 32 : 24;
+		s_worldVbHasUv1[i] = hasUv1 ? 1 : 0;
+		// Declarations without a normal (the stock R2 FVF level geometry) fall
+		// back to world up with a saturated hemi byte, matching what the grass /
+		// wallmark G-buffer writers do for the same reason (see gbuf_pack.h).
+		const bool nrmD3DCOLOR = (nrmOff >= 0) && (nrmType == D3DDECLTYPE_D3DCOLOR);
+		const bool nrmUByte4N = (nrmOff >= 0) && (nrmType == D3DDECLTYPE_UBYTE4N);
+		const bool nrmFloat = (nrmOff >= 0) && !nrmD3DCOLOR && !nrmUByte4N;
+		LogInfo("WORLD VB[%u] normal=%d(%d) d3dcolor=%d float=%d", i, nrmOff, nrmType,
+			nrmD3DCOLOR ? 1 : 0, nrmFloat ? 1 : 0);
 
-			const u32 vcount = vb->vCount;
-			const u32 stride = vb->vStride;
-			const bgfx_memory_t* mem = bgfx_alloc(vcount * vstride);
-			const u8* src = &vb->data[0];
-			u8* dst = (u8*)mem->data;
-			const bool uvFloat = (uvType == D3DDECLTYPE_FLOAT2);
-			const bool uv1Float = (uvType1 == D3DDECLTYPE_FLOAT2);
-			const bool uv1Half = (uvType1 == D3DDECLTYPE_FLOAT16_2);
-			for (u32 v = 0; v < vcount; ++v)
+		const u32 vcount = vb->vCount;
+		const u32 stride = vb->vStride;
+		const bgfx_memory_t* mem = bgfx_alloc(vcount * vstride);
+		const u8* src = &vb->data[0];
+		u8* dst = (u8*)mem->data;
+		const bool uvFloat = (uvType == D3DDECLTYPE_FLOAT2);
+		const bool uv1Float = (uvType1 == D3DDECLTYPE_FLOAT2);
+		const bool uv1Half = (uvType1 == D3DDECLTYPE_FLOAT16_2);
+		for (u32 v = 0; v < vcount; ++v)
+		{
+			memcpy(dst + v * vstride, src + v * stride + posOff, 12);
+			// Packed D3DCOLOR normal, the AXR v_static.Nh the deffer shaders read
+			// (deffer_base_flat.vs:13-14, common_iostructs.h:267-275). A
+			// D3DCOLOR source is already in the exact byte order the shader wants
+			// after unpack_D3DCOLOR(), so it is copied verbatim - its alpha byte
+			// is the reference hemi I.Nh.w and rides along for stage 2.
+			if (nrmD3DCOLOR)
+				memcpy(dst + v * vstride + 12, src + v * stride + nrmOff, 4);
+			else if (nrmUByte4N)
+				memcpy(dst + v * vstride + 12, src + v * stride + nrmOff, 4);
+			else if (nrmFloat)
 			{
-				memcpy(dst + v * vstride, src + v * stride + posOff, 12);
-				if (uvOff >= 0 && uvFloat)
-					memcpy(dst + v * vstride + 12, src + v * stride + uvOff, 8);
-				else if (uvOff >= 0)
-				{
-					const s16* s = (const s16*)(src + v * stride + uvOff);
-					float*      f = (float*)(dst + v * vstride + 12);
+				const float* s = (const float*)(src + v * stride + nrmOff);
+				packBx2Normal(s[0], s[1], s[2], 255, dst + v * vstride + 12);
+			}
+			else
+				packBx2Normal(0.0f, 0.0f, 1.0f, 255, dst + v * vstride + 12);
+			if (uvOff >= 0 && uvFloat)
+				memcpy(dst + v * vstride + 16, src + v * stride + uvOff, 8);
+			else if (uvOff >= 0)
+			{
+				const s16* s = (const s16*)(src + v * stride + uvOff);
+				float*      f = (float*)(dst + v * vstride + 16);
+
 					float du = 0.0f;
 					float dv = 0.0f;
 					if (uvType == D3DDECLTYPE_SHORT2)
@@ -1152,30 +1239,31 @@ namespace
 						f[1] = (float)s[1] * (32.0f / 32768.0f);
 					}
 				}
-				else
-					memset(dst + v * vstride + 12, 0, 8);
+			else
+				memset(dst + v * vstride + 16, 0, 8);
 
-				// Lightmap uv (TEXCOORD1): unpack_tc_lmap = /32768 for the
-				// packed types, raw float for FLOAT2.
-				if (!hasUv1)
-					continue;
-				if (uv1Float)
-					memcpy(dst + v * vstride + 20, src + v * stride + uvOff1, 8);
-				else if (uv1Half)
-				{
-					// FLOAT16_2: expand half floats to full float.
-					const u16* s = (const u16*)(src + v * stride + uvOff1);
-					float*      f = (float*)(dst + v * vstride + 20);
-					f[0] = unpackHalf(s[0]);
-					f[1] = unpackHalf(s[1]);
-				}
-				else
-				{
-					const s16* s = (const s16*)(src + v * stride + uvOff1);
-					float*      f = (float*)(dst + v * vstride + 20);
-					f[0] = (float)s[0] * (1.0f / 32768.0f);
-					f[1] = (float)s[1] * (1.0f / 32768.0f);
-				}
+			// Lightmap uv (TEXCOORD1): unpack_tc_lmap = /32768 for the
+			// packed types, raw float for FLOAT2.
+			if (!hasUv1)
+				continue;
+			if (uv1Float)
+				memcpy(dst + v * vstride + 24, src + v * stride + uvOff1, 8);
+			else if (uv1Half)
+			{
+				// FLOAT16_2: expand half floats to full float.
+				const u16* s = (const u16*)(src + v * stride + uvOff1);
+				float*      f = (float*)(dst + v * vstride + 24);
+				f[0] = unpackHalf(s[0]);
+				f[1] = unpackHalf(s[1]);
+			}
+			else
+			{
+				const s16* s = (const s16*)(src + v * stride + uvOff1);
+				float*      f = (float*)(dst + v * vstride + 24);
+				f[0] = (float)s[0] * (1.0f / 32768.0f);
+				f[1] = (float)s[1] * (1.0f / 32768.0f);
+			}
+
 			}
 
 			const bgfx_vertex_layout_t* dcl = hasUv1 ? &s_worldTerrainLayoutDesc : &s_worldLayoutDesc;

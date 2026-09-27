@@ -22,3 +22,7 @@ vec3 v_dir       : TEXCOORD3 = vec3(0.0, 0.0, 0.0);
 // Anomaly r3 carries the same thing in gbuf position (combine_1.ps:194-201 reads P.xyz
 // straight from it); the bgfx port keeps P_view on a dedicated RGBA16F attachment.
 vec3  v_viewPos  : TEXCOORD5 = vec3(0.0, 0.0, 0.0);
+// View-space normal that feeds the packed-normal half of the AXR G-buffer
+// attachment (gbuffer_stage.h:7 XY, packed by gbuf_pack_normal). TEXCOORD6 is
+// the next free semantic; TEXCOORD4 was v_fogDepth, removed with the forward fog.
+vec3  v_viewNormal : TEXCOORD6 = vec3(0.0, 0.0, 1.0);

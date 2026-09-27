@@ -1,6 +1,7 @@
 $input a_position, a_color0, a_texcoord0, a_texcoord1
-$output v_color0, v_texcoord0, v_viewPos
+$output v_color0, v_texcoord0, v_viewPos, v_viewNormal
 #include <bgfx_shader.sh>
+#include <gbuf_pack.h>
 
 uniform vec4 u_grassParams;
 uniform vec4 u_grassInt;
@@ -46,4 +47,13 @@ void main()
     v_texcoord0 = a_texcoord0;
     // Position G-buffer: view-space position, consumed by combine_ps (AXR gbuf P.xyz).
     v_viewPos = viewPos.xyz;
+    // The reference takes the grass normal from a per-blade CPU constant array,
+    // deffer_grass.vs:97  float3 N = mul((float3x3)m_WV, data.xyz), where
+    // data.xyz is exdata[i/4] = "Terrain Normal" (deffer_grass.vs:24). The port's
+    // grass vertex layout (bgfxDetails.cpp) carries no normal and exdata is an R4
+    // constant buffer that is not bound here, so the world-up normal is used
+    // instead - the same stand-in the reference itself falls back to for flora
+    // normals it does not trust (ssdo.ps:44-45 "We can't trust much about flora
+    // normal" -> float3(0.0f, 0.25f, 0.0f)). Stage 2 owns the real source.
+    v_viewNormal = mul((mat3)u_modelView, vec3(0.0, 0.0, 1.0));
 }
