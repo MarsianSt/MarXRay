@@ -32,6 +32,45 @@ void PackColor(u32 C, u32& out)
     out = (C & 0xFF00FF00u) | ((C >> 16) & 0x000000FFu) | ((C << 16) & 0x00FF0000u);
 }
 
+// CResourceManager::_ParseList (archive_sourse\Layers\xrRender\ResourceManager.cpp:93-128)
+// splits a shader texture list on ',', lowercases every element and runs
+// fix_texture_name on it. CBlender_Particle::Compile binds only the first
+// element to s_base (archive_sourse\Layers\xrRender\Blender_Particle.cpp:135 for
+// DX10, :90 for R2), so the tail of the list is parsed but never sampled.
+const char* FirstListElementEnd(const char* p)
+{
+    const char* comma = strchr(p, ',');
+    return comma ? comma : p + strlen(p);
+}
+
+// fix_texture_name (archive_sourse\Layers\xrRender\Texture.cpp:19-28) drops only
+// these four extensions; every other dotted suffix is left alone.
+void FixTextureName(std::string& name)
+{
+    size_t dot = name.find_last_of('.');
+    if (dot == std::string::npos || dot + 1 >= name.size())
+        return;
+    std::string ext = name.substr(dot + 1);
+    for (char& c : ext)
+        c = (char)std::tolower((unsigned char)c);
+    if (ext == "tga" || ext == "dds" || ext == "bmp" || ext == "ogm")
+        name.erase(dot);
+}
+
+// The name the reference hands to CResourceManager::_CreateTexture
+// (archive_sourse\Layers\xrRender\ResourceManager_Resources.cpp:418-420): one
+// lowercased element, no extension. The VFS loader appends ".dds"/".tga" itself,
+// so an extension left on the name would be looked up as "<name>.bmp.dds".
+void NormalizeTextureName(LPCSTR in, std::string& out)
+{
+    out.clear();
+    if (!in)
+        return;
+    for (const char* p = in; p != FirstListElementEnd(in); ++p)
+        out.push_back((char)std::tolower((unsigned char)*p));
+    FixTextureName(out);
+}
+
 bool EnsureProgram()
 {
     if (bgfxIsValid(s_prog))
@@ -110,16 +149,22 @@ bgfx_texture_handle_t GetTexture(LPCSTR name)
     if (!name || !name[0])
         return BGFX_INVALID_HANDLE;
 
-    std::string key(name);
+    // Keyed by the normalized single name, never by the raw CPEDef::m_TextureName:
+    // a miss cached under the unparsed list string would survive the parse fix.
+    std::string key;
+    NormalizeTextureName(name, key);
+    if (key.empty())
+        return BGFX_INVALID_HANDLE;
+
     auto it = s_texCache.find(key);
     if (it != s_texCache.end())
         return it->second;
 
     bgfx_texture_handle_t tex = BGFX_INVALID_HANDLE;
     unsigned int w = 0, h = 0;
-    if (bgfxLoadWorldTexture(name, tex, w, h))
+    if (bgfxLoadWorldTexture(key.c_str(), tex, w, h))
     {
-        LogInfo("[BGFX] Particle '%s' %ux%u h=%u", name, w, h, tex.idx);
+        LogInfo("[BGFX] Particle '%s' %ux%u h=%u", key.c_str(), w, h, tex.idx);
     }
     else
     {
@@ -127,7 +172,7 @@ bgfx_texture_handle_t GetTexture(LPCSTR name)
         // particle texture by name once, so a missing file must not be
         // re-read and re-logged on every frame.
         tex = BGFX_INVALID_HANDLE;
-        LogError("[BGFX] Particle: failed to load '%s'", name);
+        LogError("[BGFX] Particle: failed to load '%s'", key.c_str());
     }
     s_texCache[key] = tex;
     return tex;
