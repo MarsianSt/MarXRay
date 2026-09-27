@@ -262,6 +262,11 @@ public:
         bgfxHDR::LuminancePass();
         bgfxHDR::BloomPass();
         bgfxHDR::CombinePass((u16)Device.dwWidth, (u16)Device.dwHeight);
+        // Stage-1 G-buffer inspector. Off unless XRGBUF_DEBUG is set, in which
+        // case it repaints the finished frame with one attachment view. It has
+        // to come after the combine (own view kGbufDebugView, ordered in
+        // bgfxRenderDeviceRender::Begin) and before the HUD pass.
+        bgfxHDR::GbufDebugPass((u16)Device.dwWidth, (u16)Device.dwHeight);
         if (currentViewPort == MAIN_VIEWPORT)
             bgfxRenderHudPass();    // actor hands + weapon (see bgfxRenderCompat)
         bgfxClearDynamic();

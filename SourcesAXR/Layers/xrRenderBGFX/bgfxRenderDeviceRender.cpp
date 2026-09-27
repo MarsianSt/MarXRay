@@ -357,13 +357,24 @@ void bgfxRenderDeviceRender::Begin()
     bgfx_set_view_mode(4, BGFX_VIEW_MODE_SEQUENTIAL);
     bgfx_touch(4);
 
-    // Frame order: scene -> scene FX -> luminance -> bloom (build/H/V) -> combine -> leftovers.
+    // Stage-1 G-buffer inspector. The view always exists in the order so the
+    // pass order stays stable; bgfxHDR::GbufDebugPass submits into it only when
+    // XRGBUF_DEBUG is set, and an empty view draws nothing.
+    bgfx_set_view_frame_buffer(bgfxHDR::kGbufDebugView, BGFX_INVALID_HANDLE);
+    bgfx_set_view_rect(bgfxHDR::kGbufDebugView, 0, 0, (uint16_t)m_width, (uint16_t)m_height);
+    bgfx_set_view_clear(bgfxHDR::kGbufDebugView, BGFX_CLEAR_NONE, 0, 1.0f, 0);
+    bgfx_set_view_mode(bgfxHDR::kGbufDebugView, BGFX_VIEW_MODE_SEQUENTIAL);
+    bgfx_touch(bgfxHDR::kGbufDebugView);
+
+    // Frame order: scene -> scene FX -> luminance -> bloom (build/H/V) -> combine
+    // -> G-buffer inspector -> leftovers.
     // The bloom views sit between the luminance chain and the combine so bgfxHDR::BloomPass
     // reads the HDR target of this frame and combine_bloom() reads this frame's rt_Bloom_1.
+    // The inspector runs after the combine because it repaints the finished frame.
     const bgfx_view_id_t order[] = { 0, bgfxHDR::kSceneFxView, bgfxHDR::kLuminance64View,
         bgfxHDR::kLuminance8View, bgfxHDR::kLuminance1View,
         bgfxHDR::kBloomBuildView, bgfxHDR::kBloomBlurHView, bgfxHDR::kBloomBlurVView,
-        bgfxHDR::kCombineView, 1, 3, 4, 5 };
+        bgfxHDR::kCombineView, bgfxHDR::kGbufDebugView, 1, 3, 4, 5 };
     bgfx_set_view_order(0, sizeof(order) / sizeof(order[0]), order);
 }
 

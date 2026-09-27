@@ -9,6 +9,7 @@
 #include "../../../xrEngine/Environment.h"
 #include "../../../xrEngine/DiscordRichPresense.h"
 
+#include <cstdlib>
 #include <cstring>
 #include <vector>
 
@@ -17,6 +18,7 @@ namespace
     bgfx_frame_buffer_handle_t s_hdrFb = BGFX_INVALID_HANDLE;
     bgfx_texture_handle_t s_hdrColor = BGFX_INVALID_HANDLE;
     bgfx_texture_handle_t s_hdrPosition = BGFX_INVALID_HANDLE;
+    bgfx_texture_handle_t s_hdrGbuf = BGFX_INVALID_HANDLE;
     bgfx_texture_handle_t s_hdrDepth = BGFX_INVALID_HANDLE;
     bgfx_program_handle_t s_combineProgram = BGFX_INVALID_HANDLE;
     bgfx_uniform_handle_t s_hdrSampler = BGFX_INVALID_HANDLE;
@@ -24,6 +26,15 @@ namespace
     bgfx_uniform_handle_t s_positionSampler = BGFX_INVALID_HANDLE;
     bgfx_uniform_handle_t s_bloomSampler = BGFX_INVALID_HANDLE;
     bgfx_uniform_handle_t s_exposure = BGFX_INVALID_HANDLE;
+    // Environment hemi fed to every G-buffer writer. The reference resolves hemi
+    // from the vertex (deffer_base_flat.ps:37), the lightmap
+    // (deffer_base_flat.ps:23-26 + get_hemi(), common_functions.h:129-137), the
+    // hemi cube (deffer_model_flat.vs:19-30) or a per-blade constant
+    // (deffer_grass.vs:115); none of those sources is reachable from this port,
+    // so stage 1 substitutes the environment hemi colour, the same source
+    // calc_model_hemi_r1() reads (common_functions.h:99-101). Stage 2 owns the
+    // real per-pixel source.
+    bgfx_uniform_handle_t s_gbufHemi = BGFX_INVALID_HANDLE;
     // AXR r3 fog globals (game_unpacked/shaders/r3 -> Blender_Recorder_StandartBinding.cpp).
     // u_view is NOT here on purpose: bgfx_shader.sh already declares it as a predefined
     // per-view uniform, fed by bgfx_set_view_transform on kCombineView (it mirrors the
@@ -39,7 +50,22 @@ namespace
     uint16_t s_height = 0;
     bgfx_texture_format_t s_colorFormat = BGFX_TEXTURE_FORMAT_RGBA16F;
     bgfx_texture_format_t s_positionFormat = BGFX_TEXTURE_FORMAT_RGBA16F;
+    bgfx_texture_format_t s_gbufFormat = BGFX_TEXTURE_FORMAT_RGBA16F;
     bgfx_texture_format_t s_depthFormat = BGFX_TEXTURE_FORMAT_D24;
+
+    // Stage-1 G-buffer inspector (gbuf_debug_ps.sc). XRGBUF_DEBUG selects the
+    // view: 1 normal, 2 depth, 3 hemi, 4 albedo, >= 5 cycles through all four
+    // with that many seconds per view. Unset or 0 leaves the frame untouched.
+    bgfx_program_handle_t s_gbufDebugProgram = BGFX_INVALID_HANDLE;
+    bgfx_uniform_handle_t s_gbufDebugGbufSampler = BGFX_INVALID_HANDLE;
+    bgfx_uniform_handle_t s_gbufDebugPosSampler = BGFX_INVALID_HANDLE;
+    bgfx_uniform_handle_t s_gbufDebugHdrSampler = BGFX_INVALID_HANDLE;
+    bgfx_uniform_handle_t s_gbufDebugParams = BGFX_INVALID_HANDLE;
+    bgfx_vertex_layout_t s_gbufDebugLayout = {};
+    bool s_gbufDebugLayoutReady = false;
+    int s_gbufDebugEnv = 0;
+    bool s_gbufDebugEnvRead = false;
+    float s_gbufDebugClock = 0.0f;
 
     bgfx_frame_buffer_handle_t s_lum64Fb = BGFX_INVALID_HANDLE;
     bgfx_frame_buffer_handle_t s_lum8Fb = BGFX_INVALID_HANDLE;
@@ -108,10 +134,13 @@ namespace
             bgfx_destroy_texture(s_hdrColor);
         if (bgfxIsValid(s_hdrPosition))
             bgfx_destroy_texture(s_hdrPosition);
+        if (bgfxIsValid(s_hdrGbuf))
+            bgfx_destroy_texture(s_hdrGbuf);
         if (bgfxIsValid(s_hdrDepth))
             bgfx_destroy_texture(s_hdrDepth);
         s_hdrColor = BGFX_INVALID_HANDLE;
         s_hdrPosition = BGFX_INVALID_HANDLE;
+        s_hdrGbuf = BGFX_INVALID_HANDLE;
         s_hdrDepth = BGFX_INVALID_HANDLE;
     }
 
@@ -410,6 +439,26 @@ namespace
         s_sunDir = BGFX_INVALID_HANDLE;
         s_sunColor = BGFX_INVALID_HANDLE;
         s_combineLayoutReady = false;
+    }
+
+    void DestroyGbufDebugProgram()
+    {
+        if (bgfxIsValid(s_gbufDebugProgram))
+            bgfx_destroy_program(s_gbufDebugProgram);
+        if (bgfxIsValid(s_gbufDebugGbufSampler))
+            bgfx_destroy_uniform(s_gbufDebugGbufSampler);
+        if (bgfxIsValid(s_gbufDebugPosSampler))
+            bgfx_destroy_uniform(s_gbufDebugPosSampler);
+        if (bgfxIsValid(s_gbufDebugHdrSampler))
+            bgfx_destroy_uniform(s_gbufDebugHdrSampler);
+        if (bgfxIsValid(s_gbufDebugParams))
+            bgfx_destroy_uniform(s_gbufDebugParams);
+        s_gbufDebugProgram = BGFX_INVALID_HANDLE;
+        s_gbufDebugGbufSampler = BGFX_INVALID_HANDLE;
+        s_gbufDebugPosSampler = BGFX_INVALID_HANDLE;
+        s_gbufDebugHdrSampler = BGFX_INVALID_HANDLE;
+        s_gbufDebugParams = BGFX_INVALID_HANDLE;
+        s_gbufDebugLayoutReady = false;
     }
 
     bool IsTextureSupported(bgfx_texture_format_t _format)
@@ -794,24 +843,45 @@ namespace bgfxHDR
             }
         }
 
+        // Packed G-buffer (stage 1): AXR f_deffer::position
+        // (game_unpacked/shaders/r3/gbuffer_stage.h:7) = [packed normal .xy,
+        // view-space z, hemi], written by every world/terrain/skin/grass/
+        // particle/wallmark PS through gbuf_pack_gbuffer() in gbuf_pack.h. Same
+        // format policy as the two existing colour attachments.
+        s_gbufFormat = BGFX_TEXTURE_FORMAT_RGBA16F;
+        if (!IsTextureSupported(s_gbufFormat))
+        {
+            LogInfo("[BGFX] G-buffer target: RGBA16F unavailable, using RGBA32F");
+            s_gbufFormat = BGFX_TEXTURE_FORMAT_RGBA32F;
+            if (!IsTextureSupported(s_gbufFormat))
+            {
+                LogError("[BGFX] G-buffer target: no supported floating-point format");
+                return false;
+            }
+        }
+
         const uint64_t colorFlags = BGFX_TEXTURE_RT | BGFX_TEXTURE_U_CLAMP | BGFX_TEXTURE_V_CLAMP;
         const uint64_t depthFlags = BGFX_TEXTURE_RT;
         s_hdrColor = bgfx_create_texture_2d(_width, _height, false, 1, s_colorFormat, colorFlags, nullptr, 0);
         s_hdrPosition = bgfx_create_texture_2d(_width, _height, false, 1, s_positionFormat, colorFlags, nullptr, 0);
+        s_hdrGbuf = bgfx_create_texture_2d(_width, _height, false, 1, s_gbufFormat, colorFlags, nullptr, 0);
         s_hdrDepth = bgfx_create_texture_2d(_width, _height, false, 1, s_depthFormat, depthFlags, nullptr, 0);
-        if (!bgfxIsValid(s_hdrColor) || !bgfxIsValid(s_hdrPosition) || !bgfxIsValid(s_hdrDepth))
+        if (!bgfxIsValid(s_hdrColor) || !bgfxIsValid(s_hdrPosition) || !bgfxIsValid(s_hdrGbuf) ||
+            !bgfxIsValid(s_hdrDepth))
         {
             LogError("[BGFX] HDR target texture create failed (%ux%u)", _width, _height);
             DestroyTextures();
             return false;
         }
 
-        // Attachment 0 = HDR color, 1 = view-space position G-buffer, 2 = depth.
-        // Every world/particle/wallmark PS writes both color targets; the sky and
-        // the clouds only write target 0, which leaves P at the clear value 0, so
-        // the fog branch below fades them out exactly like Anomaly does.
-        bgfx_texture_handle_t attachments[3] = { s_hdrColor, s_hdrPosition, s_hdrDepth };
-        s_hdrFb = bgfx_create_frame_buffer_from_handles(3, attachments, true);
+        // Attachment 0 = HDR color, 1 = view-space position G-buffer,
+        // 2 = packed G-buffer, 3 = depth. Every world/particle/wallmark PS writes
+        // all three colour targets; the sky and the clouds only write target 0,
+        // which leaves P and the packed G-buffer at the clear value 0, so the
+        // fog branch below fades them out exactly like Anomaly does and the
+        // gbuf_debug_ps.sc inspector reports those pixels as empty.
+        bgfx_texture_handle_t attachments[4] = { s_hdrColor, s_hdrPosition, s_hdrGbuf, s_hdrDepth };
+        s_hdrFb = bgfx_create_frame_buffer_from_handles(4, attachments, true);
         if (!bgfxIsValid(s_hdrFb))
         {
             LogError("[BGFX] HDR target framebuffer create failed (%ux%u)", _width, _height);
@@ -822,8 +892,9 @@ namespace bgfxHDR
 
         s_width = _width;
         s_height = _height;
-        LogInfo("[BGFX] HDR target created: %ux%u color=%d position=%d depth=%d fb=%u",
-            _width, _height, (int)s_colorFormat, (int)s_positionFormat, (int)s_depthFormat, s_hdrFb.idx);
+        LogInfo("[BGFX] HDR target created: %ux%u color=%d position=%d gbuf=%d depth=%d fb=%u",
+            _width, _height, (int)s_colorFormat, (int)s_positionFormat, (int)s_gbufFormat,
+            (int)s_depthFormat, s_hdrFb.idx);
 
         if (!CreateLuminanceTargets() || !EnsureBloomTargets() || !EnsureBloomPrograms() || !EnsureCombineProgram())
         {
@@ -841,7 +912,12 @@ namespace bgfxHDR
         DestroyTextures();
         s_width = 0;
         s_height = 0;
+        if (bgfxIsValid(s_gbufHemi))
+            bgfx_destroy_uniform(s_gbufHemi);
+        s_gbufHemi = BGFX_INVALID_HANDLE;
+        s_gbufDebugClock = 0.0f;
         DestroyCombineProgram();
+        DestroyGbufDebugProgram();
         DestroyBloomPrograms();
         DestroyBloomTargets();
         DestroyLuminancePrograms();
@@ -865,13 +941,39 @@ namespace bgfxHDR
         if (!IsReady() || !EnsureCombineProgram())
             return false;
 
+        if (!bgfxIsValid(s_gbufHemi))
+            s_gbufHemi = bgfx_create_uniform("u_gbufHemi", BGFX_UNIFORM_TYPE_VEC4, 1);
+
+        // Environment hemi, the stage-1 stand-in for every hemi source the
+        // reference resolves per pixel (see gbuf_pack.h). calc_model_hemi_r1()
+        // (common_functions.h:99-101) returns max(0, Nw.y) * L_hemi_color, so an
+        // up-facing normal sees the descriptor's hemi colour directly; the
+        // writers have no world normal at hand in the fragment stage, so the
+        // scalar is the grey level of that colour.
+        float hemi[4] = { 1.0f, 0.0f, 0.0f, 0.0f };
+        CEnvDescriptorMixer* hemiEnv = g_pGamePersistent
+            ? g_pGamePersistent->Environment().CurrentEnv
+            : nullptr;
+        if (hemiEnv)
+        {
+            const float grey = (hemiEnv->hemi_color.x + hemiEnv->hemi_color.y + hemiEnv->hemi_color.z)
+                * (1.0f / 3.0f);
+            hemi[0] = grey < 0.0f ? 0.0f : (grey > 1.0f ? 1.0f : grey);
+        }
+        // bgfx snapshots uniform values at submit time and they are per-frame
+        // global state, so setting this once here covers every program that
+        // draws into the scene FB during the frame, whatever module submitted it.
+        if (bgfxIsValid(s_gbufHemi))
+            bgfx_set_uniform(s_gbufHemi, hemi, 1);
+
         bgfx_set_view_frame_buffer(kSceneView, s_hdrFb);
         bgfx_set_view_frame_buffer(kSceneFxView, s_hdrFb);
         bgfx_set_view_rect(kSceneView, 0, 0, s_width, s_height);
         // bgfx applies the view clear color to every color attachment, so the
         // position G-buffer starts at (0,0,0,1) => P = 0 for the pixels no
         // geometry wrote (sky, clouds) and the AXR fog branch leaves them alone
-        // (length(P) = 0 => fog = saturate(0 * w + fog_params.x) = 0).
+        // (length(P) = 0 => fog = saturate(0 * w + fog_params.x) = 0). The same
+        // zero is what gbuf_debug_ps.sc uses to report an unwritten attachment.
         bgfx_set_view_clear(kSceneView, BGFX_CLEAR_COLOR | BGFX_CLEAR_DEPTH, 0x000000ff, 1.0f, 0);
         bgfx_set_view_mode(kSceneView, BGFX_VIEW_MODE_SEQUENTIAL);
         bgfx_touch(kSceneView);
@@ -1054,5 +1156,124 @@ namespace bgfxHDR
         if (bgfxIsValid(s_hdrPosition))
             return s_hdrPosition;
         return BGFX_INVALID_HANDLE;
+    }
+
+    bgfx_texture_handle_t GetGbufTexture()
+    {
+        if (bgfxIsValid(s_hdrGbuf))
+            return s_hdrGbuf;
+        return BGFX_INVALID_HANDLE;
+    }
+
+    // Reads XRGBUF_DEBUG once per session. 1 normal, 2 depth, 3 hemi, 4 albedo;
+    // 5..99 cycle through all four with that many seconds per view; >= 100 is
+    // read as centiseconds per view. Anything else leaves the inspector off, so
+    // a normal run is bit-identical to the pre-stage-1 frame.
+    int GbufDebugEnvValue()
+    {
+        if (!s_gbufDebugEnvRead)
+        {
+            s_gbufDebugEnvRead = true;
+            const char* raw = getenv("XRGBUF_DEBUG");
+            if (raw && raw[0])
+            {
+                const int value = atoi(raw);
+                if (value > 0)
+                {
+                    s_gbufDebugEnv = (value >= 100) ? 100 + (value - 100) / 100 : value;
+                    LogInfo("[BGFX] G-buffer inspector: XRGBUF_DEBUG=%d", value);
+                }
+            }
+        }
+        return s_gbufDebugEnv;
+    }
+
+    bool EnsureGbufDebugProgram()
+    {
+        if (bgfxIsValid(s_gbufDebugProgram) && bgfxIsValid(s_gbufDebugGbufSampler) &&
+            bgfxIsValid(s_gbufDebugPosSampler) && bgfxIsValid(s_gbufDebugHdrSampler) &&
+            bgfxIsValid(s_gbufDebugParams))
+            return true;
+        if (!s_gbufDebugLayoutReady)
+        {
+            bgfx_vertex_layout_begin(&s_gbufDebugLayout, bgfx_get_renderer_type());
+            bgfx_vertex_layout_add(&s_gbufDebugLayout, BGFX_ATTRIB_POSITION, 3, BGFX_ATTRIB_TYPE_FLOAT, false, false);
+            bgfx_vertex_layout_add(&s_gbufDebugLayout, BGFX_ATTRIB_TEXCOORD0, 2, BGFX_ATTRIB_TYPE_FLOAT, false, false);
+            bgfx_vertex_layout_end(&s_gbufDebugLayout);
+            s_gbufDebugLayoutReady = true;
+        }
+        // combine_vs.sc already emits the fullscreen triangle and v_texcoord0
+        // that gbuf_debug_ps.sc consumes.
+        s_gbufDebugProgram = BuildProgram("combine_vs.sc", "gbuf_debug_ps.sc");
+        if (!bgfxIsValid(s_gbufDebugProgram))
+        {
+            LogError("[BGFX] G-buffer inspector program build failed");
+            DestroyGbufDebugProgram();
+            return false;
+        }
+        s_gbufDebugGbufSampler = bgfx_create_uniform("s_gbuf", BGFX_UNIFORM_TYPE_SAMPLER, 1);
+        s_gbufDebugPosSampler = bgfx_create_uniform("s_position", BGFX_UNIFORM_TYPE_SAMPLER, 1);
+        s_gbufDebugHdrSampler = bgfx_create_uniform("s_hdr", BGFX_UNIFORM_TYPE_SAMPLER, 1);
+        s_gbufDebugParams = bgfx_create_uniform("u_gbufDebug", BGFX_UNIFORM_TYPE_VEC4, 1);
+        if (!bgfxIsValid(s_gbufDebugGbufSampler) || !bgfxIsValid(s_gbufDebugPosSampler) ||
+            !bgfxIsValid(s_gbufDebugHdrSampler) || !bgfxIsValid(s_gbufDebugParams))
+        {
+            LogError("[BGFX] G-buffer inspector uniforms create failed");
+            DestroyGbufDebugProgram();
+            return false;
+        }
+        LogInfo("[BGFX] G-buffer inspector program created: %u", s_gbufDebugProgram.idx);
+        return true;
+    }
+
+    bool GbufDebugPass(uint16_t _width, uint16_t _height)
+    {
+        const int mode = GbufDebugEnvValue();
+        if (mode <= 0 || !IsReady() || _width == 0 || _height == 0)
+            return false;
+
+        const float dt = Device.fTimeDelta > 0.0f ? Device.fTimeDelta : 0.0f;
+        s_gbufDebugClock += dt;
+        // mode 1..4 pins a single view; mode >= 100 is centiseconds per view.
+        // Higher modes cycle forever, so any slot worth of consecutive frames
+        // covers all four views whatever the phase the frame counter started in.
+        const float slot = (mode >= 100) ? (mode - 100) * 0.01f : (float)mode;
+        const int view = (mode >= 100) ? (int(s_gbufDebugClock / slot) % 4) : (mode - 1);
+
+        if (!EnsureGbufDebugProgram())
+            return false;
+
+        struct Vertex
+        {
+            float x, y, z, u, v;
+        };
+        const Vertex vertices[3] =
+        {
+            { -1.0f, -1.0f, 0.0f, 0.0f, 1.0f },
+            {  3.0f, -1.0f, 0.0f, 2.0f, 1.0f },
+            { -1.0f,  3.0f, 0.0f, 0.0f, -1.0f },
+        };
+
+        // Draws on top of the combine result, so it has to run after kCombineView
+        // and before the UI views (see the order array in
+        // bgfxRenderDeviceRender::Begin). The view itself is set up there.
+        bgfx_transient_vertex_buffer_t tvb;
+        bgfx_alloc_transient_vertex_buffer(&tvb, 3, &s_gbufDebugLayout);
+        if (!tvb.data)
+            return false;
+        std::memcpy(tvb.data, vertices, sizeof(vertices));
+
+        // u_gbufDebug.y is the far plane, so the depth view ramps black at the
+        // near plane to white at the far plane.
+        const float farPlane = Device.mProject._43 / Device.mProject._33;
+        const float params[4] = { float(view), farPlane > 1.0f ? farPlane : 1000.0f, 0.0f, 0.0f };
+        bgfx_set_state(BGFX_STATE_WRITE_RGB | BGFX_STATE_WRITE_A, 0);
+        bgfx_set_transient_vertex_buffer(0, &tvb, 0, 3);
+        bgfx_set_texture(0, s_gbufDebugGbufSampler, s_hdrGbuf, 0);
+        bgfx_set_texture(1, s_gbufDebugPosSampler, s_hdrPosition, 0);
+        bgfx_set_texture(2, s_gbufDebugHdrSampler, s_hdrColor, 0);
+        bgfx_set_uniform(s_gbufDebugParams, params, 1);
+        bgfx_submit(kGbufDebugView, s_gbufDebugProgram, 0, BGFX_DISCARD_ALL);
+        return true;
     }
 }

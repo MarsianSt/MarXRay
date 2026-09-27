@@ -1,6 +1,7 @@
-﻿$input v_texcoord0, v_texcoord1, v_viewPos
+﻿$input v_texcoord0, v_texcoord1, v_viewPos, v_viewNormal
 
 #include <bgfx_shader.sh>
+#include <gbuf_pack.h>
 
 uniform vec4 u_alphaCtrl;
 uniform vec4 u_dtScale;
@@ -13,6 +14,10 @@ SAMPLER2D(u_dt0,    2);
 SAMPLER2D(u_dt1,    3);
 SAMPLER2D(u_dt2,    4);
 SAMPLER2D(u_dt3,    5);
+
+// Terrain material id, deffer_terrain_mid_flat.ps:56 / deffer_terrain_low_flat.ps:22
+// / deffer_impl_flat.ps:210 all pass a literal 0.95f as the mtl of pack_gbuffer.
+const float GBUF_MTL = 0.95;
 
 void main()
 {
@@ -33,4 +38,6 @@ void main()
     gl_FragData[0] = vec4(color, 1.0);
     // Position G-buffer (Anomaly gbuf position): view-space position.
     gl_FragData[1] = vec4(v_viewPos, 1.0);
+    // Packed G-buffer, AXR f_deffer::position (gbuffer_stage.h:7).
+    gl_FragData[2] = gbuf_pack_gbuffer(normalize(v_viewNormal), v_viewPos.z, u_gbufHemi.x);
 }

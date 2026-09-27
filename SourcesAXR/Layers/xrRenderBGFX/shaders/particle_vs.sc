@@ -1,6 +1,7 @@
 $input a_position, a_color0, a_texcoord0
-$output v_color0, v_texcoord0, v_viewPos
+$output v_color0, v_texcoord0, v_viewPos, v_viewNormal
 #include <bgfx_shader.sh>
+#include <gbuf_pack.h>
 
 void main()
 {
@@ -14,4 +15,8 @@ void main()
     // Position G-buffer (Anomaly gbuf position): view-space position. The rain
     // pass (bgfxRainRender.cpp) shares this program, so streaks write it too.
     v_viewPos   = viewPos.xyz;
+    // AXR billboards point their G-buffer normal at the camera:
+    // deffer_particle.vs:19  O.N = normalize(eye_position - w_pos), which in
+    // view space is exactly normalize(-viewPos).
+    v_viewNormal = normalize(-viewPos.xyz);
 }
