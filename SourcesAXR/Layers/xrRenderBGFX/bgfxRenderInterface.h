@@ -259,6 +259,11 @@ public:
         bgfxRenderDynamic(0);   // world dynamics: flush CPU-side visuals to the port
         // R2 combine (flares over scene) + R2 forward (rain/thunder after sorted).
         bgfxRenderEnvironmentFx();
+        // Stage-2 lighting: sun + hemi ambient out of the G-buffer into the lit
+        // HDR target (AXR accum_sun.ps + hmodel(), which the reference sums in
+        // combine_1.ps:114-166). Falls back to the unlit attachment 0 when the
+        // resolve is unavailable, so the frame never breaks.
+        bgfxHDR::ResolvePass();
         bgfxHDR::LuminancePass();
         bgfxHDR::BloomPass();
         bgfxHDR::CombinePass((u16)Device.dwWidth, (u16)Device.dwHeight);

@@ -45,6 +45,25 @@ namespace
     bgfx_uniform_handle_t s_lowlandFogParams = BGFX_INVALID_HANDLE;
     bgfx_uniform_handle_t s_sunDir = BGFX_INVALID_HANDLE;
     bgfx_uniform_handle_t s_sunColor = BGFX_INVALID_HANDLE;
+
+    // Stage-2 lighting resolve (deferred_light_ps.sc). Reads the three G-buffer
+    // attachments and writes the lit HDR image into its own full-res target, so
+    // the pass never samples the texture it renders into. s_resolveOk is the
+    // per-frame switch the post chain uses to decide between the two: the
+    // resolve runs at kResolveView, i.e. after every consumer has already
+    // sampled, so the flag is read while the frame is still being submitted and
+    // bgfx has not reached the view yet.
+    bgfx_frame_buffer_handle_t s_hdrLitFb = BGFX_INVALID_HANDLE;
+    bgfx_texture_handle_t s_hdrLit = BGFX_INVALID_HANDLE;
+    bgfx_program_handle_t s_resolveProgram = BGFX_INVALID_HANDLE;
+    bgfx_uniform_handle_t s_litSampler = BGFX_INVALID_HANDLE;
+    bgfx_uniform_handle_t s_litPositionSampler = BGFX_INVALID_HANDLE;
+    bgfx_uniform_handle_t s_litGbufSampler = BGFX_INVALID_HANDLE;
+    bgfx_uniform_handle_t s_hemiColor = BGFX_INVALID_HANDLE;
+    bgfx_uniform_handle_t s_ambientColor = BGFX_INVALID_HANDLE;
+    bgfx_vertex_layout_t s_resolveLayout = {};
+    bool s_resolveLayoutReady = false;
+    bool s_resolveOk = false;
     bgfx_vertex_layout_t s_combineLayout = {};
     bool s_combineLayoutReady = false;
     uint16_t s_width = 0;
@@ -178,10 +197,13 @@ namespace
             bgfx_destroy_texture(s_hdrGbuf);
         if (bgfxIsValid(s_hdrDepth))
             bgfx_destroy_texture(s_hdrDepth);
+        if (bgfxIsValid(s_hdrLit))
+            bgfx_destroy_texture(s_hdrLit);
         s_hdrColor = BGFX_INVALID_HANDLE;
         s_hdrPosition = BGFX_INVALID_HANDLE;
         s_hdrGbuf = BGFX_INVALID_HANDLE;
         s_hdrDepth = BGFX_INVALID_HANDLE;
+        s_hdrLit = BGFX_INVALID_HANDLE;
     }
 
     void DestroyLuminanceTargets()
@@ -481,6 +503,30 @@ namespace
         s_combineLayoutReady = false;
     }
 
+    void DestroyResolveProgram()
+    {
+        if (bgfxIsValid(s_resolveProgram))
+            bgfx_destroy_program(s_resolveProgram);
+        if (bgfxIsValid(s_litSampler))
+            bgfx_destroy_uniform(s_litSampler);
+        if (bgfxIsValid(s_litPositionSampler))
+            bgfx_destroy_uniform(s_litPositionSampler);
+        if (bgfxIsValid(s_litGbufSampler))
+            bgfx_destroy_uniform(s_litGbufSampler);
+        if (bgfxIsValid(s_hemiColor))
+            bgfx_destroy_uniform(s_hemiColor);
+        if (bgfxIsValid(s_ambientColor))
+            bgfx_destroy_uniform(s_ambientColor);
+        s_resolveProgram = BGFX_INVALID_HANDLE;
+        s_litSampler = BGFX_INVALID_HANDLE;
+        s_litPositionSampler = BGFX_INVALID_HANDLE;
+        s_litGbufSampler = BGFX_INVALID_HANDLE;
+        s_hemiColor = BGFX_INVALID_HANDLE;
+        s_ambientColor = BGFX_INVALID_HANDLE;
+        s_resolveLayoutReady = false;
+        s_resolveOk = false;
+    }
+
     void DestroyGbufDebugProgram()
     {
         if (bgfxIsValid(s_gbufDebugProgram))
@@ -712,6 +758,49 @@ namespace
         return true;
     }
 
+    bool EnsureResolveProgram()
+    {
+        if (bgfxIsValid(s_resolveProgram) && bgfxIsValid(s_litSampler) &&
+            bgfxIsValid(s_litPositionSampler) && bgfxIsValid(s_litGbufSampler) &&
+            bgfxIsValid(s_hemiColor) && bgfxIsValid(s_ambientColor))
+            return true;
+
+        if (!s_resolveLayoutReady)
+        {
+            bgfx_vertex_layout_begin(&s_resolveLayout, bgfx_get_renderer_type());
+            bgfx_vertex_layout_add(&s_resolveLayout, BGFX_ATTRIB_POSITION, 3, BGFX_ATTRIB_TYPE_FLOAT, false, false);
+            bgfx_vertex_layout_add(&s_resolveLayout, BGFX_ATTRIB_TEXCOORD0, 2, BGFX_ATTRIB_TYPE_FLOAT, false, false);
+            bgfx_vertex_layout_end(&s_resolveLayout);
+            s_resolveLayoutReady = true;
+        }
+
+        // combine_vs.sc emits the same fullscreen triangle and v_texcoord0 the
+        // other post passes consume.
+        s_resolveProgram = BuildProgram("combine_vs.sc", "deferred_light_ps.sc");
+        if (!bgfxIsValid(s_resolveProgram))
+        {
+            LogError("[BGFX] Lighting resolve program build failed");
+            return false;
+        }
+
+        s_litSampler = bgfx_create_uniform("s_diffuse", BGFX_UNIFORM_TYPE_SAMPLER, 1);
+        s_litPositionSampler = bgfx_create_uniform("s_position", BGFX_UNIFORM_TYPE_SAMPLER, 1);
+        s_litGbufSampler = bgfx_create_uniform("s_gbuf", BGFX_UNIFORM_TYPE_SAMPLER, 1);
+        s_hemiColor = bgfx_create_uniform("u_hemiColor", BGFX_UNIFORM_TYPE_VEC4, 1);
+        s_ambientColor = bgfx_create_uniform("u_ambient", BGFX_UNIFORM_TYPE_VEC4, 1);
+        if (!bgfxIsValid(s_litSampler) || !bgfxIsValid(s_litPositionSampler) ||
+            !bgfxIsValid(s_litGbufSampler) || !bgfxIsValid(s_hemiColor) ||
+            !bgfxIsValid(s_ambientColor))
+        {
+            LogError("[BGFX] Lighting resolve uniforms create failed");
+            DestroyResolveProgram();
+            return false;
+        }
+
+        LogInfo("[BGFX] Lighting resolve program created: %u", s_resolveProgram.idx);
+        return true;
+    }
+
     bool SubmitLuminancePass(bgfx_view_id_t _view, bgfx_frame_buffer_handle_t _fb,
         uint16_t _width, uint16_t _height, float _pass, bgfx_texture_handle_t _source,
         bgfx_texture_handle_t _previous, float _sourceWidth, float _sourceHeight,
@@ -757,18 +846,26 @@ namespace
     //   fog_color          cl_fog_color          :184-194  (rgb, density)
     //   lowland_fog_params cl_lowland_fog_params :198-208  (height, density, base height, 0)
     // u_sunDir / u_sunColor stay bound: combine_1.ps:204 only needs them through
-    // the SSFX branch we dropped, but skybox_2t / clouds read the descriptor sun
-    // colour through the same descriptor, so the values are kept for reference and
-    // the shaders declare them. u_sunDir = normalize(Device.mView * sun_dir) and
-    // u_sunColor = CEnvDescriptor::sun_color; CurrentEnv is a CEnvDescriptorMixer,
-    // which derives from CEnvDescriptor (Environment.h:258), so both live there.
-    void SetFogUniforms()
+    // the SSFX branch we dropped, but the lighting resolve (deferred_light_ps.sc)
+    // and the sky both read the descriptor sun through them.
+    //   u_sunDir     = normalize(Device.mView * CEnvDescriptor::sun_dir), already
+    //                  view space, which is the space accum_sun.ps works in
+    //                  (Ldynamic_dir); u_sunColor = CEnvDescriptor::sun_color
+    //   u_hemiColor  = CEnvDescriptor::hemi_color, i.e. L_hemi_color, the source
+    //                  calc_model_hemi_r1() reads (common_functions.h:99-101) and
+    //                  the one BindScene already sampled for u_gbufHemi
+    //   u_ambient    = CEnvDescriptor::ambient, i.e. L_ambient (hmodel.h:129)
+    // CurrentEnv is a CEnvDescriptorMixer, which derives from CEnvDescriptor
+    // (Environment.h:258), so all four live there.
+    void SetEnvironmentUniforms()
     {
         float params[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
         float fogColor[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
         float lowland[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
         float sunDir[4] = { 0.0f, -1.0f, 0.0f, 0.0f };
         float sunColor[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
+        float hemiColor[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
+        float ambient[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
 
         CEnvDescriptorMixer* env = g_pGamePersistent
             ? g_pGamePersistent->Environment().CurrentEnv
@@ -812,6 +909,16 @@ namespace
             sunColor[1] = env->sun_color.y;
             sunColor[2] = env->sun_color.z;
             sunColor[3] = 0.0f;
+
+            hemiColor[0] = env->hemi_color.x;
+            hemiColor[1] = env->hemi_color.y;
+            hemiColor[2] = env->hemi_color.z;
+            hemiColor[3] = 0.0f;
+
+            ambient[0] = env->ambient.x;
+            ambient[1] = env->ambient.y;
+            ambient[2] = env->ambient.z;
+            ambient[3] = 0.0f;
         }
 
         if (bgfxIsValid(s_fogParams))
@@ -824,6 +931,10 @@ namespace
             bgfx_set_uniform(s_sunDir, sunDir, 1);
         if (bgfxIsValid(s_sunColor))
             bgfx_set_uniform(s_sunColor, sunColor, 1);
+        if (bgfxIsValid(s_hemiColor))
+            bgfx_set_uniform(s_hemiColor, hemiColor, 1);
+        if (bgfxIsValid(s_ambientColor))
+            bgfx_set_uniform(s_ambientColor, ambient, 1);
     }
 }
 
@@ -848,7 +959,8 @@ namespace bgfxHDR
             return false;
 
         if (bgfxIsValid(s_hdrFb) && s_width == _width && s_height == _height)
-            return EnsureLuminanceTargets() && EnsureBloomTargets() && EnsureBloomPrograms() && EnsureCombineProgram();
+            return EnsureLuminanceTargets() && EnsureBloomTargets() && EnsureBloomPrograms() &&
+                EnsureCombineProgram() && EnsureResolveProgram();
 
         DestroyHDRTarget();
 
@@ -919,8 +1031,13 @@ namespace bgfxHDR
         s_hdrPosition = bgfx_create_texture_2d(_width, _height, false, 1, s_positionFormat, colorFlags, nullptr, 0);
         s_hdrGbuf = bgfx_create_texture_2d(_width, _height, false, 1, s_gbufFormat, colorFlags, nullptr, 0);
         s_hdrDepth = bgfx_create_texture_2d(_width, _height, false, 1, s_depthFormat, depthFlags, nullptr, 0);
+        // Lit HDR target (stage 2). Same size and format as attachment 0 so the
+        // luminance chain and the combine can treat it as a drop-in replacement,
+        // but a separate texture: the resolve samples attachment 0 / 1 / 2 and
+        // must not render into any of them.
+        s_hdrLit = bgfx_create_texture_2d(_width, _height, false, 1, s_colorFormat, colorFlags, nullptr, 0);
         if (!bgfxIsValid(s_hdrColor) || !bgfxIsValid(s_hdrPosition) || !bgfxIsValid(s_hdrGbuf) ||
-            !bgfxIsValid(s_hdrDepth))
+            !bgfxIsValid(s_hdrDepth) || !bgfxIsValid(s_hdrLit))
         {
             LogError("[BGFX] HDR target texture create failed (%ux%u)", _width, _height);
             DestroyTextures();
@@ -945,11 +1062,23 @@ namespace bgfxHDR
 
         s_width = _width;
         s_height = _height;
-        LogInfo("[BGFX] HDR target created: %ux%u color=%d position=%d gbuf=%d depth=%d fb=%u",
+        // Resolve target: one colour attachment, no depth - the pass covers the
+        // whole viewport and tests nothing.
+        bgfx_texture_handle_t litAttachment[1] = { s_hdrLit };
+        s_hdrLitFb = bgfx_create_frame_buffer_from_handles(1, litAttachment, false);
+        if (!bgfxIsValid(s_hdrLitFb))
+        {
+            LogError("[BGFX] Lighting resolve framebuffer create failed (%ux%u)", _width, _height);
+            s_hdrLitFb = BGFX_INVALID_HANDLE;
+            DestroyTextures();
+            return false;
+        }
+        LogInfo("[BGFX] HDR target created: %ux%u color=%d position=%d gbuf=%d depth=%d fb=%u litfb=%u",
             _width, _height, (int)s_colorFormat, (int)s_positionFormat, (int)s_gbufFormat,
-            (int)s_depthFormat, s_hdrFb.idx);
+            (int)s_depthFormat, s_hdrFb.idx, s_hdrLitFb.idx);
 
-        if (!CreateLuminanceTargets() || !EnsureBloomTargets() || !EnsureBloomPrograms() || !EnsureCombineProgram())
+        if (!CreateLuminanceTargets() || !EnsureBloomTargets() || !EnsureBloomPrograms() ||
+            !EnsureCombineProgram() || !EnsureResolveProgram())
         {
             DestroyHDRTarget();
             return false;
@@ -962,6 +1091,9 @@ namespace bgfxHDR
         if (bgfxIsValid(s_hdrFb))
             bgfx_destroy_frame_buffer(s_hdrFb);
         s_hdrFb = BGFX_INVALID_HANDLE;
+        if (bgfxIsValid(s_hdrLitFb))
+            bgfx_destroy_frame_buffer(s_hdrLitFb);
+        s_hdrLitFb = BGFX_INVALID_HANDLE;
         DestroyTextures();
         s_width = 0;
         s_height = 0;
@@ -970,6 +1102,7 @@ namespace bgfxHDR
         s_gbufHemi = BGFX_INVALID_HANDLE;
         s_gbufDebugClock = 0.0f;
         DestroyCombineProgram();
+        DestroyResolveProgram();
         DestroyGbufDebugProgram();
         DestroyBloomPrograms();
         DestroyBloomTargets();
@@ -983,7 +1116,8 @@ namespace bgfxHDR
     bool RecreateOnResize(uint16_t _width, uint16_t _height)
     {
         if (bgfxIsValid(s_hdrFb) && s_width == _width && s_height == _height)
-            return EnsureLuminanceTargets() && EnsureBloomTargets() && EnsureBloomPrograms() && EnsureCombineProgram();
+            return EnsureLuminanceTargets() && EnsureBloomTargets() && EnsureBloomPrograms() &&
+                EnsureCombineProgram() && EnsureResolveProgram();
         // Full-res SMAA/scatter targets follow the window size; drop them here,
         // the passes recreate them lazily at the new size.
         DestroySmaaTargets();
@@ -1044,6 +1178,74 @@ namespace bgfxHDR
         return true;
     }
 
+    // Stage-2 lighting resolve. The reference builds the lit image in two
+    // places and this pass is the bgfx stand-in for both at once:
+    //   sun   accum_sun.ps:23-35 - plight_infinity(mtl, P, N, C, Ldynamic_dir)
+    //         tinted by SRGBToLinear(Ldynamic_color.rgb) and the shadow term,
+    //         which this pass leaves at 1 (no shadow map is bound).
+    //   hemi  hmodel() - the ambient half combine_1.ps:166 adds, i.e.
+    //         SRGBToLinear(env_col*hemi + L_ambient) * albedo, with the ambient
+    //         cube lookup dropped because env_s0/env_s1 are not bound.
+    // Both terms read the per-pixel hemi and the packed normal out of attachment
+    // 2 and modulate the gamma-space albedo of attachment 0, exactly like the
+    // reference does through gbuffer_load_data() (gbuffer_stage.h:115-143).
+    // Pixels nothing drew (sky, clouds) keep their attachment-0 radiance: see
+    // the P == 0 branch in deferred_light_ps.sc.
+    bool ResolvePass()
+    {
+        s_resolveOk = false;
+        if (!IsReady() || !EnsureResolveProgram() || !bgfxIsValid(s_hdrLitFb))
+            return false;
+
+        bgfx_set_view_frame_buffer(kResolveView, s_hdrLitFb);
+        bgfx_set_view_rect(kResolveView, 0, 0, s_width, s_height);
+        bgfx_set_view_clear(kResolveView, BGFX_CLEAR_NONE, 0, 1.0f, 0);
+        bgfx_set_view_mode(kResolveView, BGFX_VIEW_MODE_SEQUENTIAL);
+        // The VS emits clip space directly, and the G-buffer is view space, so no
+        // camera transform is needed here (unlike the combine, whose fog block
+        // rebuilds the world position through the predefined u_view).
+        bgfx_set_view_transform(kResolveView, s_identity, s_identity);
+        bgfx_touch(kResolveView);
+
+        bgfx_transient_vertex_buffer_t tvb;
+        bgfx_alloc_transient_vertex_buffer(&tvb, 3, &s_resolveLayout);
+        if (!tvb.data)
+            return false;
+        struct Vertex
+        {
+            float x, y, z, u, v;
+        };
+        const Vertex vertices[3] =
+        {
+            { -1.0f, -1.0f, 0.0f, 0.0f, 1.0f },
+            {  3.0f, -1.0f, 0.0f, 2.0f, 1.0f },
+            { -1.0f,  3.0f, 0.0f, 0.0f, -1.0f },
+        };
+        std::memcpy(tvb.data, vertices, sizeof(vertices));
+
+        bgfx_set_state(BGFX_STATE_WRITE_RGB | BGFX_STATE_WRITE_A, 0);
+        bgfx_set_transient_vertex_buffer(0, &tvb, 0, 3);
+        SetEnvironmentUniforms();
+        bgfx_set_texture(0, s_litSampler, s_hdrColor, 0);
+        bgfx_set_texture(1, s_litPositionSampler, s_hdrPosition, 0);
+        bgfx_set_texture(2, s_litGbufSampler, s_hdrGbuf, 0);
+        bgfx_submit(kResolveView, s_resolveProgram, 0, BGFX_DISCARD_ALL);
+        s_resolveOk = true;
+        return true;
+    }
+
+    // What the post chain samples as "the HDR image". The lit target once the
+    // resolve has run this frame, the raw unlit attachment 0 otherwise, so a
+    // failed resolve degrades to the pre-stage-2 frame instead of a black one.
+    bgfx_texture_handle_t GetLitTexture()
+    {
+        if (s_resolveOk && bgfxIsValid(s_hdrLit))
+            return s_hdrLit;
+        if (bgfxIsValid(s_hdrColor))
+            return s_hdrColor;
+        return BGFX_INVALID_HANDLE;
+    }
+
     bool LuminancePass()
     {
         if (!IsReady() || !EnsureLuminanceTargets() || !EnsureLuminancePrograms())
@@ -1063,8 +1265,11 @@ namespace bgfxHDR
 
         const u32 previous = s_lumTonemapIndex ? 1u : 0u;
         const u32 current = previous ^ 1u;
+        // The middle-grey measurement runs on the lit image: the luminance chain
+        // in AXR sees the accumulator after accum_sun/hmodel, not the bare albedo.
+        const bgfx_texture_handle_t lit = GetLitTexture();
         if (!SubmitLuminancePass(kLuminance64View, s_lum64Fb, 64, 64, 0.0f,
-            s_hdrColor, s_lum1[previous], float(s_width), float(s_height), middleGray) ||
+            lit, s_lum1[previous], float(s_width), float(s_height), middleGray) ||
             !SubmitLuminancePass(kLuminance8View, s_lum8Fb, 8, 8, 1.0f,
             s_lum64, s_lum1[previous], 64.0f, 64.0f, middleGray) ||
             !SubmitLuminancePass(kLuminance1View, s_lum1Fb[current], 1, 1, 2.0f,
@@ -1122,7 +1327,7 @@ namespace bgfxHDR
         // snapshots the currently bound uniform values, not the ones set afterwards.
         bgfx_set_uniform(s_bloomSetup, buildSetup, 1);
         bgfx_set_uniform(s_bloomParams, buildParams, 1);
-        if (!SubmitBloomPass(kBloomBuildView, s_bloom1Fb, s_bloomBuildProgram, s_bloomImage, s_hdrColor,
+        if (!SubmitBloomPass(kBloomBuildView, s_bloom1Fb, s_bloomBuildProgram, s_bloomImage, GetLitTexture(),
             BGFX_STATE_WRITE_RGB | BGFX_STATE_WRITE_A | BGFX_STATE_BLEND_ALPHA))
             return false;
 
@@ -1191,8 +1396,8 @@ namespace bgfxHDR
         const float exposure[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
         bgfx_set_state(BGFX_STATE_WRITE_RGB | BGFX_STATE_WRITE_A, 0);
         bgfx_set_transient_vertex_buffer(0, &tvb, 0, 3);
-        SetFogUniforms();
-        bgfx_set_texture(0, s_hdrSampler, s_hdrColor, 0);
+        SetEnvironmentUniforms();
+        bgfx_set_texture(0, s_hdrSampler, GetLitTexture(), 0);
         bgfx_set_texture(1, s_tonemapSampler, tonemap, 0);
         bgfx_set_texture(2, s_positionSampler, GetPositionTexture(), 0);
         const bgfx_texture_handle_t bloom = GetBloomTexture();

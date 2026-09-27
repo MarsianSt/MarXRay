@@ -357,6 +357,16 @@ void bgfxRenderDeviceRender::Begin()
     bgfx_set_view_mode(4, BGFX_VIEW_MODE_SEQUENTIAL);
     bgfx_touch(4);
 
+    // Lighting resolve. The view always exists in the order so the pass order
+    // stays stable; bgfxHDR::ResolvePass rebinds it to the lit target and submits
+    // only when that target and its program are available, otherwise the view
+    // draws nothing and the post chain falls back to the unlit attachment 0.
+    bgfx_set_view_frame_buffer(bgfxHDR::kResolveView, BGFX_INVALID_HANDLE);
+    bgfx_set_view_rect(bgfxHDR::kResolveView, 0, 0, (uint16_t)m_width, (uint16_t)m_height);
+    bgfx_set_view_clear(bgfxHDR::kResolveView, BGFX_CLEAR_NONE, 0, 1.0f, 0);
+    bgfx_set_view_mode(bgfxHDR::kResolveView, BGFX_VIEW_MODE_SEQUENTIAL);
+    bgfx_touch(bgfxHDR::kResolveView);
+
     // Stage-1 G-buffer inspector. The view always exists in the order so the
     // pass order stays stable; bgfxHDR::GbufDebugPass submits into it only when
     // XRGBUF_DEBUG is set, and an empty view draws nothing.
@@ -409,14 +419,19 @@ void bgfxRenderDeviceRender::Begin()
     bgfx_set_view_mode(bgfxHDR::kFogScatterView, BGFX_VIEW_MODE_SEQUENTIAL);
     bgfx_touch(bgfxHDR::kFogScatterView);
 
-    // Frame order: scene -> scene FX -> luminance -> bloom (build/H/V) -> combine
-    // -> SMAA (edge/weights/resolve) -> G-buffer inspector -> leftovers.
-    // The bloom views sit between the luminance chain and the combine so bgfxHDR::BloomPass
-    // reads the HDR target of this frame and combine_bloom() reads this frame's rt_Bloom_1.
+    // Frame order: scene -> scene FX -> lighting resolve -> luminance -> bloom
+    // (build/H/V) -> combine -> SMAA (edge/weights/resolve) -> G-buffer inspector
+    // -> leftovers. The resolve view sits right after the last writer into the
+    // G-buffer (the scene FX view) and right before the luminance chain, whose
+    // middle-grey measurement has to see the lit image. The bloom views sit
+    // between the luminance chain and the combine so bgfxHDR::BloomPass
+    // reads the lit target of this frame and combine_bloom() reads this frame's
+    // rt_Bloom_1.
     // SMAA resolves into the backbuffer (from the scatter output when fog
     // scattering is up, otherwise straight from the combine); the inspector
     // runs after the resolve because it repaints the finished frame.
-    const bgfx_view_id_t order[] = { 0, bgfxHDR::kSceneFxView, bgfxHDR::kLuminance64View,
+    const bgfx_view_id_t order[] = { 0, bgfxHDR::kSceneFxView, bgfxHDR::kResolveView,
+        bgfxHDR::kLuminance64View,
         bgfxHDR::kLuminance8View, bgfxHDR::kLuminance1View,
         bgfxHDR::kBloomBuildView, bgfxHDR::kBloomBlurHView, bgfxHDR::kBloomBlurVView,
         bgfxHDR::kCombineView, bgfxHDR::kFogBlurBuildView, bgfxHDR::kFogBlurHView,

@@ -28,12 +28,29 @@ namespace bgfxHDR
     const bgfx_view_id_t kFogBlurHView = 18;
     const bgfx_view_id_t kFogBlurVView = 19;
     const bgfx_view_id_t kFogScatterView = 20;
+    // Deferred lighting resolve: the only place that turns the unlit albedo of
+    // attachment 0 into a lit HDR image (AXR accum_sun.ps + hmodel(), summed by
+    // combine_1.ps:114-166). It has to sit after the scene FX view (kSceneFxView,
+    // the last writer into the G-buffer) and before the luminance chain, whose
+    // middle-grey measurement has to see the lit image. Writes its own
+    // full-res RGBA16F target: attachment 0 cannot be read and written in the
+    // same pass.
+    const bgfx_view_id_t kResolveView = 21;
 
     bool CreateHDRTarget(uint16_t _width, uint16_t _height);
     void DestroyHDRTarget();
     bool RecreateOnResize(uint16_t _width, uint16_t _height);
     bool IsReady();
     bool BindScene();
+    // Stage-2 lighting resolve. Reads the G-buffer the scene views wrote and
+    // fills the lit HDR target. Returns false (drawing nothing) when the program
+    // or the target is unavailable; GetLitTexture() then hands out the raw
+    // unlit attachment 0, so the frame stays intact exactly as it was before
+    // this pass existed.
+    bool ResolvePass();
+    // The HDR image the post chain has to sample: the lit target when the
+    // resolve ran this frame, the unlit attachment 0 otherwise.
+    bgfx_texture_handle_t GetLitTexture();
     bool LuminancePass();
     bool BloomPass();
     bool CombinePass(uint16_t _width, uint16_t _height);
