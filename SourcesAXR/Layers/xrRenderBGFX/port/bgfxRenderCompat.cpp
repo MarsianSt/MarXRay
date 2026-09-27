@@ -1297,6 +1297,29 @@ namespace
 			(u32)s_worldVbh.size(), (u32)s_worldIbh.size());
 	}
 
+	// Reports a draw that had to take the white/magenta fallback because its
+	// diffuse texture is not in the level's texture table. Each (kind, shader)
+	// pair is reported once so a single frame yields the whole list of offending
+	// meshes instead of one line per draw call.
+	void bgfxWorldLogMissingTex(const char* kind, int vb, const char* shader, u16 shaderId)
+	{
+		static xr_vector<u64> s_seen;
+		// FNV-1a over the two names, so the key never needs a wide string copy.
+		auto hashOf = [](const char* s) -> u32
+		{
+			u32 h = 2166136261u;
+			for (const char* p = s; p && *p; ++p)
+				h = (h ^ (u8)*p) * 16777619u;
+			return h;
+		};
+		const u64 key = ((u64)hashOf(kind) << 32) | (u64)hashOf(shader ? shader : "");
+		for (const u64 k : s_seen)
+			if (k == key)
+				return;
+		s_seen.push_back(key);
+		LogInfo("WORLD NO_TEX: kind=%s vb=%d shader='%s' id=%u", kind, vb, shader ? shader : "(null)", shaderId);
+	}
+
 	void bgfxWorldDrawMesh(IRender_Mesh* mesh, u16 shaderId, WorldDiag& dg, bool isTree, const float* treeXform = nullptr)
 	{
 		if (!mesh || !mesh->p_rm_Vertices || !mesh->p_rm_Indices)
@@ -1399,7 +1422,10 @@ namespace
 		{
 			tex = bgfxWorldLevelTexture(shaderId);
 			if (!bgfxIsValid(tex))
-				tex = bgfxUIWhiteTextureGet();
+			{
+				bgfxWorldLogMissingTex("mesh", vi, sh, shaderId);
+				tex = bgfxUIFallbackTextureGet();
+			}
 		}
 		if (bgfxIsValid(g_worldSampler))
 			bgfx_set_texture(0, g_worldSampler, tex, UINT32_MAX);
@@ -1579,15 +1605,23 @@ namespace
 
 		static const int vid[4] = { 3, 0, 2, 1 };
 		const FLOD::_face& F = lod->facets[best];
+		// s_worldLayoutDesc is position(3x float) + packed normal(4x ubyte) +
+		// uv(2x float), so TEXCOORD0 starts at byte 16, not 12. Writing the uv at
+		// float index 3/4 left a_normal holding the uv and a_texcoord0 holding
+		// whatever the transient pool held, which painted every impostor with a
+		// flat grey texel. The facet normal is a world-space direction, so it goes
+		// through the same bx2 packing the level repack uses (packBx2Normal).
 		for (int i = 0; i < 4; ++i)
 		{
 			const FLOD::_vertex& sv = F.v[vid[i]];
-			float* dst = (float*)((u8*)tvb.data + i * tvb.stride);
+			u8* vdst = (u8*)tvb.data + i * tvb.stride;
+			float* dst = (float*)vdst;
 			dst[0] = sv.v.x + shift.x;
 			dst[1] = sv.v.y + shift.y;
 			dst[2] = sv.v.z + shift.z;
-			dst[3] = sv.t.x;
-			dst[4] = sv.t.y;
+			packBx2Normal(F.N.x, F.N.y, F.N.z, 255, vdst + 12);
+			dst[4] = sv.t.x;
+			dst[5] = sv.t.y;
 		}
 
 		{
@@ -1605,7 +1639,10 @@ namespace
 		{
 			bgfx_texture_handle_t tex = bgfxWorldLevelTexture(shaderId);
 			if (!bgfxIsValid(tex))
-				tex = bgfxUIWhiteTextureGet();
+			{
+				bgfxWorldLogMissingTex("lod", -1, sh, shaderId);
+				tex = bgfxUIFallbackTextureGet();
+			}
 			bgfx_set_texture(0, g_worldSampler, tex, UINT32_MAX);
 		}
 		if (bgfxIsValid(g_worldAlphaCtrl))
@@ -2172,7 +2209,10 @@ extern "C"
 
 		bgfx_texture_handle_t tex = bgfxWorldTextureGet(fv->diffuse_name.c_str());
 		if (!bgfxIsValid(tex))
-			tex = bgfxUIWhiteTextureGet();
+		{
+			bgfxWorldLogMissingTex("dynamic", -1, fv->diffuse_name.c_str(), 0xFFFF);
+			tex = bgfxUIFallbackTextureGet();
+		}
 		if (bgfxIsValid(s_skinSampler))
 			bgfx_set_texture(0, s_skinSampler, tex, UINT32_MAX);
 
