@@ -7,14 +7,20 @@ SAMPLER2D(s_prev, 1);
 uniform vec4 u_middleGray;
 uniform vec4 u_luminanceParams;
 
+// common_defines.h:11 - def_hdr float(9.h). A compile-time constant in the reference
+// too, so the x9 stays a shader constant and not a tunable.
+const float DEF_HDR = 9.0;
+
 float hdrLuminance(vec2 _tc)
 {
     vec3 source = texture2D(s_image, _tc).rgb;
-    // 1:1 with bloom_luminance_1.ps (dot with LUMINANCE_VECTOR, anomaly_shaders.h:9)
-    // but WITHOUT the *def_hdr: in AXR that x9 undoes the /9 high-channel
-    // normalization (sky2.ps:60, combine high=rgb/9); our s_image is full-range
-    // HDR, so multiplying would inflate luminance 9x and crush the scale ~3.6x.
-    return dot(source, vec3(0.2125, 0.7154, 0.0721));
+    // bloom_luminance_1.ps:6-10, 1:1:
+    //   return dot(s_image.Sample(smp_rtlinear, tc), LUMINANCE_VECTOR*def_hdr);
+    // LUMINANCE_VECTOR is anomaly_shaders.h:9, float3(0.2125, 0.7154, 0.0721).
+    // s_image is r2_RT_bloom1 (blender_luminance.cpp:18), i.e. the bright-pass output
+    // bloom_build.ps:46 writes in the high domain, so the x9 is the high -> pre-tonemap
+    // undo and the result lands in the sRGB domain: result = luma(sRGB_encode(linear*scale)).
+    return dot(source, vec3(0.2125, 0.7154, 0.0721) * DEF_HDR);
 }
 
 float filteredLuminance(vec2 _tc)
@@ -22,6 +28,11 @@ float filteredLuminance(vec2 _tc)
     return texture2D(s_image, _tc).r;
 }
 
+// Pass 0 (bloom_luminance_1.ps:18-44): the four reference taps of v_build over the
+// 256x256 rt_Bloom_1. The port approximates the reference corner layout (a_0..a_3
+// spanning one and two texels, r4_rendertarget_phase_luminance.cpp:39-44, plus the
+// bilinear filter, i.e. a 4x4 texel area) with a +/-0.25 texel box; that layout predates
+// the split-HDR work and is left as is, only the source and the domain changed.
 float firstPass(vec2 _uv, vec2 _texel)
 {
     vec2 offset = _texel * 0.25;

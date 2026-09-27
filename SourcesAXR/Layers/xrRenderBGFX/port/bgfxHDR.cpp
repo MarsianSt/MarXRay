@@ -63,6 +63,18 @@ namespace
     bgfx_vertex_layout_t s_resolveLayout = {};
     bool s_resolveLayoutReady = false;
     bool s_resolveOk = false;
+    // Split-HDR high channel, the /9 encoding of the pre-tonemap image
+    // (common_functions.h:32). Its own full-res target for the same reason the lit
+    // one has its own: the pass reads the lit image, so it cannot write into it.
+    bgfx_frame_buffer_handle_t s_hdrHighFb = BGFX_INVALID_HANDLE;
+    bgfx_texture_handle_t s_hdrHigh = BGFX_INVALID_HANDLE;
+    bgfx_program_handle_t s_highProgram = BGFX_INVALID_HANDLE;
+    bgfx_uniform_handle_t s_highSampler = BGFX_INVALID_HANDLE;
+    bgfx_uniform_handle_t s_highTonemapSampler = BGFX_INVALID_HANDLE;
+    bgfx_uniform_handle_t s_highPositionSampler = BGFX_INVALID_HANDLE;
+    bgfx_vertex_layout_t s_highLayout = {};
+    bool s_highLayoutReady = false;
+    bool s_highOk = false;
     bgfx_vertex_layout_t s_combineLayout = {};
     bool s_combineLayoutReady = false;
     uint16_t s_width = 0;
@@ -115,6 +127,10 @@ namespace
     constexpr float kBloomThreshold = 0.00001f;
     constexpr float kBloomKernelG = 3.0f;
     constexpr float kBloomKernelScale = 0.7f;
+    // The threshold is consumed in the high domain (bloom_build.ps:43 reads
+    // s_image = r2_RT_generic1), so this value is AXR's ps_r2_ls_bloom_threshold
+    // verbatim and needs no rescaling: the high channel carries the /9
+    // (common_defines.h:11 def_hdr) in the shader, not here.
 
     bgfx_frame_buffer_handle_t s_bloom1Fb = BGFX_INVALID_HANDLE;
     bgfx_frame_buffer_handle_t s_bloom2Fb = BGFX_INVALID_HANDLE;
@@ -198,11 +214,15 @@ namespace
             bgfx_destroy_texture(s_hdrDepth);
         if (bgfxIsValid(s_hdrLit))
             bgfx_destroy_texture(s_hdrLit);
+        if (bgfxIsValid(s_hdrHigh))
+            bgfx_destroy_texture(s_hdrHigh);
         s_hdrColor = BGFX_INVALID_HANDLE;
         s_hdrPosition = BGFX_INVALID_HANDLE;
         s_hdrGbuf = BGFX_INVALID_HANDLE;
         s_hdrDepth = BGFX_INVALID_HANDLE;
         s_hdrLit = BGFX_INVALID_HANDLE;
+        s_hdrHigh = BGFX_INVALID_HANDLE;
+        s_highOk = false;
     }
 
     void DestroyLuminanceTargets()
@@ -817,6 +837,58 @@ namespace
         return true;
     }
 
+    void DestroyHighProgram()
+    {
+        if (bgfxIsValid(s_highProgram))
+            bgfx_destroy_program(s_highProgram);
+        if (bgfxIsValid(s_highSampler))
+            bgfx_destroy_uniform(s_highSampler);
+        if (bgfxIsValid(s_highTonemapSampler))
+            bgfx_destroy_uniform(s_highTonemapSampler);
+        if (bgfxIsValid(s_highPositionSampler))
+            bgfx_destroy_uniform(s_highPositionSampler);
+        s_highProgram = BGFX_INVALID_HANDLE;
+        s_highSampler = BGFX_INVALID_HANDLE;
+        s_highTonemapSampler = BGFX_INVALID_HANDLE;
+        s_highPositionSampler = BGFX_INVALID_HANDLE;
+        s_highLayoutReady = false;
+    }
+
+    bool EnsureHighProgram()
+    {
+        if (bgfxIsValid(s_highProgram) && bgfxIsValid(s_highSampler) &&
+            bgfxIsValid(s_highTonemapSampler) && bgfxIsValid(s_highPositionSampler))
+            return true;
+
+        if (!s_highLayoutReady)
+        {
+            bgfx_vertex_layout_begin(&s_highLayout, bgfx_get_renderer_type());
+            bgfx_vertex_layout_add(&s_highLayout, BGFX_ATTRIB_POSITION, 3, BGFX_ATTRIB_TYPE_FLOAT, false, false);
+            bgfx_vertex_layout_add(&s_highLayout, BGFX_ATTRIB_TEXCOORD0, 2, BGFX_ATTRIB_TYPE_FLOAT, false, false);
+            bgfx_vertex_layout_end(&s_highLayout);
+            s_highLayoutReady = true;
+        }
+
+        s_highProgram = BuildProgram("combine_vs.sc", "high_ps.sc");
+        if (!bgfxIsValid(s_highProgram))
+        {
+            LogError("[BGFX] Split-HDR high program build failed");
+            return false;
+        }
+        s_highSampler = bgfx_create_uniform("s_hdr", BGFX_UNIFORM_TYPE_SAMPLER, 1);
+        s_highTonemapSampler = bgfx_create_uniform("s_tonemap", BGFX_UNIFORM_TYPE_SAMPLER, 1);
+        s_highPositionSampler = bgfx_create_uniform("s_position", BGFX_UNIFORM_TYPE_SAMPLER, 1);
+        if (!bgfxIsValid(s_highSampler) || !bgfxIsValid(s_highTonemapSampler) ||
+            !bgfxIsValid(s_highPositionSampler))
+        {
+            LogError("[BGFX] Split-HDR high uniforms create failed");
+            DestroyHighProgram();
+            return false;
+        }
+        LogInfo("[BGFX] Split-HDR high program created: %u", s_highProgram.idx);
+        return true;
+    }
+
     bool SubmitLuminancePass(bgfx_view_id_t _view, bgfx_frame_buffer_handle_t _fb,
         uint16_t _width, uint16_t _height, float _pass, bgfx_texture_handle_t _source,
         bgfx_texture_handle_t _previous, float _sourceWidth, float _sourceHeight,
@@ -1012,7 +1084,7 @@ namespace bgfxHDR
 
         if (bgfxIsValid(s_hdrFb) && s_width == _width && s_height == _height)
             return EnsureLuminanceTargets() && EnsureBloomTargets() && EnsureBloomPrograms() &&
-                EnsureCombineProgram() && EnsureResolveProgram();
+                EnsureCombineProgram() && EnsureResolveProgram() && EnsureHighProgram();
 
         DestroyHDRTarget();
 
@@ -1088,8 +1160,17 @@ namespace bgfxHDR
         // but a separate texture: the resolve samples attachment 0 / 1 / 2 and
         // must not render into any of them.
         s_hdrLit = bgfx_create_texture_2d(_width, _height, false, 1, s_colorFormat, colorFlags, nullptr, 0);
+        // Split-HDR high channel, the AXR rt_Generic_1 (r4_rendertarget.cpp:490).
+        // Same format policy as the other colour attachments: AXR stores it 8-bit
+        // (D3DFMT_A8R8G8B8) because there the /9 is a way to squeeze a second
+        // dynamic range into 8 bits, while in this port the pre-tonemap image it
+        // encodes is itself 16F, so the pair is 16F/16F and the encoding is the
+        // only thing that is ported 1:1. The bloom bright pass is its only reader,
+        // which is why the bright pass has to run before the luminance chain and
+        // before the high target is reused for anything else.
+        s_hdrHigh = bgfx_create_texture_2d(_width, _height, false, 1, s_colorFormat, colorFlags, nullptr, 0);
         if (!bgfxIsValid(s_hdrColor) || !bgfxIsValid(s_hdrPosition) || !bgfxIsValid(s_hdrGbuf) ||
-            !bgfxIsValid(s_hdrDepth) || !bgfxIsValid(s_hdrLit))
+            !bgfxIsValid(s_hdrDepth) || !bgfxIsValid(s_hdrLit) || !bgfxIsValid(s_hdrHigh))
         {
             LogError("[BGFX] HDR target texture create failed (%ux%u)", _width, _height);
             DestroyTextures();
@@ -1125,12 +1206,22 @@ namespace bgfxHDR
             DestroyTextures();
             return false;
         }
-        LogInfo("[BGFX] HDR target created: %ux%u color=%d position=%d gbuf=%d depth=%d fb=%u litfb=%u",
+        // High target: same shape as the resolve target, for the same reason.
+        bgfx_texture_handle_t highAttachment[1] = { s_hdrHigh };
+        s_hdrHighFb = bgfx_create_frame_buffer_from_handles(1, highAttachment, false);
+        if (!bgfxIsValid(s_hdrHighFb))
+        {
+            LogError("[BGFX] Split-HDR high framebuffer create failed (%ux%u)", _width, _height);
+            s_hdrHighFb = BGFX_INVALID_HANDLE;
+            DestroyTextures();
+            return false;
+        }
+        LogInfo("[BGFX] HDR target created: %ux%u color=%d position=%d gbuf=%d depth=%d fb=%u litfb=%u highfb=%u",
             _width, _height, (int)s_colorFormat, (int)s_positionFormat, (int)s_gbufFormat,
-            (int)s_depthFormat, s_hdrFb.idx, s_hdrLitFb.idx);
+            (int)s_depthFormat, s_hdrFb.idx, s_hdrLitFb.idx, s_hdrHighFb.idx);
 
         if (!CreateLuminanceTargets() || !EnsureBloomTargets() || !EnsureBloomPrograms() ||
-            !EnsureCombineProgram() || !EnsureResolveProgram())
+            !EnsureCombineProgram() || !EnsureResolveProgram() || !EnsureHighProgram())
         {
             DestroyHDRTarget();
             return false;
@@ -1146,12 +1237,16 @@ namespace bgfxHDR
         if (bgfxIsValid(s_hdrLitFb))
             bgfx_destroy_frame_buffer(s_hdrLitFb);
         s_hdrLitFb = BGFX_INVALID_HANDLE;
+        if (bgfxIsValid(s_hdrHighFb))
+            bgfx_destroy_frame_buffer(s_hdrHighFb);
+        s_hdrHighFb = BGFX_INVALID_HANDLE;
         DestroyTextures();
         s_width = 0;
         s_height = 0;
         s_gbufDebugClock = 0.0f;
         DestroyCombineProgram();
         DestroyResolveProgram();
+        DestroyHighProgram();
         DestroyGbufDebugProgram();
         DestroyBloomPrograms();
         DestroyBloomTargets();
@@ -1166,7 +1261,7 @@ namespace bgfxHDR
     {
         if (bgfxIsValid(s_hdrFb) && s_width == _width && s_height == _height)
             return EnsureLuminanceTargets() && EnsureBloomTargets() && EnsureBloomPrograms() &&
-                EnsureCombineProgram() && EnsureResolveProgram();
+                EnsureCombineProgram() && EnsureResolveProgram() && EnsureHighProgram();
         // Full-res SMAA/scatter targets follow the window size; drop them here,
         // the passes recreate them lazily at the new size.
         DestroySmaaTargets();
@@ -1280,9 +1375,82 @@ namespace bgfxHDR
         return BGFX_INVALID_HANDLE;
     }
 
+    // Split-HDR high channel, the AXR r2_RT_generic1 (r4_rendertarget.cpp:490). In the
+    // reference three shaders write it - sky2.ps:60, combine_1.ps:213 through
+    // tonemap()'s high line (common_functions.h:32) and combine_volumetric.ps:33 - and
+    // the single reader is the bloom bright pass (blender_bloom_build.cpp:18). Here the
+    // three writers collapse into one fullscreen pass over the lit image: the sky and
+    // the clouds are already part of that image (the resolve passes their radiance
+    // through) and the volumetric term has no bgfx counterpart, so one pass over the
+    // lit image is the same set of values.
+    // It runs before the bright pass and after the resolve, and it reads the same
+    // tm_scale the sky and the combine read, so all three agree for the whole frame.
+    bool HighPass()
+    {
+        s_highOk = false;
+        if (!IsReady() || !EnsureHighProgram() || !bgfxIsValid(s_hdrHighFb))
+            return false;
+        const bgfx_texture_handle_t tonemap = GetTonemapTexture();
+        if (!bgfxIsValid(tonemap))
+            return false;
+
+        bgfx_set_view_frame_buffer(kHighView, s_hdrHighFb);
+        bgfx_set_view_rect(kHighView, 0, 0, s_width, s_height);
+        bgfx_set_view_clear(kHighView, BGFX_CLEAR_NONE, 0, 1.0f, 0);
+        bgfx_set_view_mode(kHighView, BGFX_VIEW_MODE_SEQUENTIAL);
+        // Needed for compute_height_fog, which rebuilds the world-space position with
+        // the predefined u_view - the mirror of the AXR m_v2w (combine_1.ps:194).
+        bgfx_set_view_transform(kHighView, Device.mView.m, Device.mProject.m);
+        bgfx_touch(kHighView);
+
+        bgfx_transient_vertex_buffer_t tvb;
+        bgfx_alloc_transient_vertex_buffer(&tvb, 3, &s_highLayout);
+        if (!tvb.data)
+            return false;
+        struct Vertex
+        {
+            float x, y, z, u, v;
+        };
+        const Vertex vertices[3] =
+        {
+            { -1.0f, -1.0f, 0.0f, 0.0f, 1.0f },
+            {  3.0f, -1.0f, 0.0f, 2.0f, 1.0f },
+            { -1.0f,  3.0f, 0.0f, 0.0f, -1.0f },
+        };
+        std::memcpy(tvb.data, vertices, sizeof(vertices));
+
+        bgfx_set_state(BGFX_STATE_WRITE_RGB | BGFX_STATE_WRITE_A, 0);
+        bgfx_set_transient_vertex_buffer(0, &tvb, 0, 3);
+        SetEnvironmentUniforms();
+        bgfx_set_texture(0, s_highSampler, GetLitTexture(), 0);
+        bgfx_set_texture(1, s_highTonemapSampler, tonemap, 0);
+        bgfx_set_texture(2, s_highPositionSampler, s_hdrPosition, 0);
+        bgfx_submit(kHighView, s_highProgram, 0, BGFX_DISCARD_ALL);
+        s_highOk = true;
+        return true;
+    }
+
+    bgfx_texture_handle_t GetHighTexture()
+    {
+        if (s_highOk && bgfxIsValid(s_hdrHigh))
+            return s_hdrHigh;
+        return BGFX_INVALID_HANDLE;
+    }
+
+    // The swap of r2_RT_luminance_cur / r2_RT_luminance_dest. The reference performs it
+    // at the end of phase_combine (r4_rendertarget_phase_combine.cpp:678), which is why
+    // the sky, the high pass and combine_1 all read the previous frame's tm_scale. The
+    // bgfx post chain has the same consumers, so the index flips here rather than inside
+    // LuminancePass, which would publish the new value to the combine mid-frame.
+    void EndFrameLuminance()
+    {
+        s_lumTonemapIndex = !s_lumTonemapIndex;
+    }
+
     bool LuminancePass()
     {
-        if (!IsReady() || !EnsureLuminanceTargets() || !EnsureLuminancePrograms())
+        if (!IsReady() || !EnsureLuminanceTargets() || !EnsureLuminancePrograms() ||
+            !EnsureBloomTargets())
             return false;
 
         const float deltaTime = Device.fTimeDelta > 0.0f ? Device.fTimeDelta : 0.0f;
@@ -1299,31 +1467,40 @@ namespace bgfxHDR
 
         const u32 previous = s_lumTonemapIndex ? 1u : 0u;
         const u32 current = previous ^ 1u;
-        // The middle-grey measurement runs on the lit image: the luminance chain
-        // in AXR sees the accumulator after accum_sun/hmodel, not the bare albedo.
-        const bgfx_texture_handle_t lit = GetLitTexture();
+        // The first pass measures the bright-pass output, 1:1 with
+        // blender_luminance.cpp:16-19 (s_image = r2_RT_bloom1): 256x256 in the high
+        // domain, which bloom_luminance_1.ps:9 undoes with the def_hdr factor. This is
+        // phase_bloom:131, i.e. after the bright pass and before the two gaussian
+        // passes that overwrite rt_Bloom_1, so the chain has to run between them.
         if (!SubmitLuminancePass(kLuminance64View, s_lum64Fb, 64, 64, 0.0f,
-            lit, s_lum1[previous], float(s_width), float(s_height), middleGray) ||
+            s_bloom1, s_lum1[previous], float(kBloomSize), float(kBloomSize), middleGray) ||
             !SubmitLuminancePass(kLuminance8View, s_lum8Fb, 8, 8, 1.0f,
             s_lum64, s_lum1[previous], 64.0f, 64.0f, middleGray) ||
             !SubmitLuminancePass(kLuminance1View, s_lum1Fb[current], 1, 1, 2.0f,
             s_lum8, s_lum1[previous], 8.0f, 8.0f, middleGray))
             return false;
 
-        s_lumTonemapIndex = current != 0;
         return true;
     }
 
     // R4 bloom chain, 1:1 with archive_sourse/Layers/xrRenderPC_R4/r4_rendertarget_phase_bloom.cpp:68-340.
-    //   pass 0 (view kBloomBuildView) bloom_build  s_hdr -> rt_Bloom_1, 4 taps over the central
+    //   pass 0 (view kBloomBuildView) bloom_build  s_hdrHigh -> rt_Bloom_1, 4 taps over the central
     //                                            256x256 crop, avg in rgb and (luma - threshold) in a
     //   pass 1 (view kBloomBlurHView)  bloom_filter rt_Bloom_1 -> rt_Bloom_2, gaussian X
     //   pass 2 (view kBloomBlurVView)  bloom_filter rt_Bloom_2 -> rt_Bloom_1, gaussian Y
-    // phase_luminance() sits between the build and the filter in the original (:131); here the
-    // luminance chain already runs earlier in the frame, so the relative order is unchanged.
+    // The bright pass reads the HIGH channel (blender_bloom_build.cpp:15-20,
+    // s_image = r2_RT_generic1), which is why HighPass has to run before it and why
+    // b_params.x stays AXR's ps_r2_ls_bloom_threshold untouched: it is already a
+    // high-domain value. phase_luminance() sits between the build and the filter in the
+    // original (:131), and LuminancePass runs there.
     bool BloomPass()
     {
         if (!IsReady() || !EnsureBloomTargets() || !EnsureBloomPrograms())
+            return false;
+        // No high channel means no bright pass. Reading the un-encoded lit image here
+        // would be 9x too bright, which is worse than a frame without bloom.
+        const bgfx_texture_handle_t high = GetHighTexture();
+        if (!bgfxIsValid(high))
             return false;
 
         // phase_bloom:85-99. The quad interpolates a_i .. 1+a_i, so the v_texcoord0 term is
@@ -1361,7 +1538,7 @@ namespace bgfxHDR
         // snapshots the currently bound uniform values, not the ones set afterwards.
         bgfx_set_uniform(s_bloomSetup, buildSetup, 1);
         bgfx_set_uniform(s_bloomParams, buildParams, 1);
-        if (!SubmitBloomPass(kBloomBuildView, s_bloom1Fb, s_bloomBuildProgram, s_bloomImage, GetLitTexture(),
+        if (!SubmitBloomPass(kBloomBuildView, s_bloom1Fb, s_bloomBuildProgram, s_bloomImage, high,
             BGFX_STATE_WRITE_RGB | BGFX_STATE_WRITE_A | BGFX_STATE_BLEND_ALPHA))
             return false;
 

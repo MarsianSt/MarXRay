@@ -367,6 +367,16 @@ void bgfxRenderDeviceRender::Begin()
     bgfx_set_view_mode(bgfxHDR::kResolveView, BGFX_VIEW_MODE_SEQUENTIAL);
     bgfx_touch(bgfxHDR::kResolveView);
 
+    // Split-HDR high channel. The view always exists in the order so the pass order
+    // stays stable; bgfxHDR::HighPass rebinds it to the high target and submits only
+    // when that target and its program are available, otherwise the bloom bright pass
+    // skips instead of reading an un-encoded image.
+    bgfx_set_view_frame_buffer(bgfxHDR::kHighView, BGFX_INVALID_HANDLE);
+    bgfx_set_view_rect(bgfxHDR::kHighView, 0, 0, (uint16_t)m_width, (uint16_t)m_height);
+    bgfx_set_view_clear(bgfxHDR::kHighView, BGFX_CLEAR_NONE, 0, 1.0f, 0);
+    bgfx_set_view_mode(bgfxHDR::kHighView, BGFX_VIEW_MODE_SEQUENTIAL);
+    bgfx_touch(bgfxHDR::kHighView);
+
     // Stage-1 G-buffer inspector. The view always exists in the order so the
     // pass order stays stable; bgfxHDR::GbufDebugPass submits into it only when
     // XRGBUF_DEBUG is set, and an empty view draws nothing.
@@ -419,21 +429,26 @@ void bgfxRenderDeviceRender::Begin()
     bgfx_set_view_mode(bgfxHDR::kFogScatterView, BGFX_VIEW_MODE_SEQUENTIAL);
     bgfx_touch(bgfxHDR::kFogScatterView);
 
-    // Frame order: scene -> scene FX -> lighting resolve -> luminance -> bloom
-    // (build/H/V) -> combine -> SMAA (edge/weights/resolve) -> G-buffer inspector
-    // -> leftovers. The resolve view sits right after the last writer into the
-    // G-buffer (the scene FX view) and right before the luminance chain, whose
-    // middle-grey measurement has to see the lit image. The bloom views sit
-    // between the luminance chain and the combine so bgfxHDR::BloomPass
-    // reads the lit target of this frame and combine_bloom() reads this frame's
+    // Frame order: scene -> scene FX -> lighting resolve -> split-HDR high -> bloom
+    // bright pass -> luminance -> bloom blur H/V -> combine -> SMAA
+    // (edge/weights/resolve) -> G-buffer inspector -> leftovers. The resolve view sits
+    // right after the last writer into the G-buffer (the scene FX view); the high view
+    // right after the resolve, which produces the pre-tonemap image it encodes. The
+    // bright pass comes next because the high channel exists for it alone
+    // (blender_bloom_build.cpp:18), and the luminance chain follows it, measuring the
+    // bright-pass output (blender_luminance.cpp:18) before the two gaussian passes
+    // overwrite rt_Bloom_1 - the phase_bloom:131 placement. The blur views sit between
+    // the luminance chain and the combine so combine_bloom() reads this frame's
     // rt_Bloom_1.
     // SMAA resolves into the backbuffer (from the scatter output when fog
     // scattering is up, otherwise straight from the combine); the inspector
     // runs after the resolve because it repaints the finished frame.
     const bgfx_view_id_t order[] = { 0, bgfxHDR::kSceneFxView, bgfxHDR::kResolveView,
+        bgfxHDR::kHighView,
+        bgfxHDR::kBloomBuildView,
         bgfxHDR::kLuminance64View,
         bgfxHDR::kLuminance8View, bgfxHDR::kLuminance1View,
-        bgfxHDR::kBloomBuildView, bgfxHDR::kBloomBlurHView, bgfxHDR::kBloomBlurVView,
+        bgfxHDR::kBloomBlurHView, bgfxHDR::kBloomBlurVView,
         bgfxHDR::kCombineView, bgfxHDR::kFogBlurBuildView, bgfxHDR::kFogBlurHView,
         bgfxHDR::kFogBlurVView, bgfxHDR::kFogScatterView,
         bgfxHDR::kSmaaEdgeView, bgfxHDR::kSmaaBlendView,

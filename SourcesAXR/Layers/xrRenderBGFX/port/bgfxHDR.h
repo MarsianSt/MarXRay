@@ -36,6 +36,13 @@ namespace bgfxHDR
     // full-res RGBA16F target: attachment 0 cannot be read and written in the
     // same pass.
     const bgfx_view_id_t kResolveView = 21;
+    // Split-HDR high channel (AXR r2_RT_generic1, D3DFMT_A8R8G8B8,
+    // r4_rendertarget.cpp:490): the /9 encoding of the pre-tonemap image that
+    // tonemap() writes as its second output (common_functions.h:32, sky2.ps:60,
+    // combine_1.ps:213). Sits after the lighting resolve, which produces the
+    // pre-tonemap image, and before the bloom bright pass, the only reader
+    // (blender_bloom_build.cpp:18).
+    const bgfx_view_id_t kHighView = 22;
 
     bool CreateHDRTarget(uint16_t _width, uint16_t _height);
     void DestroyHDRTarget();
@@ -48,6 +55,18 @@ namespace bgfxHDR
     // unlit attachment 0, so the frame stays intact exactly as it was before
     // this pass existed.
     bool ResolvePass();
+    // Split-HDR high channel: high = high(tonemap(fog(lit), tm_scale)), i.e. the
+    // AXR /9 encoding of the pre-tonemap image. Returns false (drawing nothing)
+    // when the target or the program is unavailable; BloomPass then skips instead
+    // of reading an unscaled image, so the frame stays intact.
+    bool HighPass();
+    // The high channel, or an invalid handle when the pass is unavailable.
+    bgfx_texture_handle_t GetHighTexture();
+    // Publishes the luminance result of this frame: the swap of r2_RT_luminance_cur /
+    // _dest (r4_rendertarget_phase_combine.cpp:678) at the end of the frame. The
+    // reference swaps there, so the sky, the high pass and the combine all read the
+    // previous frame's tm_scale; this is the bgfx equivalent of that swap point.
+    void EndFrameLuminance();
     // The HDR image the post chain has to sample: the lit target when the
     // resolve ran this frame, the unlit attachment 0 otherwise.
     bgfx_texture_handle_t GetLitTexture();

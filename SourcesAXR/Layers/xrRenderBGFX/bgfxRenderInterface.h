@@ -264,9 +264,18 @@ public:
         // combine_1.ps:114-166). Falls back to the unlit attachment 0 when the
         // resolve is unavailable, so the frame never breaks.
         bgfxHDR::ResolvePass();
-        bgfxHDR::LuminancePass();
+        // Split-HDR high channel (AXR r2_RT_generic1): the /9 encoding of the
+        // pre-tonemap image, written for the bloom bright pass and by nothing else.
+        bgfxHDR::HighPass();
         bgfxHDR::BloomPass();
+        // phase_bloom:131 - the middle-grey measurement reads the bright-pass output,
+        // so the luminance chain runs after the bright pass and before the gaussians.
+        bgfxHDR::LuminancePass();
         bgfxHDR::CombinePass((u16)Device.dwWidth, (u16)Device.dwHeight);
+        // r2_RT_luminance_cur / _dest swap (r4_rendertarget_phase_combine.cpp:678): the
+        // value the sky, the high pass and the combine just used stays current for the
+        // whole frame, the result of this frame's chain becomes it for the next one.
+        bgfxHDR::EndFrameLuminance();
         // Fog scattering (AXR combine_2_naa.ps fog-scatter block): blurred LDR
         // copy bled over the fogged transition zone. SMAA then resolves from
         // the scattered output (or plain combine output when scattering is
