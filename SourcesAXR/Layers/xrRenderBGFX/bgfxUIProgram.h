@@ -19,3 +19,8 @@ bgfx_uniform_handle_t bgfxUITextureSamplerGet();
 
 // 1x1 white texture (fallback when a UI item has no texture).
 bgfx_texture_handle_t bgfxUIWhiteTextureGet();
+// Fallback for draws with no diffuse texture; magenta under XRBGFX_MISSING_TEX=1.
+bgfx_texture_handle_t bgfxUIFallbackTextureGet();
+// True when that fallback is the magenta diagnostic colour.
+bool bgfxUIFallbackIsMagenta();
+

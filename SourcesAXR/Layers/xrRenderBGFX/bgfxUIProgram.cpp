@@ -8,6 +8,7 @@
 #include "bgfxShaderCompiler.h"
 #include "bgfxRenderInterface.h"
 
+#include <cstdlib>
 #include <vector>
 
 static bgfx_program_handle_t s_uiProgram = BGFX_INVALID_HANDLE;
@@ -57,6 +58,7 @@ static bgfx_program_handle_t s_uiTexProgram = BGFX_INVALID_HANDLE;
 static bgfx_uniform_handle_t s_texSampler = BGFX_INVALID_HANDLE;
 static bgfx_program_handle_t s_fontProgram = BGFX_INVALID_HANDLE;
 static bgfx_texture_handle_t s_whiteTexture = BGFX_INVALID_HANDLE;
+static bgfx_texture_handle_t s_fallbackTexture = BGFX_INVALID_HANDLE;
 
 bgfx_program_handle_t bgfxUITexturedProgramGet()
 {
@@ -71,6 +73,7 @@ bgfx_program_handle_t bgfxUITexturedProgramGet()
 
     s_texSampler = bgfx_create_uniform("u_texture", BGFX_UNIFORM_TYPE_SAMPLER, 1);
     LogInfo("[BGFX] Textured UI program created: %u", s_uiTexProgram.idx);
+    bgfxUIFallbackIsMagenta();    // report the missing-texture fallback mode once
     return s_uiTexProgram;
 }
 
@@ -90,6 +93,39 @@ bgfx_texture_handle_t bgfxUIWhiteTextureGet()
     s_whiteTexture = bgfx_create_texture_2d(1, 1, false, 1, BGFX_TEXTURE_FORMAT_RGBA8,
         BGFX_TEXTURE_NONE | BGFX_TEXTURE_MIN_POINT | BGFX_TEXTURE_MAG_POINT, mem, 0);
     return s_whiteTexture;
+}
+
+// Fallback bound whenever a draw has no diffuse texture (world meshes, level
+// LOD impostors, detail objects, dynamic visuals). Normally white so the missing
+// slot is invisible; with XRGBFX_MISSING_TEX=1 it becomes magenta so one
+// screenshot lists every mesh that falls back. Read once per session, so the
+// diagnostic costs nothing when it is off and never changes a normal frame.
+bool bgfxUIFallbackIsMagenta()
+{
+    static bool s_envRead = false;
+    static bool s_magenta = false;
+    if (!s_envRead)
+    {
+        s_envRead = true;
+        const char* raw = getenv("XRBGFX_MISSING_TEX");
+        s_magenta = raw && raw[0] && atoi(raw) != 0;
+        LogInfo("[BGFX] missing-texture fallback: %s", s_magenta ? "magenta (diagnostic)" : "white");
+    }
+    return s_magenta;
+}
+
+bgfx_texture_handle_t bgfxUIFallbackTextureGet()
+{
+    if (!bgfxUIFallbackIsMagenta())
+        return bgfxUIWhiteTextureGet();
+    if (bgfxIsValid(s_fallbackTexture))
+        return s_fallbackTexture;
+
+    u8 magenta[4] = { 255, 0, 255, 255 };
+    const bgfx_memory_t* mem = bgfx_copy(magenta, 4);
+    s_fallbackTexture = bgfx_create_texture_2d(1, 1, false, 1, BGFX_TEXTURE_FORMAT_RGBA8,
+        BGFX_TEXTURE_NONE | BGFX_TEXTURE_MIN_POINT | BGFX_TEXTURE_MAG_POINT, mem, 0);
+    return s_fallbackTexture;
 }
 
 bgfx_program_handle_t bgfxFontProgramGet()

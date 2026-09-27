@@ -783,10 +783,11 @@ void bgfxDetailsRender()
 		DetailModel& dobj = *s_objects[o];
 		bgfx_texture_handle_t tex = TextureFor(dobj.texture);
 		if (!bgfxIsValid(tex))
-			tex = bgfxUIWhiteTextureGet();
+			tex = bgfxUIFallbackTextureGet();
 
 		SubmitChunk(dobj, list.data(), (u32)list.size(), tex);
 		drawn += (u32)list.size();
+
 	}
 
 	static u32 s_statFrames = 0;
