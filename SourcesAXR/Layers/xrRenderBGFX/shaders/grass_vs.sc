@@ -1,5 +1,5 @@
 $input a_position, a_color0, a_texcoord0, a_texcoord1
-$output v_color0, v_texcoord0, v_fogDepth
+$output v_color0, v_texcoord0, v_viewPos
 #include <bgfx_shader.sh>
 
 uniform vec4 u_grassParams;
@@ -44,5 +44,6 @@ void main()
     gl_Position = mul(u_modelViewProj, vec4(P, 1.0));
     v_color0 = a_color0;
     v_texcoord0 = a_texcoord0;
-    v_fogDepth = length(viewPos.xyz);
+    // Position G-buffer: view-space position, consumed by combine_ps (AXR gbuf P.xyz).
+    v_viewPos = viewPos.xyz;
 }

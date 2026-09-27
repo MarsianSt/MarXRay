@@ -16,16 +16,18 @@ namespace
 {
     bgfx_frame_buffer_handle_t s_hdrFb = BGFX_INVALID_HANDLE;
     bgfx_texture_handle_t s_hdrColor = BGFX_INVALID_HANDLE;
+    bgfx_texture_handle_t s_hdrPosition = BGFX_INVALID_HANDLE;
     bgfx_texture_handle_t s_hdrDepth = BGFX_INVALID_HANDLE;
     bgfx_program_handle_t s_combineProgram = BGFX_INVALID_HANDLE;
     bgfx_uniform_handle_t s_hdrSampler = BGFX_INVALID_HANDLE;
     bgfx_uniform_handle_t s_tonemapSampler = BGFX_INVALID_HANDLE;
-    bgfx_uniform_handle_t s_hdrDepthSampler = BGFX_INVALID_HANDLE;
+    bgfx_uniform_handle_t s_positionSampler = BGFX_INVALID_HANDLE;
     bgfx_uniform_handle_t s_bloomSampler = BGFX_INVALID_HANDLE;
     bgfx_uniform_handle_t s_exposure = BGFX_INVALID_HANDLE;
-    // SSFX_HEIGHT_FOG globals (game_unpacked/shaders/r3/screenspace_fog.h:11).
-    // u_invProj / u_invView are NOT here on purpose: bgfx_shader.sh already declares
-    // them as predefined per-view uniforms, fed by bgfx_set_view_transform on kCombineView.
+    // AXR r3 fog globals (game_unpacked/shaders/r3 -> Blender_Recorder_StandartBinding.cpp).
+    // u_view is NOT here on purpose: bgfx_shader.sh already declares it as a predefined
+    // per-view uniform, fed by bgfx_set_view_transform on kCombineView (it mirrors the
+    // m_v2w / m_inv_V matrix that compute_height_fog and combine_1.ps:194 read).
     bgfx_uniform_handle_t s_fogParams = BGFX_INVALID_HANDLE;
     bgfx_uniform_handle_t s_fogColor = BGFX_INVALID_HANDLE;
     bgfx_uniform_handle_t s_lowlandFogParams = BGFX_INVALID_HANDLE;
@@ -36,6 +38,7 @@ namespace
     uint16_t s_width = 0;
     uint16_t s_height = 0;
     bgfx_texture_format_t s_colorFormat = BGFX_TEXTURE_FORMAT_RGBA16F;
+    bgfx_texture_format_t s_positionFormat = BGFX_TEXTURE_FORMAT_RGBA16F;
     bgfx_texture_format_t s_depthFormat = BGFX_TEXTURE_FORMAT_D24;
 
     bgfx_frame_buffer_handle_t s_lum64Fb = BGFX_INVALID_HANDLE;
@@ -103,9 +106,12 @@ namespace
     {
         if (bgfxIsValid(s_hdrColor))
             bgfx_destroy_texture(s_hdrColor);
+        if (bgfxIsValid(s_hdrPosition))
+            bgfx_destroy_texture(s_hdrPosition);
         if (bgfxIsValid(s_hdrDepth))
             bgfx_destroy_texture(s_hdrDepth);
         s_hdrColor = BGFX_INVALID_HANDLE;
+        s_hdrPosition = BGFX_INVALID_HANDLE;
         s_hdrDepth = BGFX_INVALID_HANDLE;
     }
 
@@ -376,8 +382,8 @@ namespace
             bgfx_destroy_uniform(s_hdrSampler);
         if (bgfxIsValid(s_tonemapSampler))
             bgfx_destroy_uniform(s_tonemapSampler);
-        if (bgfxIsValid(s_hdrDepthSampler))
-            bgfx_destroy_uniform(s_hdrDepthSampler);
+        if (bgfxIsValid(s_positionSampler))
+            bgfx_destroy_uniform(s_positionSampler);
         if (bgfxIsValid(s_bloomSampler))
             bgfx_destroy_uniform(s_bloomSampler);
         if (bgfxIsValid(s_exposure))
@@ -395,7 +401,7 @@ namespace
         s_combineProgram = BGFX_INVALID_HANDLE;
         s_hdrSampler = BGFX_INVALID_HANDLE;
         s_tonemapSampler = BGFX_INVALID_HANDLE;
-        s_hdrDepthSampler = BGFX_INVALID_HANDLE;
+        s_positionSampler = BGFX_INVALID_HANDLE;
         s_bloomSampler = BGFX_INVALID_HANDLE;
         s_exposure = BGFX_INVALID_HANDLE;
         s_fogParams = BGFX_INVALID_HANDLE;
@@ -548,7 +554,7 @@ namespace
     bool EnsureCombineProgram()
     {
         if (bgfxIsValid(s_combineProgram) && bgfxIsValid(s_hdrSampler) && bgfxIsValid(s_tonemapSampler) &&
-            bgfxIsValid(s_hdrDepthSampler) && bgfxIsValid(s_bloomSampler) && bgfxIsValid(s_exposure) &&
+            bgfxIsValid(s_positionSampler) && bgfxIsValid(s_bloomSampler) && bgfxIsValid(s_exposure) &&
             bgfxIsValid(s_fogParams) && bgfxIsValid(s_fogColor) && bgfxIsValid(s_lowlandFogParams) &&
             bgfxIsValid(s_sunDir) && bgfxIsValid(s_sunColor))
             return true;
@@ -595,7 +601,7 @@ namespace
 
         s_hdrSampler = bgfx_create_uniform("s_hdr", BGFX_UNIFORM_TYPE_SAMPLER, 1);
         s_tonemapSampler = bgfx_create_uniform("s_tonemap", BGFX_UNIFORM_TYPE_SAMPLER, 1);
-        s_hdrDepthSampler = bgfx_create_uniform("s_hdrDepth", BGFX_UNIFORM_TYPE_SAMPLER, 1);
+        s_positionSampler = bgfx_create_uniform("s_position", BGFX_UNIFORM_TYPE_SAMPLER, 1);
         s_bloomSampler = bgfx_create_uniform("s_bloom", BGFX_UNIFORM_TYPE_SAMPLER, 1);
         s_exposure = bgfx_create_uniform("u_exposure", BGFX_UNIFORM_TYPE_VEC4, 1);
         s_fogParams = bgfx_create_uniform("u_fogParams", BGFX_UNIFORM_TYPE_VEC4, 1);
@@ -603,7 +609,7 @@ namespace
         s_lowlandFogParams = bgfx_create_uniform("u_lowlandFogParams", BGFX_UNIFORM_TYPE_VEC4, 1);
         s_sunDir = bgfx_create_uniform("u_sunDir", BGFX_UNIFORM_TYPE_VEC4, 1);
         s_sunColor = bgfx_create_uniform("u_sunColor", BGFX_UNIFORM_TYPE_VEC4, 1);
-        if (!bgfxIsValid(s_hdrSampler) || !bgfxIsValid(s_tonemapSampler) || !bgfxIsValid(s_hdrDepthSampler) ||
+        if (!bgfxIsValid(s_hdrSampler) || !bgfxIsValid(s_tonemapSampler) || !bgfxIsValid(s_positionSampler) ||
             !bgfxIsValid(s_bloomSampler) ||
             !bgfxIsValid(s_exposure) || !bgfxIsValid(s_fogParams) || !bgfxIsValid(s_fogColor) ||
             !bgfxIsValid(s_lowlandFogParams) || !bgfxIsValid(s_sunDir) || !bgfxIsValid(s_sunColor))
@@ -656,16 +662,17 @@ namespace
         return true;
     }
 
-    // SSFX_HEIGHT_FOG globals, 1:1 with the Anomaly R_constant_setup binders in
+    // Anomaly r3 fog globals, 1:1 with the R_constant_setup binders in
     // SourcesAXR/Layers/xrRender/Blender_Recorder_StandartBinding.cpp:
     //   fog_params         cl_fog_params         :170-181  (-n*r, n, f, r)
     //   fog_color          cl_fog_color          :184-194  (rgb, density)
     //   lowland_fog_params cl_lowland_fog_params :198-208  (height, density, base height, 0)
-    //   Ldynamic_dir/color r2_rendertarget_phase_combine.cpp:155-166 -> the combine
-    //     pass evaluates screenspace_fog.h against the view-space sun, so
-    //     u_sunDir = normalize(Device.mView * CEnvDescriptor::sun_dir) and
-    //     u_sunColor = CEnvDescriptor::sun_color. CurrentEnv is a CEnvDescriptorMixer,
-    //     which derives from CEnvDescriptor (Environment.h:258), so both live there.
+    // u_sunDir / u_sunColor stay bound: combine_1.ps:204 only needs them through
+    // the SSFX branch we dropped, but skybox_2t / clouds read the descriptor sun
+    // colour through the same descriptor, so the values are kept for reference and
+    // the shaders declare them. u_sunDir = normalize(Device.mView * sun_dir) and
+    // u_sunColor = CEnvDescriptor::sun_color; CurrentEnv is a CEnvDescriptorMixer,
+    // which derives from CEnvDescriptor (Environment.h:258), so both live there.
     void SetFogUniforms()
     {
         float params[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
@@ -755,6 +762,21 @@ namespace bgfxHDR
             }
         }
 
+        // Position G-buffer: the AXR gbuf position pass (combine_1.ps:194-201 reads
+        // P.xyz straight out of it), so the fog branch can be ported 1:1 instead of
+        // being reconstructed from depth. RGBA16F with an RGBA32F fallback.
+        s_positionFormat = BGFX_TEXTURE_FORMAT_RGBA16F;
+        if (!IsTextureSupported(s_positionFormat))
+        {
+            LogInfo("[BGFX] Position target: RGBA16F unavailable, using RGBA32F");
+            s_positionFormat = BGFX_TEXTURE_FORMAT_RGBA32F;
+            if (!IsTextureSupported(s_positionFormat))
+            {
+                LogError("[BGFX] Position target: no supported floating-point color format");
+                return false;
+            }
+        }
+
         s_depthFormat = BGFX_TEXTURE_FORMAT_D24;
         if (!IsTextureSupported(s_depthFormat))
         {
@@ -775,16 +797,21 @@ namespace bgfxHDR
         const uint64_t colorFlags = BGFX_TEXTURE_RT | BGFX_TEXTURE_U_CLAMP | BGFX_TEXTURE_V_CLAMP;
         const uint64_t depthFlags = BGFX_TEXTURE_RT;
         s_hdrColor = bgfx_create_texture_2d(_width, _height, false, 1, s_colorFormat, colorFlags, nullptr, 0);
+        s_hdrPosition = bgfx_create_texture_2d(_width, _height, false, 1, s_positionFormat, colorFlags, nullptr, 0);
         s_hdrDepth = bgfx_create_texture_2d(_width, _height, false, 1, s_depthFormat, depthFlags, nullptr, 0);
-        if (!bgfxIsValid(s_hdrColor) || !bgfxIsValid(s_hdrDepth))
+        if (!bgfxIsValid(s_hdrColor) || !bgfxIsValid(s_hdrPosition) || !bgfxIsValid(s_hdrDepth))
         {
             LogError("[BGFX] HDR target texture create failed (%ux%u)", _width, _height);
             DestroyTextures();
             return false;
         }
 
-        bgfx_texture_handle_t attachments[2] = { s_hdrColor, s_hdrDepth };
-        s_hdrFb = bgfx_create_frame_buffer_from_handles(2, attachments, true);
+        // Attachment 0 = HDR color, 1 = view-space position G-buffer, 2 = depth.
+        // Every world/particle/wallmark PS writes both color targets; the sky and
+        // the clouds only write target 0, which leaves P at the clear value 0, so
+        // the fog branch below fades them out exactly like Anomaly does.
+        bgfx_texture_handle_t attachments[3] = { s_hdrColor, s_hdrPosition, s_hdrDepth };
+        s_hdrFb = bgfx_create_frame_buffer_from_handles(3, attachments, true);
         if (!bgfxIsValid(s_hdrFb))
         {
             LogError("[BGFX] HDR target framebuffer create failed (%ux%u)", _width, _height);
@@ -795,8 +822,8 @@ namespace bgfxHDR
 
         s_width = _width;
         s_height = _height;
-        LogInfo("[BGFX] HDR target created: %ux%u color=%d depth=%d fb=%u",
-            _width, _height, (int)s_colorFormat, (int)s_depthFormat, s_hdrFb.idx);
+        LogInfo("[BGFX] HDR target created: %ux%u color=%d position=%d depth=%d fb=%u",
+            _width, _height, (int)s_colorFormat, (int)s_positionFormat, (int)s_depthFormat, s_hdrFb.idx);
 
         if (!CreateLuminanceTargets() || !EnsureBloomTargets() || !EnsureBloomPrograms() || !EnsureCombineProgram())
         {
@@ -841,6 +868,10 @@ namespace bgfxHDR
         bgfx_set_view_frame_buffer(kSceneView, s_hdrFb);
         bgfx_set_view_frame_buffer(kSceneFxView, s_hdrFb);
         bgfx_set_view_rect(kSceneView, 0, 0, s_width, s_height);
+        // bgfx applies the view clear color to every color attachment, so the
+        // position G-buffer starts at (0,0,0,1) => P = 0 for the pixels no
+        // geometry wrote (sky, clouds) and the AXR fog branch leaves them alone
+        // (length(P) = 0 => fog = saturate(0 * w + fog_params.x) = 0).
         bgfx_set_view_clear(kSceneView, BGFX_CLEAR_COLOR | BGFX_CLEAR_DEPTH, 0x000000ff, 1.0f, 0);
         bgfx_set_view_mode(kSceneView, BGFX_VIEW_MODE_SEQUENTIAL);
         bgfx_touch(kSceneView);
@@ -974,10 +1005,11 @@ namespace bgfxHDR
         bgfx_set_view_mode(kCombineView, BGFX_VIEW_MODE_SEQUENTIAL);
         // combine_vs.sc emits clip space straight from a_position, so the camera
         // transform does not move the fullscreen triangle. It is still needed here:
-        // the fog block rebuilds the view-space position with u_invProj and the world
-        // position with u_invView, which are the predefined bgfx per-view uniforms
-        // driven by this call (renderer.h:170 InvView / InvProj). Same pattern as the
-        // world pass in bgfxRenderDeviceRender::SetCacheXform and bgfxParticleRender.cpp:85.
+        // the fog block rebuilds the world-space position with the predefined bgfx
+        // per-view u_view (renderer.h:170 View), which is the mirror of the AXR
+        // m_v2w / m_inv_V that compute_height_fog and combine_1.ps:194 read, and it
+        // is driven by this call. Same pattern as the world pass in
+        // bgfxRenderDeviceRender::SetCacheXform and bgfxParticleRender.cpp:85.
         bgfx_set_view_transform(kCombineView, Device.mView.m, Device.mProject.m);
         bgfx_touch(kCombineView);
 
@@ -993,7 +1025,7 @@ namespace bgfxHDR
         SetFogUniforms();
         bgfx_set_texture(0, s_hdrSampler, s_hdrColor, 0);
         bgfx_set_texture(1, s_tonemapSampler, tonemap, 0);
-        bgfx_set_texture(2, s_hdrDepthSampler, s_hdrDepth, 0);
+        bgfx_set_texture(2, s_positionSampler, GetPositionTexture(), 0);
         const bgfx_texture_handle_t bloom = GetBloomTexture();
         if (bgfxIsValid(bloom))
             bgfx_set_texture(3, s_bloomSampler, bloom, 0);
@@ -1014,6 +1046,13 @@ namespace bgfxHDR
         const u32 index = s_lumTonemapIndex ? 1u : 0u;
         if (bgfxIsValid(s_lum1[index]))
             return s_lum1[index];
+        return BGFX_INVALID_HANDLE;
+    }
+
+    bgfx_texture_handle_t GetPositionTexture()
+    {
+        if (bgfxIsValid(s_hdrPosition))
+            return s_hdrPosition;
         return BGFX_INVALID_HANDLE;
     }
 }

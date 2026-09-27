@@ -1,4 +1,4 @@
-$input v_color0, v_texcoord0
+$input v_color0, v_texcoord0, v_viewPos
 
 #include <bgfx_shader.sh>
 
@@ -14,5 +14,8 @@ void main()
     vec4 res = texture2D(s_wallmark, v_texcoord0);
     res.rgb = mix(res.rgb, v_color0.rgb, v_color0.a);
     res.a *= v_color0.a;
-    gl_FragColor = res;
+    gl_FragData[0] = res;
+    // Position G-buffer (Anomaly gbuf position): view-space position. The mark
+    // blends with DestColor/SrcColor, which also scales this attachment.
+    gl_FragData[1] = vec4(v_viewPos, 1.0);
 }

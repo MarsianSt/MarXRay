@@ -1,4 +1,4 @@
-﻿$input v_texcoord0, v_fogDepth
+﻿$input v_texcoord0, v_viewPos
 
 #include <bgfx_shader.sh>
 
@@ -13,7 +13,11 @@ void main()
     vec4 c = texture2D(u_texture, v_texcoord0);
     if (u_alphaCtrl.y > 0.5 && c.a < u_alphaCtrl.x)
         discard;
-    // Forward fog removed: screenspace SSFX fog in combine is the single layer
+    // Forward fog removed: screenspace fog in combine is the single layer
     // (as in Anomaly); keeping both gives 2f-f^2 overfog.
-    gl_FragColor = c;
+    // gl_FragData[0] instead of gl_FragColor: once the PS declares a second
+    // output shaderc stops emitting the gl_FragColor/SV_TARGET0 alias.
+    gl_FragData[0] = c;
+    // Position G-buffer (Anomaly gbuf position): view-space position.
+    gl_FragData[1] = vec4(v_viewPos, 1.0);
 }
