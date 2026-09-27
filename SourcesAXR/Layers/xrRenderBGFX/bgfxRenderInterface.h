@@ -259,6 +259,12 @@ public:
         bgfxRenderDynamic(0);   // world dynamics: flush CPU-side visuals to the port
         // R2 combine (flares over scene) + R2 forward (rain/thunder after sorted).
         bgfxRenderEnvironmentFx();
+        // Screen-space ambient occlusion (AXR r4_rendertarget_phase_ssao.cpp,
+        // phase_combine calls it before the combine draws): the half-resolution
+        // occlusion buffer out of the G-buffer the scene views just finished
+        // writing. Applied by the resolve below, where the reference combine
+        // applies it (combine_1.ps:183).
+        bgfxHDR::SSAOPass();
         // Stage-2 lighting: sun + hemi ambient out of the G-buffer into the lit
         // HDR target (AXR accum_sun.ps + hmodel(), which the reference sums in
         // combine_1.ps:114-166). Falls back to the unlit attachment 0 when the

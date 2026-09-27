@@ -357,6 +357,16 @@ void bgfxRenderDeviceRender::Begin()
     bgfx_set_view_mode(4, BGFX_VIEW_MODE_SEQUENTIAL);
     bgfx_touch(4);
 
+    // Screen-space ambient occlusion. The view always exists in the order so the
+    // pass order stays stable; bgfxHDR::SSAOPass rebinds it to the half-res
+    // occlusion target and submits only when that target, the jitter texture and
+    // its program are available, otherwise the resolve samples the neutral 1.0.
+    bgfx_set_view_frame_buffer(bgfxHDR::kSsaoView, BGFX_INVALID_HANDLE);
+    bgfx_set_view_rect(bgfxHDR::kSsaoView, 0, 0, (uint16_t)(m_width / 2), (uint16_t)(m_height / 2));
+    bgfx_set_view_clear(bgfxHDR::kSsaoView, BGFX_CLEAR_NONE, 0, 1.0f, 0);
+    bgfx_set_view_mode(bgfxHDR::kSsaoView, BGFX_VIEW_MODE_SEQUENTIAL);
+    bgfx_touch(bgfxHDR::kSsaoView);
+
     // Lighting resolve. The view always exists in the order so the pass order
     // stays stable; bgfxHDR::ResolvePass rebinds it to the lit target and submits
     // only when that target and its program are available, otherwise the view
@@ -429,11 +439,13 @@ void bgfxRenderDeviceRender::Begin()
     bgfx_set_view_mode(bgfxHDR::kFogScatterView, BGFX_VIEW_MODE_SEQUENTIAL);
     bgfx_touch(bgfxHDR::kFogScatterView);
 
-    // Frame order: scene -> scene FX -> lighting resolve -> split-HDR high -> bloom
-    // bright pass -> luminance -> bloom blur H/V -> combine -> SMAA
-    // (edge/weights/resolve) -> G-buffer inspector -> leftovers. The resolve view sits
-    // right after the last writer into the G-buffer (the scene FX view); the high view
-    // right after the resolve, which produces the pre-tonemap image it encodes. The
+    // Frame order: scene -> scene FX -> SSAO -> lighting resolve -> split-HDR high
+    // -> bloom bright pass -> luminance -> bloom blur H/V -> combine -> SMAA
+    // (edge/weights/resolve) -> G-buffer inspector -> leftovers. The SSAO view
+    // sits right after the last writer into the G-buffer (the scene FX view) and
+    // right before the resolve, which is the one consumer of the occlusion buffer
+    // (combine_1.ps:183). The resolve view follows it; the high view right after
+    // the resolve, which produces the pre-tonemap image it encodes. The
     // bright pass comes next because the high channel exists for it alone
     // (blender_bloom_build.cpp:18), and the luminance chain follows it, measuring the
     // bright-pass output (blender_luminance.cpp:18) before the two gaussian passes
@@ -443,8 +455,17 @@ void bgfxRenderDeviceRender::Begin()
     // SMAA resolves into the backbuffer (from the scatter output when fog
     // scattering is up, otherwise straight from the combine); the inspector
     // runs after the resolve because it repaints the finished frame.
-    const bgfx_view_id_t order[] = { 0, bgfxHDR::kSceneFxView, bgfxHDR::kResolveView,
-        bgfxHDR::kHighView,
+    //
+    // The array is not decoration: bgfx_set_viewOrder copies it verbatim into
+    // m_viewRemap[0..count-1] (bgfx_p.h:7197 setViewOrder), i.e. entry k *is* the
+    // internal slot of the raw view id k, and every id in [0, count) has to appear
+    // exactly once. A missing id leaves m_viewOrder[slot] pointing at the other
+    // view that shares the slot, and the two then share a sort bucket - the second
+    // view's draw items are then rendered with the first view's framebuffer and
+    // rect. The list therefore has to grow with the view ids in use: 24 entries
+    // for ids 0..23, with the SSAO view (21) and the high channel (23) included.
+    const bgfx_view_id_t order[] = { 0, bgfxHDR::kSceneFxView, bgfxHDR::kSsaoView,
+        bgfxHDR::kResolveView, bgfxHDR::kHighView,
         bgfxHDR::kBloomBuildView,
         bgfxHDR::kLuminance64View,
         bgfxHDR::kLuminance8View, bgfxHDR::kLuminance1View,

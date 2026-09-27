@@ -61,6 +61,33 @@ namespace
     // s_smap holds anything. Reset by ShadowBegin() on the next frame.
     bool s_shadowMapValid = false;
 
+    // Screen-space ambient occlusion, the AXR r2_RT_ssao_temp
+    // (r4_rendertarget.cpp:861, D3DFMT_R16F) written by CRenderTarget::phase_ssao
+    // (r4_rendertarget_phase_ssao.cpp:12-105) through the element 0 of
+    // CBlender_SSAO_noMSAA (blender_ssao.cpp:16). The reference allocates the
+    // target full-res and renders into a viewport of dwWidth/2 x dwHeight/2
+    // (r4_rendertarget_phase_ssao.cpp:52-55), i.e. the occlusion is computed at
+    // half resolution and read back magnified 2x, which is what a half-res target
+    // plus a full-res tc in the consumer is; see GetSsaoTexture().
+    bgfx_frame_buffer_handle_t s_ssaoFb = BGFX_INVALID_HANDLE;
+    bgfx_texture_handle_t s_ssao = BGFX_INVALID_HANDLE;
+    bgfx_program_handle_t s_ssaoProgram = BGFX_INVALID_HANDLE;
+    bgfx_uniform_handle_t s_ssaoPositionSampler = BGFX_INVALID_HANDLE;
+    bgfx_uniform_handle_t s_ssaoGbufSampler = BGFX_INVALID_HANDLE;
+    bgfx_uniform_handle_t s_ssaoJitterSampler = BGFX_INVALID_HANDLE;
+    bgfx_uniform_handle_t s_ssaoNoiseTileFactor = BGFX_INVALID_HANDLE;
+    bgfx_uniform_handle_t s_ssaoKernelSize = BGFX_INVALID_HANDLE;
+    bgfx_vertex_layout_t s_ssaoLayout = {};
+    bool s_ssaoLayoutReady = false;
+    // 1 when this frame's SSAO pass ran, so the resolve knows whether s_occ holds
+    // a value or the neutral 1.0 it falls back to.
+    bool s_ssaoOk = false;
+    // 1x1 texture holding that neutral 1.0, handed out by GetSsaoTexture() when
+    // the pass could not run this frame.
+    bgfx_texture_handle_t s_ssaoFallback = BGFX_INVALID_HANDLE;
+    // jitter0, the SSAO dither texture. TEX_jitter = 64 (r2_types.h:118).
+    bgfx_texture_handle_t s_ssaoJitter = BGFX_INVALID_HANDLE;
+
     // Stage-2 lighting resolve (deferred_light_ps.sc). Reads the three G-buffer
     // attachments and writes the lit HDR image into its own full-res target, so
     // the pass never samples the texture it renders into. s_resolveOk is the
@@ -74,6 +101,7 @@ namespace
     bgfx_uniform_handle_t s_litSampler = BGFX_INVALID_HANDLE;
     bgfx_uniform_handle_t s_litPositionSampler = BGFX_INVALID_HANDLE;
     bgfx_uniform_handle_t s_litGbufSampler = BGFX_INVALID_HANDLE;
+    bgfx_uniform_handle_t s_litOccSampler = BGFX_INVALID_HANDLE;
     bgfx_uniform_handle_t s_hemiColor = BGFX_INVALID_HANDLE;
     bgfx_uniform_handle_t s_ambientColor = BGFX_INVALID_HANDLE;
     // Anomaly ambient cube, the env_s0 / env_s1 pair of hmodel.h:14-15. Sampler
@@ -555,6 +583,8 @@ namespace
             bgfx_destroy_uniform(s_litPositionSampler);
         if (bgfxIsValid(s_litGbufSampler))
             bgfx_destroy_uniform(s_litGbufSampler);
+        if (bgfxIsValid(s_litOccSampler))
+            bgfx_destroy_uniform(s_litOccSampler);
         if (bgfxIsValid(s_hemiColor))
             bgfx_destroy_uniform(s_hemiColor);
         if (bgfxIsValid(s_ambientColor))
@@ -569,6 +599,7 @@ namespace
         s_litSampler = BGFX_INVALID_HANDLE;
         s_litPositionSampler = BGFX_INVALID_HANDLE;
         s_litGbufSampler = BGFX_INVALID_HANDLE;
+        s_litOccSampler = BGFX_INVALID_HANDLE;
         s_hemiColor = BGFX_INVALID_HANDLE;
         s_ambientColor = BGFX_INVALID_HANDLE;
         s_envCube0 = BGFX_INVALID_HANDLE;
@@ -721,6 +752,262 @@ namespace
             return false;
         }
         LogInfo("[BGFX] Shadow program created: %u", s_shadowProgram.idx);
+        return true;
+    }
+
+    // =========================================================================
+    // Screen-space ambient occlusion
+    // =========================================================================
+    // Reference: archive_sourse/Layers/xrRenderPC_R4/r4_rendertarget_phase_ssao.cpp
+    // (phase_ssao, the half-resolution pass), blender_ssao.cpp (the element that
+    // runs ssao_calc_nomsaa), r4_rendertarget.cpp:270-291 (generate_jitter) and
+    // :856-874 (the r2_RT_ssao_temp target), driven by game_unpacked/shaders/r3/
+    // ssao.ps and ssao_calc.ps and consumed by combine_1.ps:128-159 / :183.
+    //
+    // Like the shadow constants above, the SSAO_QUALITY the reference reads from
+    // Layers/xrRender/xrRender_console.cpp is repeated here verbatim, because the
+    // bgfx layer links neither that layer nor its import library. ps_r_ssao = 3
+    // (xrRender_console.cpp:96) is the shipped default, r4_rendertarget.cpp:297-298
+    // caps it to 3 for every non-hdao mode, and r4.cpp:1365-1371 hands it to the
+    // shader as SSAO_QUALITY, which ssao.ps:35-56 turns into RINGS 3 / DIRS 8. The
+    // shader hard-codes that kernel, so this value is what selects it; it is the
+    // reference's default, not a tuned value.
+    const u32 kSsaoQuality = 3;
+
+    // r2_types.h:118 TEX_jitter - the side of the jitter0 dither texture. The
+    // reference allocates TEX_jitter_count = 5 of them (r2_types.h:119) and the
+    // blender helper stdafx.h:54-59 binds jitter0..jitter3 plus the HBAO float
+    // noise; only jitter0 is read by calc_ssao (ssao.ps:156), so this port builds
+    // that one and nothing else.
+    const u32 kSsaoJitterSize = 64;
+
+    void DestroySsao()
+    {
+        if (bgfxIsValid(s_ssaoProgram))
+            bgfx_destroy_program(s_ssaoProgram);
+        if (bgfxIsValid(s_ssaoPositionSampler))
+            bgfx_destroy_uniform(s_ssaoPositionSampler);
+        if (bgfxIsValid(s_ssaoGbufSampler))
+            bgfx_destroy_uniform(s_ssaoGbufSampler);
+        if (bgfxIsValid(s_ssaoJitterSampler))
+            bgfx_destroy_uniform(s_ssaoJitterSampler);
+        if (bgfxIsValid(s_ssaoNoiseTileFactor))
+            bgfx_destroy_uniform(s_ssaoNoiseTileFactor);
+        if (bgfxIsValid(s_ssaoKernelSize))
+            bgfx_destroy_uniform(s_ssaoKernelSize);
+        s_ssaoProgram = BGFX_INVALID_HANDLE;
+        s_ssaoPositionSampler = BGFX_INVALID_HANDLE;
+        s_ssaoGbufSampler = BGFX_INVALID_HANDLE;
+        s_ssaoJitterSampler = BGFX_INVALID_HANDLE;
+        s_ssaoNoiseTileFactor = BGFX_INVALID_HANDLE;
+        s_ssaoKernelSize = BGFX_INVALID_HANDLE;
+        if (bgfxIsValid(s_ssaoFb))
+            bgfx_destroy_frame_buffer(s_ssaoFb);
+        s_ssaoFb = BGFX_INVALID_HANDLE;
+        if (bgfxIsValid(s_ssao))
+            bgfx_destroy_texture(s_ssao);
+        s_ssao = BGFX_INVALID_HANDLE;
+        s_ssaoOk = false;
+        if (bgfxIsValid(s_ssaoJitter))
+            bgfx_destroy_texture(s_ssaoJitter);
+        s_ssaoJitter = BGFX_INVALID_HANDLE;
+        if (bgfxIsValid(s_ssaoFallback))
+            bgfx_destroy_texture(s_ssaoFallback);
+        s_ssaoFallback = BGFX_INVALID_HANDLE;
+    }
+
+    // r4_rendertarget.cpp:270-291 generate_jitter. Per texel the reference draws
+    // 2 * elem_count points in [0,256)^2, rejecting a candidate whose manhattan
+    // distance to an already accepted one is below 32, and writes each point pair
+    // as one DXGI_FORMAT_R8G8B8A8_SNORM texel through color_rgba(x, y, z, w)
+    // with (x,y) = the first pair and (z,w) = the second pair transposed
+    // (r4_rendertarget.cpp:289-290, :1082-1090).
+    //
+    // Two things cannot be reproduced literally and are worth naming:
+    //   - the values come from ::Random, the engine's global generator, which is
+    //     seeded per run, so the reference's own noise differs from run to run
+    //     and there is nothing to match against. The port uses its own generator
+    //     with a fixed seed instead of the shared one, because drawing from
+    //     ::Random would shift the game's own random stream (AI, spawns, jitter
+    //     of everything else) - a behaviour change well outside this pass.
+    //   - the SNORM container itself: this bgfx build has no signed-normalised
+    //     format (bgfx_capi.h:75-...), so the texels are stored as the floats the
+    //     SNORM decode would have produced (byte / 127.5 - 1, the DXGI SNORM
+    //     mapping of R8G8B8A8_SNORM). ssao.ps then reads exactly the values it
+    //     reads in the reference; only the container differs.
+    // jitter0 is the first of the four SNORM sheets (r4_rendertarget.cpp:1069), so
+    // its texel is the *first* point pair of the eight the function accepts.
+    static u32 s_ssaoJitterSeed = 0x13579bdfu;
+
+    static u32 SsaoJitterRand()
+    {
+        // xorshift32; the only property the reference relies on is a uniform
+        // draw over [0,256).
+        u32 x = s_ssaoJitterSeed;
+        x ^= x << 13;
+        x ^= x >> 17;
+        x ^= x << 5;
+        s_ssaoJitterSeed = x;
+        return x;
+    }
+
+    bool EnsureSsaoJitter()
+    {
+        if (bgfxIsValid(s_ssaoJitter))
+            return true;
+        if (!IsTextureSupported(BGFX_TEXTURE_FORMAT_RGBA16F))
+        {
+            LogError("[BGFX] SSAO jitter: RGBA16F unavailable");
+            return false;
+        }
+        s_ssaoJitterSeed = 0x13579bdfu;
+
+        const u32 size = kSsaoJitterSize;
+        // RGBA16F, 4 floats per texel.
+        std::vector<float> texels(size * size * 4, 0.0f);
+        for (u32 y = 0; y < size; ++y)
+        {
+            for (u32 x = 0; x < size; ++x)
+            {
+                // generate_jitter: samples.size() < elem_count * 2, i.e. eight
+                // points, of which only the first pair reaches jitter0.
+                int points[8][2] = {};
+                u32 accepted = 0;
+                while (accepted < 8)
+                {
+                    int test[2] = { (int)(SsaoJitterRand() & 0xff), (int)(SsaoJitterRand() & 0xff) };
+                    bool valid = true;
+                    for (u32 t = 0; t < accepted; ++t)
+                    {
+                        const int dist = abs(test[0] - points[t][0]) + abs(test[1] - points[t][1]);
+                        if (dist < 32)
+                        {
+                            valid = false;
+                            break;
+                        }
+                    }
+                    if (valid)
+                    {
+                        points[accepted][0] = test[0];
+                        points[accepted][1] = test[1];
+                        ++accepted;
+                    }
+                }
+                // color_rgba(samples[0].x, samples[0].y, samples[1].y, samples[1].x)
+                // of r4_rendertarget.cpp:290, through the R8G8B8A8_SNORM decode.
+                const int bytes[4] =
+                {
+                    points[0][0], points[0][1],
+                    points[1][1], points[1][0],
+                };
+                for (u32 c = 0; c < 4; ++c)
+                    texels[(y * size + x) * 4 + c] = (float)bytes[c] / 127.5f - 1.0f;
+            }
+        }
+
+        // stdafx.h:50 (the commented DX9 line of the same helper) and :60: the
+        // jitter is a point-sampled, wrapping texture. Neither clamp bit is set,
+        // which in bgfx is exactly the wrap address mode, and the three point
+        // bits give smp_jitter its D3DTEXF_POINT filtering.
+        const uint64_t flags = BGFX_TEXTURE_MIN_POINT | BGFX_TEXTURE_MAG_POINT | BGFX_TEXTURE_MIP_POINT;
+        const uint32_t bytes = (uint32_t)(texels.size() * sizeof(float));
+        const bgfx_memory_t* mem = bgfx_copy(texels.data(), bytes);
+        s_ssaoJitter = bgfx_create_texture_2d((uint16_t)size, (uint16_t)size, false, 1,
+            BGFX_TEXTURE_FORMAT_RGBA16F, flags, mem, 0);
+        if (!bgfxIsValid(s_ssaoJitter))
+        {
+            LogError("[BGFX] SSAO jitter texture create failed (%ux%u)", size, size);
+            s_ssaoJitter = BGFX_INVALID_HANDLE;
+            return false;
+        }
+        LogInfo("[BGFX] SSAO jitter created: %ux%u (AXR jitter0, TEX_jitter, r2_types.h:118)", size, size);
+        return true;
+    }
+
+    // Half-resolution occlusion target. r4_rendertarget_phase_ssao.cpp:52-55 sets
+    // the viewport to dwWidth/2 x dwHeight/2 of a full-size r2_RT_ssao_temp and
+    // the consumer reads it with a full-resolution coordinate, so the value the
+    // consumer sees is the half-res one magnified 2x - a half-size target sampled
+    // with the full-res tc is the same value, and it does not allocate the three
+    // quarters of the reference's target nobody samples. Format D3DFMT_R16F
+    // (r4_rendertarget.cpp:861).
+    bool EnsureSsaoTargets()
+    {
+        const u32 w = (u32)s_width / 2;
+        const u32 h = (u32)s_height / 2;
+        if (w < 1 || h < 1)
+            return false;
+        if (bgfxIsValid(s_ssaoFb) && bgfxIsValid(s_ssao))
+            return true;
+        if (!IsTextureSupported(BGFX_TEXTURE_FORMAT_R16F))
+        {
+            LogError("[BGFX] SSAO target: R16F unavailable");
+            return false;
+        }
+        const uint64_t colorFlags = BGFX_TEXTURE_RT | BGFX_TEXTURE_U_CLAMP | BGFX_TEXTURE_V_CLAMP;
+        s_ssao = bgfx_create_texture_2d((uint16_t)w, (uint16_t)h, false, 1,
+            BGFX_TEXTURE_FORMAT_R16F, colorFlags, nullptr, 0);
+        if (!bgfxIsValid(s_ssao))
+        {
+            LogError("[BGFX] SSAO target texture create failed (%ux%u)", w, h);
+            s_ssao = BGFX_INVALID_HANDLE;
+            return false;
+        }
+        bgfx_texture_handle_t attachments[1] = { s_ssao };
+        s_ssaoFb = bgfx_create_frame_buffer_from_handles(1, attachments, false);
+        if (!bgfxIsValid(s_ssaoFb))
+        {
+            LogError("[BGFX] SSAO target framebuffer create failed (%ux%u)", w, h);
+            s_ssaoFb = BGFX_INVALID_HANDLE;
+            bgfx_destroy_texture(s_ssao);
+            s_ssao = BGFX_INVALID_HANDLE;
+            return false;
+        }
+        LogInfo("[BGFX] SSAO target created: %ux%u (AXR r2_RT_ssao_temp, half-res viewport, "
+            "r4_rendertarget_phase_ssao.cpp:52-55)", w, h);
+        return true;
+    }
+
+    bool EnsureSsaoProgram()
+    {
+        if (bgfxIsValid(s_ssaoProgram) && bgfxIsValid(s_ssaoPositionSampler) &&
+            bgfxIsValid(s_ssaoGbufSampler) && bgfxIsValid(s_ssaoJitterSampler) &&
+            bgfxIsValid(s_ssaoNoiseTileFactor) && bgfxIsValid(s_ssaoKernelSize))
+            return true;
+
+        if (!s_ssaoLayoutReady)
+        {
+            bgfx_vertex_layout_begin(&s_ssaoLayout, bgfx_get_renderer_type());
+            bgfx_vertex_layout_add(&s_ssaoLayout, BGFX_ATTRIB_POSITION, 3, BGFX_ATTRIB_TYPE_FLOAT, false, false);
+            bgfx_vertex_layout_add(&s_ssaoLayout, BGFX_ATTRIB_TEXCOORD0, 2, BGFX_ATTRIB_TYPE_FLOAT, false, false);
+            bgfx_vertex_layout_end(&s_ssaoLayout);
+            s_ssaoLayoutReady = true;
+        }
+
+        // combine_vs.sc emits the same fullscreen triangle and v_texcoord0 the
+        // resolve and the high pass consume, and the reference's own combine
+        // vertex shader (combine_1.vs) does nothing else for this pass either.
+        s_ssaoProgram = BuildProgram("combine_vs.sc", "ssao_calc_ps.sc");
+        if (!bgfxIsValid(s_ssaoProgram))
+        {
+            LogError("[BGFX] SSAO program build failed");
+            return false;
+        }
+
+        s_ssaoPositionSampler = bgfx_create_uniform("s_position", BGFX_UNIFORM_TYPE_SAMPLER, 1);
+        s_ssaoGbufSampler = bgfx_create_uniform("s_gbuf", BGFX_UNIFORM_TYPE_SAMPLER, 1);
+        s_ssaoJitterSampler = bgfx_create_uniform("s_jitter0", BGFX_UNIFORM_TYPE_SAMPLER, 1);
+        s_ssaoNoiseTileFactor = bgfx_create_uniform("u_ssao_noise_tile_factor", BGFX_UNIFORM_TYPE_VEC4, 1);
+        s_ssaoKernelSize = bgfx_create_uniform("u_ssao_kernel_size", BGFX_UNIFORM_TYPE_VEC4, 1);
+        if (!bgfxIsValid(s_ssaoPositionSampler) || !bgfxIsValid(s_ssaoGbufSampler) ||
+            !bgfxIsValid(s_ssaoJitterSampler) || !bgfxIsValid(s_ssaoNoiseTileFactor) ||
+            !bgfxIsValid(s_ssaoKernelSize))
+        {
+            LogError("[BGFX] SSAO uniforms create failed");
+            DestroySsao();
+            return false;
+        }
+        LogInfo("[BGFX] SSAO program created: %u (SSAO_QUALITY %u, ssao.ps:35-56)", s_ssaoProgram.idx, kSsaoQuality);
         return true;
     }
 
@@ -1283,6 +1570,9 @@ namespace
         s_litSampler = bgfx_create_uniform("s_diffuse", BGFX_UNIFORM_TYPE_SAMPLER, 1);
         s_litPositionSampler = bgfx_create_uniform("s_position", BGFX_UNIFORM_TYPE_SAMPLER, 1);
         s_litGbufSampler = bgfx_create_uniform("s_gbuf", BGFX_UNIFORM_TYPE_SAMPLER, 1);
+        // s_occ, the half-resolution occlusion buffer phase_ssao writes
+        // (blender_combine.cpp:42 binds the same name in the combine pass).
+        s_litOccSampler = bgfx_create_uniform("s_occ", BGFX_UNIFORM_TYPE_SAMPLER, 1);
         s_hemiColor = bgfx_create_uniform("u_hemiColor", BGFX_UNIFORM_TYPE_VEC4, 1);
         s_ambientColor = bgfx_create_uniform("u_ambient", BGFX_UNIFORM_TYPE_VEC4, 1);
         // env_s0 / env_s1, hmodel.h:14-15, and the 0/1 switch that lets
@@ -1292,7 +1582,8 @@ namespace
         s_envCube1 = bgfx_create_uniform("s_env1", BGFX_UNIFORM_TYPE_SAMPLER, 1);
         s_cubeValid = bgfx_create_uniform("u_cubeValid", BGFX_UNIFORM_TYPE_VEC4, 1);
         if (!bgfxIsValid(s_litSampler) || !bgfxIsValid(s_litPositionSampler) ||
-            !bgfxIsValid(s_litGbufSampler) || !bgfxIsValid(s_hemiColor) ||
+            !bgfxIsValid(s_litGbufSampler) || !bgfxIsValid(s_litOccSampler) ||
+            !bgfxIsValid(s_hemiColor) ||
             !bgfxIsValid(s_ambientColor) || !bgfxIsValid(s_envCube0) ||
             !bgfxIsValid(s_envCube1) || !bgfxIsValid(s_cubeValid))
         {
@@ -1637,6 +1928,12 @@ namespace bgfxHDR
         // which is why the bright pass has to run before the luminance chain and
         // before the high target is reused for anything else.
         s_hdrHigh = bgfx_create_texture_2d(_width, _height, false, 1, s_colorFormat, colorFlags, nullptr, 0);
+        // SSAO target: half resolution, because the reference renders
+        // r2_RT_ssao_temp through a viewport of dwWidth/2 x dwHeight/2
+        // (r4_rendertarget_phase_ssao.cpp:52-55) and reads the result back
+        // magnified, i.e. a quarter of the reference's full-size allocation and
+        // the same values. R16F, as D3DFMT_R16F (r4_rendertarget.cpp:861);
+        // EnsureSsaoTargets() below builds it once the size is known.
         if (!bgfxIsValid(s_hdrColor) || !bgfxIsValid(s_hdrPosition) || !bgfxIsValid(s_hdrGbuf) ||
             !bgfxIsValid(s_hdrDepth) || !bgfxIsValid(s_hdrLit) || !bgfxIsValid(s_hdrHigh))
         {
@@ -1690,7 +1987,8 @@ namespace bgfxHDR
 
         if (!CreateLuminanceTargets() || !EnsureBloomTargets() || !EnsureBloomPrograms() ||
             !EnsureCombineProgram() || !EnsureResolveProgram() || !EnsureHighProgram() ||
-            !EnsureShadowTargets() || !EnsureShadowProgram())
+            !EnsureShadowTargets() || !EnsureShadowProgram() ||
+            !EnsureSsaoTargets() || !EnsureSsaoProgram() || !EnsureSsaoJitter())
         {
             DestroyHDRTarget();
             return false;
@@ -1725,6 +2023,7 @@ namespace bgfxHDR
         DestroySmaaPrograms();
         DestroyFogScatter();
         DestroyShadow();
+        DestroySsao();
     }
 
     bool RecreateOnResize(uint16_t _width, uint16_t _height)
@@ -1982,6 +2281,120 @@ namespace bgfxHDR
         bgfx_set_uniform(s_shadowParams, params, 1);
     }
 
+    // =========================================================================
+    // Screen-space ambient occlusion, 1:1 with CRenderTarget::phase_ssao
+    // (r4_rendertarget_phase_ssao.cpp:12-105).
+    //
+    // The reference runs this pass from inside phase_combine
+    // (r4_rendertarget_phase_combine.cpp:77-93) whenever the SSAO mode asks for
+    // a separate buffer, and the same kernel is also available inline in the
+    // combine itself (combine_1.ps:148, the calc_ssao() that ssao.ps
+    // implements). Both are the identical function; the separate pass is the one
+    // that produces a buffer, so it is the one this port runs, and the resolve
+    // consumes it where the reference's combine consumes its occ.
+    //
+    // The view has to sit after every writer of the G-buffer it reads
+    // (kSceneView and kSceneFxView, the last of them at id 6) and before the
+    // resolve that applies the factor, which is why it takes kSsaoView = 21 and
+    // the resolve / high channel moved to 22 / 23. bgfx renders views in
+    // ascending id order (bgfx_p.h:3452 collectUsedViews), not in call order.
+    // =========================================================================
+    bool SSAOPass()
+    {
+        s_ssaoOk = false;
+        if (!IsReady() || !EnsureSsaoTargets() || !EnsureSsaoProgram() || !EnsureSsaoJitter())
+            return false;
+
+        bgfx_set_view_frame_buffer(kSsaoView, s_ssaoFb);
+        // r4_rendertarget_phase_ssao.cpp:52-55, set_viewport(_w, _h) with
+        // _w / _h = dwWidth / 2, dwHeight / 2.
+        bgfx_set_view_rect(kSsaoView, 0, 0, (uint16_t)(s_width / 2), (uint16_t)(s_height / 2));
+        // r4_rendertarget_phase_ssao.cpp:16-17 clears rt_ssao_temp to
+        // (0,0,0,0) and RCache.set_Stencil(FALSE) (:29) leaves the stencil off.
+        // Every pixel of the viewport is shaded, so the clear is only needed for
+        // the pixels the pass itself does not write - the shader reproduces the
+        // stencil gate of blender_ssao.cpp:17-18 and writes that clear value.
+        bgfx_set_view_clear(kSsaoView, BGFX_CLEAR_NONE, 0, 1.0f, 0);
+        bgfx_set_view_mode(kSsaoView, BGFX_VIEW_MODE_SEQUENTIAL);
+        // r4_rendertarget_phase_ssao.cpp:69 sets m_v2w = inverse(Device.mView)
+        // and ssao.ps:151 multiplies the view-space position with it to tile the
+        // noise; the predefined u_invView is that matrix, so the view transform
+        // is fed exactly as the resolve's is.
+        bgfx_set_view_transform(kSsaoView, Device.mView.m, Device.mProject.m);
+        bgfx_touch(kSsaoView);
+
+        bgfx_transient_vertex_buffer_t tvb;
+        bgfx_alloc_transient_vertex_buffer(&tvb, 3, &s_ssaoLayout);
+        if (!tvb.data)
+            return false;
+        // The reference fills a 4-vertex quad through g_combine and
+        // combine_1.vs turns it into the fullscreen triangle the other passes
+        // use here; a single 3-vertex triangle is the same coverage.
+        struct Vertex
+        {
+            float x, y, z, u, v;
+        };
+        const Vertex vertices[3] =
+        {
+            { -1.0f, -1.0f, 0.0f, 0.0f, 1.0f },
+            {  3.0f, -1.0f, 0.0f, 2.0f, 1.0f },
+            { -1.0f,  3.0f, 0.0f, 0.0f, -1.0f },
+        };
+        std::memcpy(tvb.data, vertices, sizeof(vertices));
+
+        bgfx_set_state(BGFX_STATE_WRITE_RGB | BGFX_STATE_WRITE_A, 0);
+        bgfx_set_transient_vertex_buffer(0, &tvb, 0, 3);
+        bgfx_set_texture(0, s_ssaoPositionSampler, GetPositionTexture(), 0);
+        bgfx_set_texture(1, s_ssaoGbufSampler, GetGbufTexture(), 0);
+        bgfx_set_texture(2, s_ssaoJitterSampler, s_ssaoJitter, 0);
+
+        // r4_rendertarget_phase_ssao.cpp:40-46, the two constants the kernel
+        // reads, and the same expressions the reference also feeds the inline
+        // combine (r4_rendertarget_phase_combine.cpp:312-313).
+        const float fov = Device.fFOV;
+        float noise = 2.0f;
+        noise *= tan(deg2rad(67.5f));
+        noise /= tan(deg2rad(fov));
+        float kernel = 150.0f;
+        kernel *= tan(deg2rad(67.5f));
+        kernel /= tan(deg2rad(fov));
+        const float noiseTile[4] = { noise, 0.0f, 0.0f, 0.0f };
+        const float kernelSize[4] = { kernel, 0.0f, 0.0f, 0.0f };
+        bgfx_set_uniform(s_ssaoNoiseTileFactor, noiseTile, 1);
+        bgfx_set_uniform(s_ssaoKernelSize, kernelSize, 1);
+
+        bgfx_submit(kSsaoView, s_ssaoProgram, 0, BGFX_DISCARD_ALL);
+        s_ssaoOk = true;
+        return true;
+    }
+
+    // The 1x1 constant the resolve falls back to when the pass could not run: the
+    // reference has no such state (its pass always runs and always writes the
+    // target), so the neutral value is the one its own kernel produces for an
+    // unoccluded surface and the one compute_colored_ao(1, albedo) returns
+    // unchanged - i.e. no occlusion at all.
+    bgfx_texture_handle_t GetSsaoTexture()
+    {
+        if (s_ssaoOk && bgfxIsValid(s_ssao))
+            return s_ssao;
+        if (!bgfxIsValid(s_ssaoFallback))
+        {
+            const uint64_t flags = BGFX_TEXTURE_U_CLAMP | BGFX_TEXTURE_V_CLAMP |
+                BGFX_TEXTURE_MIN_POINT | BGFX_TEXTURE_MAG_POINT | BGFX_TEXTURE_MIP_POINT;
+            const float white[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
+            const uint32_t bytes = (uint32_t)sizeof(white);
+            const bgfx_memory_t* mem = bgfx_copy(white, bytes);
+            s_ssaoFallback = bgfx_create_texture_2d(1, 1, false, 1,
+                BGFX_TEXTURE_FORMAT_R16F, flags, mem, 0);
+            if (!bgfxIsValid(s_ssaoFallback))
+            {
+                s_ssaoFallback = BGFX_INVALID_HANDLE;
+                return BGFX_INVALID_HANDLE;
+            }
+        }
+        return s_ssaoFallback;
+    }
+
     bool ResolvePass()
     {
         s_resolveOk = false;
@@ -2028,6 +2441,12 @@ namespace bgfxHDR
         bgfx_set_texture(2, s_litGbufSampler, s_hdrGbuf, 0);
         if (bgfxIsValid(s_smapSampler))
             bgfx_set_texture(5, s_smapSampler, s_shadowMap, 0);
+        // combine_1.ps:128-159 / :183, the SSAO factor. blender_combine.cpp:42
+        // binds the combine's s_occ to r2_RT_ssao_temp; the port's producer is
+        // SSAOPass() above, and the fallback is the neutral 1.0 texture.
+        const bgfx_texture_handle_t occ = GetSsaoTexture();
+        if (bgfxIsValid(occ))
+            bgfx_set_texture(6, s_litOccSampler, occ, 0);
         bgfx_submit(kResolveView, s_resolveProgram, 0, BGFX_DISCARD_ALL);
         s_resolveOk = true;
         return true;

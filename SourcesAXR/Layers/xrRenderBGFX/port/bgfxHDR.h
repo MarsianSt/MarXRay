@@ -35,19 +35,28 @@ namespace bgfxHDR
     // middle-grey measurement has to see the lit image. Writes its own
     // full-res RGBA16F target: attachment 0 cannot be read and written in the
     // same pass.
-    const bgfx_view_id_t kResolveView = 21;
+    // bgfx renders the views in ascending id order (bgfx_p.h:3452
+    // collectUsedViews), so the SSAO pass that feeds it had to take a free id
+    // below this one, and the resolve and the high channel moved down by one.
+    const bgfx_view_id_t kResolveView = 22;
     // Split-HDR high channel (AXR r2_RT_generic1, D3DFMT_A8R8G8B8,
     // r4_rendertarget.cpp:490): the /9 encoding of the pre-tonemap image that
     // tonemap() writes as its second output (common_functions.h:32, sky2.ps:60,
     // combine_1.ps:213). Sits after the lighting resolve, which produces the
     // pre-tonemap image, and before the bloom bright pass, the only reader
     // (blender_bloom_build.cpp:18).
-    const bgfx_view_id_t kHighView = 22;
+    const bgfx_view_id_t kHighView = 23;
     // Sun shadow map (AXR r2_RT_smap_depth, r4_rendertarget.cpp:636). The one
     // writer is the caster pass, which has to run before the scene view, so it
     // takes the lowest free id below kSceneView's block; the reader is the
     // lighting resolve, which therefore also sees a map of the current frame.
     const bgfx_view_id_t kShadowView = 1;
+    // Screen-space ambient occlusion (AXR r2_RT_ssao_temp, r4_rendertarget.cpp:861,
+    // written by CRenderTarget::phase_ssao, r4_rendertarget_phase_ssao.cpp:12-105).
+    // The last id before the lighting resolve: it reads the G-buffer the scene
+    // views write (ids 0 and 6) and is read by the resolve, which applies the
+    // factor where the reference combine does (combine_1.ps:183).
+    const bgfx_view_id_t kSsaoView = 21;
 
     // Binds the shadow-map view, its sun transform and its clear, then lets the
     // caller re-walk the world with bgfxWorldShadowPass() on. Returns false when
@@ -75,6 +84,15 @@ namespace bgfxHDR
     // unlit attachment 0, so the frame stays intact exactly as it was before
     // this pass existed.
     bool ResolvePass();
+    // Screen-space ambient occlusion, 1:1 with CRenderTarget::phase_ssao
+    // (r4_rendertarget_phase_ssao.cpp:12-105) driving ssao_calc_nomsaa: the
+    // half-resolution occlusion buffer, computed out of the same G-buffer the
+    // resolve reads. Has to run after the scene FX view and before ResolvePass.
+    // Returns false (drawing nothing) when its target, its dither texture or its
+    // program is unavailable; GetSsaoTexture() then hands out a 1x1 texture
+    // holding the neutral 1.0, so the frame stays intact exactly as it was
+    // before this pass existed.
+    bool SSAOPass();
     // Split-HDR high channel: high = high(tonemap(fog(lit), tm_scale)), i.e. the
     // AXR /9 encoding of the pre-tonemap image. Returns false (drawing nothing)
     // when the target or the program is unavailable; BloomPass then skips instead

@@ -17,8 +17,9 @@ $input v_texcoord0
 // EnvGGX/pbr_brdf.h:288-309 arm). The sun shadow term is ported 1:1 too: the
 // depth from the sun's point of view, sampled with the reference's PCSS kernel
 // (shadow.h:169-231) at ps_r_sun_quality = 1, i.e. 8 poisson taps and no
-// blocker search. What is still not ported: the SSAO factor
-// (combine_1.ps:128-159), which needs the SSAO buffer this port does not bind.
+// blocker search. The SSAO factor (combine_1.ps:128-159, computed by
+// ssao_calc_ps.sc out of the same G-buffer) is applied 1:1 at the reference's
+// own application point, combine_1.ps:183 `hdiffuse *= occ`.
 
 // Attachment 0 of the scene FB: Anomaly f_deffer::C, rgb = albedo + a = gloss
 // (gbuffer_stage.h:8, written by deffer_base_flat.ps:54 as float4(D.rgb, def_gloss)
@@ -45,6 +46,17 @@ SAMPLERCUBE(s_env1, 4);
 // comparison the reference asks the hardware for (SampleCmpLevelZero, shadow.h:
 // 48/:211/:224) is done by hand in shadow_smap_test() below.
 SAMPLER2D(s_smap, 5);
+// s_occ: the screen-space occlusion, the target CRenderTarget::phase_ssao
+// writes (r4_rendertarget_phase_ssao.cpp:12-105) and blender_combine.cpp:42
+// binds to the combine pass as s_occ = r2_RT_ssao_temp. Sampler stage 6, after
+// the shadow map. Half resolution (the reference renders into a viewport of
+// dwWidth/2 x dwHeight/2, :52-55), so a full-resolution tc reproduces the
+// reference's 2x magnification of the half-res buffer; the sampler is point
+// sampled, which is the smp_nofilter the reference reads s_occ with
+// (combine_1.ps:133). When the pass could not run, u_cubeValid-style fallback:
+// the value is 1, i.e. no occlusion, which is the constant the reference kernel
+// converges to for an unoccluded surface.
+SAMPLER2D(s_occ, 6);
 
 // Environment sun, fed from CEnvironment::CurrentEnv by bgfxHDR.
 //   u_sunDir   normalize(mView * CEnvDescriptor::sun_dir) - already view space,
@@ -93,6 +105,19 @@ float SRGBToLinearF(float x) { return pow(max(0.0, x), 2.2); }
 vec3 SRGBToLinearC(vec3 x) { return vec3(SRGBToLinearF(x.r), SRGBToLinearF(x.g), SRGBToLinearF(x.b)); }
 float LinearTosRGBF(float x) { return pow(max(0.0, x), 0.45454545); }
 vec3 LinearTosRGB(vec3 x) { return vec3(LinearTosRGBF(x.r), LinearTosRGBF(x.g), LinearTosRGBF(x.b)); }
+
+// game_unpacked/shaders/r3/common_functions.h:40-47 compute_colored_ao, the
+// albedo-aware occlusion shaping combine_1.ps:156 applies to the SSAO factor
+// before the hemisphere term is scaled by it (the Activision "multiplicative
+// occlusion" polynomial). HLSL float3 out param -> explicit return.
+vec3 compute_colored_ao(float ao, vec3 albedo)
+{
+    vec3 a = 2.0404 * albedo - 0.3324;
+    vec3 b = -4.7951 * albedo + 0.6417;
+    vec3 c = 2.7552 * albedo + 0.6903;
+
+    return max(ao, ((ao * a + b) * ao + c) * ao);
+}
 
 // xmaterial with USE_R2_STATIC_SUN (common.h:17-18) = float(1.0h/4.h). The port
 // keeps the material id as a per-program constant instead of packing it into the
@@ -432,6 +457,18 @@ void main()
     vec3 N = gbuf_unpack_normal(G.xy);
     float hemi = gbuf_unpack_hemi(G.w);
 
+    // combine_1.ps:128-159, the SSAO member of the combine. In the reference the
+    // factor is either computed inline by calc_ssao() (combine_1.ps:148) or read
+    // out of the buffer phase_ssao wrote (blender_combine.cpp:42), and either way
+    // it is the same kernel; this port runs the separate pass (ssao_calc_ps.sc)
+    // and samples it here, because the ambient it multiplies is built below in
+    // this pass and not in the bgfx combine (which is post-tonemap only).
+    // combine_1.ps:156 runs it through compute_colored_ao with the *raw* G-buffer
+    // albedo (D.xyz, still gamma space - combine_1.ps:88), not the linearised
+    // one, and only under SSAO_QUALITY, which the reference build always defines
+    // (r4.cpp:1365-1371, ps_r_ssao = 3).
+    vec3 occ = compute_colored_ao(texture2D(s_occ, tc).x, D.rgb);
+
     // lmodel.h:118-120 - compute_lighting linearises the G-buffer albedo before
     // it modulates anything, and combine_1.ps:161 gamma-corrects D.rgb the same
     // way for the ambient stored in the accumulator alpha.
@@ -598,8 +635,12 @@ void main()
     // Ldynamic_color.w factor on this side) and the reference's spec*2 gain.
     float specAmbient = SRGBToLinearF(DEF_GLOSS);
     // hmodel.h:145-147 - the BRDF result scaled, then the env_d*albedo the
-    // zeroed albedo argument of Amb_BRDF could not supply.
-    vec3 ambient = env_d * albedo + ambientSpecular * (specAmbient * 2.0);
+    // zeroed albedo argument of Amb_BRDF could not supply. env_d*albedo is
+    // hdiffuse, the only term combine_1.ps:183 scales (`hdiffuse *= occ`); the
+    // `hspecular *= occ` of the next line stays commented out in the reference
+    // (combine_1.ps:185), so the ambient specular keeps its unoccluded value -
+    // which is why occ multiplies only the first product here.
+    vec3 ambient = (env_d * albedo) * occ + ambientSpecular * (specAmbient * 2.0);
 
     // combine_1.ps:187-188 sums the two halves into the linear accumulator and
     // then gamma-corrects it: color = LinearTosRGB(L.rgb + hdiffuse.rgb). The
