@@ -19,6 +19,10 @@
 #include "port\bgfxHDR.h"
 #include "port\bgfxWallMarks.h"
 
+// xr_ioc_cmd.cpp:478, the live engine flag CCC_r2 drives (xr_ioc_cmd.cpp:564). Imported
+// from AdvancedXRay.exe like every other engine global this layer reads.
+extern ENGINE_API BOOL r2_sun_static;
+
 class bgfxRenderTarget : public IRender_Target
 {
 public:
@@ -159,7 +163,20 @@ public:
 
     // Feature level
     virtual GenerationLevel get_generation() override { return GENERATION_R2; }
-    virtual bool is_sun_static() override { return true; }
+    // r4.cpp:279 `o.sunstatic = ps_r2_static_flags.test(R2FLAG_STATIC_SUN) || r2_sun_static;`,
+    // returned by r4.h:294 is_sun_static(). r2_sun_static is the live engine flag and is
+    // FALSE for every renderer this port replaces (xr_ioc_cmd.cpp:564 sets it to
+    // renderer_value<2; the bgfx backend is renderer_value 6, so the reference evaluates
+    // the whole expression to FALSE too and Environment.cpp:528 calls
+    // calculate_dynamic_sun_dir()).
+    // The R2FLAG_STATIC_SUN term is left out rather than faked: ps_r2_static_flags is
+    // defined in the xrRender module (xrRender_console.cpp:404) which is not part of this
+    // solution - only xrRenderBGFX is - so it cannot be linked from here; and its only
+    // writer, the "r2_static_sun" console command (xrRender_console.cpp:1272), lives in
+    // that same unbuilt module. Every process that runs this port therefore has the flag at
+    // its initial value { R2FLAG_USE_BUMP } (xrRender_console.cpp:404), with
+    // R2FLAG_STATIC_SUN clear - the constant false this term already reduces to.
+    virtual bool is_sun_static() override { return r2_sun_static != FALSE; }
     virtual DWORD get_dx_level() override { return 0x00009000; }
 
     // Loading / Unloading
