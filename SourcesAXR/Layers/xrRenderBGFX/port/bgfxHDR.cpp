@@ -1307,16 +1307,43 @@ namespace bgfxHDR
     // places and this pass is the bgfx stand-in for both at once:
     //   sun   accum_sun.ps:23-35 - plight_infinity(mtl, P, N, C, Ldynamic_dir)
     //         tinted by SRGBToLinear(Ldynamic_color.rgb) and the shadow term,
-    //         which this pass leaves at 1 (no shadow map is bound).
-    //   hemi  hmodel() - the ambient half combine_1.ps:166 adds, i.e.
+    //         which this pass leaves at 1 (no shadow map is bound). Both the
+    //         diffuse and the specular lobe of compute_lighting (lmodel.h:142-173)
+    //         are in there, the latter gated by the G-buffer gloss channel.
+    //   hemi  hmodel() - the ambient half combine_1.ps:166 adds: the diffuse
     //         SRGBToLinear(env_d) * albedo with
     //         env_d = lerp(env_s0, env_s1, env_color.w) * env_col * hemi + L_ambient
-    //         (hmodel.h:105, :121, :125, :130), the ambient cube included.
+    //         (hmodel.h:105, :121, :125, :130), plus the Amb_BRDF specular term
+    //         of hmodel.h:145 sampling the same two cubes along the reflection
+    //         vector at the roughness mip (hmodel.h:101-102, :44).
     // Both terms read the per-pixel hemi and the packed normal out of attachment
     // 2 and modulate the gamma-space albedo of attachment 0, exactly like the
     // reference does through gbuffer_load_data() (gbuffer_stage.h:115-143).
     // Pixels nothing drew (sky, clouds) keep their attachment-0 radiance: see
     // the P == 0 branch in deferred_light_ps.sc.
+    //
+    // Neither specular half needs anything bound that is not already here, and
+    // that is the reason this pass grew them without a single new uniform or
+    // texture:
+    //   gloss   the reference's G-buffer gloss channel is the compile-time
+    //           literal def_gloss = 2/255 (common_defines.h:6) in every writer
+    //           (deffer_base_flat.ps:51/:54, deffer_grass.ps:88,
+    //           deffer_particle.ps:69, lod.ps:105), while the port's attachment
+    //           0 stores the sampled texel verbatim (world_solid_ps.sc:25) and
+    //           so carries no gloss at all. The shader therefore uses the
+    //           literal, which is the reference value rather than a stand-in.
+    //   Ldynamic_color.w  multiplies that gloss in the sun half (lmodel.h:116)
+    //           and enters calc_rough (pbr_brdf.h:116) on the ambient side.
+    //           CEnvDescriptor::sun_color is a Fvector3 (Environment.h:186) and
+    //           the R4 constant that would carry it is never bound in this
+    //           tree (R_hemi::set_material has no caller), so the shader holds
+    //           it at the reference's own 1.0 - the same multiply appears
+    //           commented out at lmodel.h:122, and 0.0 would zero the specular.
+    //   s_material  the material LUT (common_samplers.h:69) is sampled once,
+    //           at lmodel.h:133, and the result is overwritten at lmodel.h:147
+    //           and :151 before it is read, so the whole non-ES_PSEUDO_PBR lobe
+    //           is closed form in mat_id. No LUT texture has to be created
+    //           here, and none is invented.
     bool ResolvePass()
     {
         s_resolveOk = false;

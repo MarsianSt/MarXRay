@@ -12,11 +12,11 @@ $input v_texcoord0
 //                                  accumulated by accum_sun.ps:23-35
 //   hemi   hmodel()           (hmodel.h:20-151), the ambient half
 //
-// Not ported here, deliberately: the specular half of compute_lighting
-// (lmodel.h:148-173) and hmodel's Amb_BRDF term (hmodel.h:145), the SSAO factor
-// (combine_1.ps:128-159) and the sun shadow term (accum_sun.ps:26-32). They need
-// the material LUT (s_material) and the shadow map, none of which this port
-// binds.
+// Both specular halves are now ported 1:1: the sun lobe of compute_lighting
+// (lmodel.h:148-173) and hmodel's Amb_BRDF term (hmodel.h:145, the
+// EnvGGX/pbr_brdf.h:288-309 arm). What is still not ported: the SSAO factor
+// (combine_1.ps:128-159) and the sun shadow term (accum_sun.ps:26-32), which
+// need the SSAO buffer and the shadow map, none of which this port binds.
 
 // Attachment 0 of the scene FB: Anomaly f_deffer::C, rgb = albedo + a = gloss
 // (gbuffer_stage.h:8, written by deffer_base_flat.ps:54 as float4(D.rgb, def_gloss)
@@ -120,6 +120,192 @@ vec3 sampleAmbientCube1(vec3 n)
     return e1d;
 }
 
+// hmodel.h:101-102, the specular arm of the same cube pair. The two lobes share
+// the texture and the remap; only the mip and the single tap along the
+// reflection vector differ from the diffuse arm above.
+vec3 sampleSpecCube0(vec3 dir, float mip) { return textureCubeLod(s_env0, dir, mip).rgb; }
+vec3 sampleSpecCube1(vec3 dir, float mip) { return textureCubeLod(s_env1, dir, mip).rgb; }
+
+// ---------------------------------------------------------------- material
+// The reference that runs is the non-ES_PSEUDO_PBR branch (lmodel.h:110-176,
+// hmodel.h:20-151): nothing in the r3 tree defines ES_PSEUDO_PBR, so the
+// Lit_BRDF() call of lmodel.h:31 is not the code in play, and pbr_settings.h
+// turns on USE_BURLEY_DIFFUSE / USE_GGX_SPECULAR for the parts that do run.
+//
+// Why no material LUT is bound here: s_material (common_samplers.h:69) is only
+// sampled at lmodel.h:133, and that result is dead on this branch - the
+// reference overwrites light.rgb at lmodel.h:147 and light.w at lmodel.h:151
+// before either is read. Every term that reaches the output is the closed form
+// of lmodel.h:142-155, driven only by mat_id, so a LUT texture would have
+// nothing left to contribute. hmodel.h:114 has the mirror-image line commented
+// out. There is therefore no 3D texture to create in bgfxHDR.cpp for this
+// feature, and none is invented.
+
+// common_cbuffers.h:8 - Ldynamic_color, the dynamic light cbuffer. Only its
+// alpha reaches the shading: lmodel.h:116 (spec *= Ldynamic_color.w) and
+// pbr_brdf.h:116 (calc_rough, through 1 - Ldynamic_color.w). The reference
+// binder feeds it the sun colour, whose alpha has no port-side counterpart -
+// CEnvDescriptor::sun_color is a Fvector3 (Environment.h:186), and the only
+// R4 path that would bind it, R_hemi::set_material, is never called
+// (R_Backend_hemi.cpp). 1.0 is the reference's own value: the identical
+// multiply appears a second time, commented out, at lmodel.h:122. It is a
+// constant, not a strength knob - lmodel.h:116 with 0.0 would zero the entire
+// specular term, and the reference plainly does not mean that.
+const float L_DYNAMIC_W = 1.0;
+
+// common_defines.h:6 - def_gloss, the gloss every G-buffer writer packs into
+// the diffuse alpha: deffer_base_flat.ps:51/:54 (static, terrain, decals),
+// deffer_grass.ps:88, deffer_particle.ps:69, lod.ps:105. A literal in all of
+// them - not r2_gloss_min, not a texture, no per-vertex data. gbuffer_load_data
+// reads it back as gbd.gloss (gbuffer_stage.h:140) and that is the alb_gloss.w
+// both halves below spend. The port's attachment 0 holds the sampled texel
+// verbatim (world_solid_ps.sc:25), i.e. stores no gloss channel at all, so
+// DEF_GLOSS is the reference value itself and not a stand-in for missing data.
+const float DEF_GLOSS = 2.0 / 255.0;
+
+// anomaly_shaders.h:9
+const vec3 LUMINANCE = vec3(0.2125, 0.7154, 0.0721);
+// common_brdf.h:16-17
+const float MAT_FLORA = 0.15;
+const float MAT_FLORA_ELIPSON = 0.04;
+// pbr_settings.h:14-30 (ENCHANTED_SHADERS_ENABLED is not defined, so
+// ALBEDO_BOOST is 0.5). METALNESS_SOFTNESS is absent on purpose: the reference
+// only uses it in commented-out lines (pbr_brdf.h:31, :38).
+const float ALBEDO_BOOST = 0.5;
+const float ROUGHNESS_LOW = 0.5;
+const float ROUGHNESS_HIGH = 1.0;
+const float ROUGHNESS_POW = 1.0;
+const float SPECULAR_BASE = 0.01;
+const float SPECULAR_RANGE = 1.0;
+const float SPECULAR_POW = 1.0;
+const float METAL_BOOST = 0.25;
+const float METALNESS_THRESHOLD = 0.125;
+const float PI = 3.14159265359;
+
+// pbr_brdf.h:43-46 Soft_Light, the ternary of the reference spelled as a mix.
+vec3 Soft_Light(vec3 base, vec3 blend)
+{
+    vec3 lo = base - (1.0 - 2.0 * blend) * base * (1.0 - base);
+    vec3 hi = base + (2.0 * blend - 1.0) * (sqrt(base) - base);
+    return mix(hi, lo, step(blend, vec3(0.5)));
+}
+
+// pbr_brdf.h:20-41 calc_metalness. The reference's `? 1 : 0` is step() and its
+// METALNESS_SOFTNESS constant is unused (it is commented out there too).
+float calc_metalness(vec4 alb_gloss, float material_ID)
+{
+    float metallerp = max(0.0, (material_ID * 4.0) - 0.5) / 4.0;
+    float metalness = step(0.0, saturate(material_ID - 0.75 - 0.001));
+    float metal_thres = pow(METALNESS_THRESHOLD, exp2(metallerp));
+    float metal_soft = metal_thres * 0.9;
+    metalness *= saturate((alb_gloss.a - (metal_thres - metal_soft)) /
+                          ((metal_thres + metal_soft) - (metal_thres - metal_soft)));
+    return metalness;
+}
+
+// pbr_brdf.h:50-54, needed only by calc_specular's metal arm below.
+vec3 calc_albedo_boost(vec3 albedo)
+{
+    vec3 blend = lerp(vec3(0.5), 1.0 - dot(albedo, LUMINANCE), ALBEDO_BOOST);
+    return Soft_Light(albedo, blend);
+}
+
+// pbr_brdf.h:78-108 calc_specular, complete. calc_albedo (pbr_brdf.h:56-76) is
+// deliberately not ported: it feeds the ambient *diffuse* lobe, which the
+// resolve already takes from SRGBToLinearC(D.rgb) exactly as lmodel.h:119 does
+// for the sun, and swapping it is a different change from the specular port.
+vec3 calc_specular(vec4 alb_gloss, float material_ID)
+{
+    float metalness = calc_metalness(alb_gloss, material_ID);
+
+    vec3 specular = vec3(SPECULAR_BASE);
+    vec3 specular_metal = calc_albedo_boost(alb_gloss.rgb);
+    specular_metal = SRGBToLinearC(specular_metal);
+
+    material_ID = saturate(material_ID * 1.425);
+    alb_gloss.a = sqrt(alb_gloss.a);
+
+    float specular_boost = (material_ID * 2.0 - 1.0) + (alb_gloss.a * 2.0 - 1.0);
+    specular_boost = exp2(SPECULAR_RANGE * specular_boost);
+    specular_boost = pow(specular_boost, SPECULAR_POW);
+
+    specular *= specular_boost;
+
+    return saturate(lerp(specular, specular_metal, metalness));
+}
+
+// pbr_brdf.h:110-122 calc_rough, the roughness the ambient cube is filtered
+// with (hmodel.h:39, :44, :78) and the roughness Amb_BRDF integrates against.
+float calc_rough(vec4 alb_gloss, float material_ID)
+{
+    float metalness = calc_metalness(alb_gloss, material_ID);
+    alb_gloss.a = pow(alb_gloss.a, ROUGHNESS_POW - (metalness * METAL_BOOST));
+    float roughpow = 0.5 / max(0.001, 1.0 - L_DYNAMIC_W);
+    float rough = pow(lerp(ROUGHNESS_HIGH, ROUGHNESS_LOW, alb_gloss.a), roughpow);
+    return saturate(rough * rough);
+}
+
+// pbr_brdf.h:176-182, the DICE roughness blend of the reflection vector back
+// toward the normal - it is what keeps a rough surface from sampling a mirror
+// direction in the cube.
+vec3 getSpecularDominantDir(vec3 N, vec3 R, float roughness)
+{
+    float smoothness = saturate(1.0 - roughness);
+    float lerpFactor = smoothness * (sqrt(smoothness) + roughness);
+    return lerp(N, R, lerpFactor);
+}
+
+// pbr_brdf_ggx.h:58-66 EnvBRDFApprox, the UE4 fit pbr_brdf.h:281 selects
+// through USE_GGX_SPECULAR.
+vec2 EnvBRDFApprox(float Roughness, float NoV)
+{
+    const vec4 c0 = vec4(-1.0, -0.0275, -0.572, 0.022);
+    const vec4 c1 = vec4(1.0, 0.0425, 1.04, -0.04);
+    vec4 r = Roughness * c0 + c1;
+    float a004 = min(r.x * r.x, exp2(-9.28 * NoV)) * r.x + r.y;
+    return vec2(-1.04, 1.04) * a004 + r.zw;
+}
+
+// pbr_brdf_ggx.h:110-124 EnvGGX, the Amb_Specular of pbr_brdf.h:279-286.
+vec3 EnvGGX(vec3 f0, float rough, float nDotV)
+{
+    vec3 f90Atten = saturate(50.0 * f0);
+    vec2 AB = EnvBRDFApprox(rough, nDotV);
+    return (f0 * AB.x + AB.y * f90Atten);
+}
+
+// pbr_brdf.h:262-268 EnvBurley, the Amb_Diffuse of pbr_brdf.h:270-277 through
+// USE_BURLEY_DIFFUSE.
+float EnvBurley(float roughness, float NV)
+{
+    float d0 = 0.97619 - 0.488095 * pow(1.0 - NV, 5.0);
+    float d1 = 1.55754 + (-2.02221 + (2.56283 - 1.06244 * NV) * NV) * NV;
+    return lerp(d0, d1, roughness);
+}
+
+// pbr_brdf.h:288-309 Amb_BRDF, ported whole (albedo arm included) so it can be
+// diffed against the reference line by line. hmodel.h:145 passes the literal 0
+// as albedo, so the diffuse arm of line :294-295 is multiplied by zero and the
+// result is the specular arm alone - which is exactly why hmodel.h:147 has to
+// add env_d*albedo back separately.
+vec3 Amb_BRDF(float rough, vec3 albedo, vec3 f0, vec3 env_d, vec3 env_s, vec3 V, vec3 N)
+{
+    float DotNV = dot(N, V);
+    float nDotV = max(1e-5, DotNV);
+
+    vec3 diffuse_term = vec3(EnvBurley(rough, nDotV));
+    diffuse_term *= env_d * albedo;
+
+    vec3 specular_term = EnvGGX(f0, rough, nDotV);
+    specular_term *= env_s;
+
+    float horizon = saturate(DotNV * 2.0);
+    horizon *= horizon;
+    specular_term *= horizon;
+
+    return diffuse_term + specular_term;
+}
+
 void main()
 {
     vec2 tc = v_texcoord0;
@@ -147,15 +333,34 @@ void main()
     // way for the ambient stored in the accumulator alpha.
     vec3 albedo = SRGBToLinearC(D.rgb);
 
+    // The G-buffer diffuse the reference hands to both halves as alb_gloss. Its
+    // alpha is the gloss channel, which the port does not store (see DEF_GLOSS),
+    // so it is filled with the reference's own literal.
+    vec4 alb_gloss = vec4(D.rgb, DEF_GLOSS);
+
+    // lmodel.h:113-120 - the sun's specular mask: the gloss channel scaled by
+    // the dynamic light alpha, then linearised. hmodel.h:143 spends the same
+    // gloss without the Ldynamic_color.w factor, so the ambient keeps its own
+    // copy below rather than sharing this one.
+    float specSun = SRGBToLinearF(DEF_GLOSS * L_DYNAMIC_W);
+
     // ----- sun: accum_sun.ps:23-35
     // plight_infinity (lmodel.h:180-183): L = -normalize(light_direction) with
     // light_direction = Ldynamic_dir, which the port's u_sunDir already is in
-    // view space; the eye vector is only needed by the specular half.
+    // view space; V = -normalize(pnt) with pnt the view-space position.
     vec3 L = -normalize(u_sunDir.xyz);
+    vec3 V = -normalize(P);
     float NdotL = saturate(dot(N, L));
 
+    // lmodel.h:126-129, the half vector and the two dot products only the
+    // specular lobe consumes.
+    vec3 H = normalize(L + V);
+    float NdotH = saturate(dot(N, H));
+    float HdotL = saturate(dot(H, L));
+
     // lmodel.h:142, :146-147 - the non-LUT diffuse of the non-ES_PSEUDO_PBR
-    // branch, with the s_material lookup of lmodel.h:133 skipped (not bound):
+    // branch, with the s_material lookup of lmodel.h:133 skipped (dead there,
+    // see the material block above):
     //   metalness = ceil(mat_id - 0.75)
     //   gloss     = saturate(mat_id/0.75) - 0.5*metalness
     //   exponent  = ((gloss*0.5)*0.8) + 0.6
@@ -164,11 +369,36 @@ void main()
     float gloss = saturate(GBUF_MTL / 0.75);
     gloss -= 0.5 * metalness;
     float exponent = ((gloss * 0.5) * 0.8) + 0.6;
-    vec3 sun = pow(NdotL, exponent) * ((exponent + 1.0) * 0.5) * albedo;
+    float sunDiffuse = pow(NdotL, exponent) * ((exponent + 1.0) * 0.5);
 
-    // accum_sun.ps:34-35: SRGBToLinear(s) is the shadow term and is 1 here (no
-    // shadow map in this pass), then the same gamma correction on the sun colour
-    // the reference applies to Ldynamic_color.rgb.
+    // lmodel.h:150-151 - the specular lobe. glossiness = exp2(gloss^1.5 * 14),
+    // which at gloss = 1/3 is 32, i.e. a narrow Blinn lobe; the (g+2)/8 term is
+    // the reference's Blinn normalisation (written `2/8` there) and
+    // saturate(4*NdotL) the grazing fade.
+    float glossiness = exp2(pow(gloss, 1.5) * 14.0);
+    float sunSpecular = pow(NdotH, glossiness) * (glossiness + 2.0 / 8.0) * saturate(4.0 * NdotL);
+
+    // lmodel.h:154-155 - non-PBR fresnel, f0 = lerp(0.04, 0.75, metalness).
+    float f0 = lerp(0.04, 0.75, metalness);
+    sunSpecular *= lerp(f0, 1.0, pow(1.0 - HdotL, 5.0));
+
+    // lmodel.h:167 - the gloss channel as the specular mask.
+    sunSpecular *= specSun;
+
+    // lmodel.h:170 - a metal surface tints its specular by its own diffuse.
+    // mat_id = GBUF_MTL is 0.25 here, far below the 0.75 metal threshold, so
+    // calc_metalness/ceil() both give 0 and metaltint is the reference's 1.0.
+    vec3 metaltint = mix(vec3(1.0), albedo / max(dot(LUMINANCE, albedo), 0.01), metalness);
+
+    // lmodel.h:166, :173 - light.rgb = light.rgb*albedo and
+    // light.rgb += light.www*metaltint, i.e. the lobe above enters already
+    // masked by the gloss channel.
+    vec3 sun = sunDiffuse * albedo + sunSpecular * metaltint;
+
+    // accum_sun.ps:29 result *= light * SRGBToLinear(Ldynamic_color.rgb), i.e.
+    // the sun colour multiplies the specular lobe too. (accum_sun.ps:34-35
+    // SRGBToLinear(s) is the shadow term and is 1 here, no shadow map in this
+    // pass.)
     sun *= SRGBToLinearC(u_sunColor.rgb);
 
     // ----- hemi ambient: hmodel.h, the diffuse half of combine_1.ps:166
@@ -191,7 +421,55 @@ void main()
     // ambient cube was bound (the cube replaced by 1).
     cubeD = mix(vec3(1.0), cubeD, u_cubeValid.x);
     vec3 env_d = SRGBToLinearC(cubeD * u_hemiColor.rgb * hemi + u_ambient.rgb);
-    vec3 ambient = env_d * albedo;
+
+    // ----- ambient specular: hmodel.h:39-44, :64-78, :101-106, :121-134
+    // The reflection direction. combine_1.ps:166 hands hmodel the view-space
+    // position, which hmodel.h:52 normalises, so v2Pnt is this pass's P and the
+    // m_inv_V multiply of hmodel.h:53 is the same rotate-only view inverse nw
+    // went through above.
+    vec3 v2Pnt = normalize(P);
+    // hmodel.h:64 - reflect(view vector, world normal), then the identical
+    // remap + renormalise pair the diffuse taps use (hmodel.h:66-75).
+    vec3 vreflect = reflect(v2Pnt, nw);
+    vec3 vreflectRemap = normalize(cube_remap(vreflect));
+
+    // hmodel.h:35, :39 - the roughness, and hmodel.h:44 the mip it filters the
+    // cube with. calc_rough reads the raw gloss of alb_gloss, not the
+    // linearised specSun.
+    float roughCube = calc_rough(alb_gloss, GBUF_MTL);
+    float roughMip = CUBE_MIPS - ((1.0 - roughCube) * CUBE_MIPS);
+
+    // hmodel.h:78 - blend the reflection vector toward the normal by roughness
+    // so a rough surface stops sampling a mirror direction.
+    vreflectRemap = getSpecularDominantDir(normalize(cube_remap(nw)), vreflectRemap, roughCube);
+
+    // hmodel.h:101-102, :106 - the same two cubes, one tap along the
+    // reflection direction at the roughness mip instead of the three diffuse
+    // taps, lerped with env_color.w.
+    vec3 cubeS = mix(sampleSpecCube0(vreflectRemap, roughMip),
+                     sampleSpecCube1(vreflectRemap, roughMip), u_ambient.w);
+    cubeS = mix(vec3(1.0), cubeS, u_cubeValid.x);
+    // hmodel.h:121-134 - the same tint / scale / add / linearise chain env_d
+    // went through. hmodel.h:113 sets all four components of `light` to hscale
+    // (h = the G-buffer hemi) and hmodel.h:126 spends light.www, so env_s is
+    // scaled by hscale, not by hspec: hmodel.h:110 computes hspec and
+    // hmodel.h:150 then throws it away ("do not use hspec at all").
+    vec3 env_s = SRGBToLinearC(cubeS * u_hemiColor.rgb * hemi + u_ambient.rgb);
+
+    // hmodel.h:145 - Amb_BRDF(roughCube, 0, specular, env_d, env_s*!m_flora,
+    // -v2Pnt, nw). `env_s * !m_flora` is env_s itself here: hmodel.h:28 tests
+    // abs(m - MAT_FLORA) <= MAT_FLORA_ELIPSON and GBUF_MTL is 0.25, not the
+    // 0.15 flora id, and the same test at lmodel.h:158 makes the grass SSS a
+    // no-op for the static class this resolve lights.
+    vec3 f0Ambient = calc_specular(alb_gloss, GBUF_MTL);
+    vec3 ambientSpecular = Amb_BRDF(roughCube, 0.0, f0Ambient, env_d, env_s, -v2Pnt, nw);
+
+    // hmodel.h:143, :146 - the ambient's own copy of the gloss channel (no
+    // Ldynamic_color.w factor on this side) and the reference's spec*2 gain.
+    float specAmbient = SRGBToLinearF(DEF_GLOSS);
+    // hmodel.h:145-147 - the BRDF result scaled, then the env_d*albedo the
+    // zeroed albedo argument of Amb_BRDF could not supply.
+    vec3 ambient = env_d * albedo + ambientSpecular * (specAmbient * 2.0);
 
     // combine_1.ps:187-188 sums the two halves into the linear accumulator and
     // then gamma-corrects it: color = LinearTosRGB(L.rgb + hdiffuse.rgb). The
