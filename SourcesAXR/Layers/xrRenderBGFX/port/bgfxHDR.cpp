@@ -1730,11 +1730,17 @@ namespace
     //   u_sunDir     = normalize(Device.mView * CEnvDescriptor::sun_dir), already
     //                  view space, which is the space accum_sun.ps works in
     //                  (Ldynamic_dir); u_sunColor = CEnvDescriptor::sun_color
-    //   u_hemiColor  = CEnvDescriptor::hemi_color, i.e. L_hemi_color, the source
+    //   u_hemiColor  = env_color, i.e. L_hemi_color, the source
     //                  calc_model_hemi_r1() reads (common_functions.h:99-101); the
     //                  writers' G-buffer hemi is the bare up factor max(0, Nw.y)
-    //                  that this colour scales (gbuf_pack.h)
-    //   u_ambient    = CEnvDescriptor::ambient, i.e. L_ambient (hmodel.h:129), with
+    //                  that this colour scales (gbuf_pack.h). It is NOT the raw
+    //                  descriptor hemi: r4_rendertarget_phase_combine.cpp:222-231
+    //                  builds env_color as (sky|hemi)_color*2 + EPS and then scales
+    //                  x/y/z by 2*sun_lumscale_hemi, i.e. the descriptor value times
+    //                  4*sun_lumscale_hemi, with EPS keeping it off zero.
+    //   u_ambient    = L_ambient (hmodel.h:129), also NOT the raw descriptor ambient:
+    //                  phase_combine.cpp:218-220 builds it as max(ambient*2, 0.001)
+    //                  scaled by sun_lumscale_amb + nightvision_lum_factor. Its
     //                  .w = CEnvDescriptorMixer::weight, i.e. the env_color.w of
     //                  hmodel.h:105 - the factor the two ambient cubes are
     //                  lerped with, the same slot
@@ -1756,6 +1762,25 @@ namespace
             : nullptr;
         if (env)
         {
+            // r4_rendertarget_phase_combine.cpp:207-216, the two lumscale accumulators.
+            // ps_r2_sun_lumscale_amb / ps_r2_sun_lumscale_hemi are xrRender console
+            // variables (xrRender_console.cpp:313-314) that this layer does not link
+            // (the same reason ps_r2_gloss_min above is spelled out); their reference
+            // defaults - the advanced_settings "start_settings" entries no shipped
+            // config overrides - are used instead. bWeatherSunLumscale is
+            // ENGINE_API (x_ray.h:79, x_ray.cpp:91) and links, and the weather half of
+            // the sum is the mixer's own field (Environment.h:209-210), exactly the
+            // envdesc.sun_lumscale_amb / ._hemi the reference adds here.
+            const float kSunLumscaleAmb = 1.0f;   // ps_r2_sun_lumscale_amb
+            const float kSunLumscaleHemi = 1.0f;  // ps_r2_sun_lumscale_hemi
+            float sun_lumscale_amb = kSunLumscaleAmb;
+            float sun_lumscale_hemi = kSunLumscaleHemi;
+            if (bWeatherSunLumscale)
+            {
+                sun_lumscale_amb += env->sun_lumscale_amb;
+                sun_lumscale_hemi += env->sun_lumscale_hemi;
+            }
+
             float n = env->fog_near;
             float f = env->fog_far;
             float r = 0.0f;
@@ -1794,17 +1819,39 @@ namespace
             sunColor[2] = env->sun_color.z;
             sunColor[3] = 0.0f;
 
-            hemiColor[0] = env->hemi_color.x;
-            hemiColor[1] = env->hemi_color.y;
-            hemiColor[2] = env->hemi_color.z;
+            // env_color, r4_rendertarget_phase_combine.cpp:222-231: the SoC weather
+            // path takes sky_color, everything else hemi_color, both scaled by *2 + EPS
+            // (EPS = 0.00001f, xrCore/vector.h:53) and then by 2*sun_lumscale_hemi -
+            // so the descriptor colour reaches the shader times 4*sun_lumscale_hemi.
+            // Handing the raw descriptor value over instead puts both ambient halves at
+            // a quarter of the reference's brightness, which is exactly the "ambient is
+            // 4x darker" reading. .w is not touched: the reference scales x/y/z only
+            // (:229-231), env_color.w carries the cube lerp factor (hmodel.h:105).
+            Fvector3 envColor;
+            envColor.set(env->hemi_color.x, env->hemi_color.y, env->hemi_color.z);
+            if (g_pGamePersistent->Environment().used_soc_weather)
+                envColor.set(env->sky_color.x, env->sky_color.y, env->sky_color.z);
+            const float envK = 2.f * sun_lumscale_hemi;
+            hemiColor[0] = (envColor.x * 2.f + EPS) * envK;
+            hemiColor[1] = (envColor.y * 2.f + EPS) * envK;
+            hemiColor[2] = (envColor.z * 2.f + EPS) * envK;
             hemiColor[3] = 0.0f;
 
-            ambient[0] = env->ambient.x;
-            ambient[1] = env->ambient.y;
-            ambient[2] = env->ambient.z;
-            // env_color.w, the cube lerp factor (hmodel.h:105). The mixer carries
-            // the weather blend weight, the same slot the reference feeds
-            // L_ambient.w with (Blender_Recorder_StandartBinding.cpp:389-390).
+            // L_ambient, r4_rendertarget_phase_combine.cpp:218-220:
+            // max(ambient*2, minamb) * (sun_lumscale_amb + nightvision_lum_factor),
+            // i.e. the descriptor ambient doubled, floored at 0.001 so a black
+            // descriptor still leaves a trace, then scaled by the ambient lumscale.
+            const float minamb = 0.001f;
+            const float ambK = sun_lumscale_amb
+                + g_pGamePersistent->devices_shader_data.nightvision_lum_factor;
+            ambient[0] = _max(env->ambient.x * 2.f, minamb) * ambK;
+            ambient[1] = _max(env->ambient.y * 2.f, minamb) * ambK;
+            ambient[2] = _max(env->ambient.z * 2.f, minamb) * ambK;
+            // .w = CEnvDescriptorMixer::weight, i.e. the env_color.w of hmodel.h:105 -
+            // the factor the two ambient cubes are lerped with, the same slot
+            // Blender_Recorder_StandartBinding.cpp:389-390 feeds L_ambient.w. The
+            // reference's L_ambient.w starts at 0 (:219) and ambclr.mul() (:220) cannot
+            // lift it, so nothing here scales the weight.
             ambient[3] = env->weight;
         }
 
@@ -1898,7 +1945,16 @@ namespace
     // a shadowed point becomes (light.cpp:307-356) and get_LOD()'s distance fade
     // (light.cpp:382-388, which is 1 for an unshadowed light anyway). Every light is
     // therefore accumulated as the reference's unshadowed element does.
-    u32 CollectDynamicLights(float* _pos, float* _color, float* _dir, float* _params, u32 _capacity)
+    //
+    // The light data is ONE interleaved array, 3 vec4 per light in the order the reference's
+    // own Ldynamic_* constants occupy:  [0] Ldynamic_pos (pos.xyz, att_factor),
+    // [1] Ldynamic_color (L_clr.rgb, L_spec), [2] the view-space spot axis. That is the
+    // layout deferred_light_ps.sc:661-663 reads (u_lights[i*3+0..2]) and the layout the
+    // uniform is sized for (3 * kMaxDynamicLights vec4, line 1613). Writing the three
+    // values into three separate 4*kMaxDynamicLights-apart blocks instead leaves every
+    // colour at zero and every axis at zero, which is invisible: a POINT lamp then
+    // accumulates exactly 0 and a SPOT one is culled by the z <= 0 test.
+    u32 CollectDynamicLights(float* _lights, float* _params, u32 _capacity)
     {
         // ps_r__opt_dist, the reference's own cull distance (xrRender_console.cpp:472).
         const float kOptDist = 100.f;
@@ -1950,33 +2006,32 @@ namespace
             Device.mView.transform_dir(L_dir, L->m_direction);
             L_dir.normalize_safe();
 
-            float* p = _pos + count * 12;
+            // accum_point.cpp:104, "Ldynamic_pos" = (L_pos.xyz, att_factor)
+            // accum_spot.cpp:149-150, the same two lines for the spot path.
+            float* p = _lights + count * 12;
             p[0] = L_pos.x;
             p[1] = L_pos.y;
             p[2] = L_pos.z;
             p[3] = 1.f / (range * range);   // accum_point.cpp:104 / accum_spot.cpp:149-150
-            p[4] = 0.f; p[5] = 0.f; p[6] = 0.f; p[7] = 0.f;
-            p[8] = 0.f; p[9] = 0.f; p[10] = 0.f; p[11] = 0.f;
 
             // L_clr: accum_point.cpp:36 / accum_spot.cpp:123. accum_spot multiplies it
             // by get_LOD() at :124, which is 1 for an unshadowed light (light.cpp:384),
             // so both accumulators see the colour as it is here.
+            // accum_point.cpp:105 / accum_spot.cpp:151, "Ldynamic_color" = (L_clr.rgb, L_spec)
             const float spec = u_diffuse2s(L->m_color.r, L->m_color.g, L->m_color.b);
-            float* c = _color + count * 12;
-            c[0] = L->m_color.r;
-            c[1] = L->m_color.g;
-            c[2] = L->m_color.b;
-            c[3] = spec;                    // L_spec = u_diffuse2s(L_clr)
-            c[4] = 0.f; c[5] = 0.f; c[6] = 0.f; c[7] = 0.f;
-            c[8] = 0.f; c[9] = 0.f; c[10] = 0.f; c[11] = 0.f;
+            p[4] = L->m_color.r;
+            p[5] = L->m_color.g;
+            p[6] = L->m_color.b;
+            p[7] = spec;                    // L_spec = u_diffuse2s(L_clr)
 
-            float* d = _dir + count * 12;
-            d[0] = L_dir.x;
-            d[1] = L_dir.y;
-            d[2] = L_dir.z;
-            d[3] = 0.f;
-            d[4] = 0.f; d[5] = 0.f; d[6] = 0.f; d[7] = 0.f;
-            d[8] = 0.f; d[9] = 0.f; d[10] = 0.f; d[11] = 0.f;
+            // accum_spot.cpp:126-129, the view-space axis of the cone (transform_dir +
+            // normalize). The reference keeps it out of the Ldynamic_* constants because
+            // the axis travels in the light's own xform there; the merged loop needs the
+            // vector itself, and this is the third vec4 of the same stride.
+            p[8] = L_dir.x;
+            p[9] = L_dir.y;
+            p[10] = L_dir.z;
+            p[11] = 0.f;
 
             float* q = _params + count * 4;
             q[0] = (L->m_type == IRender_Light::SPOT) ? 1.f : 0.f;
@@ -2002,8 +2057,6 @@ namespace
         s_lightParamData.assign(4 * kMaxDynamicLights, 0.f);
         const u32 count = CollectDynamicLights(
             s_lightData.data(),
-            s_lightData.data() + 4 * kMaxDynamicLights,
-            s_lightData.data() + 8 * kMaxDynamicLights,
             s_lightParamData.data(),
             kMaxDynamicLights);
 
