@@ -19,9 +19,10 @@ void main()
     sky *= 0.33;
     // Horizon color match: blend the grazing band toward the live weather
     // fog_color so the terrain/sky boundary has no seam under any weather.
-    // True view-ray height (v_dir interpolates badly on box faces).
+    // True view-ray height (v_dir interpolates badly on box faces). Power 10:
+    // gradual melt over ~10deg; 32 was too sharp and read as a contour line.
     vec3 vd = v_worldPos - u_invView[3].xyz;
     float h = vd.y / max(length(vd), 0.001);
-    sky = mix(sky, u_fogColor.rgb, pow(1.0 - saturate(h), 32.0));
+    sky = mix(sky, u_fogColor.rgb, pow(1.0 - saturate(h), 10.0));
     gl_FragColor = vec4(sky, 1.0);
 }

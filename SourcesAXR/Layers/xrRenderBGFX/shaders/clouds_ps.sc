@@ -15,9 +15,10 @@ void main()
     float scale = texture2D(s_tonemap, vec2(0.5, 0.5)).x;
     vec4 c = vec4(v_color1.rgb * scale, v_color1.a);
     vec4 col = c * (s0 + s1);
-    // Same horizon color match as the skybox, alpha untouched.
+    // Same horizon color match as the skybox, alpha untouched (power 10,
+    // gradual melt like above).
     vec3 vd = v_worldPos - u_invView[3].xyz;
-    float fog = pow(1.0 - saturate(vd.y / length(vd)), 32.0);
+    float fog = pow(1.0 - saturate(vd.y / length(vd)), 10.0);
     col.rgb = mix(col.rgb, u_fogColor.rgb, fog);
     gl_FragColor = col;
 }
