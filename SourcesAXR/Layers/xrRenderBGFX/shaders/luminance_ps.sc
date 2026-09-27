@@ -10,7 +10,11 @@ uniform vec4 u_luminanceParams;
 float hdrLuminance(vec2 _tc)
 {
     vec3 source = texture2D(s_image, _tc).rgb;
-    return dot(source, vec3(0.3, 0.38, 0.22)) * 9.0;
+    // 1:1 with bloom_luminance_1.ps (dot with LUMINANCE_VECTOR, anomaly_shaders.h:9)
+    // but WITHOUT the *def_hdr: in AXR that x9 undoes the /9 high-channel
+    // normalization (sky2.ps:60, combine high=rgb/9); our s_image is full-range
+    // HDR, so multiplying would inflate luminance 9x and crush the scale ~3.6x.
+    return dot(source, vec3(0.2125, 0.7154, 0.0721));
 }
 
 float filteredLuminance(vec2 _tc)
