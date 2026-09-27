@@ -1,4 +1,4 @@
-﻿$input v_texcoord0, v_texcoord1, v_viewPos, v_viewNormal
+﻿$input v_texcoord0, v_texcoord1, v_viewPos, v_viewNormal, v_hemi
 
 #include <bgfx_shader.sh>
 #include <gbuf_pack.h>
@@ -40,16 +40,27 @@ void main()
     // Packed G-buffer, AXR f_deffer::position (gbuffer_stage.h:7):
     // XY = packed normal, Z = view-space z, W = hemi.
     //
-    // The hemi is the AXR USE_LM_HEMI branch, deffer_base_flat.ps:22-27:
-    //     float4 lm = s_hemi.Sample( smp_rtlinear, I.lmh );
-    //     float  h  = get_hemi(lm);
+    // The hemi is the per-vertex I.Nh.w the vertex stage passes in v_hemi, the
+    // value the reference builds at deffer_base_flat.vs:25
+    //     O.position = float4(Pe, I.Nh.w);
+    // and reads back unchanged at deffer_base_flat.ps:41
+    //     float h = I.position.w;
+    // - the ambient/sky byte the level compiler baked into the mesh, so walls
+    // and back-lit foliage no longer collapse to L_ambient with the up factor.
+    //
+    // USE_LM_HEMI takes priority over it, deffer_base_flat.ps:22-27: with a level
+    // lightmap bound the hemi is get_hemi(lm) and I.position.w is never read.
     // get_hemi (common_functions.h:129-137) is lm.a unless USE_SHOC_MODE is
-    // defined, and nothing in the r3 tree defines it - so the hemi scalar is the
-    // lightmap's alpha channel, the baked indirect light the level compiler
-    // wrote there, and NOT max(0, Nw.y). That value is what hmodel.h:109 spends
-    // as `hscale` (env_d *= light.xxx, hmodel.h:125), so the level's baked
-    // lighting reaches the resolve through exactly the ambient term the
-    // reference drives it through, and nothing else has to change downstream.
+    // defined, and nothing in the r3 tree defines it - so the lightmap hemi is
+    // the lightmap's alpha channel, the baked indirect light the level compiler
+    // wrote there. That is the same value hmodel.h:109 spends as `hscale`
+    // (env_d *= light.xxx, hmodel.h:125), so the level's baked lighting reaches
+    // the resolve through exactly the ambient term the reference drives it
+    // through, and nothing else has to change downstream.
+    //
+    // The reference makes that choice at shader-compile time, the port
+    // per draw through u_lmapValid.x (see the uniform above), so the select is a
+    // mix with the lightmap on top.
     //
     // The sampler is smp_rtlinear - RT filtering, i.e. linear inside the tile and
     // REPEAT across tiles (common_samplers.h), which is what the lightmap needs:
@@ -64,6 +75,6 @@ void main()
     // With nothing bound at stage 1 the fetch is 0 and u_lmapValid.x is 0, so
     // the mix reproduces the fallback exactly.
     vec4 lm = texture2D(u_lmap, v_texcoord1);
-    float hemi = mix(gbuf_calc_hemi(v_viewNormal), lm.a, u_lmapValid.x);
+    float hemi = mix(v_hemi, lm.a, u_lmapValid.x);
     gl_FragData[2] = gbuf_pack_gbuffer(normalize(v_viewNormal), v_viewPos.z, hemi);
 }

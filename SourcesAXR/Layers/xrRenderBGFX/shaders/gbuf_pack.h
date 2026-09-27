@@ -114,9 +114,13 @@ float gbuf_unpack_hemi(float mtl_hemi)
 //   particle          deffer_particle.vs:22      .2h, a flat constant
 //   with lightmaps    deffer_base_flat.ps:22-27  get_hemi(s_hemi) (USE_LM_HEMI)
 //
-// None of those sources is reachable here: no lightmaps are loaded, the R4
-// constant arrays are absent, and the per-vertex I.Nh.w byte is not bound.
-// What every one of them multiplies is the descriptor's hemi colour, i.e.
+// None of those sources is a normal-derived quantity, and the ones that are
+// reachable are now bound: static and terrain take the per-vertex I.Nh.w byte
+// (world_solid_ps.sc / world_terrain_ps.sc, the byte a_normal.w already carries
+// - bgfxRenderCompat.cpp:1298-1308), particles take the flat 0.2
+// (particle_ps.sc), and the level lightmap still wins over both through
+// u_lmapValid.x (deffer_base_flat.ps:22-27). What every one of them multiplies
+// is the descriptor's hemi colour, i.e.
 // calc_model_hemi_r1 (common_functions.h:99-101):
 //
 //   float3 calc_model_hemi_r1( float3 norm_w )
@@ -124,10 +128,25 @@ float gbuf_unpack_hemi(float mtl_hemi)
 //
 // so the colour factor belongs to the caller - which is exactly where the
 // resolve already has it, deferred_light_ps.sc `cubeD * u_hemiColor.rgb * hemi
-// + u_ambient.rgb`, CEnvDescriptor::hemi_color = L_hemi_color - and the G-buffer
-// carries the bare up factor max(0, Nw.y). That is 1.0 facing up and 0.0 facing
-// down, per pixel, in world space, and its ceiling is the same 1.0 the previous
-// per-frame constant (saturate(grey(hemi_color))) had, so nothing brightens.
+// + u_ambient.rgb`, CEnvDescriptor::hemi_color = L_hemi_color.
+//
+// The two classes left on the normal-derived up factor are the ones whose
+// reference source is a CPU-side value the port has no binding for:
+//   grass    deffer_grass.vs:115 clamp(c0.w, 0.05f, 1.0f) - c0 is
+//            array[i+3] of the per-batch 61*4-float4 `array` constant the
+//            detail manager dumps (DetailManager_VS.cpp:174,213), and the
+//            port's grass layout carries no such data (bgfxDetails.cpp:
+//            424-427)
+//   models   deffer_model_flat.vs:18-25 the hemi cube, whose faces are R4
+//            constants filled per object from CROS_impl::get_hemi_cube()
+//            (R_Backend_hemi.cpp:16-26) and only faked here
+//            (bgfxRenderInterface.h:150)
+// Wallmarks are the same story: the decal PS reads I.position.w
+// (deffer_base_aref_flat.ps:83) and the port's mark quad has no Nh.
+//
+// The up factor itself is the same 1:1 substitution the reference's own
+// fallback makes, calc_model_hemi_r1's max(0, norm_w.y): 1.0 facing up and 0.0
+// facing down, per pixel, in world space.
 //
 // The reference computes norm_w in the lighting pass, where the normal is
 // already unprojected (hmodel.h:47-48 mul(m_inv_V, normal)). The writers only

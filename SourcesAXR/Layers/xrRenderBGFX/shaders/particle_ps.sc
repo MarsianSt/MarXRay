@@ -10,13 +10,13 @@ uniform vec4 u_particleParams;
 // (common.h:17-18).
 const float GBUF_MTL = 0.25;
 
-// deffer_particle.vs:22  O.position = float4(Pe, .2h) - the reference gives every
-// particle a flat 0.2 hemi, a per-quad constant with no normal behind it (billboards
-// have no facing). It is still a scale on the same L_hemi_color, so the same
-// per-pixel up factor the rest of the scene uses applies here too
-// (gbuf_pack.h, calc_model_hemi_r1): identical treatment for identical reason -
-// the constant was a stand-in for a source the port does not bind, and it left
-// every back-lit puff on L_ambient alone.
+// deffer_particle.vs:26  O.position = float4(Pe, .2h) -> deffer_particle.ps:64
+//     float4 Ne = float4(normalize((float3)I.N.xyz), I.position.w);
+// The reference gives every particle quad a flat 0.2 hemi, a per-quad constant
+// with no normal behind it (a billboard has no facing: deffer_particle.vs:23
+// points O.N at the camera), and spends it as the hscale of the same
+// L_hemi_color the other classes use (hmodel.h:109 / :125).
+const float GBUF_HEMI = 0.2;
 
 void main()
 {
@@ -29,5 +29,5 @@ void main()
     // pass (bgfxRainRender.cpp) shares this program, so streaks write it too.
     gl_FragData[1] = vec4(v_viewPos, 1.0);
     // Packed G-buffer, AXR f_deffer::position (gbuffer_stage.h:7).
-    gl_FragData[2] = gbuf_pack_gbuffer(normalize(v_viewNormal), v_viewPos.z, gbuf_calc_hemi(v_viewNormal));
+    gl_FragData[2] = gbuf_pack_gbuffer(normalize(v_viewNormal), v_viewPos.z, GBUF_HEMI);
 }

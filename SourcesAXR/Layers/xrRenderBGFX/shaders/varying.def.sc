@@ -26,3 +26,9 @@ vec3  v_viewPos  : TEXCOORD5 = vec3(0.0, 0.0, 0.0);
 // attachment (gbuffer_stage.h:7 XY, packed by gbuf_pack_normal). TEXCOORD6 is
 // the next free semantic; TEXCOORD4 was v_fogDepth, removed with the forward fog.
 vec3  v_viewNormal : TEXCOORD6 = vec3(0.0, 0.0, 1.0);
+// TEXCOORD4 was v_fogDepth, removed with the forward fog, and is free again.
+// Per-vertex hemi of the static and terrain classes: the AXR I.Nh.w byte that
+// deffer_base_flat.vs:25 writes into O.position.w and deffer_base_flat.ps:41
+// reads back as `h`, deffer_terrain_flat_d.vs:19 / deffer_terrain_mid_flat.ps:53
+// the same way. Only the classes whose reference hemi is that byte declare it.
+float v_hemi       : TEXCOORD4 = 0.0;

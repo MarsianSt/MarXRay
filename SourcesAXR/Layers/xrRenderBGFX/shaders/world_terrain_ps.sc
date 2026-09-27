@@ -1,4 +1,4 @@
-﻿$input v_texcoord0, v_texcoord1, v_viewPos, v_viewNormal
+$input v_texcoord0, v_texcoord1, v_viewPos, v_viewNormal, v_hemi
 
 #include <bgfx_shader.sh>
 #include <gbuf_pack.h>
@@ -40,8 +40,8 @@ void main()
     gl_FragData[1] = vec4(v_viewPos, 1.0);
     // Packed G-buffer, AXR f_deffer::position (gbuffer_stage.h:7). The reference
     // reads the terrain hemi from D.w, i.e. the per-vertex I.Nh.w
-    // (deffer_terrain_flat_d.vs:19 → deffer_terrain_mid_flat.ps:56), which the
-    // port does not bind; the hemi is the normal's world-space up factor
-    // (gbuf_pack.h, calc_model_hemi_r1).
-    gl_FragData[2] = gbuf_pack_gbuffer(normalize(v_viewNormal), v_viewPos.z, gbuf_calc_hemi(v_viewNormal));
+    // (deffer_terrain_flat_d.vs:19 / :26 -> deffer_terrain_mid_flat.ps:53
+    // float4 Ne = float4(normalize(N), D.w)), which the vertex stage hands over
+    // in v_hemi.
+    gl_FragData[2] = gbuf_pack_gbuffer(normalize(v_viewNormal), v_viewPos.z, v_hemi);
 }

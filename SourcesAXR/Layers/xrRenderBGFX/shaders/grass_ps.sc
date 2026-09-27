@@ -24,12 +24,15 @@ void main()
     // Position G-buffer (Anomaly gbuf position): view-space position.
     gl_FragData[1] = vec4(v_viewPos, 1.0);
     // Packed G-buffer, AXR f_deffer::position (gbuffer_stage.h:7). The reference
-    // gives every blade clamp(c0.w, 0.05f, 1.0f) (deffer_grass.vs:115), a
-    // per-blade constant the port does not bind - and the reference itself notes
-    // it as "Some spots are bugged (Full black)" and offers v_hemi(N) as the
-    // fix, so the hemi here is per pixel from the normal (gbuf_pack.h,
-    // calc_model_hemi_r1): a leaf lit from the sky side keeps its value while the
-    // leaves turned away from it drop to L_ambient, instead of every blade
-    // sharing one frame-wide constant.
+    // gives every blade clamp(c0.w, 0.05f, 1.0f) (deffer_grass.vs:115), read
+    // back as I.position.w (deffer_grass.ps:118). c0 is array[i+3] out of the
+    // 61*4-float4 `array` constant the detail manager dumps per grass batch
+    // (deffer_grass.vs:14 / DetailManager_VS.cpp:174,213), i.e. a per-blade CPU
+    // value - the port's grass vertex layout carries position, colour, tc0 and
+    // tc1 only (bgfxDetails.cpp:424-427) and binds no such constant, so the
+    // reference source is not reachable here and the hemi stays the normal's
+    // world-space up factor (gbuf_pack.h, calc_model_hemi_r1). Note the
+    // reference itself flags the constant as unreliable at the same line
+    // ("Some spots are bugged (Full black)") and no shipped config overrides it.
     gl_FragData[2] = gbuf_pack_gbuffer(normalize(v_viewNormal), v_viewPos.z, gbuf_calc_hemi(v_viewNormal));
 }

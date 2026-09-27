@@ -1,5 +1,5 @@
 ﻿$input a_position, a_normal, a_texcoord0, a_texcoord1
-$output v_texcoord0, v_texcoord1, v_viewPos, v_viewNormal
+$output v_texcoord0, v_texcoord1, v_viewPos, v_viewNormal, v_hemi
 #include <bgfx_shader.sh>
 #include <gbuf_pack.h>
 
@@ -24,4 +24,12 @@ void main()
     // (deffer_base_flat.vs:13-15, deffer_base_flat.ps:37).
     vec3 Nw = normalize(unpack_bx2(a_normal.xyz));
     v_viewNormal = mul((mat3)u_modelView, Nw);
+    // Hemi, the reference I.Nh.w the decal PS reads back as I.position.w
+    // (deffer_base_aref_flat.ps:83, packed at :90) - same byte as the static
+    // class (deffer_base_flat.vs:25 / deffer_base_flat.ps:41) and the terrain
+    // class (deffer_terrain_flat_d.vs:19 / deffer_terrain_mid_flat.ps:53), and
+    // the decal draw reuses the same world vertex buffer, so a_normal.w carries
+    // it unchanged. A decal is never a lightmap material, so u_lmapValid stays 0
+    // and world_solid_ps.sc passes this through as the hemi.
+    v_hemi = a_normal.w;
 }
