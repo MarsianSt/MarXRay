@@ -4,6 +4,7 @@
 #include "bgfxHDR.h"
 #include "../bgfxShaderCompiler.h"
 #include "../bgfxUIShader.h"
+#include "../bgfxRenderInterface.h"
 #include "../../../xrEngine/device.h"
 #include "../../../xrEngine/x_ray.h"
 #include "../../../xrEngine/IGame_Persistent.h"
@@ -114,6 +115,20 @@ namespace
     bgfx_vertex_layout_t s_resolveLayout = {};
     bool s_resolveLayoutReady = false;
     bool s_resolveOk = false;
+    // Dynamic point / spot accumulators (AXR accum_omni_unshadowed.ps /
+    // accum_base.ps, accumulated by CRenderTarget::accum_point / accum_spot). The
+    // reference draws one volume per light and adds it into rt_Accumulator; bgfx has
+    // neither stencil nor a per-light pass, so the resolve reads the light list as
+    // three vec4 per light and evaluates the same volumes per pixel
+    // (deferred_light_ps.sc). Capacity is the only place this port is not 1:1: the
+    // reference has no per-frame cap, so a level with more lights than this loses
+    // the tail and says so in the log rather than silently.
+    const u32 kMaxDynamicLights = 32;
+    bgfx_uniform_handle_t s_lightCount = BGFX_INVALID_HANDLE;
+    bgfx_uniform_handle_t s_lights = BGFX_INVALID_HANDLE;
+    bgfx_uniform_handle_t s_lightParams = BGFX_INVALID_HANDLE;
+    std::vector<float> s_lightData;       // 3 * kMaxDynamicLights vec4
+    std::vector<float> s_lightParamData;  // 1 * kMaxDynamicLights vec4
     // Split-HDR high channel, the /9 encoding of the pre-tonemap image
     // (common_functions.h:32). Its own full-res target for the same reason the lit
     // one has its own: the pass reads the lit image, so it cannot write into it.
@@ -595,6 +610,12 @@ namespace
             bgfx_destroy_uniform(s_envCube1);
         if (bgfxIsValid(s_cubeValid))
             bgfx_destroy_uniform(s_cubeValid);
+        if (bgfxIsValid(s_lightCount))
+            bgfx_destroy_uniform(s_lightCount);
+        if (bgfxIsValid(s_lights))
+            bgfx_destroy_uniform(s_lights);
+        if (bgfxIsValid(s_lightParams))
+            bgfx_destroy_uniform(s_lightParams);
         s_resolveProgram = BGFX_INVALID_HANDLE;
         s_litSampler = BGFX_INVALID_HANDLE;
         s_litPositionSampler = BGFX_INVALID_HANDLE;
@@ -605,6 +626,11 @@ namespace
         s_envCube0 = BGFX_INVALID_HANDLE;
         s_envCube1 = BGFX_INVALID_HANDLE;
         s_cubeValid = BGFX_INVALID_HANDLE;
+        s_lightCount = BGFX_INVALID_HANDLE;
+        s_lights = BGFX_INVALID_HANDLE;
+        s_lightParams = BGFX_INVALID_HANDLE;
+        s_lightData.clear();
+        s_lightParamData.clear();
         s_resolveLayoutReady = false;
         s_resolveOk = false;
     }
@@ -1546,7 +1572,8 @@ namespace
         if (bgfxIsValid(s_resolveProgram) && bgfxIsValid(s_litSampler) &&
             bgfxIsValid(s_litPositionSampler) && bgfxIsValid(s_litGbufSampler) &&
             bgfxIsValid(s_hemiColor) && bgfxIsValid(s_ambientColor) &&
-            bgfxIsValid(s_envCube0) && bgfxIsValid(s_envCube1) && bgfxIsValid(s_cubeValid))
+            bgfxIsValid(s_envCube0) && bgfxIsValid(s_envCube1) && bgfxIsValid(s_cubeValid) &&
+            bgfxIsValid(s_lightCount) && bgfxIsValid(s_lights) && bgfxIsValid(s_lightParams))
             return true;
 
         if (!s_resolveLayoutReady)
@@ -1581,11 +1608,16 @@ namespace
         s_envCube0 = bgfx_create_uniform("s_env0", BGFX_UNIFORM_TYPE_SAMPLER, 1);
         s_envCube1 = bgfx_create_uniform("s_env1", BGFX_UNIFORM_TYPE_SAMPLER, 1);
         s_cubeValid = bgfx_create_uniform("u_cubeValid", BGFX_UNIFORM_TYPE_VEC4, 1);
+        // The dynamic light list the accumulators read (deferred_light_ps.sc).
+        s_lightCount = bgfx_create_uniform("u_lightCount", BGFX_UNIFORM_TYPE_VEC4, 1);
+        s_lights = bgfx_create_uniform("u_lights", BGFX_UNIFORM_TYPE_VEC4, 3 * kMaxDynamicLights);
+        s_lightParams = bgfx_create_uniform("u_lightParams", BGFX_UNIFORM_TYPE_VEC4, kMaxDynamicLights);
         if (!bgfxIsValid(s_litSampler) || !bgfxIsValid(s_litPositionSampler) ||
             !bgfxIsValid(s_litGbufSampler) || !bgfxIsValid(s_litOccSampler) ||
             !bgfxIsValid(s_hemiColor) ||
             !bgfxIsValid(s_ambientColor) || !bgfxIsValid(s_envCube0) ||
-            !bgfxIsValid(s_envCube1) || !bgfxIsValid(s_cubeValid))
+            !bgfxIsValid(s_envCube1) || !bgfxIsValid(s_cubeValid) ||
+            !bgfxIsValid(s_lightCount) || !bgfxIsValid(s_lights) || !bgfxIsValid(s_lightParams))
         {
             LogError("[BGFX] Lighting resolve uniforms create failed");
             DestroyResolveProgram();
@@ -1818,6 +1850,180 @@ namespace
         }
         const float valid[4] = { hasCube ? 1.0f : 0.0f, 0.0f, 0.0f, 0.0f };
         bgfx_set_uniform(s_cubeValid, valid, 1);
+    }
+
+    // u_diffuse2s, archive_sourse/Layers/xrRenderPC_R4/r2_types.h:160-172: the
+    // specular weight every accumulator binds into Ldynamic_color.w
+    // (r4_rendertarget_accum_point.cpp:37 / :105, r4_rendertarget_accum_spot.cpp:125 /
+    // :151), which lmodel.h:116 then multiplies the gloss channel with. The selector is
+    // ps_ssfx_gloss_method, and only its method-0 arm runs in this build: the variable
+    // (xr_ioc_cmd.cpp:500, initialised to 0) is bound to no console command anywhere in
+    // this tree, so no reachable configuration can make it differ from that, and xrEngine
+    // is an LTCG static library that internalises a variable nothing inside it reads - so
+    // this layer cannot link it and does not pretend to. Method 0's own two inputs are the
+    // R2 console variables ps_r2_gloss_min / ps_r2_gloss_factor, which this layer does not
+    // link either; their reference defaults (xrRender_console.cpp:373-374, the
+    // advanced_settings start_settings entries no shipped config overrides) are spelled
+    // out below, and the method-1 arm is left in place with the two ps_ssfx values it does
+    // read, so the expression can be diffed against the reference line by line.
+    float u_diffuse2s(float _x, float _y, float _z)
+    {
+        const float kGlossMin = 0.0f;      // ps_r2_gloss_min
+        const float kGlossFactor = 0.001f;  // ps_r2_gloss_factor
+        // r2_types.h:170, the method-1 arm: "remove sun from the equation and clamp".
+        const float span = ps_ssfx_gloss_minmax.y - ps_ssfx_gloss_minmax.x;
+        const float clamped = span < 0.f ? 0.f : (span > 1.f ? 1.f : span);
+        const float method1 = ps_ssfx_gloss_minmax.x + clamped * ps_ssfx_gloss_factor;
+
+        const float v = (_x + _y + _z) / 3.f;
+        const float method0 = kGlossMin + kGlossFactor * ((v < 1.f) ? powf(v, 2.f / 3.f) : v);
+
+        return method0 + (method1 - method0) * 0.f;   // ps_ssfx_gloss_method == 0
+    }
+
+    // The dynamic point / spot light list for this frame, 1:1 with the reference's own
+    // pre-pass:
+    //   r2_R_calculate.cpp:58-73   every STYPE_LIGHTSOURCE spatial -> Lights.add_light
+    //   Light_DB.cpp:219-227        add_light -> L->export_to(package[getVP()])
+    //   light.cpp:362-367            export_to, the unshadowed branch, is the switch
+    //                                between package.v_point and package.v_spot
+    //   r2_R_lights.cpp:33-48        isLightVisible(): the distance / behind-camera test
+    //   r2_R_lights.cpp:191-271      accum_point / accum_spot over those two vectors
+    // The registry this walks is bgfxDynamicLights() (bgfxRenderInterface.h), the port's
+    // stand-in for the reference's spatial query, which it cannot have: the port's light
+    // class is a plain IRender_Light and never registers a spatial.
+    //
+    // Not carried over, all of it a per-light shadow-map feature the port does not have
+    // and which is a separate stage: the bShadow split (light.cpp:305), the six omniparts
+    // a shadowed point becomes (light.cpp:307-356) and get_LOD()'s distance fade
+    // (light.cpp:382-388, which is 1 for an unshadowed light anyway). Every light is
+    // therefore accumulated as the reference's unshadowed element does.
+    u32 CollectDynamicLights(float* _pos, float* _color, float* _dir, float* _params, u32 _capacity)
+    {
+        // ps_r__opt_dist, the reference's own cull distance (xrRender_console.cpp:472).
+        const float kOptDist = 100.f;
+
+        const std::vector<bgfxLight*>& all = bgfxDynamicLights();
+        u32 count = 0;
+        for (u32 i = 0; i < all.size(); ++i)
+        {
+            if (count >= _capacity)
+            {
+                static bool s_warned = false;
+                if (!s_warned)
+                {
+                    s_warned = true;
+                    LogInfo("[BGFX] dynamic lights: %u in the registry, only the first %u are accumulated",
+                        (u32)all.size(), _capacity);
+                }
+                break;
+            }
+            bgfxLight* L = all[i];
+            if (!L)
+                continue;
+            // light::export_to, the unshadowed branch (light.cpp:362-367): only the
+            // omni and spot types reach the accumulators; DIRECT is the sun (the two
+            // CLight_DB sun objects, r2_types.h) and REFLECTED is render_indirect's
+            // synthetic light (r2_R_lights.cpp:274-313, driven by ps_r2_ls_flags GI).
+            if (L->m_type != IRender_Light::POINT && L->m_type != IRender_Light::SPOT)
+                continue;
+
+            // r2_R_lights.cpp:33-48, isLightVisible.
+            Fvector toLight;
+            toLight.sub(L->m_position, Device.vCameraPosition);
+            const float distance = toLight.magnitude();
+            toLight.normalize();
+            if (distance > kOptDist)
+                continue;
+            if (Device.vCameraDirection.dotproduct(toLight) < 0.f && distance > L->m_range)
+                continue;
+
+            // L_R = range * 0.95, the range both accumulators attenuate over
+            // (r4_rendertarget_accum_point.cpp:35, r4_rendertarget_accum_spot.cpp:148).
+            const float range = L->m_range * 0.95f;
+            Fvector L_pos, L_dir;
+            // accum_point.cpp:38 / accum_spot.cpp:126, the view-space position, and
+            // accum_spot.cpp:127-129, the view-space axis (transform_dir, then the
+            // normalize the reference spells out but never reaches - the cone lives in
+            // the vertices there, so this port needs the vector itself).
+            Device.mView.transform_tiny(L_pos, L->m_position);
+            Device.mView.transform_dir(L_dir, L->m_direction);
+            L_dir.normalize_safe();
+
+            float* p = _pos + count * 12;
+            p[0] = L_pos.x;
+            p[1] = L_pos.y;
+            p[2] = L_pos.z;
+            p[3] = 1.f / (range * range);   // accum_point.cpp:104 / accum_spot.cpp:149-150
+            p[4] = 0.f; p[5] = 0.f; p[6] = 0.f; p[7] = 0.f;
+            p[8] = 0.f; p[9] = 0.f; p[10] = 0.f; p[11] = 0.f;
+
+            // L_clr: accum_point.cpp:36 / accum_spot.cpp:123. accum_spot multiplies it
+            // by get_LOD() at :124, which is 1 for an unshadowed light (light.cpp:384),
+            // so both accumulators see the colour as it is here.
+            const float spec = u_diffuse2s(L->m_color.r, L->m_color.g, L->m_color.b);
+            float* c = _color + count * 12;
+            c[0] = L->m_color.r;
+            c[1] = L->m_color.g;
+            c[2] = L->m_color.b;
+            c[3] = spec;                    // L_spec = u_diffuse2s(L_clr)
+            c[4] = 0.f; c[5] = 0.f; c[6] = 0.f; c[7] = 0.f;
+            c[8] = 0.f; c[9] = 0.f; c[10] = 0.f; c[11] = 0.f;
+
+            float* d = _dir + count * 12;
+            d[0] = L_dir.x;
+            d[1] = L_dir.y;
+            d[2] = L_dir.z;
+            d[3] = 0.f;
+            d[4] = 0.f; d[5] = 0.f; d[6] = 0.f; d[7] = 0.f;
+            d[8] = 0.f; d[9] = 0.f; d[10] = 0.f; d[11] = 0.f;
+
+            float* q = _params + count * 4;
+            q[0] = (L->m_type == IRender_Light::SPOT) ? 1.f : 0.f;
+            // light.cpp:281, s = 2*range*tanf(cone/2) - the very factor the spot volume
+            // is scaled with, so this is the reference's own half-angle, not a fit.
+            q[1] = tanf(L->m_cone * 0.5f);
+            q[2] = 0.f;
+            q[3] = 0.f;
+
+            ++count;
+        }
+        return count;
+    }
+
+    // Feeds deferred_light_ps.sc with this frame's dynamic lights. Called from
+    // ResolvePass, i.e. once per frame, right before the submit that reads them.
+    void SetDynamicLightUniforms()
+    {
+        if (!bgfxIsValid(s_lightCount) || !bgfxIsValid(s_lights) || !bgfxIsValid(s_lightParams))
+            return;
+
+        s_lightData.assign(4 * 3 * kMaxDynamicLights, 0.f);
+        s_lightParamData.assign(4 * kMaxDynamicLights, 0.f);
+        const u32 count = CollectDynamicLights(
+            s_lightData.data(),
+            s_lightData.data() + 4 * kMaxDynamicLights,
+            s_lightData.data() + 8 * kMaxDynamicLights,
+            s_lightParamData.data(),
+            kMaxDynamicLights);
+
+        const float count4[4] = { (float)count, 0.f, 0.f, 0.f };
+        bgfx_set_uniform(s_lightCount, count4, 1);
+        bgfx_set_uniform(s_lights, s_lightData.data(), 3 * kMaxDynamicLights);
+        bgfx_set_uniform(s_lightParams, s_lightParamData.data(), kMaxDynamicLights);
+
+        // One line, the first frame that has lights: the only visible evidence that
+        // the accumulators are fed, since from inside the resolve they are just a sum.
+        static int s_logged = 0;
+        if (count > 0 && !s_logged)
+        {
+            s_logged = 1;
+            LogInfo("[BGFX] dynamic point/spot accumulators: %u of %u registered lights, first = pos(%f %f %f) range=%f cone=%f",
+                count, (u32)bgfxDynamicLights().size(),
+                s_lightData[0], s_lightData[1], s_lightData[2],
+                sqrtf(1.f / s_lightData[3]) / 0.95f,
+                atanf(s_lightParamData[1]) * 2.f);
+        }
     }
 }
 
@@ -2436,6 +2642,9 @@ namespace bgfxHDR
         // The sun shadow term of accum_sun_near.ps:69-72, i.e. the last piece the
         // reference multiplies into the sun lobe.
         SetShadowUniforms();
+        // The dynamic point / spot accumulators, i.e. accum_omni_unshadowed.ps and
+        // accum_base.ps over the volumes accum_point / accum_spot would have drawn.
+        SetDynamicLightUniforms();
         bgfx_set_texture(0, s_litSampler, s_hdrColor, 0);
         bgfx_set_texture(1, s_litPositionSampler, s_hdrPosition, 0);
         bgfx_set_texture(2, s_litGbufSampler, s_hdrGbuf, 0);

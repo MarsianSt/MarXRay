@@ -14,7 +14,13 @@ $input v_texcoord0
 //
 // Both specular halves are now ported 1:1: the sun lobe of compute_lighting
 // (lmodel.h:148-173) and hmodel's Amb_BRDF term (hmodel.h:145, the
-// EnvGGX/pbr_brdf.h:288-309 arm). The sun shadow term is ported 1:1 too: the
+// EnvGGX/pbr_brdf.h:288-309 arm). The dynamic point / spot accumulators are
+// ported 1:1 as well: accum_omni_unshadowed.ps and accum_base.ps, i.e. the
+// unshadowed elements CRenderTarget::accum_point / accum_spot select
+// (r4_rendertarget_accum_point.cpp:97-101, r4_rendertarget_accum_spot.cpp:139-143),
+// running the same plight_local (lmodel.h:190-207) over the same volumes the
+// reference's du_sphere / du_cone geometry describes. The sun shadow term is
+// ported 1:1 too: the
 // depth from the sun's point of view, sampled with the reference's PCSS kernel
 // (shadow.h:169-231) at ps_r_sun_quality = 1, i.e. 8 poisson taps and no
 // blocker search. The SSAO factor (combine_1.ps:128-159, computed by
@@ -95,6 +101,40 @@ uniform mat4 u_shadowMat;
 //       resolve then keeps the reference's no-map behaviour, i.e. s = 1
 //       (accum_sun.ps:26-32 with an unbound s_smap).
 uniform vec4 u_shadowParams;
+
+// ---------------------------------------------------------------- dynamic lights
+// The point / spot accumulators of the reference, 1:1:
+//   accum_omni_unshadowed.ps  (POINT, r4_rendertarget_accum_point.cpp:101 SE_L_UNSHADOWED)
+//   accum_base.ps             (SPOT,  r4_rendertarget_accum_spot.cpp:143  SE_L_UNSHADOWED)
+// Both read the G-buffer at the pixel, run plight_local (lmodel.h:190-207) and add
+// Ldynamic_color * light into the same rt_Accumulator the sun writes, which
+// combine_1.ps:114-166 sums with hdiffuse. This pass is that accumulator: the three
+// terms are summed here, at the same point of the same expression, and closed
+// through the same LinearTosRGB.
+//
+// bgfx has no stencil and no per-light geometry pass, so the volumes are not drawn
+// and not masked: they are evaluated per pixel against the exact solids the
+// reference's du_sphere / du_cone geometry describes (see the volume test in
+// main()). Everything else - the attenuation, the cone solid, the light colour,
+// the range factor and the BRDF - is the reference's own expression.
+//
+// Three vec4 per light, exactly the two vectors the accumulators bind plus the
+// cone axis:
+//   [0] Ldynamic_pos    (L_pos_view.xyz, 1/(L_R*L_R))   accum_point.cpp:104 / accum_spot.cpp:150
+//   [1] Ldynamic_color  (L_clr.rgb, L_spec)              accum_point.cpp:105 / accum_spot.cpp:151
+//   [2] the cone axis, view space (accum_spot.cpp:127-129 builds it for the
+//       geometry and leaves it commented out, because the cone lives in the
+//       vertices; the analytic volume test needs it explicitly)
+#define MAX_DYN_LIGHTS 32
+uniform vec4 u_lights[MAX_DYN_LIGHTS * 3];
+//   .x  1 for IRender_Light::SPOT, 0 for IRender_Light::POINT - the switch
+//        light::export_to makes between package.v_spot and package.v_point
+//        (light.cpp:364-365), which is the reference's own omni/spot split.
+//   .y  tan(cone/2), the very factor light::xform_calc scales the cone with
+//        (light.cpp:281, s = 2*range*tanf(cone/2)).
+uniform vec4 u_lightParams[MAX_DYN_LIGHTS];
+//   .x  number of lights in u_lights / u_lightParams this frame.
+uniform vec4 u_lightCount;
 
 // u_invView is the bgfx predefined per-view uniform (bgfx_shader.sh:836), the
 // mirror of the AXR m_inv_V that hmodel.h:48 multiplies the normal with; the
@@ -361,6 +401,89 @@ vec3 Amb_BRDF(float rough, vec3 albedo, vec3 f0, vec3 env_d, vec3 env_s, vec3 V,
     return diffuse_term + specular_term;
 }
 
+// lmodel.h:110-176 compute_lighting, the non-ES_PSEUDO_PBR branch, in full and
+// with nothing folded away, so the sun and both accumulators can share it. The two
+// inputs the reference reads from globals become arguments:
+//   mat_id   `m`, i.e. xmaterial with USE_R2_STATIC_SUN = 1/4 (common.h:17-18)
+//   lightW   the Ldynamic_color.w factor of lmodel.h:116 - `spec *= Ldynamic_color.w`
+//            then lmodel.h:120 linearises it. The sun passes L_DYNAMIC_W (see the
+//            comment on that constant); the accumulators pass L_spec, i.e.
+//            u_diffuse2s of the light colour (r2_types.h:160-172, bound at
+//            r4_rendertarget_accum_point.cpp:37/:105 and accum_spot.cpp:125/:151),
+//            so a point light really does scale its own specular the way the
+//            reference does.
+// Not ported, both for the reason already given on the material block above: the
+// s_material lookup at lmodel.h:133 (its result is overwritten at :147 and :151
+// before it is read) and the grass SSS at lmodel.h:158-163 (GBUF_MTL is 0.25, not
+// the flora id, so it is a no-op for the class this resolve lights).
+vec3 compute_lighting_lmodel(vec3 N, vec3 V, vec3 L, vec4 alb_gloss, float mat_id, float lightW)
+{
+    // lmodel.h:114-120
+    vec3 albedo = SRGBToLinearC(alb_gloss.rgb);
+    float spec = SRGBToLinearF(alb_gloss.a * lightW);
+
+    // lmodel.h:126-129
+    vec3 H = normalize(L + V);
+    float NdotL = saturate(dot(N, L));
+    float NdotH = saturate(dot(N, H));
+    float HdotL = saturate(dot(H, L));
+
+    // lmodel.h:113, :142-144
+    float metalness = ceil(mat_id - 0.75);
+    float gloss = saturate(mat_id / 0.75);
+    gloss -= 0.5 * metalness;
+    float exponent = ((gloss * 0.5) * 0.8) + 0.6;
+
+    // lmodel.h:146-147 - the non-LUT diffuse, over the linearised albedo.
+    vec3 diffuse = pow(NdotL, exponent) * ((exponent + 1.0) * 0.5);
+
+    // lmodel.h:150-151 - the Blinn lobe, the reference's own normalisation (written
+    // `2/8` there) and the grazing fade.
+    float glossiness = exp2(pow(gloss, 1.5) * 14.0);
+    float specular = pow(NdotH, glossiness) * (glossiness + 2.0 / 8.0) * saturate(4.0 * NdotL);
+
+    // lmodel.h:154-155 - non-PBR fresnel.
+    float f0 = lerp(0.04, 0.75, metalness);
+    specular *= lerp(f0, 1.0, pow(1.0 - HdotL, 5.0));
+
+    // lmodel.h:167 - the gloss channel as the specular mask.
+    specular *= spec;
+
+    // lmodel.h:170 - a metal surface tints its specular by its own diffuse.
+    vec3 metaltint = mix(vec3(1.0), albedo / max(dot(LUMINANCE, albedo), 0.01), metalness);
+
+    // lmodel.h:166, :173
+    return diffuse * albedo + specular * metaltint;
+}
+
+// lmodel.h:190-207 plight_local, the light model both accumulators run
+// (accum_omni_unshadowed.ps:41, accum_base.ps:50). Ldynamic_pos and Ldynamic_color
+// are the two vectors the reference binds per light, so they arrive whole:
+//   rsqr = dot(L2P, L2P); att = saturate(1 - rsqr * light_range_rsq)
+// The .w of Ldynamic_pos is that 1/(L_R*L_R) with L_R = range * 0.95
+// (r4_rendertarget_accum_point.cpp:35/:104, r4_rendertarget_accum_spot.cpp:148/:150),
+// so the attenuation term needs no reconstruction here.
+// The ES_PSEUDO_PBR arm of lmodel.h:56-84 - the one that is not compiled in this
+// build - carries an extra rsqr = max(rsqr, 0.1) clamp; the branch that runs does
+// not, so it is not here either.
+vec3 plight_local(vec3 pnt, vec3 normal, vec4 alb_gloss, vec4 Ldynamic_pos, vec4 Ldynamic_color)
+{
+    vec3 L2P = pnt - Ldynamic_pos.xyz;
+    float rsqr = dot(L2P, L2P);
+
+    float att = saturate(1.0 - rsqr * Ldynamic_pos.w);
+    att = SRGBToLinearF(att);
+
+    vec3 N = normalize(normal);
+    vec3 V = normalize(-pnt);
+    vec3 L = normalize(-L2P);
+
+    // accum_omni_unshadowed.ps:50 / accum_base.ps:88: Ldynamic_color * light, with
+    // the lightmap (spot) and the shadow (off in both unshadowed elements) at their
+    // own reference defaults of 1 - accum_base.ps:69 and :63.
+    return Ldynamic_color.rgb * (att * compute_lighting_lmodel(N, V, L, alb_gloss, GBUF_MTL, Ldynamic_color.w));
+}
+
 // ---------------------------------------------------------------- shadow term
 // The sun shadow of accum_sun_near.ps:69-72
 //     float4 P4 = float4(_P.xyz + NormalOffset, 1.0);
@@ -474,67 +597,22 @@ void main()
     // way for the ambient stored in the accumulator alpha.
     vec3 albedo = SRGBToLinearC(D.rgb);
 
-    // The G-buffer diffuse the reference hands to both halves as alb_gloss. Its
-    // alpha is the gloss channel, which the port does not store (see DEF_GLOSS),
-    // so it is filled with the reference's own literal.
+    // The G-buffer diffuse the reference hands to every half below as alb_gloss. Its
+    // alpha is the gloss channel, which the port does not store (see DEF_GLOSS), so
+    // it is filled with the reference's own literal. lmodel.h:116 then scales it by
+    // the light's own Ldynamic_color.w inside compute_lighting_lmodel; hmodel.h:143
+    // spends the same gloss without that factor, so the ambient keeps its own copy
+    // below (specAmbient) rather than sharing the one the light model makes.
     vec4 alb_gloss = vec4(D.rgb, DEF_GLOSS);
-
-    // lmodel.h:113-120 - the sun's specular mask: the gloss channel scaled by
-    // the dynamic light alpha, then linearised. hmodel.h:143 spends the same
-    // gloss without the Ldynamic_color.w factor, so the ambient keeps its own
-    // copy below rather than sharing this one.
-    float specSun = SRGBToLinearF(DEF_GLOSS * L_DYNAMIC_W);
 
     // ----- sun: accum_sun.ps:23-35
     // plight_infinity (lmodel.h:180-183): L = -normalize(light_direction) with
     // light_direction = Ldynamic_dir, which the port's u_sunDir already is in
-    // view space; V = -normalize(pnt) with pnt the view-space position.
+    // view space; V = -normalize(pnt) with pnt the view-space position. The whole
+    // lobe is lmodel.h:110-176 with Ldynamic_color.w = L_DYNAMIC_W.
     vec3 L = -normalize(u_sunDir.xyz);
     vec3 V = -normalize(P);
-    float NdotL = saturate(dot(N, L));
-
-    // lmodel.h:126-129, the half vector and the two dot products only the
-    // specular lobe consumes.
-    vec3 H = normalize(L + V);
-    float NdotH = saturate(dot(N, H));
-    float HdotL = saturate(dot(H, L));
-
-    // lmodel.h:142, :146-147 - the non-LUT diffuse of the non-ES_PSEUDO_PBR
-    // branch, with the s_material lookup of lmodel.h:133 skipped (dead there,
-    // see the material block above):
-    //   metalness = ceil(mat_id - 0.75)
-    //   gloss     = saturate(mat_id/0.75) - 0.5*metalness
-    //   exponent  = ((gloss*0.5)*0.8) + 0.6
-    //   light.rgb = pow(NdotL, exponent) * ((exponent + 1.0) * 0.5)
-    float metalness = ceil(GBUF_MTL - 0.75);
-    float gloss = saturate(GBUF_MTL / 0.75);
-    gloss -= 0.5 * metalness;
-    float exponent = ((gloss * 0.5) * 0.8) + 0.6;
-    float sunDiffuse = pow(NdotL, exponent) * ((exponent + 1.0) * 0.5);
-
-    // lmodel.h:150-151 - the specular lobe. glossiness = exp2(gloss^1.5 * 14),
-    // which at gloss = 1/3 is 32, i.e. a narrow Blinn lobe; the (g+2)/8 term is
-    // the reference's Blinn normalisation (written `2/8` there) and
-    // saturate(4*NdotL) the grazing fade.
-    float glossiness = exp2(pow(gloss, 1.5) * 14.0);
-    float sunSpecular = pow(NdotH, glossiness) * (glossiness + 2.0 / 8.0) * saturate(4.0 * NdotL);
-
-    // lmodel.h:154-155 - non-PBR fresnel, f0 = lerp(0.04, 0.75, metalness).
-    float f0 = lerp(0.04, 0.75, metalness);
-    sunSpecular *= lerp(f0, 1.0, pow(1.0 - HdotL, 5.0));
-
-    // lmodel.h:167 - the gloss channel as the specular mask.
-    sunSpecular *= specSun;
-
-    // lmodel.h:170 - a metal surface tints its specular by its own diffuse.
-    // mat_id = GBUF_MTL is 0.25 here, far below the 0.75 metal threshold, so
-    // calc_metalness/ceil() both give 0 and metaltint is the reference's 1.0.
-    vec3 metaltint = mix(vec3(1.0), albedo / max(dot(LUMINANCE, albedo), 0.01), metalness);
-
-    // lmodel.h:166, :173 - light.rgb = light.rgb*albedo and
-    // light.rgb += light.www*metaltint, i.e. the lobe above enters already
-    // masked by the gloss channel.
-    vec3 sun = sunDiffuse * albedo + sunSpecular * metaltint;
+    vec3 sun = compute_lighting_lmodel(N, V, L, alb_gloss, GBUF_MTL, L_DYNAMIC_W);
 
     // accum_sun.ps:26-32 / accum_sun_near.ps:69-72 - the shadow term s, which
     // multiplies the whole sun lobe.
@@ -567,6 +645,55 @@ void main()
     // scales the product exactly as accum_sun_near.ps:81 return float4(
     // Ldynamic_color * light * s) does.
     sun *= sShadow * SRGBToLinearC(u_sunColor.rgb);
+
+    // ----- dynamic point / spot accumulators
+    // r4_R_lights.cpp:191-209 and :248-271 walk package.v_point / package.v_spot
+    // and call accum_point / accum_spot, which add their volume into the same
+    // rt_Accumulator the sun just wrote; combine_1.ps:114-166 then sums it with
+    // hdiffuse. Here the two walks collapse into the loop below: the same lights,
+    // the same volumes, the same plight_local, summed into the same total.
+    vec3 dynamic = vec3(0.0);
+    for (int i = 0; i < int(u_lightCount.x); ++i)
+    {
+        vec4 LdynPos = u_lights[i * 3 + 0];
+        vec4 LdynColor = u_lights[i * 3 + 1];
+        vec4 LdynDir = u_lights[i * 3 + 2];
+        vec4 lparam = u_lightParams[i];
+
+        if (lparam.x > 0.5)
+        {
+            // SPOT. The reference draws the solid of du_cone
+            // (r4_rendertarget_accum_spot_geom.cpp:7-27): apex at the origin, a
+            // base circle of radius 0.5 at z = 1 and its centre at z = 1 + EPS_L,
+            // i.e. 18 vertices and 32 triangles, scaled by light::xform_calc
+            // (light.cpp:278-285) with s = 2*range*tan(cone/2) on x/y and range on
+            // z. In the light's own frame that solid is exactly
+            //     0 <= z <= range   and   |xy| <= z * tan(cone/2)
+            // and nothing else - there is no cone falloff in the shader, the cone
+            // edge is the edge of the drawn geometry (accum_base.ps has no cone
+            // term at all). Of the two conditions, z <= range is already enforced
+            // by the attenuation: att = saturate(1 - rsqr * light_range_rsq) is
+            // zero from rsqr = (range*0.95)^2 outwards, i.e. for every z > range.
+            // So the apex plane and the lateral cone are the whole of the volume
+            // test, and the direction is transformed as a direction
+            // (accum_spot.cpp:127-129, transform_dir + normalize) because the view
+            // matrix is a rotation and the angle is what the test measures.
+            vec3 L2P = P - LdynPos.xyz;
+            float z = dot(L2P, LdynDir.xyz);
+            if (z <= 0.0)
+                continue;
+            float lateralSq = dot(L2P, L2P) - z * z;
+            float tanHalf = lparam.y;
+            if (lateralSq > z * z * tanHalf * tanHalf)
+                continue;
+        }
+        // POINT needs no test: du_sphere (r4_rendertarget_accum_point_geom.cpp)
+        // scaled by range (light.cpp:270-276) is the ball of radius range, which
+        // is exactly the region where att is non-zero, so the geometry and the
+        // attenuation describe the same solid and the shader is free of it.
+
+        dynamic += plight_local(P, N, alb_gloss, LdynPos, LdynColor);
+    }
 
     // ----- hemi ambient: hmodel.h, the diffuse half of combine_1.ps:166
     //   hmodel.h:47-48  nw = normalize(mul(m_inv_V, normal)), world space, the
@@ -602,7 +729,7 @@ void main()
 
     // hmodel.h:35, :39 - the roughness, and hmodel.h:44 the mip it filters the
     // cube with. calc_rough reads the raw gloss of alb_gloss, not the
-    // linearised specSun.
+    // linearised spec the light model makes.
     float roughCube = calc_rough(alb_gloss, GBUF_MTL);
     float roughMip = CUBE_MIPS - ((1.0 - roughCube) * CUBE_MIPS);
 
@@ -643,10 +770,13 @@ void main()
     vec3 ambient = (env_d * albedo) * occ + ambientSpecular * (specAmbient * 2.0);
 
     // combine_1.ps:187-188 sums the two halves into the linear accumulator and
-    // then gamma-corrects it: color = LinearTosRGB(L.rgb + hdiffuse.rgb). The
-    // bgfx post chain expects the same encoding at this point - combine_ps.sc
+    // then gamma-corrects it: color = LinearTosRGB(L.rgb + hdiffuse.rgb). L is the
+    // accumulator, which by then holds the sun lobe of accum_sun.ps and every
+    // point / spot volume the accumulator passes added (r4_R_lights.cpp:191-271),
+    // so the dynamic term joins the sum in exactly that place.
+    // The bgfx post chain expects the same encoding at this point - combine_ps.sc
     // hands the value to tonemap(), whose first act is SRGBToLinear (see the
     // comment on tonemap() there) - so the resolve has to close the same round
     // trip the reference does.
-    gl_FragColor = vec4(LinearTosRGB(sun + ambient), 1.0);
+    gl_FragColor = vec4(LinearTosRGB(sun + dynamic + ambient), 1.0);
 }

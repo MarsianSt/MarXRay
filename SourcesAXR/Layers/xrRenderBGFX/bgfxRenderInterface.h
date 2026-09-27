@@ -5,6 +5,9 @@
 #include "bgfxUIState.h"
 #include "..\..\Include\xrRender\RenderFactory.h"
 
+#include <algorithm>
+#include <vector>
+
 #ifndef ENGINE_API
 #define ENGINE_API
 #endif
@@ -90,6 +93,22 @@ public:
     virtual void set_moveable(bool b) override { m_moveable = b; }
     virtual void set_flare(bool b) override { m_flare = b; }
 };
+
+// The set of live dynamic lights, the bgfx stand-in for the AXR light database
+// (SourcesAXR/Layers/xrRender/Light_DB.cpp) that the STYPE_LIGHTSOURCE spatial
+// query refills every frame (r2_R_calculate.cpp:58-73) and that
+// light::export_to (light.cpp:362-367) splits into package.v_point / package.v_spot.
+// The reference reaches the lights through ISpatial, because its own light class
+// derives from it; the port's light class is a plain IRender_Light with no spatial
+// registration, so this registry is the only place the set exists. bgfxHDR's
+// resolve pass walks it once per frame and fills the uniform the accumulators read
+// (deferred_light_ps.sc). Order is creation order, which is the order the reference
+// sees them in too - the spatial query returns them in DB order, not sorted.
+inline std::vector<bgfxLight*>& bgfxDynamicLights()
+{
+    static std::vector<bgfxLight*> s_lights;
+    return s_lights;
+}
 
 // ---------------------------------------------------------------------------
 // Stub dynamic glow.
@@ -219,8 +238,17 @@ public:
     virtual void ros_destroy(IRender_ObjectSpecific*& p) override { xr_delete(p); }
 
     // Lighting/glowing
-    virtual IRender_Light* light_create() override { return xr_new<bgfxLight>(); }
-    virtual void light_destroy(IRender_Light* p_) override {}
+    virtual IRender_Light* light_create() override
+    {
+        bgfxLight* L = xr_new<bgfxLight>();
+        bgfxDynamicLights().push_back(L);
+        return L;
+    }
+    virtual void light_destroy(IRender_Light* p_) override
+    {
+        std::vector<bgfxLight*>& v = bgfxDynamicLights();
+        v.erase(std::remove(v.begin(), v.end(), static_cast<bgfxLight*>(p_)), v.end());
+    }
     virtual IRender_Glow* glow_create() override { return xr_new<bgfxGlow>(); }
     virtual void glow_destroy(IRender_Glow* p_) override {}
 
