@@ -21,6 +21,7 @@ namespace
 #define DDPF_FOURCC     0x00000004
 #define DDPF_RGB        0x00000040
 #define DDPF_ALPHA      0x00000002
+#define DDPF_LUMINANCE  0x00020000
 #define DDSD_MIPMAPCOUNT 0x00020000
 
 #define FOURCC(a, b, c, d) ((u32)(a) | ((u32)(b) << 8) | ((u32)(c) << 16) | ((u32)(d) << 24))
@@ -138,6 +139,61 @@ bgfx_texture_handle_t LoadDDSTexture(IReader* file, unsigned int& outW, unsigned
                 }
                 const bgfx_memory_t* memA8 = bgfx_copy(rgba, mipBytes);
                 tex = bgfx_create_texture_2d((u16)w, (u16)h, false, 1, fmt, flags, memA8, 0);
+                xr_free(rgba);
+
+                if (bgfxIsValid(tex))
+                {
+                    outW = w;
+                    outH = h;
+                }
+                break;
+            }
+            else if (!isDxt && isRgb && hdr.ddspf.rgbBitCount == 24)
+            {
+                // 24-bit BGR (SMAA AreaTexDX10): expand to BGRA8, lossless
+                // (BGR bytes + opaque alpha). Level 0 only, like the A8 branch:
+                // all current consumers sample it with explicit Lod 0.
+                fmt = BGFX_TEXTURE_FORMAT_BGRA8;
+                u32 mipBytes = w * h * 4;
+
+                u8* rgba = (u8*)xr_malloc(mipBytes);
+                const u8* src = data + 4 + sizeof(DdsHeader);
+                for (u32 i = 0; i < w * h; i++)
+                {
+                    rgba[i * 4 + 0] = src[i * 3 + 0];
+                    rgba[i * 4 + 1] = src[i * 3 + 1];
+                    rgba[i * 4 + 2] = src[i * 3 + 2];
+                    rgba[i * 4 + 3] = 255;
+                }
+                const bgfx_memory_t* memRGB = bgfx_copy(rgba, mipBytes);
+                tex = bgfx_create_texture_2d((u16)w, (u16)h, false, 1, fmt, flags, memRGB, 0);
+                xr_free(rgba);
+
+                if (bgfxIsValid(tex))
+                {
+                    outW = w;
+                    outH = h;
+                }
+                break;
+            }
+            else if (!isDxt && !isRgb && (hdr.ddspf.flags & DDPF_LUMINANCE) && hdr.ddspf.rgbBitCount == 8)
+            {
+                // 8-bit luminance (SMAA SearchTex): expand RGB=lum, A=255.
+                // Level 0 only, same rationale as above.
+                fmt = BGFX_TEXTURE_FORMAT_RGBA8;
+                u32 mipBytes = w * h * 4;
+
+                u8* rgba = (u8*)xr_malloc(mipBytes);
+                const u8* src = data + 4 + sizeof(DdsHeader);
+                for (u32 i = 0; i < w * h; i++)
+                {
+                    rgba[i * 4 + 0] = src[i];
+                    rgba[i * 4 + 1] = src[i];
+                    rgba[i * 4 + 2] = src[i];
+                    rgba[i * 4 + 3] = 255;
+                }
+                const bgfx_memory_t* memL8 = bgfx_copy(rgba, mipBytes);
+                tex = bgfx_create_texture_2d((u16)w, (u16)h, false, 1, fmt, flags, memL8, 0);
                 xr_free(rgba);
 
                 if (bgfxIsValid(tex))

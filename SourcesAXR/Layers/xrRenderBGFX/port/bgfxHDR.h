@@ -14,6 +14,13 @@ namespace bgfxHDR
     const bgfx_view_id_t kBloomBlurHView = 11;
     const bgfx_view_id_t kBloomBlurVView = 12;
     const bgfx_view_id_t kGbufDebugView = 13;
+    // SMAA (AXR blender_smaa + rendertarget_phase_smaa.cpp, CryRay port of
+    // iryoku SMAA ULTRA, color edge detection): edge -> blend weights ->
+    // neighbourhood resolve. Runs on the combine LDR output, resolves into
+    // the backbuffer before the UI views.
+    const bgfx_view_id_t kSmaaEdgeView = 14;
+    const bgfx_view_id_t kSmaaBlendView = 15;
+    const bgfx_view_id_t kSmaaResolveView = 16;
 
     bool CreateHDRTarget(uint16_t _width, uint16_t _height);
     void DestroyHDRTarget();
@@ -23,6 +30,10 @@ namespace bgfxHDR
     bool LuminancePass();
     bool BloomPass();
     bool CombinePass(uint16_t _width, uint16_t _height);
+    // SMAA resolve of the combine output. Returns false (drawing nothing)
+    // when SMAA is unavailable; CombinePass then targets the backbuffer
+    // directly, so the frame stays intact either way.
+    bool SMAAPass(uint16_t _width, uint16_t _height);
     // Stage-1 G-buffer inspector: draws one of the four attachment views over
     // the combine result. Returns false when the inspector is disabled, which is
     // the default (no env var set), so the frame is untouched.

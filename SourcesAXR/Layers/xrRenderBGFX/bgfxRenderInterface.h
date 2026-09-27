@@ -262,6 +262,9 @@ public:
         bgfxHDR::LuminancePass();
         bgfxHDR::BloomPass();
         bgfxHDR::CombinePass((u16)Device.dwWidth, (u16)Device.dwHeight);
+        // SMAA resolve of the combine LDR output (AXR blender_smaa). Falls back
+        // to direct combine-to-backbuffer inside CombinePass when unavailable.
+        bgfxHDR::SMAAPass((u16)Device.dwWidth, (u16)Device.dwHeight);
         // Stage-1 G-buffer inspector. Off unless XRGBUF_DEBUG is set, in which
         // case it repaints the finished frame with one attachment view. It has
         // to come after the combine (own view kGbufDebugView, ordered in

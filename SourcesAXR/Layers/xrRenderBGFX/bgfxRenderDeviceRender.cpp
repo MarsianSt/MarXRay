@@ -366,15 +366,37 @@ void bgfxRenderDeviceRender::Begin()
     bgfx_set_view_mode(bgfxHDR::kGbufDebugView, BGFX_VIEW_MODE_SEQUENTIAL);
     bgfx_touch(bgfxHDR::kGbufDebugView);
 
+    // SMAA (AXR blender_smaa + rendertarget_phase_smaa.cpp): edge -> weights ->
+    // resolve. Views always exist in the order; bgfxHDR::SMAAPass submits into
+    // them only when its targets/programs/textures are ready, otherwise the
+    // combine presents to the backbuffer directly and empty views draw nothing.
+    bgfx_set_view_frame_buffer(bgfxHDR::kSmaaEdgeView, BGFX_INVALID_HANDLE);
+    bgfx_set_view_rect(bgfxHDR::kSmaaEdgeView, 0, 0, (uint16_t)m_width, (uint16_t)m_height);
+    bgfx_set_view_clear(bgfxHDR::kSmaaEdgeView, BGFX_CLEAR_NONE, 0, 1.0f, 0);
+    bgfx_set_view_mode(bgfxHDR::kSmaaEdgeView, BGFX_VIEW_MODE_SEQUENTIAL);
+    bgfx_touch(bgfxHDR::kSmaaEdgeView);
+    bgfx_set_view_frame_buffer(bgfxHDR::kSmaaBlendView, BGFX_INVALID_HANDLE);
+    bgfx_set_view_rect(bgfxHDR::kSmaaBlendView, 0, 0, (uint16_t)m_width, (uint16_t)m_height);
+    bgfx_set_view_clear(bgfxHDR::kSmaaBlendView, BGFX_CLEAR_NONE, 0, 1.0f, 0);
+    bgfx_set_view_mode(bgfxHDR::kSmaaBlendView, BGFX_VIEW_MODE_SEQUENTIAL);
+    bgfx_touch(bgfxHDR::kSmaaBlendView);
+    bgfx_set_view_frame_buffer(bgfxHDR::kSmaaResolveView, BGFX_INVALID_HANDLE);
+    bgfx_set_view_rect(bgfxHDR::kSmaaResolveView, 0, 0, (uint16_t)m_width, (uint16_t)m_height);
+    bgfx_set_view_clear(bgfxHDR::kSmaaResolveView, BGFX_CLEAR_NONE, 0, 1.0f, 0);
+    bgfx_set_view_mode(bgfxHDR::kSmaaResolveView, BGFX_VIEW_MODE_SEQUENTIAL);
+    bgfx_touch(bgfxHDR::kSmaaResolveView);
+
     // Frame order: scene -> scene FX -> luminance -> bloom (build/H/V) -> combine
-    // -> G-buffer inspector -> leftovers.
+    // -> SMAA (edge/weights/resolve) -> G-buffer inspector -> leftovers.
     // The bloom views sit between the luminance chain and the combine so bgfxHDR::BloomPass
     // reads the HDR target of this frame and combine_bloom() reads this frame's rt_Bloom_1.
-    // The inspector runs after the combine because it repaints the finished frame.
+    // SMAA resolves the combine LDR output into the backbuffer; the inspector
+    // runs after the resolve because it repaints the finished frame.
     const bgfx_view_id_t order[] = { 0, bgfxHDR::kSceneFxView, bgfxHDR::kLuminance64View,
         bgfxHDR::kLuminance8View, bgfxHDR::kLuminance1View,
         bgfxHDR::kBloomBuildView, bgfxHDR::kBloomBlurHView, bgfxHDR::kBloomBlurVView,
-        bgfxHDR::kCombineView, bgfxHDR::kGbufDebugView, 1, 3, 4, 5 };
+        bgfxHDR::kCombineView, bgfxHDR::kSmaaEdgeView, bgfxHDR::kSmaaBlendView,
+        bgfxHDR::kSmaaResolveView, bgfxHDR::kGbufDebugView, 1, 3, 4, 5 };
     bgfx_set_view_order(0, sizeof(order) / sizeof(order[0]), order);
 }
 

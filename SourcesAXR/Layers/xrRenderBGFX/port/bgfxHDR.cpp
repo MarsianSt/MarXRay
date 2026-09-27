@@ -3,6 +3,7 @@
 
 #include "bgfxHDR.h"
 #include "../bgfxShaderCompiler.h"
+#include "../bgfxUIShader.h"
 #include "../../../xrEngine/device.h"
 #include "../../../xrEngine/x_ray.h"
 #include "../../../xrEngine/IGame_Persistent.h"
@@ -113,6 +114,32 @@ namespace
     bgfx_vertex_layout_t s_bloomLayout = {};
     bool s_bloomLayoutReady = false;
     bgfx_texture_format_t s_bloomFormat = BGFX_TEXTURE_FORMAT_RGBA8;
+
+    // SMAA working set (AXR blender_smaa.cpp + rendertarget_phase_smaa.cpp).
+    // Combine renders its LDR output into s_smaaInput; edge/blend passes run
+    // on full-res RGBA8 targets; resolve writes into the backbuffer. Stencil
+    // from the reference (edge ALWAYS/REPLACE, weights EQUAL) is skipped on
+    // purpose: it is only a fill-rate optimisation, the weights are zero
+    // outside edges either way, so the output is identical.
+    bgfx_frame_buffer_handle_t s_smaaInputFb = BGFX_INVALID_HANDLE;
+    bgfx_frame_buffer_handle_t s_smaaEdgesFb = BGFX_INVALID_HANDLE;
+    bgfx_frame_buffer_handle_t s_smaaBlendFb = BGFX_INVALID_HANDLE;
+    bgfx_texture_handle_t s_smaaInput = BGFX_INVALID_HANDLE;
+    bgfx_texture_handle_t s_smaaEdges = BGFX_INVALID_HANDLE;
+    bgfx_texture_handle_t s_smaaBlend = BGFX_INVALID_HANDLE;
+    bgfx_texture_handle_t s_smaaAreaTex = BGFX_INVALID_HANDLE;
+    bgfx_texture_handle_t s_smaaSearchTex = BGFX_INVALID_HANDLE;
+    bgfx_program_handle_t s_smaaEdgeProgram = BGFX_INVALID_HANDLE;
+    bgfx_program_handle_t s_smaaBlendProgram = BGFX_INVALID_HANDLE;
+    bgfx_program_handle_t s_smaaResolveProgram = BGFX_INVALID_HANDLE;
+    bgfx_uniform_handle_t s_smaaImage = BGFX_INVALID_HANDLE;
+    bgfx_uniform_handle_t s_smaaEdgesU = BGFX_INVALID_HANDLE;
+    bgfx_uniform_handle_t s_smaaArea = BGFX_INVALID_HANDLE;
+    bgfx_uniform_handle_t s_smaaSearch = BGFX_INVALID_HANDLE;
+    bgfx_uniform_handle_t s_smaaBlendU = BGFX_INVALID_HANDLE;
+    bgfx_uniform_handle_t s_smaaMetrics = BGFX_INVALID_HANDLE;
+    uint16_t s_smaaWidth = 0;
+    uint16_t s_smaaHeight = 0;
 
     // Defaults mirror SourcesAXR/Layers/xrRender/xrRender_console.cpp:276-279; xrRender is not linked into BGFX.
     constexpr float kTonemapMiddleGray = 0.95f;
@@ -789,6 +816,15 @@ namespace
 
 namespace bgfxHDR
 {
+    // SMAA helpers are defined after CombinePass below (they reuse its
+    // layout/uniform patterns); forward declarations for the earlier callers.
+    void DestroySmaaTargets();
+    void DestroySmaaPrograms();
+    bool EnsureSmaaTargets(uint16_t _width, uint16_t _height);
+    bool EnsureSmaaPrograms();
+    bool EnsureSmaaTextures();
+    bool IsSmaaReady(uint16_t _width, uint16_t _height);
+
     bool CreateHDRTarget(uint16_t _width, uint16_t _height)
     {
         if (_width == 0 || _height == 0)
@@ -922,12 +958,17 @@ namespace bgfxHDR
         DestroyBloomTargets();
         DestroyLuminancePrograms();
         DestroyLuminanceTargets();
+        DestroySmaaTargets();
+        DestroySmaaPrograms();
     }
 
     bool RecreateOnResize(uint16_t _width, uint16_t _height)
     {
         if (bgfxIsValid(s_hdrFb) && s_width == _width && s_height == _height)
             return EnsureLuminanceTargets() && EnsureBloomTargets() && EnsureBloomPrograms() && EnsureCombineProgram();
+        // Full-res SMAA targets follow the window size; drop them here, the
+        // passes recreate them lazily at the new size.
+        DestroySmaaTargets();
         return CreateHDRTarget(_width, _height);
     }
 
@@ -1101,7 +1142,14 @@ namespace bgfxHDR
             { -1.0f,  3.0f, 0.0f, 0.0f, -1.0f },
         };
 
-        bgfx_set_view_frame_buffer(kCombineView, BGFX_INVALID_HANDLE);
+        // With SMAA ready the combine feeds the SMAA input target and the
+        // resolve pass presents to the backbuffer; otherwise combine presents
+        // directly (SMAAPass then draws nothing), so the frame stays intact.
+        // (No ternary: bgfx frame-buffer handles are structs, not scalars.)
+        if (IsSmaaReady(_width, _height))
+            bgfx_set_view_frame_buffer(kCombineView, s_smaaInputFb);
+        else
+            bgfx_set_view_frame_buffer(kCombineView, BGFX_INVALID_HANDLE);
         bgfx_set_view_rect(kCombineView, 0, 0, _width, _height);
         bgfx_set_view_clear(kCombineView, BGFX_CLEAR_NONE, 0, 1.0f, 0);
         bgfx_set_view_mode(kCombineView, BGFX_VIEW_MODE_SEQUENTIAL);
@@ -1133,6 +1181,243 @@ namespace bgfxHDR
             bgfx_set_texture(3, s_bloomSampler, bloom, 0);
         bgfx_set_uniform(s_exposure, exposure, 1);
         bgfx_submit(kCombineView, s_combineProgram, 0, BGFX_DISCARD_ALL);
+        return true;
+    }
+
+    void DestroySmaaTargets()
+    {
+        if (bgfxIsValid(s_smaaInputFb))
+            bgfx_destroy_frame_buffer(s_smaaInputFb);
+        if (bgfxIsValid(s_smaaEdgesFb))
+            bgfx_destroy_frame_buffer(s_smaaEdgesFb);
+        if (bgfxIsValid(s_smaaBlendFb))
+            bgfx_destroy_frame_buffer(s_smaaBlendFb);
+        s_smaaInputFb = BGFX_INVALID_HANDLE;
+        s_smaaEdgesFb = BGFX_INVALID_HANDLE;
+        s_smaaBlendFb = BGFX_INVALID_HANDLE;
+        if (bgfxIsValid(s_smaaInput))
+            bgfx_destroy_texture(s_smaaInput);
+        if (bgfxIsValid(s_smaaEdges))
+            bgfx_destroy_texture(s_smaaEdges);
+        if (bgfxIsValid(s_smaaBlend))
+            bgfx_destroy_texture(s_smaaBlend);
+        s_smaaInput = BGFX_INVALID_HANDLE;
+        s_smaaEdges = BGFX_INVALID_HANDLE;
+        s_smaaBlend = BGFX_INVALID_HANDLE;
+        s_smaaWidth = 0;
+        s_smaaHeight = 0;
+    }
+
+    void DestroySmaaPrograms()
+    {
+        if (bgfxIsValid(s_smaaEdgeProgram))
+            bgfx_destroy_program(s_smaaEdgeProgram);
+        if (bgfxIsValid(s_smaaBlendProgram))
+            bgfx_destroy_program(s_smaaBlendProgram);
+        if (bgfxIsValid(s_smaaResolveProgram))
+            bgfx_destroy_program(s_smaaResolveProgram);
+        s_smaaEdgeProgram = BGFX_INVALID_HANDLE;
+        s_smaaBlendProgram = BGFX_INVALID_HANDLE;
+        s_smaaResolveProgram = BGFX_INVALID_HANDLE;
+        if (bgfxIsValid(s_smaaImage))
+            bgfx_destroy_uniform(s_smaaImage);
+        if (bgfxIsValid(s_smaaEdgesU))
+            bgfx_destroy_uniform(s_smaaEdgesU);
+        if (bgfxIsValid(s_smaaArea))
+            bgfx_destroy_uniform(s_smaaArea);
+        if (bgfxIsValid(s_smaaSearch))
+            bgfx_destroy_uniform(s_smaaSearch);
+        if (bgfxIsValid(s_smaaBlendU))
+            bgfx_destroy_uniform(s_smaaBlendU);
+        if (bgfxIsValid(s_smaaMetrics))
+            bgfx_destroy_uniform(s_smaaMetrics);
+        s_smaaImage = BGFX_INVALID_HANDLE;
+        s_smaaEdgesU = BGFX_INVALID_HANDLE;
+        s_smaaArea = BGFX_INVALID_HANDLE;
+        s_smaaSearch = BGFX_INVALID_HANDLE;
+        s_smaaBlendU = BGFX_INVALID_HANDLE;
+        s_smaaMetrics = BGFX_INVALID_HANDLE;
+        if (bgfxIsValid(s_smaaAreaTex))
+            bgfx_destroy_texture(s_smaaAreaTex);
+        if (bgfxIsValid(s_smaaSearchTex))
+            bgfx_destroy_texture(s_smaaSearchTex);
+        s_smaaAreaTex = BGFX_INVALID_HANDLE;
+        s_smaaSearchTex = BGFX_INVALID_HANDLE;
+    }
+
+    bool EnsureSmaaTextures()
+    {
+        if (bgfxIsValid(s_smaaAreaTex) && bgfxIsValid(s_smaaSearchTex))
+            return true;
+        unsigned int w = 0, h = 0;
+        if (!bgfxIsValid(s_smaaAreaTex))
+        {
+            if (!bgfxLoadWorldTexture("shaders\\smaa_area_tex_dx10", s_smaaAreaTex, w, h) &&
+                !bgfxLoadWorldTexture("shaders\\smaa_area_tex_dx9", s_smaaAreaTex, w, h))
+            {
+                LogError("[BGFX] SMAA area texture load failed, SMAA disabled");
+                return false;
+            }
+            LogInfo("[BGFX] SMAA area texture %ux%u", w, h);
+        }
+        if (!bgfxIsValid(s_smaaSearchTex))
+        {
+            if (!bgfxLoadWorldTexture("shaders\\smaa_search_tex", s_smaaSearchTex, w, h))
+            {
+                LogError("[BGFX] SMAA search texture load failed, SMAA disabled");
+                return false;
+            }
+            LogInfo("[BGFX] SMAA search texture %ux%u", w, h);
+        }
+        return bgfxIsValid(s_smaaAreaTex) && bgfxIsValid(s_smaaSearchTex);
+    }
+
+    bool EnsureSmaaPrograms()
+    {
+        if (bgfxIsValid(s_smaaEdgeProgram) && bgfxIsValid(s_smaaBlendProgram) &&
+            bgfxIsValid(s_smaaResolveProgram) && bgfxIsValid(s_smaaImage) &&
+            bgfxIsValid(s_smaaEdgesU) && bgfxIsValid(s_smaaArea) &&
+            bgfxIsValid(s_smaaSearch) && bgfxIsValid(s_smaaBlendU) &&
+            bgfxIsValid(s_smaaMetrics))
+            return true;
+        DestroySmaaPrograms();
+        if (!s_combineLayoutReady)
+        {
+            LogError("[BGFX] SMAA needs the combine vertex layout");
+            return false;
+        }
+        s_smaaEdgeProgram = BuildProgram("smaa_vs.sc", "smaa_edge_ps.sc");
+        s_smaaBlendProgram = BuildProgram("smaa_vs.sc", "smaa_blend_ps.sc");
+        s_smaaResolveProgram = BuildProgram("smaa_vs.sc", "smaa_resolve_ps.sc");
+        s_smaaImage = bgfx_create_uniform("s_smaaImage", BGFX_UNIFORM_TYPE_SAMPLER, 1);
+        s_smaaEdgesU = bgfx_create_uniform("s_smaaEdges", BGFX_UNIFORM_TYPE_SAMPLER, 1);
+        s_smaaArea = bgfx_create_uniform("s_smaaArea", BGFX_UNIFORM_TYPE_SAMPLER, 1);
+        s_smaaSearch = bgfx_create_uniform("s_smaaSearch", BGFX_UNIFORM_TYPE_SAMPLER, 1);
+        s_smaaBlendU = bgfx_create_uniform("s_smaaBlend", BGFX_UNIFORM_TYPE_SAMPLER, 1);
+        s_smaaMetrics = bgfx_create_uniform("u_smaaMetrics", BGFX_UNIFORM_TYPE_VEC4, 1);
+        if (!bgfxIsValid(s_smaaEdgeProgram) || !bgfxIsValid(s_smaaBlendProgram) ||
+            !bgfxIsValid(s_smaaResolveProgram) || !bgfxIsValid(s_smaaImage) ||
+            !bgfxIsValid(s_smaaEdgesU) || !bgfxIsValid(s_smaaArea) ||
+            !bgfxIsValid(s_smaaSearch) || !bgfxIsValid(s_smaaBlendU) ||
+            !bgfxIsValid(s_smaaMetrics))
+        {
+            LogError("[BGFX] SMAA program build failed");
+            DestroySmaaPrograms();
+            return false;
+        }
+        LogInfo("[BGFX] SMAA programs created: %u %u %u",
+            s_smaaEdgeProgram.idx, s_smaaBlendProgram.idx, s_smaaResolveProgram.idx);
+        return true;
+    }
+
+    bool EnsureSmaaTargets(uint16_t _width, uint16_t _height)
+    {
+        if (bgfxIsValid(s_smaaInputFb) && bgfxIsValid(s_smaaEdgesFb) &&
+            bgfxIsValid(s_smaaBlendFb) && s_smaaWidth == _width && s_smaaHeight == _height)
+            return true;
+        DestroySmaaTargets();
+        if (_width == 0 || _height == 0)
+            return false;
+        const uint64_t flags = BGFX_TEXTURE_RT | BGFX_TEXTURE_U_CLAMP | BGFX_TEXTURE_V_CLAMP;
+        s_smaaInput = bgfx_create_texture_2d(_width, _height, false, 1, BGFX_TEXTURE_FORMAT_RGBA8, flags, nullptr, 0);
+        s_smaaEdges = bgfx_create_texture_2d(_width, _height, false, 1, BGFX_TEXTURE_FORMAT_RGBA8, flags, nullptr, 0);
+        s_smaaBlend = bgfx_create_texture_2d(_width, _height, false, 1, BGFX_TEXTURE_FORMAT_RGBA8, flags, nullptr, 0);
+        if (!bgfxIsValid(s_smaaInput) || !bgfxIsValid(s_smaaEdges) || !bgfxIsValid(s_smaaBlend))
+        {
+            LogError("[BGFX] SMAA target texture create failed (%ux%u)", _width, _height);
+            DestroySmaaTargets();
+            return false;
+        }
+        bgfx_texture_handle_t aIn[] = { s_smaaInput };
+        bgfx_texture_handle_t aEd[] = { s_smaaEdges };
+        bgfx_texture_handle_t aBl[] = { s_smaaBlend };
+        s_smaaInputFb = bgfx_create_frame_buffer_from_handles(1, aIn, true);
+        s_smaaEdgesFb = bgfx_create_frame_buffer_from_handles(1, aEd, true);
+        s_smaaBlendFb = bgfx_create_frame_buffer_from_handles(1, aBl, true);
+        if (!bgfxIsValid(s_smaaInputFb) || !bgfxIsValid(s_smaaEdgesFb) || !bgfxIsValid(s_smaaBlendFb))
+        {
+            LogError("[BGFX] SMAA target framebuffer create failed (%ux%u)", _width, _height);
+            DestroySmaaTargets();
+            return false;
+        }
+        s_smaaWidth = _width;
+        s_smaaHeight = _height;
+        LogInfo("[BGFX] SMAA targets created: %ux%u", _width, _height);
+        return true;
+    }
+
+    bool IsSmaaReady(uint16_t _width, uint16_t _height)
+    {
+        return EnsureSmaaTargets(_width, _height) && EnsureSmaaPrograms() && EnsureSmaaTextures();
+    }
+
+    // Binds the fullscreen triangle + metrics for an SMAA pass. Textures are
+    // bound by the caller AFTER this and BEFORE the single submit (bgfx
+    // snapshots uniforms/textures at submit, like SubmitBloomPass).
+    static bool SetupSmaaDraw(uint16_t _width, uint16_t _height)
+    {
+        bgfx_transient_vertex_buffer_t tvb;
+        bgfx_alloc_transient_vertex_buffer(&tvb, 3, &s_combineLayout);
+        if (!tvb.data)
+            return false;
+        static const float verts[3][5] =
+        {
+            { -1.0f, -1.0f, 0.0f, 0.0f, 1.0f },
+            { 3.0f, -1.0f, 0.0f, 2.0f, 1.0f },
+            { -1.0f, 3.0f, 0.0f, 0.0f, -1.0f },
+        };
+        std::memcpy(tvb.data, verts, sizeof(verts));
+
+        const float metrics[4] = { 1.0f / _width, 1.0f / _height, (float)_width, (float)_height };
+        bgfx_set_state(BGFX_STATE_WRITE_RGB | BGFX_STATE_WRITE_A, 0);
+        bgfx_set_transient_vertex_buffer(0, &tvb, 0, 3);
+        bgfx_set_uniform(s_smaaMetrics, metrics, 1);
+        return true;
+    }
+
+    static void SetupSmaaView(bgfx_view_id_t _view, bgfx_frame_buffer_handle_t _fb,
+        uint16_t _width, uint16_t _height, bool _clear)
+    {
+        bgfx_set_view_frame_buffer(_view, _fb);
+        bgfx_set_view_rect(_view, 0, 0, _width, _height);
+        bgfx_set_view_clear(_view, _clear ? BGFX_CLEAR_COLOR : BGFX_CLEAR_NONE, 0, 1.0f, 0);
+        bgfx_set_view_mode(_view, BGFX_VIEW_MODE_SEQUENTIAL);
+        bgfx_set_view_transform(_view, s_identity, s_identity);
+        bgfx_touch(_view);
+    }
+
+    bool SMAAPass(uint16_t _width, uint16_t _height)
+    {
+        if (!IsReady() || _width == 0 || _height == 0)
+            return false;
+        if (!IsSmaaReady(_width, _height))
+            return false;
+        const uint64_t pointFlags =
+            BGFX_SAMPLER_MIN_POINT | BGFX_SAMPLER_MAG_POINT | BGFX_SAMPLER_MIP_POINT;
+        // Pass 0 (rendertarget_phase_smaa.cpp:19-36): edge detect on the combine
+        // LDR output, point sampling (SMAASamplePoint), cleared to 0 like the
+        // reference ClearRenderTargetView. Stencil optimisation skipped (same output).
+        SetupSmaaView(kSmaaEdgeView, s_smaaEdgesFb, _width, _height, true);
+        if (!SetupSmaaDraw(_width, _height))
+            return false;
+        bgfx_set_texture(0, s_smaaImage, s_smaaInput, pointFlags);
+        bgfx_submit(kSmaaEdgeView, s_smaaEdgeProgram, 0, BGFX_DISCARD_ALL);
+        // Pass 1 (:38-57): blend weights from edges + area (linear) + search (point).
+        SetupSmaaView(kSmaaBlendView, s_smaaBlendFb, _width, _height, true);
+        if (!SetupSmaaDraw(_width, _height))
+            return false;
+        bgfx_set_texture(0, s_smaaEdgesU, s_smaaEdges, 0);
+        bgfx_set_texture(1, s_smaaArea, s_smaaAreaTex, 0);
+        bgfx_set_texture(2, s_smaaSearch, s_smaaSearchTex, pointFlags);
+        bgfx_submit(kSmaaBlendView, s_smaaBlendProgram, 0, BGFX_DISCARD_ALL);
+        // Pass 2 (:60-76): neighbourhood blend of the combine image, linear.
+        // Writes into the backbuffer; UI draws on top of it as before.
+        SetupSmaaView(kSmaaResolveView, BGFX_INVALID_HANDLE, _width, _height, false);
+        if (!SetupSmaaDraw(_width, _height))
+            return false;
+        bgfx_set_texture(0, s_smaaImage, s_smaaInput, 0);
+        bgfx_set_texture(1, s_smaaBlendU, s_smaaBlend, 0);
+        bgfx_submit(kSmaaResolveView, s_smaaResolveProgram, 0, BGFX_DISCARD_ALL);
         return true;
     }
 
