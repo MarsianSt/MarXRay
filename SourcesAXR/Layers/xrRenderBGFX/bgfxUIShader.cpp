@@ -3,6 +3,7 @@
 #include "bgfxVideoDecoder.h"
 
 #include <map>
+#include <set>
 #include <string>
 
 namespace
@@ -17,6 +18,10 @@ namespace
         bool seqCycles;
     };
     std::map<std::string, UITextureCacheItem> g_UITextureCache;
+    // Names that are known to be absent. A missing file is resolved once: the
+    // reference keeps its texture cache by name, so a miss is remembered too
+    // and never re-read (nor re-logged) on a later frame.
+    std::set<std::string> g_UIMissingTextures;
 
 #define DDPF_FOURCC     0x00000004
 #define DDPF_RGB        0x00000040
@@ -362,6 +367,9 @@ bool LoadUITexture(const char* texName, bgfx_texture_handle_t& outTex, unsigned 
     outW = 0;
     outH = 0;
 
+    if (g_UIMissingTextures.find(texName) != g_UIMissingTextures.end())
+        return false;
+
     IReader* file = NULL;
     char path[260];
     for (int attempt = 0; attempt < 2 && !file; attempt++)
@@ -392,6 +400,7 @@ bool LoadUITexture(const char* texName, bgfx_texture_handle_t& outTex, unsigned 
     if (!file)
     {
         // .seq textures are handled by the caller (LoadUISeqTexture).
+        g_UIMissingTextures.insert(texName);
         LogError("[BGFX] UIShader: texture file not found: '%s'", texName);
         return false;
     }
@@ -407,6 +416,7 @@ bool LoadUITexture(const char* texName, bgfx_texture_handle_t& outTex, unsigned 
 
     if (!bgfxIsValid(outTex))
     {
+        g_UIMissingTextures.insert(texName);
         LogError("[BGFX] UIShader: failed to load texture '%s'", texName);
         return false;
     }

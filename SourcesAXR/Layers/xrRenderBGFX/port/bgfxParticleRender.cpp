@@ -120,10 +120,16 @@ bgfx_texture_handle_t GetTexture(LPCSTR name)
     if (bgfxLoadWorldTexture(name, tex, w, h))
     {
         LogInfo("[BGFX] Particle '%s' %ux%u h=%u", name, w, h, tex.idx);
-        s_texCache[key] = tex;
     }
     else
+    {
+        // A miss is cached under the same key: the reference resolves a
+        // particle texture by name once, so a missing file must not be
+        // re-read and re-logged on every frame.
+        tex = BGFX_INVALID_HANDLE;
         LogError("[BGFX] Particle: failed to load '%s'", name);
+    }
+    s_texCache[key] = tex;
     return tex;
 }
 
