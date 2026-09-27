@@ -33,6 +33,7 @@
 #include "../../../xrEngine/device.h"
 #include "../../../xrEngine/CustomHUD.h"
 #include "bgfxModelBridge.h"
+#include "bgfxHDR.h"
 
 // ============================================================================
 // Global instances
@@ -1320,6 +1321,45 @@ namespace
 		LogInfo("WORLD NO_TEX: kind=%s vb=%d shader='%s' id=%u", kind, vb, shader ? shader : "(null)", shaderId);
 	}
 
+	// Sun shadow caster draw, the bgfx twin of the SE_R2_SHADOW pass of the
+	// reference blenders. The vertex buffer and its layout are the same ones the
+	// camera pass uses, and so is the model transform (FTreeVisual::GetTreeXform
+	// arrives through bgfx_set_transform, which is the AXR xform_world slot);
+	// only the program, the view and the state differ.
+	//   state    AXR renders the depth with no colour output at all
+	//            (shadow_direct_base.ps:8-9 returns 0 under USE_HWSMAP, the
+	//            colour write mask of r_Pass(..., FALSE, TRUE, TRUE, FALSE) is
+	//            off); the port writes the light-space depth into the R32F target
+	//            instead, so the RGB write is on and the A channel is left alone.
+	//            The depth test is LESS with depth writes on, which is the
+	//            "nearest caster wins" the D32F map gets from its own buffer.
+	//   program  shadow_vs.sc / shadow_ps.sc, i.e. shadow_direct_base.
+	void bgfxWorldDrawMeshShadow(IRender_Mesh* _mesh, int _vi, int _ii, const float* _treeXform, WorldDiag& dg)
+	{
+		const bgfx_program_handle_t prog = bgfxHDR::GetShadowProgram();
+		if (!bgfxIsValid(prog))
+			return;
+		const bgfx_vertex_layout_handle_t layout = s_worldVbHasUv1[_vi] ? s_worldTerrainLayout : s_worldLayout;
+		bgfx_set_vertex_buffer_with_layout(0, s_worldVbh[_vi], _mesh->vBase, _mesh->vCount, layout);
+		bgfx_set_index_buffer(s_worldIbh[_ii], _mesh->iBase, _mesh->iCount);
+		bgfx_set_state(BGFX_STATE_WRITE_RGB | BGFX_STATE_DEPTH_TEST_LESS | BGFX_STATE_WRITE_Z, 0);
+		if (_treeXform)
+			bgfx_set_transform(_treeXform, 1);
+		bgfx_submit(bgfxHDR::kShadowView, prog, 0, BGFX_DISCARD_ALL);
+		if (_treeXform)
+		{
+			static const float s_identityXform[16] =
+			{
+				1.0f, 0.0f, 0.0f, 0.0f,
+				0.0f, 1.0f, 0.0f, 0.0f,
+				0.0f, 0.0f, 1.0f, 0.0f,
+				0.0f, 0.0f, 0.0f, 1.0f,
+			};
+			bgfx_set_transform(s_identityXform, 1);
+		}
+		++dg.drawn;
+	}
+
 	void bgfxWorldDrawMesh(IRender_Mesh* mesh, u16 shaderId, WorldDiag& dg, bool isTree, const float* treeXform = nullptr)
 	{
 		if (!mesh || !mesh->p_rm_Vertices || !mesh->p_rm_Indices)
@@ -1343,11 +1383,34 @@ namespace
 			return;
 		}
 
-		const char* sh = bgfxLevelShaderName(shaderId);
-		const WorldDecalKind decalKind = bgfxWorldDecalKind(sh);
-		const bool isDecal = (decalKind != WDK_NONE);
-		if (isDecal != s_worldDecalPass)
-			return;
+        const char* sh = bgfxLevelShaderName(shaderId);
+        const WorldDecalKind decalKind = bgfxWorldDecalKind(sh);
+        const bool isDecal = (decalKind != WDK_NONE);
+        if (isDecal != s_worldDecalPass)
+            return;
+        // Sun shadow caster. AXR renders the sun's shadow map from the same visual
+        // walk it uses for the frame: phase_smap_direct (r2_R_sun.cpp:728) followed by
+        // r_dsgraph_render_graph (r2_R_sun.cpp:732) run the dsgraph with
+        // xform_project = fuckingsun->X.D.combine, i.e. the identical tree with a
+        // different projection, and the per-blender SE_R2_SHADOW passes
+        // (Blender_BmmD.cpp:183, Blender_Model_EbB.cpp:166, Blender_tree.cpp:156) pick
+        // shadow_direct_base / shadow_direct_model / shadow_direct_tree. Here the same
+        // walk runs a third time with the shadow program and the shadow view, so the
+        // caster set is the frame's own opaque set and cannot drift from it.
+        // Not casters here, matching the reference's own pass selection
+        // (r2_R_sun.cpp:725-726 keys the pass on mapNormalPasses / mapMatrixPasses /
+        // mapSorted): projected decals (a separate blend pass on the camera view),
+        // particles (mapSorted, and the reference renders them with
+        // shadow_direct_base only as the bSpecial / phase_smap_direct_tsh follow-up),
+        // grass and the other detail objects (R2FLAG_SUN_DETAILS is not consulted by
+        // r2_R_sun.cpp at all) and the wall marks. MT_LOD is also left out: it draws
+        // an 8-facet impostor quad (bgfxWorldDrawLod), not the tree geometry AXR casts
+        // from Blender_tree.cpp:156.
+        if (bgfxHDR::ShadowPassActive())
+        {
+            bgfxWorldDrawMeshShadow(mesh, vi, ii, treeXform, dg);
+            return;
+        }
 		const bool isTerrain = !isDecal && bgfxWorldIsTerrainShader(sh);
 		const bool vbHasUv1 = (vi < (int)s_worldVbHasUv1.size()) && (s_worldVbHasUv1[vi] != 0);
 		if (isTree)
@@ -1553,6 +1616,12 @@ namespace
 			return;
 		if (s_worldDecalPass)
 			return;
+		// The sun shadow map takes the tree geometry, not this impostor: AXR's
+		// shadow pass draws the tree with Blender_tree.cpp:156 (shadow_direct_tree),
+		// and the 8-facet quad below is a camera-distance stand-in for it, so
+		// casting it would drop a square where the canopy is.
+		if (bgfxHDR::ShadowPassActive())
+			return;
 
 		const u16 shaderId = lod->shader_id;
 		const char* sh = bgfxLevelShaderName(shaderId);
@@ -1754,8 +1823,10 @@ namespace
 		case MT_PARTICLE_GROUP:
 			// Particles submit into the HDR scene FX view (kView=6). Draw them only in
 			// the base pass: the decal pass re-walks the visuals with a fresh
-			// frame marker and would otherwise submit them twice.
-			if (!s_worldDecalPass)
+			// frame marker and would otherwise submit them twice. The sun shadow pass
+			// re-walks them a third time, and the reference keeps particles out of
+			// mapNormalPasses (r2_R_sun.cpp:725-726), so they are skipped there too.
+			if (!s_worldDecalPass && !bgfxHDR::ShadowPassActive())
 			{
 				bgfxDrawParticleVisual(v);
 				++dg.drawn;
@@ -1911,6 +1982,29 @@ extern "C"
 			for (IRenderVisual* V0 : RImplementation.Visuals)
 				bgfxWorldCollectFlodChildren(static_cast<dxRender_Visual*>(V0), 0);
 			LogInfo("WORLD FLOD children=%u", (u32)s_flodChildren.size());
+		}
+
+		// pass 0: sun shadow map, the bgfx twin of r2_R_sun.cpp:722-741
+		//   Target->phase_smap_direct(fuckingsun, SE_SUN_FAR);
+		//   RCache.set_xform_world(Fidentity); set_xform_view(Fidentity);
+		//   RCache.set_xform_project(fuckingsun->X.D.combine);
+		//   r_dsgraph_render_graph(0);
+		// i.e. the frame's own opaque visual set re-walked with the sun projection.
+		// ShadowBegin() binds the view, the transform and the clear, and the walk
+		// itself swaps program and state per mesh (bgfxWorldDrawMeshShadow). It runs
+		// before pass 1 so the map exists by the time the resolve samples it, and
+		// kShadowView is ordered below kSceneView, which is what bgfx needs for that.
+		if (bgfxHDR::ShadowBegin())
+		{
+			++s_worldFrameMarker;
+			for (IRenderVisual* V0 : RImplementation.Visuals)
+			{
+				dxRender_Visual* v = static_cast<dxRender_Visual*>(V0);
+				if (s_flodChildren.find(v) != s_flodChildren.end())
+					continue;
+				bgfxWorldDrawVisual(v, g_worldDiag);
+			}
+			bgfxHDR::ShadowEnd();
 		}
 
 		// pass 1: opaque / alpha-tested / transparent world geometry

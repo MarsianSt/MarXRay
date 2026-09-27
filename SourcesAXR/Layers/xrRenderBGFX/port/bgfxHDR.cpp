@@ -38,6 +38,29 @@ namespace
     bgfx_uniform_handle_t s_sunDir = BGFX_INVALID_HANDLE;
     bgfx_uniform_handle_t s_sunColor = BGFX_INVALID_HANDLE;
 
+    // Sun shadow map (AXR r2_RT_smap_depth, r4_rendertarget.cpp:636: smapsize x
+    // smapsize, HW_smap_FORMAT = D32F_LOCKABLE under r4.cpp:221). bgfx has no
+    // comparison sampler on this backend, so the port stores the light-space depth
+    // in a colour target - the reference's own non-HW branch, whose target is
+    // r2_RT_smap_surf in D3DFMT_R32F (r4_rendertarget.cpp:698-699) and whose
+    // writer is shadow_direct_base.ps:11 `return I.depth`. A real depth
+    // attachment sits next to it so the "nearest caster wins" resolution the D32F
+    // map gets from its own depth test happens here too; the resolve compares by
+    // hand (deferred_light_ps.sc, shadow_smap_test).
+    bgfx_frame_buffer_handle_t s_shadowFb = BGFX_INVALID_HANDLE;
+    bgfx_texture_handle_t s_shadowDepth = BGFX_INVALID_HANDLE;
+    bgfx_texture_handle_t s_shadowMap = BGFX_INVALID_HANDLE;
+    bgfx_program_handle_t s_shadowProgram = BGFX_INVALID_HANDLE;
+    bgfx_uniform_handle_t s_smapSampler = BGFX_INVALID_HANDLE;
+    bgfx_uniform_handle_t s_shadowMat = BGFX_INVALID_HANDLE;
+    bgfx_uniform_handle_t s_shadowParams = BGFX_INVALID_HANDLE;
+    // 1 between ShadowBegin() and ShadowEnd(), i.e. while the world walk is casting.
+    // bgfxRenderCompat.cpp reads it to pick the shadow program and view.
+    bool s_shadowPassActive = false;
+    // 1 once a map has been rendered into this frame, so the resolve knows whether
+    // s_smap holds anything. Reset by ShadowBegin() on the next frame.
+    bool s_shadowMapValid = false;
+
     // Stage-2 lighting resolve (deferred_light_ps.sc). Reads the three G-buffer
     // attachments and writes the lit HDR image into its own full-res target, so
     // the pass never samples the texture it renders into. s_resolveOk is the
@@ -579,6 +602,451 @@ namespace
     {
         return bgfx_is_texture_valid(0, false, 1, _format,
             BGFX_TEXTURE_RT | BGFX_TEXTURE_U_CLAMP | BGFX_TEXTURE_V_CLAMP);
+    }
+
+    // =========================================================================
+    // Sun shadow map
+    // =========================================================================
+    // Reference: archive_sourse/Layers/xrRenderPC_R4/r2_R_sun.cpp (the caster pass
+    // and the sun matrix), r4_rendertarget.cpp:635-636 (the target),
+    // r4_rendertarget_accum_direct.cpp:152-180 (m_shadow) and
+    // Layers/xrRender/xrRender_console.cpp (the constants).
+    //
+    // Those console variables live in Layers/xrRender/xrRender_console.cpp, which
+    // belongs to the D3D render layer. The bgfx layer replaces that layer and links
+    // neither it nor its import library, so the values the reference reads at
+    // runtime are repeated here verbatim instead. Consequence, and the reason this
+    // is written down rather than papered over: r2_smap_size, r2_sun_tsm_proj,
+    // r2_sun_tsm_bias, r2_sun_depth_far_scale and r2_sun_depth_far_bias have no
+    // effect on the bgfx sun shadow until the port grows a console of its own. The
+    // numbers are the reference's own defaults, not tuned values.
+    const u32   kSunSmapSize          = 2048;      // ps_r2_smapsize,            xrRender_console.cpp:45
+    const float kSunTsmProjection     = 0.3f;      // ps_r2_sun_tsm_projection,  xrRender_console.cpp:301
+    const float kSunTsmBias           = -0.01f;    // ps_r2_sun_tsm_bias,        xrRender_console.cpp:302
+    const float kSunDepthFarScale     = 1.0f;      // ps_r2_sun_depth_far_scale, xrRender_console.cpp:308
+    const float kSunDepthFarBias      = -0.00002f; // ps_r2_sun_depth_far_bias,  xrRender_console.cpp:309
+    // ps_r_sun_quality (xrRender_console.cpp:108) selects how many taps the PCSS
+    // kernel takes, shadow.h:157-167. The reference build runs at 1, which is what
+    // makes USE_ULTRA_SHADOWS off (accum_sun_near.ps:8-10) and shadow() call
+    // shadow_pcss() directly (shadow.h:283-294); the shader reads the same value
+    // through u_shadowParams, so the two cannot disagree.
+    const u32   kSunQuality           = 1;
+
+    void DestroyShadow()
+    {
+        if (bgfxIsValid(s_shadowProgram))
+            bgfx_destroy_program(s_shadowProgram);
+        if (bgfxIsValid(s_smapSampler))
+            bgfx_destroy_uniform(s_smapSampler);
+        if (bgfxIsValid(s_shadowMat))
+            bgfx_destroy_uniform(s_shadowMat);
+        if (bgfxIsValid(s_shadowParams))
+            bgfx_destroy_uniform(s_shadowParams);
+        s_shadowProgram = BGFX_INVALID_HANDLE;
+        s_smapSampler = BGFX_INVALID_HANDLE;
+        s_shadowMat = BGFX_INVALID_HANDLE;
+        s_shadowParams = BGFX_INVALID_HANDLE;
+        if (bgfxIsValid(s_shadowFb))
+            bgfx_destroy_frame_buffer(s_shadowFb);
+        s_shadowFb = BGFX_INVALID_HANDLE;
+        if (bgfxIsValid(s_shadowMap))
+            bgfx_destroy_texture(s_shadowMap);
+        s_shadowMap = BGFX_INVALID_HANDLE;
+        if (bgfxIsValid(s_shadowDepth))
+            bgfx_destroy_texture(s_shadowDepth);
+        s_shadowDepth = BGFX_INVALID_HANDLE;
+        s_shadowPassActive = false;
+        s_shadowMapValid = false;
+    }
+
+    // r2_R_sun.cpp:728-731 renders into r2_RT_smap_depth, whose size is
+    // ps_r2_smapsize (r4_rendertarget.cpp:635, default 2048,
+    // xrRender_console.cpp:45) and whose format is HW_smap_FORMAT
+    // (r4.cpp:221 D32F_LOCKABLE). See the statics block for what the port stores
+    // in its place.
+    bool EnsureShadowTargets()
+    {
+        if (bgfxIsValid(s_shadowFb) && bgfxIsValid(s_shadowMap) && bgfxIsValid(s_shadowDepth))
+            return true;
+
+        const u32 size = kSunSmapSize;
+        if (!IsTextureSupported(BGFX_TEXTURE_FORMAT_R32F))
+        {
+            LogError("[BGFX] Shadow map: R32F unavailable");
+            return false;
+        }
+        // Point sampled: the PCSS kernel places its taps by hand
+        // (deferred_light_ps.sc, shadow_smap_pcss), and AXR's SampleCmpLevelZero
+        // is a point compare as well (shadow.h:48).
+        const uint64_t colorFlags = BGFX_TEXTURE_RT | BGFX_TEXTURE_U_CLAMP | BGFX_TEXTURE_V_CLAMP;
+        s_shadowMap = bgfx_create_texture_2d(size, size, false, 1, BGFX_TEXTURE_FORMAT_R32F, colorFlags, nullptr, 0);
+        s_shadowDepth = bgfx_create_texture_2d(size, size, false, 1, s_depthFormat, BGFX_TEXTURE_RT, nullptr, 0);
+        if (!bgfxIsValid(s_shadowMap) || !bgfxIsValid(s_shadowDepth))
+        {
+            LogError("[BGFX] Shadow map texture create failed (%ux%u)", size, size);
+            DestroyShadow();
+            return false;
+        }
+        bgfx_texture_handle_t attachments[2] = { s_shadowMap, s_shadowDepth };
+        s_shadowFb = bgfx_create_frame_buffer_from_handles(2, attachments, true);
+        if (!bgfxIsValid(s_shadowFb))
+        {
+            LogError("[BGFX] Shadow map framebuffer create failed (%ux%u)", size, size);
+            DestroyShadow();
+            return false;
+        }
+        LogInfo("[BGFX] Shadow map created: %ux%u (AXR r2_RT_smap_depth, r4_rendertarget.cpp:636)", size, size);
+        return true;
+    }
+
+    bool EnsureShadowProgram()
+    {
+        if (bgfxIsValid(s_shadowProgram) && bgfxIsValid(s_smapSampler) &&
+            bgfxIsValid(s_shadowMat) && bgfxIsValid(s_shadowParams))
+            return true;
+
+        s_shadowProgram = BuildProgram("shadow_vs.sc", "shadow_ps.sc");
+        if (!bgfxIsValid(s_shadowProgram))
+        {
+            LogError("[BGFX] Shadow program build failed");
+            return false;
+        }
+        s_smapSampler = bgfx_create_uniform("s_smap", BGFX_UNIFORM_TYPE_SAMPLER, 1);
+        s_shadowMat = bgfx_create_uniform("u_shadowMat", BGFX_UNIFORM_TYPE_MAT4, 1);
+        s_shadowParams = bgfx_create_uniform("u_shadowParams", BGFX_UNIFORM_TYPE_VEC4, 1);
+        if (!bgfxIsValid(s_smapSampler) || !bgfxIsValid(s_shadowMat) || !bgfxIsValid(s_shadowParams))
+        {
+            LogError("[BGFX] Shadow uniforms create failed");
+            DestroyShadow();
+            return false;
+        }
+        LogInfo("[BGFX] Shadow program created: %u", s_shadowProgram.idx);
+        return true;
+    }
+
+    // -------------------------------------------------------------------------
+    // fuckingsun->X.D.combine, 1:1 with r2_R_sun.cpp:436-636.
+    //
+    // The reference builds the sun matrix out of the camera frustum and the sun
+    // direction, and it does so in eye space, feeding the frustum through the
+    // *view* matrix. Everything the chain needs from the caster/receiver lists is
+    // the depth range (r2_R_sun.cpp:487 BuildTSMProjectionMatrix_caster_depth_bounds)
+    // and the R2FLAG_SUN_FOCUS refit (r2_R_sun.cpp:639-715); both are documented
+    // deviations below. What stays untouched is the part that decides where the
+    // shadow map lands, i.e. everything that is a function of the camera and the
+    // sun alone:
+    //   lightSpaceBasis      r2_R_sun.cpp:464-477  (BuildLSPSMProjectionMatrix)
+    //   lightSpaceOrtho      r2_R_sun.cpp:503-504  off-centre ortho of the AABB
+    //   trapezoid_space      r2_R_sun.cpp:519-633  shear + unsqueeze + x rescale
+    // and the gate that chooses between them and the R2 cull_xform,
+    // r2_R_sun.cpp:446.
+    // -------------------------------------------------------------------------
+    // Column-major 4x4, the same layout as the D3DXMATRIX the reference casts its
+    // own matrices to, so every literal below can be compared with the original
+    // element for element. Fmatrix/D3DXMATRIX are row-major with m[i][j]; the
+    // literals here are the same rows, and m[i] is the i-th column here.
+    struct SunMatrix
+    {
+        float m[16];
+    };
+
+    static void SunMul(SunMatrix& _dst, const SunMatrix& _a, const SunMatrix& _b)
+    {
+        // _dst = _a * _b, the D3DXMatrixMultiply(out, a, b) convention
+        // (r2_R_sun.cpp:611, :622, :629, :631-633).
+        SunMatrix r;
+        for (int i = 0; i < 4; ++i)
+        {
+            for (int j = 0; j < 4; ++j)
+            {
+                float s = 0.0f;
+                for (int k = 0; k < 4; ++k)
+                    s += _a.m[k * 4 + j] * _b.m[i * 4 + k];
+                r.m[i * 4 + j] = s;
+            }
+        }
+        _dst = r;
+    }
+
+    // D3DXVec3TransformCoord: the matrix part plus the translation, w = 1.
+    static void SunXformCoord(float* _out, const SunMatrix& _m, const float* _in)
+    {
+        _out[0] = _m.m[0] * _in[0] + _m.m[1] * _in[1] + _m.m[2] * _in[2] + _m.m[3];
+        _out[1] = _m.m[4] * _in[0] + _m.m[5] * _in[1] + _m.m[6] * _in[2] + _m.m[7];
+        _out[2] = _m.m[8] * _in[0] + _m.m[9] * _in[1] + _m.m[10] * _in[2] + _m.m[11];
+    }
+
+    // D3DXMatrixOrthoOffCenterLH (r2_R_sun.cpp:504).
+    static SunMatrix SunOrthoOffCenterLH(float _l, float _r, float _b, float _t, float _zn, float _zf)
+    {
+        SunMatrix r;
+        r.m[0] = 2.0f / (_r - _l);   r.m[1] = 0.0f;                r.m[2] = 0.0f;                 r.m[3] = 0.0f;
+        r.m[4] = 0.0f;               r.m[5] = 2.0f / (_t - _b);   r.m[6] = 0.0f;                 r.m[7] = 0.0f;
+        r.m[8] = 0.0f;               r.m[9] = 0.0f;                r.m[10] = 1.0f / (_zf - _zn);  r.m[11] = 0.0f;
+        r.m[12] = -(_r + _l) / (_r - _l);
+        r.m[13] = -(_t + _b) / (_t - _b);
+        r.m[14] = -_zn / (_zf - _zn);
+        r.m[15] = 1.0f;
+        return r;
+    }
+
+    // Builds fuckingsun->X.D.combine into _out, and reports through _ok whether
+    // the TSM branch was taken. _lightDir is the sun's light-travel direction in
+    // world space, i.e. CEnvDescriptor::sun_dir: the resolve's u_sunDir is
+    // normalize(mView * sun_dir) and the shader turns it into the surface-to-light
+    // vector with -normalize (deferred_light_ps.sc:351), which is the same sign
+    // convention r2_R_sun.cpp:436 assumes when it negates fuckingsun->direction.
+    static bool BuildSunMatrix(SunMatrix& _out, const float* _lightDir, const Fmatrix& _view,
+                               float _fovRad, float _aspect, float _far)
+    {
+        SunMatrix eyeSpaceView;
+        std::memcpy(eyeSpaceView.m, _view.m, sizeof(eyeSpaceView.m));
+
+        // m_lightDir in eye space, r2_R_sun.cpp:436-442. m_fCosGamma is the tilt
+        // between the light and the view, and it is the gate of r2_R_sun.cpp:446.
+        float mLightDir[3] = { -_lightDir[0], -_lightDir[1], -_lightDir[2] };
+        float upView[3];
+        SunXformCoord(upView, eyeSpaceView, mLightDir); // D3DXVec3TransformNormal
+        const float m_fCosGamma = mLightDir[0] * eyeSpaceView.m[2] +   // m_View._13
+                                  mLightDir[1] * eyeSpaceView.m[6] +   // m_View._23
+                                  mLightDir[2] * eyeSpaceView.m[10];   // m_View._33
+
+        // R2FLAG_SUN_TSM is on in the reference build (xrRender_console.cpp:262),
+        // and ps_r2_sun_tsm_projection is 0.3 (xrRender_console.cpp:301). The mask
+        // itself is not reachable from here (see kSunSmapSize above), so the gate
+        // keeps the flag side - the tilt test of r2_R_sun.cpp:446 - and takes the
+        // projection constant, both of which are the reference's configured values.
+        if (!(_abs(m_fCosGamma) < 0.99f && true))
+        {
+            // r2_R_sun.cpp:634-636 takes the R2 cull_xform here. That matrix comes
+            // from a caster hull (DumbConvexVolume::compute_caster_model,
+            // r2_R_sun.cpp:340-401) built over main_coarse_structure, which this
+            // port has no equivalent of; the frustum AABB in light space below is
+            // the same shape of fit with the casters left out.
+        }
+
+        // r2_R_sun.cpp:451-457: the 8 eye-space frustum corners, far plane first.
+        // Frustum::pntList is not part of the archived sources, so the corners are
+        // unprojected out of the projection directly; the reference only ever uses
+        // them as two four-point sets ([0..3] = far, [4..7] = near) and every step
+        // below is symmetric inside a plane, so the corner order inside a set does
+        // not change the result.
+        float frustumPnts[8][3];
+        {
+            const float tanHalf = tanf(_fovRad * 0.5f);
+            const float nearZ = VIEWPORT_NEAR;
+            // 4 far corners then 4 near corners, x/y signs sweeping the rectangle.
+            const float signs[4][2] = { { -1.0f, -1.0f }, { 1.0f, -1.0f }, { -1.0f, 1.0f }, { 1.0f, 1.0f } };
+            for (int i = 0; i < 4; ++i)
+            {
+                frustumPnts[i][0] = signs[i][0] * tanHalf * _aspect * _far;
+                frustumPnts[i][1] = signs[i][1] * tanHalf * _far;
+                frustumPnts[i][2] = -_far;
+                frustumPnts[i + 4][0] = signs[i][0] * tanHalf * _aspect * nearZ;
+                frustumPnts[i + 4][1] = signs[i][1] * tanHalf * nearZ;
+                frustumPnts[i + 4][2] = -nearZ;
+            }
+        }
+
+        // r2_R_sun.cpp:464-471: upVector = normalize(m_lightDir in eye space),
+        // leftVector = normalize(cross(up, (0,0,-1))), viewVector = cross(up, left).
+        float leftVector[3], viewVector[3];
+        {
+            const float eyeVector[3] = { 0.0f, 0.0f, -1.0f };
+            float l = _sqrt(upView[0] * upView[0] + upView[1] * upView[1] + upView[2] * upView[2]);
+            if (l < 1e-8f)
+                l = 1.0f;
+            leftVector[0] = upView[1] * eyeVector[2] - upView[2] * eyeVector[1];
+            leftVector[1] = upView[2] * eyeVector[0] - upView[0] * eyeVector[2];
+            leftVector[2] = upView[0] * eyeVector[1] - upView[1] * eyeVector[0];
+            l = _sqrt(leftVector[0] * leftVector[0] + leftVector[1] * leftVector[1] + leftVector[2] * leftVector[2]);
+            if (l < 1e-8f)
+                l = 1.0f;
+            leftVector[0] /= l; leftVector[1] /= l; leftVector[2] /= l;
+            viewVector[0] = upView[1] * leftVector[2] - upView[2] * leftVector[1];
+            viewVector[1] = upView[2] * leftVector[0] - upView[0] * leftVector[2];
+            viewVector[2] = upView[0] * leftVector[1] - upView[1] * leftVector[0];
+        }
+
+        // r2_R_sun.cpp:473-477, the LSPSM light space with Y and Z permuted.
+        SunMatrix lightSpaceBasis;
+        lightSpaceBasis.m[0] = leftVector[0];  lightSpaceBasis.m[1] = viewVector[0];  lightSpaceBasis.m[2] = -upView[0];  lightSpaceBasis.m[3] = 0.0f;
+        lightSpaceBasis.m[4] = leftVector[1];  lightSpaceBasis.m[5] = viewVector[1];  lightSpaceBasis.m[6] = -upView[1];  lightSpaceBasis.m[7] = 0.0f;
+        lightSpaceBasis.m[8] = leftVector[2];  lightSpaceBasis.m[9] = viewVector[2];  lightSpaceBasis.m[10] = -upView[2]; lightSpaceBasis.m[11] = 0.0f;
+        lightSpaceBasis.m[12] = 0.0f;          lightSpaceBasis.m[13] = 0.0f;           lightSpaceBasis.m[14] = 0.0f;         lightSpaceBasis.m[15] = 1.0f;
+
+        // r2_R_sun.cpp:480, rotate the eye frustum into light space.
+        for (int i = 0; i < 8; ++i)
+            SunXformCoord(frustumPnts[i], lightSpaceBasis, frustumPnts[i]);
+
+        // r2_R_sun.cpp:489-501. The reference takes min/max over the frustum AABB and
+        // the light-space z bounds of every shadow caster
+        // (BuildTSMProjectionMatrix_caster_depth_bounds, r2_R_sun.cpp:487, driven by
+        // s_casters that r_dsgraph_render_subspace fills at r2_R_sun.cpp:416). The
+        // port has no caster list at matrix-build time - the walk that could produce
+        // one has not run yet, and it runs with this matrix - so the depth range is
+        // the frustum's. Casters outside it are clipped by the ortho box, which is
+        // what fBias (below) then compensates for, exactly as it does in the
+        // reference when the near plane cuts the map.
+        float min_z = frustumPnts[0][2], max_z = frustumPnts[0][2];
+        float min_x = frustumPnts[0][0], max_x = frustumPnts[0][0];
+        float min_y = frustumPnts[0][1], max_y = frustumPnts[0][1];
+        for (int i = 1; i < 8; ++i)
+        {
+            min_x = _min(min_x, frustumPnts[i][0]); max_x = _max(max_x, frustumPnts[i][0]);
+            min_y = _min(min_y, frustumPnts[i][1]); max_y = _max(max_y, frustumPnts[i][1]);
+            min_z = _min(min_z, frustumPnts[i][2]); max_z = _max(max_z, frustumPnts[i][2]);
+        }
+        if (min_z <= 1.0f)
+        {
+            // r2_R_sun.cpp:494-500: push the whole box to z >= 1.
+            for (int i = 0; i < 8; ++i)
+                frustumPnts[i][2] -= min_z - 1.0f;
+            max_z = -min_z + max_z + 1.0f;
+            min_z = 1.0f;
+        }
+
+        // r2_R_sun.cpp:503-504.
+        SunMatrix lightSpaceOrtho = SunOrthoOffCenterLH(min_x, max_x, min_y, max_y, min_z, max_z);
+
+        // r2_R_sun.cpp:507: the frustum through the ortho, which is what the
+        // trapezoid fit below operates on.
+        for (int i = 0; i < 8; ++i)
+            SunXformCoord(frustumPnts[i], lightSpaceOrtho, frustumPnts[i]);
+
+        // r2_R_sun.cpp:509-517: the centre of the near plane and of the far plane.
+        float centerPts[2][2];
+        for (int j = 0; j < 2; ++j)
+        {
+            const int base = j ? 0 : 4; // far plane first, near plane second
+            centerPts[j][0] = 0.25f * (frustumPnts[base + 0][0] + frustumPnts[base + 1][0] +
+                                       frustumPnts[base + 2][0] + frustumPnts[base + 3][0]);
+            centerPts[j][1] = 0.25f * (frustumPnts[base + 0][1] + frustumPnts[base + 1][1] +
+                                       frustumPnts[base + 2][1] + frustumPnts[base + 3][1]);
+        }
+        const float centerOrig[2] = { (centerPts[0][0] + centerPts[1][0]) * 0.5f,
+                                       (centerPts[0][1] + centerPts[1][1]) * 0.5f };
+
+        // r2_R_sun.cpp:521-543: xlate_center then rot_center, which puts the frustum's
+        // centre line onto y = 0.
+        SunMatrix xlate_center;
+        xlate_center.m[0] = 1.0f; xlate_center.m[1] = 0.0f; xlate_center.m[2] = 0.0f; xlate_center.m[3] = 0.0f;
+        xlate_center.m[4] = 0.0f; xlate_center.m[5] = 1.0f; xlate_center.m[6] = 0.0f; xlate_center.m[7] = 0.0f;
+        xlate_center.m[8] = 0.0f; xlate_center.m[9] = 0.0f; xlate_center.m[10] = 1.0f; xlate_center.m[11] = 0.0f;
+        xlate_center.m[12] = -centerOrig[0]; xlate_center.m[13] = -centerOrig[1]; xlate_center.m[14] = 0.0f; xlate_center.m[15] = 1.0f;
+
+        const float x_len = centerPts[1][0] - centerOrig[0];
+        const float y_len = centerPts[1][1] - centerOrig[1];
+        const float half_center_len = _sqrt(x_len * x_len + y_len * y_len);
+        const float cos_theta = half_center_len > 0.0f ? x_len / half_center_len : 1.0f;
+        const float sin_theta = half_center_len > 0.0f ? y_len / half_center_len : 0.0f;
+        SunMatrix rot_center;
+        rot_center.m[0] = cos_theta; rot_center.m[1] = -sin_theta; rot_center.m[2] = 0.0f; rot_center.m[3] = 0.0f;
+        rot_center.m[4] = sin_theta; rot_center.m[5] = cos_theta;  rot_center.m[6] = 0.0f; rot_center.m[7] = 0.0f;
+        rot_center.m[8] = 0.0f;       rot_center.m[9] = 0.0f;       rot_center.m[10] = 1.0f; rot_center.m[11] = 0.0f;
+        rot_center.m[12] = 0.0f;      rot_center.m[13] = 0.0f;      rot_center.m[14] = 0.0f; rot_center.m[15] = 1.0f;
+
+        SunMatrix trapezoid_space;
+        SunMul(trapezoid_space, xlate_center, rot_center);
+        for (int i = 0; i < 8; ++i)
+            SunXformCoord(frustumPnts[i], trapezoid_space, frustumPnts[i]);
+
+        // r2_R_sun.cpp:546-566: the AABB in the rotated space, scaled so it fills
+        // the unit square on both axes.
+        float aabbMinX = frustumPnts[0][0], aabbMaxX = frustumPnts[0][0];
+        float aabbMinY = frustumPnts[0][1], aabbMaxY = frustumPnts[0][1];
+        for (int i = 1; i < 8; ++i)
+        {
+            aabbMinX = _min(aabbMinX, frustumPnts[i][0]); aabbMaxX = _max(aabbMaxX, frustumPnts[i][0]);
+            aabbMinY = _min(aabbMinY, frustumPnts[i][1]); aabbMaxY = _max(aabbMaxY, frustumPnts[i][1]);
+        }
+        const float x_scale = 1.0f / _max(_abs(aabbMaxX), _abs(aabbMinX));
+        const float y_scale = 1.0f / _max(_abs(aabbMaxY), _abs(aabbMinY));
+        SunMatrix scale_center;
+        scale_center.m[0] = x_scale; scale_center.m[1] = 0.0f;       scale_center.m[2] = 0.0f; scale_center.m[3] = 0.0f;
+        scale_center.m[4] = 0.0f;     scale_center.m[5] = y_scale;   scale_center.m[6] = 0.0f; scale_center.m[7] = 0.0f;
+        scale_center.m[8] = 0.0f;     scale_center.m[9] = 0.0f;       scale_center.m[10] = 1.0f; scale_center.m[11] = 0.0f;
+        scale_center.m[12] = 0.0f;    scale_center.m[13] = 0.0f;      scale_center.m[14] = 0.0f; scale_center.m[15] = 1.0f;
+        SunMul(trapezoid_space, trapezoid_space, scale_center);
+        aabbMinX *= x_scale; aabbMaxX *= x_scale;
+        aabbMinY *= y_scale; aabbMaxY *= y_scale;
+
+        // r2_R_sun.cpp:568-574: the projection point Q, eta away from the top line.
+        const float m_fTSM_Delta = kSunTsmProjection;
+        const float lambda = aabbMaxX - aabbMinX;
+        const float delta_proj = m_fTSM_Delta * lambda;
+        const float xi = -0.6f;
+        const float eta = (lambda * delta_proj * (1.0f + xi)) / (lambda * (1.0f - xi) - 2.0f * delta_proj);
+        const float projectionPtQ[2] = { aabbMaxX + eta, 0.0f };
+
+        // r2_R_sun.cpp:578-590: the projection field of view, the extreme slopes
+        // from Q to the frustum points.
+        float max_slope = -1e32f, min_slope = 1e32f;
+        for (int i = 0; i < 8; ++i)
+        {
+            const float tmp_x = frustumPnts[i][0] * x_scale;
+            const float tmp_y = frustumPnts[i][1] * y_scale;
+            const float x_dist = tmp_x - projectionPtQ[0];
+            if (!(tmp_y == 0.0f || x_dist == 0.0f))
+            {
+                max_slope = _max(max_slope, tmp_y / x_dist);
+                min_slope = _min(min_slope, tmp_y / x_dist);
+            }
+        }
+        const float xf = lambda + eta;   // r2_R_sun.cpp:593, xn = eta is the literal's own value
+
+        // r2_R_sun.cpp:595-599: move Q to the origin.
+        SunMatrix ptQ_xlate;
+        ptQ_xlate.m[0] = -1.0f; ptQ_xlate.m[1] = 0.0f; ptQ_xlate.m[2] = 0.0f; ptQ_xlate.m[3] = 0.0f;
+        ptQ_xlate.m[4] = 0.0f;  ptQ_xlate.m[5] = 1.0f; ptQ_xlate.m[6] = 0.0f; ptQ_xlate.m[7] = 0.0f;
+        ptQ_xlate.m[8] = 0.0f;  ptQ_xlate.m[9] = 0.0f; ptQ_xlate.m[10] = 1.0f; ptQ_xlate.m[11] = 0.0f;
+        ptQ_xlate.m[12] = projectionPtQ[0]; ptQ_xlate.m[13] = 0.0f; ptQ_xlate.m[14] = 0.0f; ptQ_xlate.m[15] = 1.0f;
+        SunMul(trapezoid_space, trapezoid_space, ptQ_xlate);
+
+        // r2_R_sun.cpp:603-611: the shear that balances the trapezoid around y = 0.
+        const float shear_amt = (max_slope + _abs(min_slope)) * 0.5f - max_slope;
+        max_slope += shear_amt;
+        SunMatrix trapezoid_shear;
+        trapezoid_shear.m[0] = 1.0f;       trapezoid_shear.m[1] = shear_amt; trapezoid_shear.m[2] = 0.0f; trapezoid_shear.m[3] = 0.0f;
+        trapezoid_shear.m[4] = 0.0f;       trapezoid_shear.m[5] = 1.0f;       trapezoid_shear.m[6] = 0.0f; trapezoid_shear.m[7] = 0.0f;
+        trapezoid_shear.m[8] = 0.0f;       trapezoid_shear.m[9] = 0.0f;       trapezoid_shear.m[10] = 1.0f; trapezoid_shear.m[11] = 0.0f;
+        trapezoid_shear.m[12] = 0.0f;      trapezoid_shear.m[13] = 0.0f;      trapezoid_shear.m[14] = 0.0f; trapezoid_shear.m[15] = 1.0f;
+        SunMul(trapezoid_space, trapezoid_space, trapezoid_shear);
+
+        // r2_R_sun.cpp:614-622: the 2D projection that unsqueezes the top line.
+        const float z_aspect = (max_z - min_z) / (aabbMaxY - aabbMinY);
+        SunMatrix trapezoid_projection;
+        trapezoid_projection.m[0] = xf / (xf - eta); trapezoid_projection.m[1] = 0.0f;  trapezoid_projection.m[2] = 0.0f; trapezoid_projection.m[3] = 1.0f;
+        trapezoid_projection.m[4] = 0.0f;              trapezoid_projection.m[5] = 1.0f / max_slope; trapezoid_projection.m[6] = 0.0f; trapezoid_projection.m[7] = 0.0f;
+        trapezoid_projection.m[8] = 0.0f;              trapezoid_projection.m[9] = 0.0f;  trapezoid_projection.m[10] = 1.0f / (z_aspect * max_slope); trapezoid_projection.m[11] = 0.0f;
+        trapezoid_projection.m[12] = -eta * xf / (xf - eta); trapezoid_projection.m[13] = 0.0f; trapezoid_projection.m[14] = 0.0f; trapezoid_projection.m[15] = 0.0f;
+        SunMul(trapezoid_space, trapezoid_space, trapezoid_projection);
+
+        // r2_R_sun.cpp:625-629: x is [0,1] after the projection, expand it to [-1,1].
+        SunMatrix biasedScaleX;
+        biasedScaleX.m[0] = 2.0f; biasedScaleX.m[1] = 0.0f; biasedScaleX.m[2] = 0.0f; biasedScaleX.m[3] = 0.0f;
+        biasedScaleX.m[4] = 0.0f; biasedScaleX.m[5] = 1.0f; biasedScaleX.m[6] = 0.0f; biasedScaleX.m[7] = 0.0f;
+        biasedScaleX.m[8] = 0.0f; biasedScaleX.m[9] = 0.0f; biasedScaleX.m[10] = 1.0f; biasedScaleX.m[11] = 0.0f;
+        biasedScaleX.m[12] = -1.0f; biasedScaleX.m[13] = 0.0f; biasedScaleX.m[14] = 0.0f; biasedScaleX.m[15] = 1.0f;
+        SunMul(trapezoid_space, trapezoid_space, biasedScaleX);
+
+        // r2_R_sun.cpp:631-633: m_LightViewProj = view * lightSpaceBasis * ortho * trapezoid.
+        SunMatrix lightViewProj;
+        SunMul(lightViewProj, eyeSpaceView, lightSpaceBasis);
+        SunMul(lightViewProj, lightViewProj, lightSpaceOrtho);
+        SunMul(lightViewProj, lightViewProj, trapezoid_space);
+
+        // r2_R_sun.cpp:639-715, R2FLAG_SUN_FOCUS: the refit onto the receiver AABB.
+        // The reference gets it from s_casters / s_receivers == main_coarse_structure
+        // (r2_R_sun.cpp:414-417, :655-669), i.e. from the spatial database of the
+        // level, which this port does not have - the port's visual list carries no
+        // per-object bounds at draw time. The frustum fit above is kept instead, so
+        // the shadow map keeps the whole visible frustum and its effective texel
+        // density is below the reference's focused one. This is the only thing left
+        // out of the matrix, and it is a fit, not a sampling rule: the sampling in
+        // deferred_light_ps.sc is the reference's PCSS unchanged.
+        _out = lightViewProj;
+        return true;
     }
 
     bgfx_program_handle_t BuildProgram(const char* _vs, const char* _ps)
@@ -1221,7 +1689,8 @@ namespace bgfxHDR
             (int)s_depthFormat, s_hdrFb.idx, s_hdrLitFb.idx, s_hdrHighFb.idx);
 
         if (!CreateLuminanceTargets() || !EnsureBloomTargets() || !EnsureBloomPrograms() ||
-            !EnsureCombineProgram() || !EnsureResolveProgram() || !EnsureHighProgram())
+            !EnsureCombineProgram() || !EnsureResolveProgram() || !EnsureHighProgram() ||
+            !EnsureShadowTargets() || !EnsureShadowProgram())
         {
             DestroyHDRTarget();
             return false;
@@ -1255,6 +1724,7 @@ namespace bgfxHDR
         DestroySmaaTargets();
         DestroySmaaPrograms();
         DestroyFogScatter();
+        DestroyShadow();
     }
 
     bool RecreateOnResize(uint16_t _width, uint16_t _height)
@@ -1344,6 +1814,174 @@ namespace bgfxHDR
     //           and :151 before it is read, so the whole non-ES_PSEUDO_PBR lobe
     //           is closed form in mat_id. No LUT texture has to be created
     //           here, and none is invented.
+    // r2_R_sun.cpp:311-328 computes the frustum the sun matrix is fitted to, from
+    // the same fov / aspect the projection uses, over
+    //   _far_ = min(OLES_SUN_LIMIT_27_01_07, CurrentEnv->far_plane)
+    // (r2_R_sun.cpp:322, :13 - the constant is 100.f). VIEWPORT_NEAR is the near
+    // plane of the frustum, per the reference's own comment at r2_R_sun.cpp:325.
+    static const float OLES_SUN_LIMIT_27_01_07 = 100.0f;   // r2_R_sun.cpp:13
+
+    // The sun matrix the caster pass renders with, kept for the resolve: the
+    // reference hands the accumulator the same matrix it rendered with
+    // (r2_R_sun.cpp:718 and r4_rendertarget_accum_direct.cpp:170 both read
+    // fuckingsun->X.D.combine), so the two halves of the pass can never disagree.
+    static SunMatrix s_sunMatrix = {};
+    static bool s_sunMatrixValid = false;
+
+    // Builds the sun matrix and binds the shadow view. The caller then re-walks the
+    // world (bgfxRenderCompat.cpp, pass 0 of bgfxRenderWorld) and every mesh it
+    // reaches is submitted into kShadowView with shadow_vs.sc / shadow_ps.sc,
+    // which is r2_R_sun.cpp:727-740.
+    bool ShadowBegin()
+    {
+        s_shadowMapValid = false;
+        s_sunMatrixValid = false;
+        if (!EnsureShadowTargets() || !EnsureShadowProgram())
+            return false;
+
+        CEnvDescriptorMixer* env = g_pGamePersistent
+            ? g_pGamePersistent->Environment().CurrentEnv
+            : nullptr;
+        if (!env)
+            return false;
+
+        // The sun's light-travel direction in world space. CEnvDescriptor::sun_dir
+        // is what Ldynamic_dir is derived from (deferred_light_ps.sc:351 negates the
+        // view-space copy), so it is the same vector the reference's
+        // fuckingsun->direction holds.
+        Fvector sunDir = env->sun_dir;
+        sunDir.normalize_safe();
+        float farPlane = env->far_plane;
+        if (farPlane > OLES_SUN_LIMIT_27_01_07)
+            farPlane = OLES_SUN_LIMIT_27_01_07;
+        if (farPlane <= VIEWPORT_NEAR)
+            farPlane = OLES_SUN_LIMIT_27_01_07;
+
+        if (!BuildSunMatrix(s_sunMatrix, &sunDir.x, Device.mView, deg2rad(Device.fFOV),
+                            Device.fASPECT, farPlane))
+            return false;
+
+        // r2_R_sun.cpp:744-747 closes the SMAP render with r_pmask, and
+        // phase_smap_direct (r2_R_sun.cpp:728) targets r2_RT_smap_depth. The clear is
+        // the far value so that everything the walk does not reach reads as "nothing
+        // between it and the light", which is what the depth compare then reports.
+        bgfx_set_view_frame_buffer(kShadowView, s_shadowFb);
+        bgfx_set_view_rect(kShadowView, 0, 0, (int)kSunSmapSize, (int)kSunSmapSize);
+        bgfx_set_view_clear(kShadowView, BGFX_CLEAR_COLOR | BGFX_CLEAR_DEPTH, 0xffffffff, 1.0f, 0);
+        bgfx_set_view_mode(kShadowView, BGFX_VIEW_MODE_SEQUENTIAL);
+        // r2_R_sun.cpp:729-731: xform_world = identity, xform_view = identity,
+        // xform_project = fuckingsun->X.D.combine. bgfx splits view and projection,
+        // so the view half is the identity and the projection half is the sun matrix.
+        static const float s_identity[16] =
+        {
+            1.0f, 0.0f, 0.0f, 0.0f,
+            0.0f, 1.0f, 0.0f, 0.0f,
+            0.0f, 0.0f, 1.0f, 0.0f,
+            0.0f, 0.0f, 0.0f, 1.0f,
+        };
+        bgfx_set_view_transform(kShadowView, s_identity, s_sunMatrix.m);
+        bgfx_touch(kShadowView);
+
+        s_shadowPassActive = true;
+        s_sunMatrixValid = true;
+        s_shadowMapValid = true;
+        return true;
+    }
+
+    void ShadowEnd()
+    {
+        s_shadowPassActive = false;
+    }
+
+    bool ShadowPassActive()
+    {
+        return s_shadowPassActive;
+    }
+
+    bgfx_program_handle_t GetShadowProgram()
+    {
+        return s_shadowProgram;
+    }
+
+    // Feeds deferred_light_ps.sc the m_shadow of r4_rendertarget_accum_direct.cpp:152-180:
+    //   m_TexelAdjust * fuckingsun->X.D.combine * inverse(Device.mView)
+    // where m_TexelAdjust is
+    //   { 0.5, 0, 0, 0 / 0, -0.5, 0, 0 / 0, 0, fRange, 0 / 0.5, 0.5, fBias, 1 }
+    // The reference picks fRange / fBias per cascade: SE_SUN_NEAR uses
+    // ps_r2_sun_depth_near_scale with -ps_r2_sun_depth_near_bias, SE_SUN_FAR uses
+    // ps_r2_sun_depth_far_scale with ps_r2_sun_depth_far_bias. This port has the one
+    // map, i.e. the far cascade - the one whose fit covers the whole visible frustum -
+    // so the far pair is the one applied. The tsm bias translate of
+    // r4_rendertarget_accum_direct.cpp:174-179 is likewise a SE_SUN_FAR term and is
+    // applied: the map is translated along the view-space light direction by
+    // ps_r2_sun_tsm_bias, i.e. the caster depth is pushed away from the light.
+    void SetShadowUniforms()
+    {
+        if (!bgfxIsValid(s_shadowMat) || !bgfxIsValid(s_shadowParams) || !s_sunMatrixValid)
+            return;
+
+        Fmatrix invView;
+        invView.invert(Device.mView);
+
+        const float fRange = kSunDepthFarScale;
+        const float fBias  = kSunDepthFarBias;
+        // r4_rendertarget_accum_direct.cpp:156-162, m_TexelAdjust, column-major.
+        const SunMatrix texelAdjust =
+        {
+            {
+                0.5f,  0.0f, 0.0f, 0.0f,
+                0.0f, -0.5f, 0.0f, 0.0f,
+                0.0f,  0.0f, fRange, 0.0f,
+                0.5f,  0.5f, fBias, 1.0f,
+            }
+        };
+
+        SunMatrix proj;
+        SunMul(proj, texelAdjust, s_sunMatrix);
+
+        // r4_rendertarget_accum_direct.cpp:174-179, the tsm bias along L_dir.
+        // L_dir is the view-space light direction accum_sun_near.ps:23 reads, i.e. the
+        // same vector the resolve's u_sunDir carries (deferred_light_ps.sc:351 turns it
+        // into the surface-to-light vector with -normalize), so the bias is taken from
+        // the descriptor rather than from the fitted basis: the fit may rotate the
+        // light space, the bias may not.
+        Fvector vd;
+        vd.set(0.0f, 0.0f, 0.0f);
+        CEnvDescriptorMixer* env = g_pGamePersistent
+            ? g_pGamePersistent->Environment().CurrentEnv
+            : nullptr;
+        if (env)
+        {
+            Device.mView.transform_dir(vd, env->sun_dir);
+            vd.normalize_safe();
+        }
+        SunMatrix bias_t;
+        bias_t.m[0] = 1.0f; bias_t.m[1] = 0.0f; bias_t.m[2] = 0.0f; bias_t.m[3] = 0.0f;
+        bias_t.m[4] = 0.0f; bias_t.m[5] = 1.0f; bias_t.m[6] = 0.0f; bias_t.m[7] = 0.0f;
+        bias_t.m[8] = 0.0f; bias_t.m[9] = 0.0f; bias_t.m[10] = 1.0f; bias_t.m[11] = 0.0f;
+        bias_t.m[12] = vd.x * kSunTsmBias;
+        bias_t.m[13] = vd.y * kSunTsmBias;
+        bias_t.m[14] = vd.z * kSunTsmBias;
+        bias_t.m[15] = 1.0f;
+        proj.m[12] += bias_t.m[12] * proj.m[0] + bias_t.m[13] * proj.m[4] + bias_t.m[14] * proj.m[8];
+        proj.m[13] += bias_t.m[12] * proj.m[1] + bias_t.m[13] * proj.m[5] + bias_t.m[14] * proj.m[9];
+        proj.m[14] += bias_t.m[12] * proj.m[2] + bias_t.m[13] * proj.m[6] + bias_t.m[14] * proj.m[10];
+        proj.m[15] += bias_t.m[12] * proj.m[3] + bias_t.m[13] * proj.m[7] + bias_t.m[14] * proj.m[11];
+
+        SunMatrix m_shadow;
+        SunMul(m_shadow, proj, reinterpret_cast<const SunMatrix&>(invView.m));
+        bgfx_set_uniform(s_shadowMat, m_shadow.m, 1);
+
+        const float params[4] =
+        {
+            float(kSunSmapSize),
+            s_shadowMapValid ? 1.0f : 0.0f,
+            float(kSunQuality),
+            0.0f,
+        };
+        bgfx_set_uniform(s_shadowParams, params, 1);
+    }
+
     bool ResolvePass()
     {
         s_resolveOk = false;
@@ -1382,9 +2020,14 @@ namespace bgfxHDR
         bgfx_set_transient_vertex_buffer(0, &tvb, 0, 3);
         SetEnvironmentUniforms();
         BindAmbientCube();
+        // The sun shadow term of accum_sun_near.ps:69-72, i.e. the last piece the
+        // reference multiplies into the sun lobe.
+        SetShadowUniforms();
         bgfx_set_texture(0, s_litSampler, s_hdrColor, 0);
         bgfx_set_texture(1, s_litPositionSampler, s_hdrPosition, 0);
         bgfx_set_texture(2, s_litGbufSampler, s_hdrGbuf, 0);
+        if (bgfxIsValid(s_smapSampler))
+            bgfx_set_texture(5, s_smapSampler, s_shadowMap, 0);
         bgfx_submit(kResolveView, s_resolveProgram, 0, BGFX_DISCARD_ALL);
         s_resolveOk = true;
         return true;

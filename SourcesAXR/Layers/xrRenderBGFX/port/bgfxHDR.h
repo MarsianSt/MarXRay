@@ -43,6 +43,26 @@ namespace bgfxHDR
     // pre-tonemap image, and before the bloom bright pass, the only reader
     // (blender_bloom_build.cpp:18).
     const bgfx_view_id_t kHighView = 22;
+    // Sun shadow map (AXR r2_RT_smap_depth, r4_rendertarget.cpp:636). The one
+    // writer is the caster pass, which has to run before the scene view, so it
+    // takes the lowest free id below kSceneView's block; the reader is the
+    // lighting resolve, which therefore also sees a map of the current frame.
+    const bgfx_view_id_t kShadowView = 1;
+
+    // Binds the shadow-map view, its sun transform and its clear, then lets the
+    // caller re-walk the world with bgfxWorldShadowPass() on. Returns false when
+    // the target or the program is unavailable, in which case the world walk is
+    // left in its normal mode and the resolve falls back to s = 1. ShadowEnd()
+    // clears the flag again and is a no-op when ShadowBegin() returned false.
+    bool ShadowBegin();
+    void ShadowEnd();
+    // 1 between ShadowBegin() and ShadowEnd(). The world walk reads it to swap the
+    // world program, the view and the state for the shadow caster ones
+    // (bgfxRenderCompat.cpp, pass 0 of bgfxRenderWorld).
+    bool ShadowPassActive();
+    // The caster program (shadow_vs.sc / shadow_ps.sc), invalid when the shadow
+    // targets or the program could not be built.
+    bgfx_program_handle_t GetShadowProgram();
 
     bool CreateHDRTarget(uint16_t _width, uint16_t _height);
     void DestroyHDRTarget();

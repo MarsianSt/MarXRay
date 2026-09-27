@@ -14,9 +14,11 @@ $input v_texcoord0
 //
 // Both specular halves are now ported 1:1: the sun lobe of compute_lighting
 // (lmodel.h:148-173) and hmodel's Amb_BRDF term (hmodel.h:145, the
-// EnvGGX/pbr_brdf.h:288-309 arm). What is still not ported: the SSAO factor
-// (combine_1.ps:128-159) and the sun shadow term (accum_sun.ps:26-32), which
-// need the SSAO buffer and the shadow map, none of which this port binds.
+// EnvGGX/pbr_brdf.h:288-309 arm). The sun shadow term is ported 1:1 too: the
+// depth from the sun's point of view, sampled with the reference's PCSS kernel
+// (shadow.h:169-231) at ps_r_sun_quality = 1, i.e. 8 poisson taps and no
+// blocker search. What is still not ported: the SSAO factor
+// (combine_1.ps:128-159), which needs the SSAO buffer this port does not bind.
 
 // Attachment 0 of the scene FB: Anomaly f_deffer::C, rgb = albedo + a = gloss
 // (gbuffer_stage.h:8, written by deffer_base_flat.ps:54 as float4(D.rgb, def_gloss)
@@ -36,6 +38,13 @@ SAMPLER2D(s_gbuf, 2);
 // bgfxGetAmbientCube()).
 SAMPLERCUBE(s_env0, 3);
 SAMPLERCUBE(s_env1, 4);
+// s_smap: the sun shadow map. game_unpacked/shaders/r3/shadow.h:9 binds it at
+// ps t0 under the same name; here it is sampler stage 5, right after the two
+// ambient cubes, and it carries the light-space depth of the nearest caster
+// rather than a hardware depth texture - see shadow_ps.sc for why. The
+// comparison the reference asks the hardware for (SampleCmpLevelZero, shadow.h:
+// 48/:211/:224) is done by hand in shadow_smap_test() below.
+SAMPLER2D(s_smap, 5);
 
 // Environment sun, fed from CEnvironment::CurrentEnv by bgfxHDR.
 //   u_sunDir   normalize(mView * CEnvDescriptor::sun_dir) - already view space,
@@ -53,6 +62,27 @@ uniform vec4 u_ambient;
 // cube term is the constant 1, i.e. the pre-cube behaviour, because a sampler
 // with no texture behind it has no defined value (bgfxHDR.cpp, BindAmbientCube).
 uniform vec4 u_cubeValid;
+// m_shadow of shadow.h:327, the world -> shadow-map matrix. The reference builds
+// it once per frame in the accumulator (r4_rendertarget_accum_direct.cpp:152-180)
+// as
+//   m_shadow = m_TexelAdjust * fuckingsun->X.D.combine * inverse(Device.mView)
+//   m_TexelAdjust = { 0.5, 0, 0, 0 / 0, -0.5, 0, 0 / 0, 0, fRange, 0 / 0.5, 0.5, fBias, 1 }
+// so the .xy of the result already are shadow-map texcoords, the .z/.w pair is the
+// depth the comparison runs against, and the fBias term is the whole depth bias
+// the reference applies (ps_r2_sun_depth_far_bias). Because the multiply is
+// already done on the CPU, the shader has to undo nothing: it only applies
+// tc.xyz /= tc.w (accum_sun_near.ps:70 followed by shadow.h:176).
+// G-buffer P is view space here, so the world-space position the reference feeds
+// m_shadow with (gbd.P, gbuffer_stage.h:59) is rebuilt through u_invView first.
+uniform mat4 u_shadowMat;
+//   .x  ps_r2_smapsize, the shadow map edge in texels. AXR compiles it into every
+//       shadow shader as SMAP_size (common_defines.h:15-16, r4.cpp:1066); here it
+//       comes in as a uniform so the C++ side and the kernel radius cannot drift
+//       apart when r2_smap_size is changed.
+//   .y  1 while a shadow map was rendered and bound this frame, 0 otherwise. The
+//       resolve then keeps the reference's no-map behaviour, i.e. s = 1
+//       (accum_sun.ps:26-32 with an unbound s_smap).
+uniform vec4 u_shadowParams;
 
 // u_invView is the bgfx predefined per-view uniform (bgfx_shader.sh:836), the
 // mirror of the AXR m_inv_V that hmodel.h:48 multiplies the normal with; the
@@ -306,6 +336,80 @@ vec3 Amb_BRDF(float rough, vec3 albedo, vec3 f0, vec3 env_d, vec3 env_s, vec3 V,
     return diffuse_term + specular_term;
 }
 
+// ---------------------------------------------------------------- shadow term
+// The sun shadow of accum_sun_near.ps:69-72
+//     float4 P4 = float4(_P.xyz + NormalOffset, 1.0);
+//     float4 PS = mul(m_shadow, P4);
+//     float  s  = sunmask(P4);
+//             s *= shadow(PS);
+//     return float4(Ldynamic_color * light * s);
+// with the NormalOffset term of SSFX_SHADOWS left out (it needs
+// ssfx_shadow_bias, a screen-space-shader uniform this port does not carry) and
+// sunmask() at its reference default of 1 (shadow.h:324 - USE_SUNMASK off, so
+// the clouds mask is not multiplied in).
+//
+// shadow() is shadow_pcss() here: ps_r_sun_quality defaults to 1
+// (xrRender_console.cpp:108), so SUN_QUALITY = 1, USE_ULTRA_SHADOWS stays off
+// (accum_sun_near.ps:8-10) and shadow.h:283-294 takes the plain shadow_pcss().
+// The SUN_QUALITY <= 3 arm of shadow_pcss (shadow.h:215-228) is therefore the
+// one that runs, in full:
+//
+//     float fRatio = 4.0f / float(SMAP_size);
+//     for (i < PCSS_NUM_SAMPLES)  s += SampleCmpLevelZero(smp_smap,
+//                                tc.xy + poissonDisk[i]*fRatio, tc.z).x;
+//     return s / PCSS_NUM_SAMPLES;
+//
+// PCSS_NUM_SAMPLES = 8 at SUN_QUALITY 1 (shadow.h:159-160). The blocker search
+// of the SUN_QUALITY > 3 arm is not compiled in the reference at this quality
+// either, so nothing of that arm is missing.
+//
+// The one substitution: SampleCmpLevelZero with the D3D comparison state
+// LESS_EQUAL returns 1 when the reference depth is <= the stored depth, which is
+// what shadow_smap_test() spells out. That is the whole of the port's
+// depth-format deviation - see shadow_ps.sc.
+
+// shadow.h:121-154, poissonDisk[0..7] - the first PCSS_NUM_SAMPLES entries, which
+// are the only ones the SUN_QUALITY 1 arm reads. The values are verbatim. They are
+// spelled out as eight named constants instead of a table because this file is
+// compiled through the HLSL parser (bgfxShaderCompiler.cpp:47-50 selects the
+// spirv profile on the Vulkan backend, and shaderc routes it through HLSL), which
+// rejects the GLSL array-constructor initialiser. Same eight taps, same order.
+const vec2 POISSON_0 = vec2(0.0617981, 0.07294159);
+const vec2 POISSON_1 = vec2(0.6470215, 0.7474022);
+const vec2 POISSON_2 = vec2(-0.5987766, -0.7512833);
+const vec2 POISSON_3 = vec2(-0.693034, 0.6913887);
+const vec2 POISSON_4 = vec2(0.6987045, -0.6843052);
+const vec2 POISSON_5 = vec2(-0.9402866, 0.04474335);
+const vec2 POISSON_6 = vec2(0.8934509, 0.07369385);
+const vec2 POISSON_7 = vec2(0.1592735, -0.9686295);
+
+// shadow.h:237-242, `test` without the reference's tc.xyz /= tc.w (done once by
+// the caller, shadow.h:176) and with SampleCmpLevelZero in its spelled-out form:
+// the D3D comparison the reference asks for is LESS_EQUAL against the stored
+// depth, so the tap contributes 1 (lit) exactly when ref <= stored.
+float shadow_smap_test(vec2 tc, float ref)
+{
+    return step(texture2D(s_smap, tc).r, ref);
+}
+
+// shadow.h:215-228, the no-blocker-search arm, with the loop written out:
+// PCSS_NUM_SAMPLES = 8 (shadow.h:159-160, SUN_QUALITY 1) and
+// fRatio = 4.0f / float(SMAP_size).
+float shadow_smap_pcss(vec3 tc)
+{
+    float fRatio = 4.0 / u_shadowParams.x;
+    float s = 0.0;
+    s += shadow_smap_test(tc.xy + POISSON_0 * fRatio, tc.z);
+    s += shadow_smap_test(tc.xy + POISSON_1 * fRatio, tc.z);
+    s += shadow_smap_test(tc.xy + POISSON_2 * fRatio, tc.z);
+    s += shadow_smap_test(tc.xy + POISSON_3 * fRatio, tc.z);
+    s += shadow_smap_test(tc.xy + POISSON_4 * fRatio, tc.z);
+    s += shadow_smap_test(tc.xy + POISSON_5 * fRatio, tc.z);
+    s += shadow_smap_test(tc.xy + POISSON_6 * fRatio, tc.z);
+    s += shadow_smap_test(tc.xy + POISSON_7 * fRatio, tc.z);
+    return s * 0.125;   // s / float(PCSS_NUM_SAMPLES)
+}
+
 void main()
 {
     vec2 tc = v_texcoord0;
@@ -395,11 +499,37 @@ void main()
     // masked by the gloss channel.
     vec3 sun = sunDiffuse * albedo + sunSpecular * metaltint;
 
-    // accum_sun.ps:29 result *= light * SRGBToLinear(Ldynamic_color.rgb), i.e.
-    // the sun colour multiplies the specular lobe too. (accum_sun.ps:34-35
-    // SRGBToLinear(s) is the shadow term and is 1 here, no shadow map in this
-    // pass.)
-    sun *= SRGBToLinearC(u_sunColor.rgb);
+    // accum_sun.ps:26-32 / accum_sun_near.ps:69-72 - the shadow term s, which
+    // multiplies the whole sun lobe.
+    //
+    // accum_sun.ps:27-30 is the R3 four-quadrant form: it reads the LT/RT/LB/RB
+    // varyings the R3 VS emits and takes one channel per quadrant of an RGBA
+    // shadow map. That is the older sibling of the same term - it has no m_shadow,
+    // no SMAP_size and no PCSS - and the R4 chain this port follows
+    // (r2_R_sun.cpp -> phase_smap_direct -> accum_sun_near.ps) produces the
+    // 2D shadow map accumulated here instead. So the ported form is the
+    // accum_sun_near one, which is the same factor in the same place.
+    //
+    // gbd.P is world space in AXR (gbuffer_stage.h:59-65); this port's
+    // s_position carries the view-space position, so u_invView rebuilds the
+    // world-space point the reference hands to m_shadow.
+    vec3 Pw = mul(u_invView, vec4(P, 1.0)).xyz;
+    vec4 PS = mul(u_shadowMat, vec4(Pw, 1.0));
+    // shadow.h:176, tc.xyz /= tc.w, the perspective divide the reference does
+    // once for the whole kernel.
+    vec3 shadowTc = PS.xyz / PS.w;
+    // 1 = the map is bound, 0 = no map this frame. The reference has no such
+    // switch: an unbound s_smap is undefined, and accum_sun_near.ps always has
+    // one. Here the pass may be unavailable, and 1 is the reference's own
+    // unshadowed value (shadow.h:324's sunmask() default, and the constant the
+    // resolve used before the map existed).
+    float sShadow = (u_shadowParams.y > 0.5) ? shadow_smap_pcss(shadowTc) : 1.0;
+
+    // accum_sun.ps:29-35 result *= light * SRGBToLinear(Ldynamic_color.rgb), i.e.
+    // the sun colour multiplies the specular lobe too, and the shadow factor
+    // scales the product exactly as accum_sun_near.ps:81 return float4(
+    // Ldynamic_color * light * s) does.
+    sun *= sShadow * SRGBToLinearC(u_sunColor.rgb);
 
     // ----- hemi ambient: hmodel.h, the diffuse half of combine_1.ps:166
     //   hmodel.h:47-48  nw = normalize(mul(m_inv_V, normal)), world space, the
