@@ -141,6 +141,19 @@ namespace
     uint16_t s_smaaWidth = 0;
     uint16_t s_smaaHeight = 0;
 
+    // Fog-scatter working set (AXR combine_2_naa.ps:106-121). The blur chain
+    // reuses the bloom build/filter programs with a zero threshold (full-scene
+    // average instead of bright-pass); the blend is fog_scatter_ps.sc.
+    bgfx_frame_buffer_handle_t s_fogBlur1Fb = BGFX_INVALID_HANDLE;
+    bgfx_frame_buffer_handle_t s_fogBlur2Fb = BGFX_INVALID_HANDLE;
+    bgfx_frame_buffer_handle_t s_smaaScatterFb = BGFX_INVALID_HANDLE;
+    bgfx_texture_handle_t s_fogBlur1 = BGFX_INVALID_HANDLE;
+    bgfx_texture_handle_t s_fogBlur2 = BGFX_INVALID_HANDLE;
+    bgfx_texture_handle_t s_smaaScatter = BGFX_INVALID_HANDLE;
+    bgfx_program_handle_t s_fogScatterProgram = BGFX_INVALID_HANDLE;
+    bgfx_uniform_handle_t s_scatterImage = BGFX_INVALID_HANDLE;
+    bgfx_uniform_handle_t s_scatterBlur = BGFX_INVALID_HANDLE;
+
     // Defaults mirror SourcesAXR/Layers/xrRender/xrRender_console.cpp:276-279; xrRender is not linked into BGFX.
     constexpr float kTonemapMiddleGray = 0.95f;
     constexpr float kTonemapAdaptation = 1.0f;
@@ -824,6 +837,10 @@ namespace bgfxHDR
     bool EnsureSmaaPrograms();
     bool EnsureSmaaTextures();
     bool IsSmaaReady(uint16_t _width, uint16_t _height);
+    void DestroyFogScatter();
+    bool EnsureFogScatter(uint16_t _width, uint16_t _height);
+    bool FogScatterPass(uint16_t _width, uint16_t _height);
+    bgfx_texture_handle_t ScatterOutputTexture();
 
     bool CreateHDRTarget(uint16_t _width, uint16_t _height)
     {
@@ -960,15 +977,17 @@ namespace bgfxHDR
         DestroyLuminanceTargets();
         DestroySmaaTargets();
         DestroySmaaPrograms();
+        DestroyFogScatter();
     }
 
     bool RecreateOnResize(uint16_t _width, uint16_t _height)
     {
         if (bgfxIsValid(s_hdrFb) && s_width == _width && s_height == _height)
             return EnsureLuminanceTargets() && EnsureBloomTargets() && EnsureBloomPrograms() && EnsureCombineProgram();
-        // Full-res SMAA targets follow the window size; drop them here, the
-        // passes recreate them lazily at the new size.
+        // Full-res SMAA/scatter targets follow the window size; drop them here,
+        // the passes recreate them lazily at the new size.
         DestroySmaaTargets();
+        DestroyFogScatter();
         return CreateHDRTarget(_width, _height);
     }
 
@@ -1400,7 +1419,7 @@ namespace bgfxHDR
         SetupSmaaView(kSmaaEdgeView, s_smaaEdgesFb, _width, _height, true);
         if (!SetupSmaaDraw(_width, _height))
             return false;
-        bgfx_set_texture(0, s_smaaImage, s_smaaInput, pointFlags);
+        bgfx_set_texture(0, s_smaaImage, ScatterOutputTexture(), pointFlags);
         bgfx_submit(kSmaaEdgeView, s_smaaEdgeProgram, 0, BGFX_DISCARD_ALL);
         // Pass 1 (:38-57): blend weights from edges + area (linear) + search (point).
         SetupSmaaView(kSmaaBlendView, s_smaaBlendFb, _width, _height, true);
@@ -1415,9 +1434,154 @@ namespace bgfxHDR
         SetupSmaaView(kSmaaResolveView, BGFX_INVALID_HANDLE, _width, _height, false);
         if (!SetupSmaaDraw(_width, _height))
             return false;
-        bgfx_set_texture(0, s_smaaImage, s_smaaInput, 0);
+        bgfx_set_texture(0, s_smaaImage, ScatterOutputTexture(), 0);
         bgfx_set_texture(1, s_smaaBlendU, s_smaaBlend, 0);
         bgfx_submit(kSmaaResolveView, s_smaaResolveProgram, 0, BGFX_DISCARD_ALL);
+        return true;
+    }
+
+    void DestroyFogScatter()
+    {
+        if (bgfxIsValid(s_fogBlur1Fb))
+            bgfx_destroy_frame_buffer(s_fogBlur1Fb);
+        if (bgfxIsValid(s_fogBlur2Fb))
+            bgfx_destroy_frame_buffer(s_fogBlur2Fb);
+        if (bgfxIsValid(s_smaaScatterFb))
+            bgfx_destroy_frame_buffer(s_smaaScatterFb);
+        s_fogBlur1Fb = BGFX_INVALID_HANDLE;
+        s_fogBlur2Fb = BGFX_INVALID_HANDLE;
+        s_smaaScatterFb = BGFX_INVALID_HANDLE;
+        if (bgfxIsValid(s_fogBlur1))
+            bgfx_destroy_texture(s_fogBlur1);
+        if (bgfxIsValid(s_fogBlur2))
+            bgfx_destroy_texture(s_fogBlur2);
+        if (bgfxIsValid(s_smaaScatter))
+            bgfx_destroy_texture(s_smaaScatter);
+        s_fogBlur1 = BGFX_INVALID_HANDLE;
+        s_fogBlur2 = BGFX_INVALID_HANDLE;
+        s_smaaScatter = BGFX_INVALID_HANDLE;
+        if (bgfxIsValid(s_fogScatterProgram))
+            bgfx_destroy_program(s_fogScatterProgram);
+        if (bgfxIsValid(s_scatterImage))
+            bgfx_destroy_uniform(s_scatterImage);
+        if (bgfxIsValid(s_scatterBlur))
+            bgfx_destroy_uniform(s_scatterBlur);
+        s_fogScatterProgram = BGFX_INVALID_HANDLE;
+        s_scatterImage = BGFX_INVALID_HANDLE;
+        s_scatterBlur = BGFX_INVALID_HANDLE;
+    }
+
+    bool EnsureFogScatter(uint16_t _width, uint16_t _height)
+    {
+        if (bgfxIsValid(s_fogBlur1Fb) && bgfxIsValid(s_fogBlur2Fb) &&
+            bgfxIsValid(s_smaaScatterFb) && bgfxIsValid(s_fogScatterProgram) &&
+            bgfxIsValid(s_scatterImage) && bgfxIsValid(s_scatterBlur) &&
+            s_smaaWidth == _width && s_smaaHeight == _height)
+            return true;
+        DestroyFogScatter();
+        if (_width == 0 || _height == 0)
+            return false;
+        const uint64_t flags = BGFX_TEXTURE_RT | BGFX_TEXTURE_U_CLAMP | BGFX_TEXTURE_V_CLAMP;
+        s_fogBlur1 = bgfx_create_texture_2d(kBloomSize, kBloomSize, false, 1, BGFX_TEXTURE_FORMAT_RGBA8, flags, nullptr, 0);
+        s_fogBlur2 = bgfx_create_texture_2d(kBloomSize, kBloomSize, false, 1, BGFX_TEXTURE_FORMAT_RGBA8, flags, nullptr, 0);
+        s_smaaScatter = bgfx_create_texture_2d(_width, _height, false, 1, BGFX_TEXTURE_FORMAT_RGBA8, flags, nullptr, 0);
+        if (!bgfxIsValid(s_fogBlur1) || !bgfxIsValid(s_fogBlur2) || !bgfxIsValid(s_smaaScatter))
+        {
+            LogError("[BGFX] Fog scatter target create failed (%ux%u)", _width, _height);
+            DestroyFogScatter();
+            return false;
+        }
+        bgfx_texture_handle_t aB1[] = { s_fogBlur1 };
+        bgfx_texture_handle_t aB2[] = { s_fogBlur2 };
+        bgfx_texture_handle_t aSc[] = { s_smaaScatter };
+        s_fogBlur1Fb = bgfx_create_frame_buffer_from_handles(1, aB1, true);
+        s_fogBlur2Fb = bgfx_create_frame_buffer_from_handles(1, aB2, true);
+        s_smaaScatterFb = bgfx_create_frame_buffer_from_handles(1, aSc, true);
+        if (!bgfxIsValid(s_fogBlur1Fb) || !bgfxIsValid(s_fogBlur2Fb) || !bgfxIsValid(s_smaaScatterFb))
+        {
+            LogError("[BGFX] Fog scatter framebuffer create failed (%ux%u)", _width, _height);
+            DestroyFogScatter();
+            return false;
+        }
+        s_fogScatterProgram = BuildProgram("smaa_vs.sc", "fog_scatter_ps.sc");
+        s_scatterImage = bgfx_create_uniform("s_scatterImage", BGFX_UNIFORM_TYPE_SAMPLER, 1);
+        s_scatterBlur = bgfx_create_uniform("s_scatterBlur", BGFX_UNIFORM_TYPE_SAMPLER, 1);
+        if (!bgfxIsValid(s_fogScatterProgram) || !bgfxIsValid(s_scatterImage) || !bgfxIsValid(s_scatterBlur))
+        {
+            LogError("[BGFX] Fog scatter program build failed");
+            DestroyFogScatter();
+            return false;
+        }
+        LogInfo("[BGFX] Fog scatter targets created: 256x256 x2 + %ux%u, program %u",
+            _width, _height, s_fogScatterProgram.idx);
+        return true;
+    }
+
+    // Image SMAA (and the debug views) resolve from: scattered output when the
+    // fog-scatter chain is up, plain combine output otherwise.
+    bgfx_texture_handle_t ScatterOutputTexture()
+    {
+        if (bgfxIsValid(s_smaaScatter))
+            return s_smaaScatter;
+        return s_smaaInput;
+    }
+
+    bool FogScatterPass(uint16_t _width, uint16_t _height)
+    {
+        if (!IsReady() || _width == 0 || _height == 0)
+            return false;
+        if (!EnsureSmaaTargets(_width, _height) || !EnsureSmaaPrograms() || !EnsureSmaaTextures())
+            return false;
+        if (!EnsureFogScatter(_width, _height))
+            return false;
+        if (!bgfxIsValid(s_bloomBuildProgram) || !bgfxIsValid(s_bloomFilterProgram))
+            return false;
+        // Downsample the combine LDR output with a zero threshold (full-scene
+        // average, not the bright pass). Same 256 geometry as the bloom build.
+        const float buildSetup[4] =
+        {
+            0.5f / float(s_width), 0.5f / float(s_height),
+            0.5f / float(kBloomSize), 0.5f / float(kBloomSize),
+        };
+        const float zeroThreshold[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
+        const float kernelH = kBloomKernelG;
+        const float kernelV = kBloomKernelG * float(s_height) / float(s_width);
+        float w0[4], w1[4];
+        CalcGauss_wave(w0, w1, kernelH, kernelH / 3.0f, kBloomKernelScale);
+        float v0[4], v1[4];
+        CalcGauss_wave(v0, v1, kernelV, kernelV / 3.0f, kBloomKernelScale);
+        const float filterStep = 1.0f / float(kBloomSize);
+        const float filterSetupH[4] = { filterStep, 1.0f, 0.0f, 0.0f };
+        const float filterSetupV[4] = { filterStep, 0.0f, 1.0f, 0.0f };
+
+        bgfx_set_uniform(s_bloomSetup, buildSetup, 1);
+        bgfx_set_uniform(s_bloomParams, zeroThreshold, 1);
+        if (!SubmitBloomPass(kFogBlurBuildView, s_fogBlur1Fb, s_bloomBuildProgram, s_bloomImage, s_smaaInput,
+            BGFX_STATE_WRITE_RGB | BGFX_STATE_WRITE_A))
+            return false;
+
+        bgfx_set_uniform(s_filterSetup, filterSetupH, 1);
+        bgfx_set_uniform(s_bloomWeight0, w0, 1);
+        bgfx_set_uniform(s_bloomWeight1, w1, 1);
+        if (!SubmitBloomPass(kFogBlurHView, s_fogBlur2Fb, s_bloomFilterProgram, s_bloomSource, s_fogBlur1,
+            BGFX_STATE_WRITE_RGB | BGFX_STATE_WRITE_A))
+            return false;
+
+        bgfx_set_uniform(s_filterSetup, filterSetupV, 1);
+        bgfx_set_uniform(s_bloomWeight0, v0, 1);
+        bgfx_set_uniform(s_bloomWeight1, v1, 1);
+        if (!SubmitBloomPass(kFogBlurVView, s_fogBlur1Fb, s_bloomFilterProgram, s_bloomSource, s_fogBlur2,
+            BGFX_STATE_WRITE_RGB | BGFX_STATE_WRITE_A))
+            return false;
+
+        // Scatter blend (combine_2_naa.ps:106-121): lerp(img, max(img, blur),
+        // smoothstep(0.2, 0.8, fog^2)). disablefog (scopes/NVG) is not wired.
+        SetupSmaaView(kFogScatterView, s_smaaScatterFb, _width, _height, false);
+        if (!SetupSmaaDraw(_width, _height))
+            return false;
+        bgfx_set_texture(0, s_scatterImage, s_smaaInput, 0);
+        bgfx_set_texture(1, s_scatterBlur, s_fogBlur1, 0);
+        bgfx_submit(kFogScatterView, s_fogScatterProgram, 0, BGFX_DISCARD_ALL);
         return true;
     }
 

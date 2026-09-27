@@ -385,17 +385,43 @@ void bgfxRenderDeviceRender::Begin()
     bgfx_set_view_clear(bgfxHDR::kSmaaResolveView, BGFX_CLEAR_NONE, 0, 1.0f, 0);
     bgfx_set_view_mode(bgfxHDR::kSmaaResolveView, BGFX_VIEW_MODE_SEQUENTIAL);
     bgfx_touch(bgfxHDR::kSmaaResolveView);
+    // Fog scattering (AXR combine_2_naa.ps fog-scatter block): blur chain +
+    // scatter resolve run after the combine and before SMAA. Views exist
+    // always; passes submit only when their targets are ready.
+    bgfx_set_view_frame_buffer(bgfxHDR::kFogBlurBuildView, BGFX_INVALID_HANDLE);
+    bgfx_set_view_rect(bgfxHDR::kFogBlurBuildView, 0, 0, (uint16_t)m_width, (uint16_t)m_height);
+    bgfx_set_view_clear(bgfxHDR::kFogBlurBuildView, BGFX_CLEAR_NONE, 0, 1.0f, 0);
+    bgfx_set_view_mode(bgfxHDR::kFogBlurBuildView, BGFX_VIEW_MODE_SEQUENTIAL);
+    bgfx_touch(bgfxHDR::kFogBlurBuildView);
+    bgfx_set_view_frame_buffer(bgfxHDR::kFogBlurHView, BGFX_INVALID_HANDLE);
+    bgfx_set_view_rect(bgfxHDR::kFogBlurHView, 0, 0, (uint16_t)m_width, (uint16_t)m_height);
+    bgfx_set_view_clear(bgfxHDR::kFogBlurHView, BGFX_CLEAR_NONE, 0, 1.0f, 0);
+    bgfx_set_view_mode(bgfxHDR::kFogBlurHView, BGFX_VIEW_MODE_SEQUENTIAL);
+    bgfx_touch(bgfxHDR::kFogBlurHView);
+    bgfx_set_view_frame_buffer(bgfxHDR::kFogBlurVView, BGFX_INVALID_HANDLE);
+    bgfx_set_view_rect(bgfxHDR::kFogBlurVView, 0, 0, (uint16_t)m_width, (uint16_t)m_height);
+    bgfx_set_view_clear(bgfxHDR::kFogBlurVView, BGFX_CLEAR_NONE, 0, 1.0f, 0);
+    bgfx_set_view_mode(bgfxHDR::kFogBlurVView, BGFX_VIEW_MODE_SEQUENTIAL);
+    bgfx_touch(bgfxHDR::kFogBlurVView);
+    bgfx_set_view_frame_buffer(bgfxHDR::kFogScatterView, BGFX_INVALID_HANDLE);
+    bgfx_set_view_rect(bgfxHDR::kFogScatterView, 0, 0, (uint16_t)m_width, (uint16_t)m_height);
+    bgfx_set_view_clear(bgfxHDR::kFogScatterView, BGFX_CLEAR_NONE, 0, 1.0f, 0);
+    bgfx_set_view_mode(bgfxHDR::kFogScatterView, BGFX_VIEW_MODE_SEQUENTIAL);
+    bgfx_touch(bgfxHDR::kFogScatterView);
 
     // Frame order: scene -> scene FX -> luminance -> bloom (build/H/V) -> combine
     // -> SMAA (edge/weights/resolve) -> G-buffer inspector -> leftovers.
     // The bloom views sit between the luminance chain and the combine so bgfxHDR::BloomPass
     // reads the HDR target of this frame and combine_bloom() reads this frame's rt_Bloom_1.
-    // SMAA resolves the combine LDR output into the backbuffer; the inspector
+    // SMAA resolves into the backbuffer (from the scatter output when fog
+    // scattering is up, otherwise straight from the combine); the inspector
     // runs after the resolve because it repaints the finished frame.
     const bgfx_view_id_t order[] = { 0, bgfxHDR::kSceneFxView, bgfxHDR::kLuminance64View,
         bgfxHDR::kLuminance8View, bgfxHDR::kLuminance1View,
         bgfxHDR::kBloomBuildView, bgfxHDR::kBloomBlurHView, bgfxHDR::kBloomBlurVView,
-        bgfxHDR::kCombineView, bgfxHDR::kSmaaEdgeView, bgfxHDR::kSmaaBlendView,
+        bgfxHDR::kCombineView, bgfxHDR::kFogBlurBuildView, bgfxHDR::kFogBlurHView,
+        bgfxHDR::kFogBlurVView, bgfxHDR::kFogScatterView,
+        bgfxHDR::kSmaaEdgeView, bgfxHDR::kSmaaBlendView,
         bgfxHDR::kSmaaResolveView, bgfxHDR::kGbufDebugView, 1, 3, 4, 5 };
     bgfx_set_view_order(0, sizeof(order) / sizeof(order[0]), order);
 }

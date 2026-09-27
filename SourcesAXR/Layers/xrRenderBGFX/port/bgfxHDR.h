@@ -21,6 +21,13 @@ namespace bgfxHDR
     const bgfx_view_id_t kSmaaEdgeView = 14;
     const bgfx_view_id_t kSmaaBlendView = 15;
     const bgfx_view_id_t kSmaaResolveView = 16;
+    // Fog scattering (AXR combine_2_naa.ps:106-121, G_FOG_USE_SCATTERING): a
+    // blurred LDR copy feeds the scatter blend. Views run after the combine
+    // and before SMAA: downsample -> blur H/V -> scatter resolve.
+    const bgfx_view_id_t kFogBlurBuildView = 17;
+    const bgfx_view_id_t kFogBlurHView = 18;
+    const bgfx_view_id_t kFogBlurVView = 19;
+    const bgfx_view_id_t kFogScatterView = 20;
 
     bool CreateHDRTarget(uint16_t _width, uint16_t _height);
     void DestroyHDRTarget();
@@ -34,6 +41,10 @@ namespace bgfxHDR
     // when SMAA is unavailable; CombinePass then targets the backbuffer
     // directly, so the frame stays intact either way.
     bool SMAAPass(uint16_t _width, uint16_t _height);
+    // Fog-scatter chain (see above): builds the blurred LDR copy and blends
+    // it over the combine output. Returns false when unavailable; SMAAPass
+    // then reads the plain combine output instead, so the frame stays intact.
+    bool FogScatterPass(uint16_t _width, uint16_t _height);
     // Stage-1 G-buffer inspector: draws one of the four attachment views over
     // the combine result. Returns false when the inspector is disabled, which is
     // the default (no env var set), so the frame is untouched.
