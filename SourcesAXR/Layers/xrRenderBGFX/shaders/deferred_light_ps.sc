@@ -90,8 +90,9 @@ uniform vec4 u_cubeValid;
 // the reference applies (ps_r2_sun_depth_far_bias). Because the multiply is
 // already done on the CPU, the shader has to undo nothing: it only applies
 // tc.xyz /= tc.w (accum_sun_near.ps:70 followed by shadow.h:176).
-// G-buffer P is view space here, so the world-space position the reference feeds
-// m_shadow with (gbd.P, gbuffer_stage.h:59) is rebuilt through u_invView first.
+// G-buffer P is view space here (gbuffer_stage.h:15-17), which is exactly what
+// accum_sun_near.ps:70 multiplies m_shadow with - the view->world step is the
+// invView that is already inside m_shadow, so it must not be repeated here.
 uniform mat4 u_shadowMat;
 //   .x  ps_r2_smapsize, the shadow map edge in texels. AXR compiles it into every
 //       shadow shader as SMAP_size (common_defines.h:15-16, r4.cpp:1066); here it
@@ -625,11 +626,13 @@ void main()
     // 2D shadow map accumulated here instead. So the ported form is the
     // accum_sun_near one, which is the same factor in the same place.
     //
-    // gbd.P is world space in AXR (gbuffer_stage.h:59-65); this port's
-    // s_position carries the view-space position, so u_invView rebuilds the
-    // world-space point the reference hands to m_shadow.
-    vec3 Pw = mul(u_invView, vec4(P, 1.0)).xyz;
-    vec4 PS = mul(u_shadowMat, vec4(Pw, 1.0));
+    // gbd.P is VIEW space (gbuffer_stage.h:15-17, "float3 P; //View space
+    // position") and accum_sun_near.ps:70 applies m_shadow to it directly: the
+    // invView that turns it into world space is already inside m_shadow itself
+    // (r4_rendertarget_accum_direct.cpp:170-171 builds
+    // m_shadow = m_TexelAdjust * combine * xf_invview). Multiplying u_invView
+    // here as well would apply it twice and throw the texcoords out of [0,1].
+    vec4 PS = mul(u_shadowMat, vec4(P, 1.0));
     // shadow.h:176, tc.xyz /= tc.w, the perspective divide the reference does
     // once for the whole kernel.
     vec3 shadowTc = PS.xyz / PS.w;
