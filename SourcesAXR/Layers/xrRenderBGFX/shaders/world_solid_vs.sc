@@ -1,5 +1,5 @@
-﻿$input a_position, a_normal, a_texcoord0
-$output v_texcoord0, v_viewPos, v_viewNormal
+﻿$input a_position, a_normal, a_texcoord0, a_texcoord1
+$output v_texcoord0, v_texcoord1, v_viewPos, v_viewNormal
 #include <bgfx_shader.sh>
 #include <gbuf_pack.h>
 
@@ -10,6 +10,13 @@ void main()
     vec4 viewPos = mul(u_modelView, vec4(a_position, 1.0) );
     gl_Position = mul(u_modelViewProj, vec4(a_position, 1.0) );
     v_texcoord0 = a_texcoord0;
+    // Lightmap uv, the AXR p_flat::lmh (deffer_base_flat.vs:22
+    // O.lmh = I.tc1, i.e. TEXCOORD1 passed straight through - the CPU repack has
+    // already applied unpack_tc_lmap = /32768, common_functions.h:112). Only the
+    // buffers that declare TEXCOORD1 feed this slot (bgfxRenderCompat.cpp
+    // s_worldTerrainLayoutDesc), and the pixel stage only reads it when a
+    // lightmap is actually bound for the draw.
+    v_texcoord1 = a_texcoord1;
     // Position G-buffer: view-space position, consumed by combine_ps (AXR gbuf P.xyz).
     v_viewPos = viewPos.xyz;
     // Eye-space normal for the packed-normal half of the G-buffer attachment.

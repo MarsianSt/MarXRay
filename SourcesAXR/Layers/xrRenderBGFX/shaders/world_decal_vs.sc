@@ -1,5 +1,5 @@
-﻿$input a_position, a_normal, a_texcoord0
-$output v_texcoord0, v_viewPos, v_viewNormal
+﻿$input a_position, a_normal, a_texcoord0, a_texcoord1
+$output v_texcoord0, v_texcoord1, v_viewPos, v_viewNormal
 #include <bgfx_shader.sh>
 #include <gbuf_pack.h>
 
@@ -11,6 +11,12 @@ void main()
     gl_Position = mul(u_modelViewProj, vec4(a_position, 1.0) );
     gl_Position.z -= (0.02 / max(gl_Position.w, 0.01) ) + 0.002;
     v_texcoord0 = a_texcoord0;
+    // Carried for the shared pixel stage (world_solid_ps.sc, paired with this
+    // vertex shader at bgfxWorldProgram.cpp:82-83). A decal material is never a
+    // lightmap material - uber_deffer.cpp:21-24 only accepts a third texture
+    // whose name starts with "lmap" - so u_lmapValid stays 0 for these draws
+    // and the varying is not read.
+    v_texcoord1 = a_texcoord1;
     // Position G-buffer: view-space position, consumed by combine_ps (AXR gbuf P.xyz).
     v_viewPos = viewPos.xyz;
     // Decals are AXR's deffer_base_aref_flat / deffer_model_flat_d pair; the

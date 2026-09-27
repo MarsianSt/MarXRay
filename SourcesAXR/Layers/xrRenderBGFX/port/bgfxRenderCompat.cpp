@@ -590,6 +590,14 @@ namespace
 	bgfx_uniform_handle_t   g_worldFogParams = BGFX_INVALID_HANDLE;
 	bgfx_uniform_handle_t   g_worldFogColor = BGFX_INVALID_HANDLE;
 	bgfx_uniform_handle_t   g_worldMaskSampler = BGFX_INVALID_HANDLE;
+	// The level lightmap sampler of the G-buffer writers (world_solid_ps.sc
+	// `u_lmap`, the AXR `s_hemi` of deffer_base_flat.ps:23) and the switch that
+	// tells them a lightmap is actually bound for this draw. The reference makes
+	// the same choice at shader-compile time, per material, by defining
+	// USE_LM_HEMI (uber_deffer.cpp:113-117) and picking deffer_*_lmh_*; bgfx
+	// compiles one program, so the permutation is carried as a uniform.
+	bgfx_uniform_handle_t   g_worldLmapSampler = BGFX_INVALID_HANDLE;
+	bgfx_uniform_handle_t   g_worldLmapValid = BGFX_INVALID_HANDLE;
 	bgfx_uniform_handle_t   g_worldDtSamplers[4] = { BGFX_INVALID_HANDLE, BGFX_INVALID_HANDLE, BGFX_INVALID_HANDLE, BGFX_INVALID_HANDLE };
 	bgfx_uniform_handle_t   g_worldDtScale = BGFX_INVALID_HANDLE;
 	bool g_worldTexturesReady = false;
@@ -635,6 +643,7 @@ namespace
 	xr_string bgfxLevelTextureName(const char* shaderName);
 	xr_string bgfxLevelTextureNamePart(const xr_string& s);
 	xr_string bgfxLevelShaderNameOnly(const char* shaderName);
+	xr_string bgfxLevelLmapName(const char* shaderName);
 	bool      bgfxWorldIsTerrainShader(const char* shaderName);
 	bool      bgfxWorldTerrainDetail(const char* baseName, xr_string& detailName, float& detailScale);
 	bgfx_texture_handle_t bgfxWorldTextureGet(const char* name);
@@ -767,10 +776,13 @@ namespace
 		bgfx_texture_handle_t handle;   // diffuse base texture
 		bgfx_texture_handle_t mask;     // <base>_mask (terrain only), invalid if none
 		bgfx_texture_handle_t det[4];   // 4 detail textures (terrain only)
+		bgfx_texture_handle_t lmap;     // level lightmap (L_textures[2]), invalid if none
 		float detailScale;              // detail tile scale from .thm (0 = none)
 		u8 resolved;
 	};
 	static xr_vector<WorldLevelTex> g_worldLevelTexCache;
+
+	bgfx_texture_handle_t bgfxWorldLevelLmap(u16 shader_id);
 
 	bgfx_texture_handle_t bgfxWorldLevelTexture(u16 shader_id)
 	{
@@ -785,6 +797,7 @@ namespace
 				e.mask = BGFX_INVALID_HANDLE;
 				for (int i = 0; i < 4; ++i)
 					e.det[i] = BGFX_INVALID_HANDLE;
+				e.lmap = BGFX_INVALID_HANDLE;
 				e.detailScale = 0.0f;
 				e.resolved = 0;
 			}
@@ -798,6 +811,7 @@ namespace
 		e.mask = BGFX_INVALID_HANDLE;
 		for (int i = 0; i < 4; ++i)
 			e.det[i] = BGFX_INVALID_HANDLE;
+		e.lmap = BGFX_INVALID_HANDLE;
 		e.detailScale = 0.0f;
 		const char* sn = bgfxLevelShaderName(shader_id);
 		if (!sn || !sn[0])
@@ -851,7 +865,48 @@ namespace
 				LogInfo("WORLD BmmD '%s': no blender/detail", shaderName.c_str());
 			}
 		}
+
+		// Level lightmap, the L_textures[2] the reference binds as `s_hemi` for
+		// the deffer_*_lmh_* writers (uber_deffer.cpp:182-185 / :211). It is
+		// resolved here, next to the diffuse, because both come out of the same
+		// fsL_SHADERS entry and the handle lives in the same cache slot.
+		const xr_string lmapName = bgfxLevelLmapName(sn);
+		if (!lmapName.empty())
+		{
+			unsigned int lw = 0, lh = 0;
+			if (bgfxLoadWorldTexture(lmapName.c_str(), e.lmap, lw, lh))
+			{
+				if (!bgfxIsValid(e.lmap))
+					LogInfo("WORLD lmap MISS '%s' (%s)", lmapName.c_str(), sn);
+				else
+					LogInfo("WORLD lmap '%s' %ux%u", lmapName.c_str(), lw, lh);
+			}
+			else
+			{
+				LogInfo("WORLD lmap MISS '%s' (%s)", lmapName.c_str(), sn);
+				e.lmap = BGFX_INVALID_HANDLE;
+			}
+		}
+		else
+		{
+			LogInfo("WORLD lmap none (%s)", sn);
+		}
 		return e.handle;
+	}
+
+	// The level lightmap of a shader id, cached in the same entry that
+	// bgfxWorldLevelTexture resolves. BGFX_INVALID_HANDLE when the level has no
+	// lightmap for it - the reference case the non-lm deffer shader is compiled
+	// for, which reads the per-vertex hemi instead (deffer_base_flat.ps:41).
+	bgfx_texture_handle_t bgfxWorldLevelLmap(u16 shader_id)
+	{
+		if (shader_id == 0 || shader_id >= (u16)g_worldLevelTexCache.size())
+			return BGFX_INVALID_HANDLE;
+		if (!g_worldLevelTexCache[shader_id].resolved)
+			bgfxWorldLevelTexture(shader_id);
+		if (shader_id >= (u16)g_worldLevelTexCache.size())
+			return BGFX_INVALID_HANDLE;
+		return g_worldLevelTexCache[shader_id].lmap;
 	}
 
 	// Mask + 4 detail textures + shared scale for a terrain shader id (cached
@@ -934,6 +989,47 @@ namespace
 		return s;
 	}
 
+	// The level lightmap of an fsL_SHADERS entry, i.e. CBlender_Compile::
+	// L_textures[2] of the reference (uber_deffer.cpp:16-24), the texture the
+	// deferred writers bind as `s_hemi`. The whole entry is
+	// "<shader>/<tex0>,<tex1>,<tex2>", so the lightmap is the THIRD
+	// comma-separated element, and the reference only treats it as a lightmap
+	// when that element exists and its name starts with "lmap" - exactly the
+	// test at uber_deffer.cpp:21-24, which is also what selects the
+	// deffer_*_lmh_* / USE_LM_HEMI shader variant there. An entry with fewer
+	// than three textures (terrain: "terrain\terrain_zaton,terrain\terrain_zaton_lm")
+	// has no lightmap and the reference keeps the non-lm shader, so it is
+	// reported empty here too.
+	xr_string bgfxLevelLmapName(const char* shaderName)
+	{
+		xr_string out;
+		if (!shaderName || !shaderName[0])
+			return out;
+		// Drop the "<shader>/" prefix first: the texture list starts after it.
+		const size_t slash = xr_string(shaderName).find('/');
+		xr_string s = (slash == xr_string::npos) ? xr_string(shaderName) : xr_string(shaderName).substr(slash + 1);
+
+		// Collect the comma-separated elements; index 2 is the lightmap slot.
+		int index = 0;
+		size_t start = 0;
+		for (size_t i = 0; i <= s.size(); ++i)
+		{
+			if (i == s.size() || s[i] == ',')
+			{
+				if (index == 2)
+				{
+					xr_string e = s.substr(start, i - start);
+					if (e.size() >= 4 && e[0] == 'l' && e[1] == 'm' && e[2] == 'a' && e[3] == 'p')
+						out = bgfxLevelTextureNamePart(e);
+					return out;
+				}
+				++index;
+				start = i + 1;
+			}
+		}
+		return out;
+	}
+
 	// Terrain materials are the fsL_SHADERS entries whose diffuse (first)
 	// part carries a "terrain" path segment, e.g. ".../terrain\terrain_zaton,...".
 	bool bgfxWorldIsTerrainShader(const char* shaderName)
@@ -990,6 +1086,8 @@ namespace
 		g_worldFogParams = bgfx_create_uniform("u_fogParams", BGFX_UNIFORM_TYPE_VEC4, 1);
 		g_worldFogColor = bgfx_create_uniform("u_fogColor", BGFX_UNIFORM_TYPE_VEC4, 1);
 		g_worldMaskSampler = bgfx_create_uniform("u_mask", BGFX_UNIFORM_TYPE_SAMPLER, 1);
+		g_worldLmapSampler = bgfx_create_uniform("u_lmap", BGFX_UNIFORM_TYPE_SAMPLER, 1);
+		g_worldLmapValid = bgfx_create_uniform("u_lmapValid", BGFX_UNIFORM_TYPE_VEC4, 1);
 		for (int i = 0; i < 4; ++i)
 		{
 			char name[16];
@@ -1492,6 +1590,26 @@ namespace
 		}
 		if (bgfxIsValid(g_worldSampler))
 			bgfx_set_texture(0, g_worldSampler, tex, UINT32_MAX);
+		// Level lightmap (the reference `s_hemi`). The G-buffer writer needs
+		// BOTH halves of the reference's USE_LM_HEMI split: a lightmap texture
+		// and the lightmap uv to sample it with, which is the vertex TEXCOORD1
+		// the repack already carries (bgfxWorldUploadBuffers, unpack_tc_lmap
+		// = /32768). A buffer without that slot cannot be lit the reference way,
+		// so the flag stays 0 and the writer keeps its non-lm hemi - the same
+		// outcome the reference gets from compiling the non-lm shader.
+		bgfx_texture_handle_t lmap = BGFX_INVALID_HANDLE;
+		float lmapValid[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
+		if (g_worldTexturesReady && bgfxIsValid(g_worldLmapSampler) && vbHasUv1 && !isTerrain)
+		{
+			lmap = bgfxWorldLevelLmap(shaderId);
+			if (bgfxIsValid(lmap))
+			{
+				bgfx_set_texture(1, g_worldLmapSampler, lmap, UINT32_MAX);
+				lmapValid[0] = 1.0f;
+			}
+		}
+		if (bgfxIsValid(g_worldLmapValid))
+			bgfx_set_uniform(g_worldLmapValid, lmapValid, 1);
 		if (hasValidTerrain && bgfxIsValid(g_worldMaskSampler))
 		{
 			WorldTerrainLayers tl;
