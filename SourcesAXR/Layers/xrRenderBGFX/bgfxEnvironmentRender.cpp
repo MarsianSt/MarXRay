@@ -613,6 +613,21 @@ void bgfxEnvironmentRender::RenderClouds(CEnvironment &env)
     bgfx_submit(kSkyView, s_cloudsProg, 0, BGFX_DISCARD_ALL);
 }
 
+bool bgfxGetAmbientCube(CEnvironment& _env, bgfx_texture_handle_t& _a, bgfx_texture_handle_t& _b)
+{
+    _a = BGFX_INVALID_HANDLE;
+    _b = BGFX_INVALID_HANDLE;
+    CEnvDescriptorMixer* E = _env.CurrentEnv;
+    if (!E)
+        return false;
+    bgfxEnvDescriptorMixerRender* mix = (bgfxEnvDescriptorMixerRender*)&*E->m_pDescriptorMixer;
+    if (!mix)
+        return false;
+    _a = mix->sky_env_a;
+    _b = mix->sky_env_b;
+    return bgfxIsValid(_a) && bgfxIsValid(_b);
+}
+
 void bgfxEnvironmentRender::OnDeviceCreate()
 {
     EnsureEnvResources();

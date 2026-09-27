@@ -33,6 +33,18 @@ public:
     bgfx_texture_handle_t clouds_b = BGFX_INVALID_HANDLE;
 };
 
+// The Anomaly ambient cube the lighting resolve samples as env_s0 / env_s1
+// (game_unpacked/shaders/r3/hmodel.h:14-15, :82-106). In the reference those two
+// TextureCubes are CEnvDescriptor::sky_texture_env of the descriptors the weather
+// mixer currently blends, i.e. <sky_texture>#small
+// (SourcesAXR/xrEngine/Environment_misc.cpp:417-421), published by
+// CEnvDescriptorMixer::lerp into sky_r_textures_env
+// (Environment_misc.cpp:819-822 -> SourcesAXR/Layers/xrRender/dxEnvironmentRender.cpp:151-154).
+// The bgfx twin of that list is bgfxEnvDescriptorMixerRender::sky_env_a / sky_env_b
+// (bgfxEnvironmentRender.cpp:464-465); this is the accessor for it, so the ported
+// resolve does not have to reach into the render object itself.
+bool bgfxGetAmbientCube(CEnvironment& _env, bgfx_texture_handle_t& _a, bgfx_texture_handle_t& _b);
+
 class bgfxEnvironmentRender : public IEnvironmentRender
 {
 public:

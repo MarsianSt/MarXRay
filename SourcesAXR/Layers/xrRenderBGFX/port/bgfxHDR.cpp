@@ -8,6 +8,7 @@
 #include "../../../xrEngine/x_ray.h"
 #include "../../../xrEngine/IGame_Persistent.h"
 #include "../../../xrEngine/Environment.h"
+#include "../bgfxEnvironmentRender.h"
 #include "../../../xrEngine/DiscordRichPresense.h"
 
 #include <cstdlib>
@@ -61,6 +62,13 @@ namespace
     bgfx_uniform_handle_t s_litGbufSampler = BGFX_INVALID_HANDLE;
     bgfx_uniform_handle_t s_hemiColor = BGFX_INVALID_HANDLE;
     bgfx_uniform_handle_t s_ambientColor = BGFX_INVALID_HANDLE;
+    // Anomaly ambient cube, the env_s0 / env_s1 pair of hmodel.h:14-15. Sampler
+    // stages 3 and 4 (0-2 are the three G-buffer attachments) and the 0/1 switch
+    // that keeps the pre-cube constant alive while neither cube is bound, i.e.
+    // while the level has no <sky_texture>#small env cube at all.
+    bgfx_uniform_handle_t s_envCube0 = BGFX_INVALID_HANDLE;
+    bgfx_uniform_handle_t s_envCube1 = BGFX_INVALID_HANDLE;
+    bgfx_uniform_handle_t s_cubeValid = BGFX_INVALID_HANDLE;
     bgfx_vertex_layout_t s_resolveLayout = {};
     bool s_resolveLayoutReady = false;
     bool s_resolveOk = false;
@@ -517,12 +525,21 @@ namespace
             bgfx_destroy_uniform(s_hemiColor);
         if (bgfxIsValid(s_ambientColor))
             bgfx_destroy_uniform(s_ambientColor);
+        if (bgfxIsValid(s_envCube0))
+            bgfx_destroy_uniform(s_envCube0);
+        if (bgfxIsValid(s_envCube1))
+            bgfx_destroy_uniform(s_envCube1);
+        if (bgfxIsValid(s_cubeValid))
+            bgfx_destroy_uniform(s_cubeValid);
         s_resolveProgram = BGFX_INVALID_HANDLE;
         s_litSampler = BGFX_INVALID_HANDLE;
         s_litPositionSampler = BGFX_INVALID_HANDLE;
         s_litGbufSampler = BGFX_INVALID_HANDLE;
         s_hemiColor = BGFX_INVALID_HANDLE;
         s_ambientColor = BGFX_INVALID_HANDLE;
+        s_envCube0 = BGFX_INVALID_HANDLE;
+        s_envCube1 = BGFX_INVALID_HANDLE;
+        s_cubeValid = BGFX_INVALID_HANDLE;
         s_resolveLayoutReady = false;
         s_resolveOk = false;
     }
@@ -762,7 +779,8 @@ namespace
     {
         if (bgfxIsValid(s_resolveProgram) && bgfxIsValid(s_litSampler) &&
             bgfxIsValid(s_litPositionSampler) && bgfxIsValid(s_litGbufSampler) &&
-            bgfxIsValid(s_hemiColor) && bgfxIsValid(s_ambientColor))
+            bgfxIsValid(s_hemiColor) && bgfxIsValid(s_ambientColor) &&
+            bgfxIsValid(s_envCube0) && bgfxIsValid(s_envCube1) && bgfxIsValid(s_cubeValid))
             return true;
 
         if (!s_resolveLayoutReady)
@@ -788,9 +806,16 @@ namespace
         s_litGbufSampler = bgfx_create_uniform("s_gbuf", BGFX_UNIFORM_TYPE_SAMPLER, 1);
         s_hemiColor = bgfx_create_uniform("u_hemiColor", BGFX_UNIFORM_TYPE_VEC4, 1);
         s_ambientColor = bgfx_create_uniform("u_ambient", BGFX_UNIFORM_TYPE_VEC4, 1);
+        // env_s0 / env_s1, hmodel.h:14-15, and the 0/1 switch that lets
+        // deferred_light_ps.sc fall back to the cube-less constant while the
+        // level has no env cube bound.
+        s_envCube0 = bgfx_create_uniform("s_env0", BGFX_UNIFORM_TYPE_SAMPLER, 1);
+        s_envCube1 = bgfx_create_uniform("s_env1", BGFX_UNIFORM_TYPE_SAMPLER, 1);
+        s_cubeValid = bgfx_create_uniform("u_cubeValid", BGFX_UNIFORM_TYPE_VEC4, 1);
         if (!bgfxIsValid(s_litSampler) || !bgfxIsValid(s_litPositionSampler) ||
             !bgfxIsValid(s_litGbufSampler) || !bgfxIsValid(s_hemiColor) ||
-            !bgfxIsValid(s_ambientColor))
+            !bgfxIsValid(s_ambientColor) || !bgfxIsValid(s_envCube0) ||
+            !bgfxIsValid(s_envCube1) || !bgfxIsValid(s_cubeValid))
         {
             LogError("[BGFX] Lighting resolve uniforms create failed");
             DestroyResolveProgram();
@@ -854,7 +879,11 @@ namespace
     //   u_hemiColor  = CEnvDescriptor::hemi_color, i.e. L_hemi_color, the source
     //                  calc_model_hemi_r1() reads (common_functions.h:99-101) and
     //                  the one BindScene already sampled for u_gbufHemi
-    //   u_ambient    = CEnvDescriptor::ambient, i.e. L_ambient (hmodel.h:129)
+    //   u_ambient    = CEnvDescriptor::ambient, i.e. L_ambient (hmodel.h:129), with
+    //                  .w = CEnvDescriptorMixer::weight, i.e. the env_color.w of
+    //                  hmodel.h:105 - the factor the two ambient cubes are
+    //                  lerped with, the same slot
+    //                  Blender_Recorder_StandartBinding.cpp:390 feeds L_ambient.w
     // CurrentEnv is a CEnvDescriptorMixer, which derives from CEnvDescriptor
     // (Environment.h:258), so all four live there.
     void SetEnvironmentUniforms()
@@ -918,7 +947,10 @@ namespace
             ambient[0] = env->ambient.x;
             ambient[1] = env->ambient.y;
             ambient[2] = env->ambient.z;
-            ambient[3] = 0.0f;
+            // env_color.w, the cube lerp factor (hmodel.h:105). The mixer carries
+            // the weather blend weight, the same slot the reference feeds
+            // L_ambient.w with (Blender_Recorder_StandartBinding.cpp:389-390).
+            ambient[3] = env->weight;
         }
 
         if (bgfxIsValid(s_fogParams))
@@ -935,6 +967,34 @@ namespace
             bgfx_set_uniform(s_hemiColor, hemiColor, 1);
         if (bgfxIsValid(s_ambientColor))
             bgfx_set_uniform(s_ambientColor, ambient, 1);
+    }
+
+    // The ambient cube pair itself. env_s0 / env_s1 (hmodel.h:14-15) are
+    // CEnvDescriptor::sky_texture_env of the two descriptors the weather mixer
+    // blends, published as bgfxEnvDescriptorMixerRender::sky_env_a / sky_env_b
+    // and read back through bgfxGetAmbientCube(). Sampler stages 3 and 4, right
+    // after the three G-buffer attachments.
+    // The 0/1 switch is what keeps a cube-less level on the previous constant:
+    // a sampler with no texture behind it is not a defined value, so the shader
+    // must be told to ignore it (deferred_light_ps.sc, u_cubeValid).
+    void BindAmbientCube()
+    {
+        if (!bgfxIsValid(s_envCube0) || !bgfxIsValid(s_envCube1) || !bgfxIsValid(s_cubeValid))
+            return;
+
+        bgfx_texture_handle_t envA = BGFX_INVALID_HANDLE;
+        bgfx_texture_handle_t envB = BGFX_INVALID_HANDLE;
+        bool hasCube = false;
+        if (g_pGamePersistent)
+            hasCube = bgfxGetAmbientCube(g_pGamePersistent->Environment(), envA, envB);
+
+        if (hasCube)
+        {
+            bgfx_set_texture(3, s_envCube0, envA, 0);
+            bgfx_set_texture(4, s_envCube1, envB, 0);
+        }
+        const float valid[4] = { hasCube ? 1.0f : 0.0f, 0.0f, 0.0f, 0.0f };
+        bgfx_set_uniform(s_cubeValid, valid, 1);
     }
 }
 
@@ -1184,8 +1244,9 @@ namespace bgfxHDR
     //         tinted by SRGBToLinear(Ldynamic_color.rgb) and the shadow term,
     //         which this pass leaves at 1 (no shadow map is bound).
     //   hemi  hmodel() - the ambient half combine_1.ps:166 adds, i.e.
-    //         SRGBToLinear(env_col*hemi + L_ambient) * albedo, with the ambient
-    //         cube lookup dropped because env_s0/env_s1 are not bound.
+    //         SRGBToLinear(env_d) * albedo with
+    //         env_d = lerp(env_s0, env_s1, env_color.w) * env_col * hemi + L_ambient
+    //         (hmodel.h:105, :121, :125, :130), the ambient cube included.
     // Both terms read the per-pixel hemi and the packed normal out of attachment
     // 2 and modulate the gamma-space albedo of attachment 0, exactly like the
     // reference does through gbuffer_load_data() (gbuffer_stage.h:115-143).
@@ -1201,10 +1262,12 @@ namespace bgfxHDR
         bgfx_set_view_rect(kResolveView, 0, 0, s_width, s_height);
         bgfx_set_view_clear(kResolveView, BGFX_CLEAR_NONE, 0, 1.0f, 0);
         bgfx_set_view_mode(kResolveView, BGFX_VIEW_MODE_SEQUENTIAL);
-        // The VS emits clip space directly, and the G-buffer is view space, so no
-        // camera transform is needed here (unlike the combine, whose fog block
-        // rebuilds the world position through the predefined u_view).
-        bgfx_set_view_transform(kResolveView, s_identity, s_identity);
+        // The VS emits clip space directly and the G-buffer is view space, so the
+        // camera matrices never reach the geometry here. They are still fed to
+        // the view because the ambient cube lookup needs the world-space normal
+        // (hmodel.h:48, nw = mul(m_inv_V, normal)) and the predefined u_invView is
+        // the bgfx mirror of m_inv_V, exactly as it is for the sky / cloud shaders.
+        bgfx_set_view_transform(kResolveView, Device.mView.m, Device.mProject.m);
         bgfx_touch(kResolveView);
 
         bgfx_transient_vertex_buffer_t tvb;
@@ -1226,6 +1289,7 @@ namespace bgfxHDR
         bgfx_set_state(BGFX_STATE_WRITE_RGB | BGFX_STATE_WRITE_A, 0);
         bgfx_set_transient_vertex_buffer(0, &tvb, 0, 3);
         SetEnvironmentUniforms();
+        BindAmbientCube();
         bgfx_set_texture(0, s_litSampler, s_hdrColor, 0);
         bgfx_set_texture(1, s_litPositionSampler, s_hdrPosition, 0);
         bgfx_set_texture(2, s_litGbufSampler, s_hdrGbuf, 0);
