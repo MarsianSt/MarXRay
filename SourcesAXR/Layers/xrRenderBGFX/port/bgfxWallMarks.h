@@ -8,8 +8,12 @@
 // CPU-side port of Layers/xrRender/WallmarksEngine.cpp: the touched level
 // faces are gathered through a CDB box query, clipped against a small 3D
 // ortho frustum, triangulated and cached with a TTL. The cached quads are
-// submitted into the world view (view 0) after the world pass with the
-// reference multiply blend, depth test on and depth write off.
+// submitted into their own view (bgfxHDR::kWallmarkView), which sits after the
+// scene and scene FX views and before the SSAO view, and multiply into the
+// albedo G-buffer alone with depth test on and depth write off - the AXR
+// phase_wallmarks (r4_rendertarget_phase_combine.cpp:791-804, called from
+// r4_R_render.cpp:464). They therefore take the deferred lighting and the
+// height fog of the surface they lie on, exactly like the reference.
 //
 // Skeleton wallmarks (blood on animated meshes) are not implemented yet.
 

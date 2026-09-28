@@ -19,6 +19,11 @@
 namespace
 {
     bgfx_frame_buffer_handle_t s_hdrFb = BGFX_INVALID_HANDLE;
+    // Albedo + scene depth only: CRenderTarget::phase_wallmarks binds rt_Color as
+    // the single colour target and leaves slots 1 and 2 unbound
+    // (r4_rendertarget_phase_combine.cpp:794-799), so the wallmark multiply must
+    // not be able to reach the position and packed G-buffer.
+    bgfx_frame_buffer_handle_t s_hdrAlbedoFb = BGFX_INVALID_HANDLE;
     bgfx_texture_handle_t s_hdrColor = BGFX_INVALID_HANDLE;
     bgfx_texture_handle_t s_hdrPosition = BGFX_INVALID_HANDLE;
     bgfx_texture_handle_t s_hdrGbuf = BGFX_INVALID_HANDLE;
@@ -2217,6 +2222,18 @@ namespace bgfxHDR
             return false;
         }
 
+        // Wallmark phase target: albedo + the scene depth, no other colour
+        // attachment (r4_rendertarget_phase_combine.cpp:794-799).
+        bgfx_texture_handle_t albedoAttachments[2] = { s_hdrColor, s_hdrDepth };
+        s_hdrAlbedoFb = bgfx_create_frame_buffer_from_handles(2, albedoAttachments, true);
+        if (!bgfxIsValid(s_hdrAlbedoFb))
+        {
+            LogError("[BGFX] Wallmark target framebuffer create failed (%ux%u)", _width, _height);
+            s_hdrAlbedoFb = BGFX_INVALID_HANDLE;
+            DestroyTextures();
+            return false;
+        }
+
         s_width = _width;
         s_height = _height;
         // Resolve target: one colour attachment, no depth - the pass covers the
@@ -2266,6 +2283,9 @@ namespace bgfxHDR
         if (bgfxIsValid(s_hdrHighFb))
             bgfx_destroy_frame_buffer(s_hdrHighFb);
         s_hdrHighFb = BGFX_INVALID_HANDLE;
+        if (bgfxIsValid(s_hdrAlbedoFb))
+            bgfx_destroy_frame_buffer(s_hdrAlbedoFb);
+        s_hdrAlbedoFb = BGFX_INVALID_HANDLE;
         DestroyTextures();
         s_width = 0;
         s_height = 0;
@@ -3378,6 +3398,13 @@ namespace bgfxHDR
     {
         if (bgfxIsValid(s_hdrGbuf))
             return s_hdrGbuf;
+        return BGFX_INVALID_HANDLE;
+    }
+
+    bgfx_frame_buffer_handle_t GetWallmarkFrameBuffer()
+    {
+        if (bgfxIsValid(s_hdrAlbedoFb))
+            return s_hdrAlbedoFb;
         return BGFX_INVALID_HANDLE;
     }
 

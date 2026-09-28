@@ -396,6 +396,19 @@ void bgfxRenderDeviceRender::Begin()
     bgfx_set_view_mode(bgfxHDR::kGbufDebugView, BGFX_VIEW_MODE_SEQUENTIAL);
     bgfx_touch(bgfxHDR::kGbufDebugView);
 
+    // Wallmarks (AXR CRenderTarget::phase_wallmarks,
+    // r4_rendertarget_phase_combine.cpp:791-804). The view always exists in the
+    // order; bgfxWallMarks::Render rebinds it to the albedo+depth target and
+    // submits only when that target is available, otherwise an empty view draws
+    // nothing. It sits after the scene FX view - the last G-buffer writer - and
+    // before SSAO, matching r4_R_render.cpp:464 where the phase runs after the
+    // level/lods/Detail passes and before the lighting accumulations.
+    bgfx_set_view_frame_buffer(bgfxHDR::kWallmarkView, BGFX_INVALID_HANDLE);
+    bgfx_set_view_rect(bgfxHDR::kWallmarkView, 0, 0, (uint16_t)m_width, (uint16_t)m_height);
+    bgfx_set_view_clear(bgfxHDR::kWallmarkView, BGFX_CLEAR_NONE, 0, 1.0f, 0);
+    bgfx_set_view_mode(bgfxHDR::kWallmarkView, BGFX_VIEW_MODE_SEQUENTIAL);
+    bgfx_touch(bgfxHDR::kWallmarkView);
+
     // SMAA (AXR blender_smaa + rendertarget_phase_smaa.cpp): edge -> weights ->
     // resolve. Views always exist in the order; bgfxHDR::SMAAPass submits into
     // them only when its targets/programs/textures are ready, otherwise the
@@ -462,9 +475,15 @@ void bgfxRenderDeviceRender::Begin()
     // exactly once. A missing id leaves m_viewOrder[slot] pointing at the other
     // view that shares the slot, and the two then share a sort bucket - the second
     // view's draw items are then rendered with the first view's framebuffer and
-    // rect. The list therefore has to grow with the view ids in use: 24 entries
-    // for ids 0..23, with the SSAO view (21) and the high channel (23) included.
-    const bgfx_view_id_t order[] = { 0, bgfxHDR::kSceneFxView, bgfxHDR::kSsaoView,
+    // rect. The list therefore has to grow with the view ids in use: 25 entries
+    // for ids 0..24, with the SSAO view (21) and the high channel (23) included.
+    // The wallmark view (24) is placed by position and not by value: bgfx renders
+    // the remapped slots in array order, and 24 has to run after the last
+    // G-buffer writer (kSceneFxView) and before the SSAO view - the
+    // r4_R_render.cpp:464 placement of CRenderTarget::phase_wallmarks, which sits
+    // after the level/lods/Detail passes and before the lighting accumulations.
+    const bgfx_view_id_t order[] = { 0, bgfxHDR::kSceneFxView, bgfxHDR::kWallmarkView,
+        bgfxHDR::kSsaoView,
         bgfxHDR::kResolveView, bgfxHDR::kHighView,
         bgfxHDR::kBloomBuildView,
         bgfxHDR::kLuminance64View,
@@ -498,6 +517,10 @@ void bgfxRenderDeviceRender::SetCacheXform(Fmatrix &mView, Fmatrix &mProject)
 {
     bgfx_set_view_transform(bgfxHDR::kSceneView, mView.m, mProject.m);
     bgfx_set_view_transform(bgfxHDR::kSceneFxView, mView.m, mProject.m);
+    // The wallmark quads are world-space (WallmarksEngine.cpp:348 sets the world
+    // xform to identity and the projection to Device.mProject), so the phase view
+    // needs the same transform the scene view has.
+    bgfx_set_view_transform(bgfxHDR::kWallmarkView, mView.m, mProject.m);
 }
 
 void bgfxRenderDeviceRender::OnAssetsChanged()

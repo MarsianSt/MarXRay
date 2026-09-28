@@ -1,34 +1,42 @@
-$input v_color0, v_texcoord0, v_viewPos, v_viewNormal
+$input v_texcoord0
 
 #include <bgfx_shader.sh>
-#include <gbuf_pack.h>
 
 SAMPLER2D(s_wallmark, 0);
 
-// Decal material id: deffer_base_aref_flat.ps:92-95 passes xmaterial for the
-// wallmark/decal pass, same as the static class (common.h:17-18).
-const float GBUF_MTL = 0.25;
-
-// Mirror of the reference effects\wallmark pixel shader (stub_default_ma):
-//   res.rgb = lerp(tex.rgb, v_color.rgb, v_color.a);
-//   res.a  *= v_color.a;
-// Combined with the multiply blend (DestColor/SrcColor) the mark starts fully
-// applied and fades towards neutral grey as its TTL runs out.
+// 1:1 with the reference wallmark pair (r3/effects_wallmarkmult.s +
+// r3/simple.ps), not with deffer_base_aref_flat.ps:
+//
+//   shader:begin ("wmark","simple")
+//     : blend  (true, blend.destcolor, blend.srccolor)
+//     : aref   (true, 0)
+//     : zb     (true, false)          depth test on, depth write off
+//     : fog    (false)
+//     : wmark  (true)
+//     : dx10color_write_enable(true, true, true, false)   RGB written, alpha not
+//
+// simple.ps is a bare texture fetch - no lighting, no fog, and it does NOT read
+// the vertex colour, so the TTL alpha the wallmark engine writes into
+// WallmarksEngine.cpp:103 color_rgba(128,128,128,aC) is unused in the reference
+// and unused here. The fade in the reference comes from the texture itself: the
+// mark textures are authored on a neutral 0.5 grey, and DestColor/SrcColor turns
+// that into result = 2*src*dst = dst, i.e. a no-op outside the mark shape.
+//
+// One output only, because CRenderTarget::phase_wallmarks (r4_rendertarget_phase_combine.cpp:794-799)
+// unbind RT slots 1 and 2 and bind the albedo (rt_Color == r2_RT_albedo,
+// r4_rendertarget.cpp:455) as slot 0 - the reference pixel stage writes a single
+// float4, so the multiply lands on the albedo alone. The position and packed
+// G-buffer of the underlying surface must survive untouched, otherwise the mark
+// scales P and the packed normal and the deferred lighting and the height fog
+// both read corrupted values.
+//
+// The discard is the aref(true, 0) state of the material (a fixed-function alpha
+// test with ref 0 in the reference, world_solid_ps.sc:31 spells the same test for
+// the world aref).
 void main()
 {
-    vec4 res = texture2D(s_wallmark, v_texcoord0);
-    res.rgb = mix(res.rgb, v_color0.rgb, v_color0.a);
-    res.a *= v_color0.a;
-    gl_FragData[0] = res;
-    // Position G-buffer (Anomaly gbuf position): view-space position. The mark
-    // blends with DestColor/SrcColor, which also scales this attachment.
-    gl_FragData[1] = vec4(v_viewPos, 1.0);
-    // Packed G-buffer, AXR f_deffer::position (gbuffer_stage.h:7). The reference
-    // draws wallmarks through the decal pair deffer_base_aref_flat.ps, whose
-    // hemi is I.position.w (deffer_base_aref_flat.ps:83) - the decal mesh's own
-    // I.Nh.w, written by deffer_base_aref_flat_d (a deffer_model_flat_d.vs
-    // include). The port's wallmark quad (bgfxWallMarks.cpp) carries position,
-    // colour and uv only, so that byte does not exist and the hemi is the
-    // normal's world-space up factor (gbuf_pack.h, calc_model_hemi_r1).
-    gl_FragData[2] = gbuf_pack_gbuffer(normalize(v_viewNormal), v_viewPos.z, gbuf_calc_hemi(v_viewNormal));
+    vec4 D = texture2D(s_wallmark, v_texcoord0);
+    if (D.w - 0.0 < 0.0)
+        discard;
+    gl_FragColor = D;
 }

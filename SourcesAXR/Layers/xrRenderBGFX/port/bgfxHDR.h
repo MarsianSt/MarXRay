@@ -57,6 +57,18 @@ namespace bgfxHDR
     // views write (ids 0 and 6) and is read by the resolve, which applies the
     // factor where the reference combine does (combine_1.ps:183).
     const bgfx_view_id_t kSsaoView = 21;
+    // Wallmarks (AXR CRenderTarget::phase_wallmarks,
+    // r4_rendertarget_phase_combine.cpp:791-804, called from r4_R_render.cpp:464
+    // right after the level / lods / Detail passes and before rain, sun,
+    // accum_emissive, the lights and the combine). The phase multiplies the marks
+    // into the albedo, so it still belongs to the G-buffer pass: it has to sit
+    // after the last G-buffer writer (kSceneFxView) and before the SSAO view,
+    // which measures the occlusion the marks are part of. Its numeric id is the
+    // next free one - ids 0..23 are taken and the ids in use are frozen by the
+    // other passes - because the order[] remap in
+    // bgfxRenderDeviceRender::Begin, not the numeric value, is what fixes the
+    // render sequence.
+    const bgfx_view_id_t kWallmarkView = 24;
 
     // Binds the shadow-map view, its sun transform and its clear, then lets the
     // caller re-walk the world with bgfxWorldShadowPass() on. Returns false when
@@ -131,4 +143,10 @@ namespace bgfxHDR
     // Packed G-buffer (Anomaly f_deffer::position, gbuffer_stage.h:7):
     // [gbuf_pack_normal(N).xy, view-space z, hemi] in attachment 2.
     bgfx_texture_handle_t GetGbufTexture();
+    // The wallmark phase target: the albedo attachment plus the scene depth and
+    // nothing else, i.e. the bgfx equivalent of phase_wallmarks' set_RT(NULL, 2),
+    // set_RT(NULL, 1), u_setrt(rt_Color, NULL, NULL, HW.pBaseZB)
+    // (r4_rendertarget_phase_combine.cpp:794-799). Invalid when the HDR target is
+    // not up, in which case the wallmark pass draws nothing.
+    bgfx_frame_buffer_handle_t GetWallmarkFrameBuffer();
 }

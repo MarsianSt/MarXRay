@@ -2,6 +2,7 @@
 #pragma hdrstop
 
 #include "bgfxWallMarks.h"
+#include "bgfxHDR.h"
 #include "../bgfxShaderCompiler.h"
 
 #include "../../../xrEngine/IGame_Level.h"
@@ -303,8 +304,17 @@ namespace
 			u16* idx = (u16*)tib.data;
 			for (u32 i = 0; i < nI; i++) idx[i] = (u16)i;
 
-			// Reference effects\wallmark: SrcBlend=DestColor, DstBlend=SrcColor.
-			const uint64_t st = BGFX_STATE_WRITE_RGB | BGFX_STATE_WRITE_A
+			// Reference state, r3/effects_wallmarkmult.s:
+			//   blend(true, blend.destcolor, blend.srccolor)  -> src*dst + dst*src
+			//   zb(true, false)                               -> depth test, no write
+			//   dx10color_write_enable(true, true, true, false) -> RGB only, no alpha
+			// CULL_CCW of phase_wallmarks (r4_rendertarget_phase_combine.cpp:802) is
+			// the same cull the level pass runs with, and the world program in this
+			// port states no cull bit either, so the wallmark pass leaves it off too.
+			// The stencil test of the phase (LESSEQUAL 0x01, "geometry is here") has no
+			// counterpart here: this port's G-buffer depth is a plain D24 without a
+			// stencil plane, and the depth test rejects the same pixels.
+			const uint64_t st = BGFX_STATE_WRITE_RGB
 				| BGFX_STATE_DEPTH_TEST_LEQUAL
 				| BGFX_STATE_BLEND_FUNC(BGFX_STATE_BLEND_DST_COLOR, BGFX_STATE_BLEND_SRC_COLOR)
 				| BGFX_STATE_MSAA;
@@ -313,7 +323,7 @@ namespace
 			bgfx_set_transient_vertex_buffer(0, &tvb, 0, nV);
 			bgfx_set_transient_index_buffer(&tib, 0, nI);
 			bgfx_set_texture(0, s_sampler, tex, UINT32_MAX);
-			bgfx_submit(0, s_prog, 0, BGFX_DISCARD_ALL);
+			bgfx_submit(bgfxHDR::kWallmarkView, s_prog, 0, BGFX_DISCARD_ALL);
 
 			done += batch;
 		}
@@ -357,6 +367,14 @@ void Render()
 		return;
 	if (s_items.empty())
 		return;
+
+	// CRenderTarget::phase_wallmarks binds the albedo as the only colour target
+	// and leaves the other G-buffer slots unbound, so the multiply reaches the
+	// albedo and nothing else (r4_rendertarget_phase_combine.cpp:794-799).
+	bgfx_frame_buffer_handle_t fb = bgfxHDR::GetWallmarkFrameBuffer();
+	if (!bgfxIsValid(fb))
+		return;
+	bgfx_set_view_frame_buffer(bgfxHDR::kWallmarkView, fb);
 
 	struct Batch
 	{
