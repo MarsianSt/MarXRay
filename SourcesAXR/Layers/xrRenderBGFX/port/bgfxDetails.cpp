@@ -31,6 +31,15 @@ namespace
 {
 	const u32	kMaxVertsPerSubmit	= 60000;
 	const u32	kMaxIndicesPerSubmit	= 65532;
+	// DetailManager_VS.cpp:52-53
+	//   hw_BatchSize = (u32(HW.Caps.geometry.dwRegisters) - c_hdr) / c_size;  // c_hdr=10, c_size=4
+	//   clamp(hw_BatchSize, 0, 64);
+	// 256 vertex constant registers (D3D9/D3D10) give 61, and that is exactly the
+	// size the reference shaders declare for the two per-batch stores,
+	// deffer_grass.vs:8  exdata[61] and :14 array[61*4]. The reference also
+	// flushes every hw_BatchSize blades (DetailManager_VS.cpp:297), so a submit
+	// carries at most that many.
+	const int	kMaxBatchInstances	= 61;
 	const int	kMaxBenders		= 16;
 	const int	kMaxObjects		= 16;
 	const int	kMaxDecompressPerFrame	= 24;
@@ -123,9 +132,11 @@ namespace
 	bgfx_program_handle_t		s_prog		= BGFX_INVALID_HANDLE;
 	bgfx_uniform_handle_t		s_sampler	= BGFX_INVALID_HANDLE;
 	bgfx_uniform_handle_t		s_alphaCtrl	= BGFX_INVALID_HANDLE;
-	bgfx_uniform_handle_t		s_grassAlign	= BGFX_INVALID_HANDLE;
+	bgfx_uniform_handle_t		s_array		= BGFX_INVALID_HANDLE;
+	bgfx_uniform_handle_t		s_exdata		= BGFX_INVALID_HANDLE;
 	bgfx_uniform_handle_t		s_grassParams	= BGFX_INVALID_HANDLE;
 	bgfx_uniform_handle_t		s_grassInt	= BGFX_INVALID_HANDLE;
+	bgfx_uniform_handle_t		s_grassAlign	= BGFX_INVALID_HANDLE;
 	bgfx_uniform_handle_t		s_bendersPos	= BGFX_INVALID_HANDLE;
 	bgfx_uniform_handle_t		s_bendersSetup	= BGFX_INVALID_HANDLE;
 	bgfx_uniform_handle_t		s_fogParams	= BGFX_INVALID_HANDLE;
@@ -435,14 +446,14 @@ namespace
 		{
 			bgfx_vertex_layout_begin(&s_layoutDesc, bgfx_get_renderer_type());
 			bgfx_vertex_layout_add(&s_layoutDesc, BGFX_ATTRIB_POSITION, 3, BGFX_ATTRIB_TYPE_FLOAT, false, false);
-			bgfx_vertex_layout_add(&s_layoutDesc, BGFX_ATTRIB_COLOR0, 4, BGFX_ATTRIB_TYPE_UINT8, true, false);
 			bgfx_vertex_layout_add(&s_layoutDesc, BGFX_ATTRIB_TEXCOORD0, 2, BGFX_ATTRIB_TYPE_FLOAT, false, false);
+			// (frac, mid) of the reference v_detail.misc.zw
+			// (common_iostructs.h:273  int4 misc : TEXCOORD0; // (u(Q),v(Q),frac,matrix-id)).
+			// frac is the per-vertex fraction of the model bbox height
+			// (DetailManager_VS.cpp:105  pV->t = QC(vP.y/(D.bv_bb.max.y-D.bv_bb.min.y))),
+			// mid is the float4 index of the blade in the per-batch stores
+			// (DetailManager_VS.cpp:96,106  mid = batch*c_size; pV->mid = short(mid)).
 			bgfx_vertex_layout_add(&s_layoutDesc, BGFX_ATTRIB_TEXCOORD1, 2, BGFX_ATTRIB_TYPE_FLOAT, false, false);
-			// Per-blade constant the reference keeps in the vertex-constant store:
-			// exdata[dwBatch] = (Item.normal.xyz, Item.alpha)
-			// (dx10DetailManager_VS.cpp:264). The port expands every blade into
-			// its own vertices, so the per-blade value is carried per vertex.
-			bgfx_vertex_layout_add(&s_layoutDesc, BGFX_ATTRIB_TEXCOORD2, 4, BGFX_ATTRIB_TYPE_FLOAT, false, false);
 			bgfx_vertex_layout_end(&s_layoutDesc);
 			s_layout = bgfx_create_vertex_layout(&s_layoutDesc);
 			s_layoutReady = true;
@@ -472,6 +483,11 @@ namespace
 
 		s_sampler      = bgfx_create_uniform("u_texture", BGFX_UNIFORM_TYPE_SAMPLER, 1);
 		s_alphaCtrl    = bgfx_create_uniform("u_grassAlpha", BGFX_UNIFORM_TYPE_VEC4, 1);
+		// deffer_grass.vs:14  float4 array[61*4];  and :8  float4 exdata[61];
+		// filled per batch by DetailManager_VS.cpp:278-294 (3x4 scaled matrix +
+		// colour row) and dx10DetailManager_VS.cpp:264 (terrain normal + alpha).
+		s_array        = bgfx_create_uniform("c_array", BGFX_UNIFORM_TYPE_VEC4, kMaxBatchInstances * 4);
+		s_exdata       = bgfx_create_uniform("c_exdata", BGFX_UNIFORM_TYPE_VEC4, kMaxBatchInstances);
 		s_grassParams  = bgfx_create_uniform("u_grassParams", BGFX_UNIFORM_TYPE_VEC4, 1);
 		s_grassInt     = bgfx_create_uniform("u_grassInt", BGFX_UNIFORM_TYPE_VEC4, 1);
 		s_grassAlign   = bgfx_create_uniform("u_grassAlign", BGFX_UNIFORM_TYPE_VEC4, 1);
@@ -525,22 +541,20 @@ namespace
 	struct OutVertex
 	{
 		float	x, y, z;
-		u32	color;
 		float	u, v;
-		float	height;
-		float	pad;
-		// exdata[dwBatch] of deffer_grass.vs:8, fed by
-		// dx10DetailManager_VS.cpp:264 - world-space terrain normal and the
-		// per-blade alpha.
-		float	nx, ny, nz, alpha;
+		float	frac;		// v_detail.misc.z, the fraction of the model bbox height
+		float	mid;		// v_detail.misc.w, the float4 index of the blade in c_array
 	};
 
-	u32 BakeColor(float c_hemi, float c_sun)
+	// DetailManager_VS.cpp:37-41 short QC(float v) { int t = iFloor(v*float(quant));
+	// clamp(t,-32768,32767); return short(t & 0xffff); } with quant = 16384
+	// (DetailManager_VS.cpp:18). The stored shorts are read back as signed in
+	// the shader, so the dequantized value is QC(v)/quant.
+	float DetailQC(float v)
 	{
-		float l = 0.25f + 0.75f * (c_hemi * 0.55f + c_sun * 0.45f);
-		clamp(l, 0.f, 1.f);
-		u32 b = (u32)(l * 255.f + 0.5f);
-		return 0xFF000000u | (b << 16) | (b << 8) | b;
+		int t = iFloor(v * 16384.f);
+		clamp(t, -32768, 32767);
+		return float(s16(u16(t))) * (1.f / 16384.f);
 	}
 
 	void SubmitChunk(DetailModel& dobj, SlotItem** items, u32 count, bgfx_texture_handle_t tex)
@@ -554,8 +568,32 @@ namespace
 		u32 byIdx = kMaxIndicesPerSubmit / ni;
 		if (byIdx < maxBatch)
 			maxBatch = byIdx;
+		// The two per-batch stores hold kMaxBatchInstances blades; the reference
+		// flushes on the same bound (DetailManager_VS.cpp:297).
+		if (maxBatch > (u32)kMaxBatchInstances)
+			maxBatch = kMaxBatchInstances;
 		if (!maxBatch)
 			return;
+
+		// The per-vertex values the reference bakes once into its static VB
+		// (DetailManager_VS.cpp:99-107): quantized u, v, the height fraction and
+		// no matrix id (that one is per batch).
+		static xr_vector<float> q_u, q_v, q_frac;
+		q_u.resize(nv);
+		q_v.resize(nv);
+		q_frac.resize(nv);
+		const float bbH = dobj.bv_bb.max.y - dobj.bv_bb.min.y;
+		for (u32 v = 0; v < nv; v++)
+		{
+			const DetailVertexIn& sv = dobj.vertices[v];
+			q_u[v] = DetailQC(sv.u);
+			q_v[v] = DetailQC(sv.v);
+			q_frac[v] = (bbH > 0.f) ? DetailQC(sv.P.y / bbH) : 0.f;
+		}
+
+		// deffer_grass.vs:8,:14 - the per-batch constant stores.
+		Fvector4 carr[kMaxBatchInstances * 4];
+		Fvector4 cexd[kMaxBatchInstances];
 
 		u32 done = 0;
 		while (done < count)
@@ -580,32 +618,33 @@ namespace
 				SlotItem& it = *items[done + inst];
 				const float scale = it.scale;
 				const Fmatrix& M = it.M;
-				const u32 color = BakeColor(it.c_hemi, it.c_sun);
+				const u32 base = inst * 4;			// DetailManager_VS.cpp:273
+				const float mid = float(base);		// DetailManager_VS.cpp:96,106
 				const u16 vbase = u16(inst * nv);
+
+				// DetailManager_VS.cpp:278-281 (dx10DetailManager_VS.cpp:259-261):
+				// three rows of the scaled 3x4 instance matrix.
+				carr[base + 0].set(M._11 * scale, M._21 * scale, M._31 * scale, M._41);
+				carr[base + 1].set(M._12 * scale, M._22 * scale, M._32 * scale, M._42);
+				carr[base + 2].set(M._13 * scale, M._23 * scale, M._33 * scale, M._43);
+				// DetailManager_VS.cpp:292-294 (dx10DetailManager_VS.cpp:272-274):
+				// the colour row, (c_sun, c_sun, c_sun, c_hemi). deffer_grass.vs:115
+				// reads only c0.w out of it.
+				carr[base + 3].set(it.c_sun, it.c_sun, it.c_sun, it.c_hemi);
+				// dx10DetailManager_VS.cpp:263-264 - the terrain normal the blade
+				// stands on plus the per-blade alpha.
+				cexd[inst].set(it.normal.x, it.normal.y, it.normal.z, 1.f);
 
 				for (u32 v = 0; v < nv; v++)
 				{
 					const DetailVertexIn& sv = dobj.vertices[v];
-					const float px = sv.P.x * scale;
-					const float py = sv.P.y * scale;
-					const float pz = sv.P.z * scale;
-					// deffer_grass.vs:43  float H = P.y - m1.w; with
-					// m1 = array[i+1] = (M._12*scale, M._22*scale, M._32*scale, M._42)
-					// (DetailManager_VS.cpp:280), i.e. the scaled rotated Y of the
-					// vertex - row 1 of the matrix, not row 2.
-					const float h = M._12 * px + M._22 * py + M._32 * pz;
-					vdst->x = M._11 * px + M._21 * py + M._31 * pz + M._41;
-					vdst->y = M._12 * px + M._22 * py + M._32 * pz + M._42;
-					vdst->z = M._13 * px + M._23 * py + M._33 * pz + M._43;
-					vdst->color = color;
-					vdst->u = sv.u;
-					vdst->v = sv.v;
-					vdst->height = h;
-					vdst->pad = 0.f;
-					vdst->nx = it.normal.x;
-					vdst->ny = it.normal.y;
-					vdst->nz = it.normal.z;
-					vdst->alpha = 1.f;
+					vdst->x = sv.P.x;
+					vdst->y = sv.P.y;
+					vdst->z = sv.P.z;
+					vdst->u = q_u[v];
+					vdst->v = q_v[v];
+					vdst->frac = q_frac[v];
+					vdst->mid = mid;
 					vdst++;
 				}
 
@@ -613,6 +652,11 @@ namespace
 					((u16*)idst)[i] = u16(vbase + dobj.indices[i]);
 				idst += ni * 2;
 			}
+
+			if (bgfxIsValid(s_array))
+				bgfx_set_uniform(s_array, carr, u16(batch * 4));
+			if (bgfxIsValid(s_exdata))
+				bgfx_set_uniform(s_exdata, cexd, u16(batch));
 
 			const float gp[4] = { Device.fTimeGlobal, 0.12f, 0.6f, 0.4f };
 			const float ac[4] = { 0.5f, 1.f, 0.f, 0.f };

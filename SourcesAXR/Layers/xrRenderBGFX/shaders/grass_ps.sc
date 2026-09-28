@@ -1,4 +1,4 @@
-$input v_color0, v_texcoord0, v_viewPos, v_viewNormal
+$input v_texcoord0, v_viewPos, v_viewNormal, v_hemi
 #include <bgfx_shader.sh>
 #include <gbuf_pack.h>
 
@@ -18,13 +18,20 @@ void main()
     vec4 base = texture2D(u_texture, v_texcoord0);
     if (u_grassAlpha.y > 0.5 && base.w < u_grassAlpha.x)
         discard;
-    vec4 c = vec4(base.rgb * v_color0.rgb, base.w * v_color0.a);
     // Forward fog removed: single fog layer in combine (Anomaly).
-    gl_FragData[0] = c;
+    // deffer_grass.ps:74  surface_bumped S = sload(I);  -> S.base = tbase(I.tcdh)
+    // and deffer_grass.ps:135  float4(S.base.rgb, S.gloss). The reference albedo
+    // is the plain texture: the per-blade colour row c0 (c_sun, c_sun, c_sun,
+    // c_hemi; DetailManager_VS.cpp:294) is read by deffer_grass.vs:115 for the
+    // hemi only and never multiplies the diffuse, so nothing is multiplied here.
+    gl_FragData[0] = base;
     // Position G-buffer (Anomaly gbuf position): view-space position.
     gl_FragData[1] = vec4(v_viewPos, 1.0);
-    // Packed G-buffer, AXR f_deffer::position (gbuffer_stage.h:7). The reference
-    // adds one more term to the normal here, deffer_grass.ps:70-79
+    // Packed G-buffer, AXR f_deffer::position (gbuffer_stage.h:7), with the hemi
+    // the vertex stage produced (deffer_grass.vs:115 -> I.position.w, read back
+    // at deffer_grass.ps:118 `float h = I.position.w;`).
+    //
+    // The reference adds one more term to the normal here, deffer_grass.ps:70-79
     //   S.normal.xy *= max(5.0f * rain_params.y, 3.0f);
     //   float3 fN = mul(m_WV, float3(S.normal.x, 1.0f, S.normal.y));
     //   fN = normalize(fN);
@@ -35,5 +42,5 @@ void main()
     // map does not exist in this level's data (the jupiter archive holds only
     // levels/jupiter/build_details.dds, no build_details_bump), so the term has
     // no source here and is NOT replaced by a guessed constant.
-    gl_FragData[2] = gbuf_pack_gbuffer(normalize(v_viewNormal), v_viewPos.z, gbuf_calc_hemi(v_viewNormal), GBUF_MTL);
+    gl_FragData[2] = gbuf_pack_gbuffer(normalize(v_viewNormal), v_viewPos.z, v_hemi, GBUF_MTL);
 }
