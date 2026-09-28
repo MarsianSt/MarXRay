@@ -4,6 +4,7 @@
 #include "bgfx_capi.h"
 #include "bgfxShaderCompiler.h"
 #include "bgfxUIShader.h"
+#include "port/bgfxHDR.h"
 
 #include "../../xrcdb/xrXRC.h"
 #include "../../xrSound/sound.h"
@@ -23,15 +24,50 @@
 
 #include <vector>
 
-// Rain/snow streaks, ported 1:1 from dxRainRender::Render (dxRainRender.cpp:66).
-// Submits into the HDR scene FX view (6) from
-// CEnvironment::RenderLast() -> bgfxRenderEnvironmentFx().
-// Splash particles (owner.particle_active + dm\rain.dm) are stage 2 and not
-// drawn here yet.
+// Rain / snow streaks, ported 1:1 from dxRainRender::Render
+// (archive_sourse\Layers\xrRender\dxRainRender.cpp:66-351).
+//
+// This is a FORWARD pass, not a G-buffer writer. The reference draws the streaks
+// into rt_Color - the already-composed, tone-mapped LDR image - after the
+// combine and before the forward phase:
+//
+//   r4_rendertarget_phase_combine.cpp:355-366
+//     // Water rendering & Rain/thunder-bolts
+//     {
+//        if (!RImplementation.o.dx10_msaa)
+//            u_setrt(rt_Generic_0, 0, 0, HW.pBaseZB);
+//        ...
+//        g_pGamePersistent->Environment().RenderLast(); // rain/thunder-bolts
+//     }
+//
+// reached through CEnvironment::RenderLast (Environment_render.cpp:207-215,
+// eff_Rain->Render). bgfxRenderEnvironmentFx() calls the same entry point, and
+// the view it submits into is bgfxHDR::kForwardView, the port's slot for exactly
+// this phase.
+//
+// The previous revision of this file reused particle_vs.sc / particle_ps.sc and
+// submitted into kSceneFxView, i.e. it wrote the three G-buffer attachments
+// (position, packed normal+hemi, albedo) and the streaks were then resolved,
+// fogged and tone-mapped as if they were level geometry.
 namespace
 {
-    const bgfx_view_id_t kRainView = 6;
     const u32 kMaxQuadsPerSubmit = 1024;
+
+    // dxRainRender.cpp:96, :221, :250, :281 gate the whole screen-space-shaders
+    // arm on ps_r4_shaders_flags.test(R4FLAG_SSS_ADDON). That variable is defined
+    // in the xrRender module (Layers/xrRender/xrRender_console.cpp:406), which is
+    // not part of this solution - only xrRenderBGFX is - so it cannot be linked
+    // from here, exactly like ps_r2_static_flags (see the same reasoning in
+    // bgfxRenderInterface.h:166-179). Its reference initial value is
+    // { R4FLAG_ES_ADDON }, i.e. R4FLAG_SSS_ADDON (1 << 0) is CLEAR, and its only
+    // writer, the "r4_screen_space_shaders" console command
+    // (xrRender_console.cpp:1365), lives in that same unbuilt module. Every
+    // process that runs this port therefore evaluates dxRainRender.cpp:96 to the
+    // same FALSE the reference does with the shipped configuration, so the
+    // screen-space arm is a constant false here and the stock arm - owner
+    // drop_length / drop_width, speed 1.0, the stub_default streak shader - is
+    // the one that runs.
+    const bool kSssRainAddon = false;   // R4FLAG_SSS_ADDON, xrRender_console.cpp:406
 
     struct RainVertex
     {
@@ -42,7 +78,7 @@ namespace
 
     bgfx_program_handle_t s_prog = BGFX_INVALID_HANDLE;
     bgfx_uniform_handle_t s_sampler = BGFX_INVALID_HANDLE;
-    bgfx_uniform_handle_t s_params = BGFX_INVALID_HANDLE;
+    bgfx_uniform_handle_t s_setup = BGFX_INVALID_HANDLE;
     bgfx_vertex_layout_t s_layout = {};
     bool s_layoutReady = false;
 
@@ -54,6 +90,9 @@ namespace
     int s_current_items = 0;
 
     // Engine ARGB (0xAARRGGBB) -> bgfx uint8 vertex color memory order R,G,B,A.
+    // This is the reference's `I.Color.bgra` swizzle (stub_default.vs:12),
+    // applied here because bgfx declares COLOR0 as UINT8x4 normalised, i.e.
+    // already in the order the shader reads it.
     u32 PackColor(u32 C)
     {
         return (C & 0xFF00FF00u) | ((C >> 16) & 0x000000FFu) | ((C << 16) & 0x00FF0000u);
@@ -75,8 +114,8 @@ namespace
         }
 
         std::vector<u8> vsBlob, psBlob;
-        if (!bgfxShaderCompileFile("particle_vs.sc", 'v', vsBlob) ||
-            !bgfxShaderCompileFile("particle_ps.sc", 'f', psBlob))
+        if (!bgfxShaderCompileFile("rain_vs.sc", 'v', vsBlob) ||
+            !bgfxShaderCompileFile("rain_ps.sc", 'f', psBlob))
         {
             LogError("[BGFX] Rain program build failed");
             return false;
@@ -97,7 +136,7 @@ namespace
         }
 
         s_sampler = bgfx_create_uniform("s_base", BGFX_UNIFORM_TYPE_SAMPLER, 1);
-        s_params = bgfx_create_uniform("u_particleParams", BGFX_UNIFORM_TYPE_VEC4, 1);
+        s_setup = bgfx_create_uniform("ssfx_rain_setup", BGFX_UNIFORM_TYPE_VEC4, 1);
         LogInfo("[BGFX] Rain program created: %u", s_prog.idx);
         return true;
     }
@@ -111,6 +150,9 @@ namespace
         s_texTried = true;
         s_texWinter = !!bWinterMode;
 
+        // dxRainRender.cpp:26 "effects\rain" + "fx\fx_rain"; :46 "effects\snow"
+        // + "fx\fx_snow". effects_rain.s:8 binds t_base to s_base, so the texture
+        // name is the second create() argument.
         const char* name = bWinterMode ? "fx\\fx_snow" : "fx\\fx_rain";
         unsigned int w = 0, h = 0;
         if (bgfxLoadUITexture(name, s_tex, w, h) && bgfxIsValid(s_tex))
@@ -123,18 +165,49 @@ namespace
         return s_tex;
     }
 
-    void SubmitQuads(const RainVertex* quads, u32 quadCount, bgfx_texture_handle_t tex)
+    void SubmitQuads(const RainVertex* quads, u32 quadCount, bgfx_texture_handle_t tex,
+        const float (&setup)[4])
     {
         if (!EnsureProgram() || !bgfxIsValid(tex) || !quadCount)
             return;
 
-        bgfx_set_view_rect(kRainView, 0, 0, (u16)Device.dwWidth, (u16)Device.dwHeight);
-        bgfx_set_view_clear(kRainView, BGFX_CLEAR_NONE, 0, 1.0f, 0);
-        bgfx_set_view_mode(kRainView, BGFX_VIEW_MODE_SEQUENTIAL);
-        bgfx_set_view_transform(kRainView, Device.mView.m, Device.mProject.m);
-        bgfx_touch(kRainView);
+        // kRainView, not kForwardView: the reference draws the rain
+        // (r4_rendertarget_phase_combine.cpp:365, Environment().RenderLast) into
+        // rt_Generic_0 BEFORE the forward phase (:386 RImplementation.render_forward),
+        // so the streaks have to be a separate view placed one slot earlier. Sharing
+        // kForwardView with the particles would put both passes in one bgfx sort
+        // bucket, where the draws are co-sorted instead of run in reference order.
+        const bgfx_view_id_t view = bgfxHDR::kRainView;
+        bgfx_set_view_rect(view, 0, 0, (u16)Device.dwWidth, (u16)Device.dwHeight);
+        bgfx_set_view_clear(view, BGFX_CLEAR_NONE, 0, 1.0f, 0);
+        bgfx_set_view_mode(view, BGFX_VIEW_MODE_SEQUENTIAL);
+        bgfx_set_view_transform(view, Device.mView.m, Device.mProject.m);
+        // The reference binds rt_Generic_0 (the combine output) with the scene
+        // depth still attached (r4_rendertarget_phase_combine.cpp:358), so the
+        // streaks depth-test against the level. GetForwardFrameBuffer() is exactly
+        // that pair: s_smaaInput + s_hdrDepth. It is only built once the SMAA
+        // targets exist, so before that the pass has no target and draws nothing -
+        // the same guard every other pass in this module uses.
+        const bgfx_frame_buffer_handle_t fb = bgfxHDR::GetForwardFrameBuffer();
+        if (!bgfxIsValid(fb))
+        {
+            static bool s_warned = false;
+            if (!s_warned)
+            {
+                s_warned = true;
+                LogError("[BGFX] Rain: no forward frame buffer, streaks skipped");
+            }
+            return;
+        }
+        bgfx_set_view_frame_buffer(view, fb);
+        bgfx_touch(view);
 
-        const float prm[4] = { 0.f, 0.f, 0.f, 0.f };    // alpha test off
+        // effects_rain.s:3-6 - zb(true,false) + blend(srcalpha, invsrcalpha) +
+        // aref(true,0), applied by dxRainRender.cpp:264-269. zb(true,false) is
+        // z-test on / z-write off, i.e. DEPTH_TEST_LEQUAL with no WRITE_Z.
+        // aref(true,0) discards nothing: the alpha reference is zero, so every
+        // fragment passes and no clip() is emitted (stub_default.ps:9-12 has the
+        // clip calls commented out for exactly this shader).
         const u64 state = BGFX_STATE_WRITE_RGB | BGFX_STATE_WRITE_A
             | BGFX_STATE_DEPTH_TEST_LEQUAL
             | BGFX_STATE_BLEND_FUNC(BGFX_STATE_BLEND_SRC_ALPHA, BGFX_STATE_BLEND_INV_SRC_ALPHA);
@@ -174,8 +247,11 @@ namespace
             bgfx_set_transient_vertex_buffer(0, &tvb, 0, nV);
             bgfx_set_transient_index_buffer(&tib, 0, nI);
             bgfx_set_texture(0, s_sampler, tex, 0);
-            bgfx_set_uniform(s_params, prm, 1);
-            bgfx_submit(kRainView, s_prog, 0, BGFX_DISCARD_ALL);
+            // dxRainRender.cpp:81,270 - static shared_str s_shader_setup =
+            // "ssfx_rain_setup", set right after the streak draw with
+            // ps_ssfx_rain_2 (alpha, brightness, refraction, reflection).
+            bgfx_set_uniform(s_setup, setup, 1);
+            bgfx_submit(view, s_prog, 0, BGFX_DISCARD_ALL);
 
             done += batch;
         }
@@ -204,7 +280,22 @@ void bgfxRainRender::Render(CEffect_Rain &owner)
         return;
 
     float particles_multiplier = bWinterMode ? 2.0f : 1.0f;
+
+    // dxRainRender.cpp:77-79, then :96-103. The R4 screen-space-shaders arm
+    // replaces the engine's own drop_length / drop_width / speed 1.0 with
+    // ps_ssfx_rain_1.x / .y / .z, and swaps the splash shader in; the stock arm
+    // keeps owner.drop_length / owner.drop_width and speed 1.0. The arm is
+    // R4FLAG_SSS_ADDON and never winter (bWinterMode is excluded at :96).
+    float _drop_len = owner.drop_length;
+    float _drop_width = owner.drop_width;
     float _drop_speed = 1.0f;
+    const bool sss_rain = kSssRainAddon && !bWinterMode;
+    if (sss_rain)
+    {
+        _drop_len = ps_ssfx_rain_1.x;
+        _drop_width = ps_ssfx_rain_1.y;
+        _drop_speed = ps_ssfx_rain_1.z;
+    }
 
     float wind_direction = 0.0f;
     float wind_power = 0.0f;
@@ -319,11 +410,16 @@ void bgfxRainRender::Render(CEffect_Rain &owner)
             }
         }
 
-        // Build line
+        // Build line - dxRainRender.cpp:219-227.
         Fvector& pos_head = one.P;
         Fvector pos_trail;
         if (!bWinterMode)
-            pos_trail.mad(pos_head, one.D, -owner.drop_length * factor_visual);
+        {
+            if (sss_rain)
+                pos_trail.mad(pos_head, one.D, -_drop_len * factor_visual);
+            else
+                pos_trail.mad(pos_head, one.D, -owner.drop_length * factor_visual);
+        }
         else
             pos_trail.mad(pos_head, one.D, -owner.drop_length * 5.5f);
 
@@ -348,7 +444,8 @@ void bgfxRainRender::Render(CEffect_Rain &owner)
         camDir.sub(sC, vEye);
         camDir.normalize();
         lineTop.crossproduct(camDir, lineD);
-        float w = owner.drop_width;
+        // dxRainRender.cpp:250 - the screen-space arm also widens the streak.
+        float w = sss_rain ? _drop_width : owner.drop_width;
         u32 s = one.uv_set;
 
         RainVertex v;
@@ -361,7 +458,12 @@ void bgfxRainRender::Render(CEffect_Rain &owner)
     }
 
     if (!quads.empty())
-        SubmitQuads(quads.data(), (u32)(quads.size() / 4), GetRainTexture());
+    {
+        // ps_ssfx_rain_2 (xr_ioc_cmd.cpp:493) = { 0.7f, 0.1f, 1.0f, 0.5f }
+        // (alpha, brightness, refraction, reflection), dxRainRender.cpp:270.
+        const float setup[4] = { ps_ssfx_rain_2.x, ps_ssfx_rain_2.y, ps_ssfx_rain_2.z, ps_ssfx_rain_2.w };
+        SubmitQuads(quads.data(), (u32)(quads.size() / 4), GetRainTexture(), setup);
+    }
 }
 
 const Fsphere& bgfxRainRender::GetDropBounds() const

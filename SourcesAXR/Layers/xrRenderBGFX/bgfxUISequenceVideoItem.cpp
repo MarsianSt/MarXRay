@@ -2,6 +2,7 @@
 #include "bgfxUISequenceVideoItem.h"
 #include "bgfxUIProgram.h"
 #include "bgfxRenderInterface.h"
+#include "port\bgfxHDR.h"
 
 bgfxUISequenceVideoItem::bgfxUISequenceVideoItem()
     : m_textureCaptured(false)
@@ -162,6 +163,6 @@ void bgfxUISequenceVideoItem::RenderVideoFrame()
     // Any 2D UI submitted later in this frame (the fullscreen menu/intro
     // backdrop goes through bgfxUIShader after Render->Render()) must fall
     // back to the world view to keep the video visible.
-    bgfxUISubmitView() = 0;
-    bgfx_submit(1, prog, 0, BGFX_DISCARD_ALL);
+    bgfxUISubmitView() = bgfxHDR::kIntroView;
+    bgfx_submit(bgfxHDR::kIntroView, prog, 0, BGFX_DISCARD_ALL);
 }

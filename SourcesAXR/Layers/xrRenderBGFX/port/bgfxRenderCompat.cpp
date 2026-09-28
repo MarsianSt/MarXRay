@@ -1667,7 +1667,7 @@ namespace
 		if (treeXform)
 			bgfx_set_transform(treeXform, 1);
 		bgfxSetFogUniforms();
-		bgfx_submit(0, prog, 0, BGFX_DISCARD_ALL);
+		bgfx_submit(bgfxHDR::kSceneView, prog, 0, BGFX_DISCARD_ALL);
 		if (treeXform)
 		{
 			static const float s_identityXform[16] =
@@ -1842,7 +1842,7 @@ namespace
 		bgfx_set_transient_vertex_buffer(0, &tvb, 0, 4);
 		bgfx_set_index_buffer(s_worldLodIbh, 0, 6);
 		bgfxSetFogUniforms();
-		bgfx_submit(0, s_worldProgram, 0, BGFX_DISCARD_ALL);
+		bgfx_submit(bgfxHDR::kSceneView, s_worldProgram, 0, BGFX_DISCARD_ALL);
 		++dg.drawn;
 	}
 
@@ -2228,7 +2228,7 @@ extern "C"
 	// bgfxRenderDeviceRender::Begin) since CLevel::OnRender draws it after
 	// Render->Render() and it belongs on top of the HUD.
 	// ========================================================================
-	const bgfx_view_id_t kHudViewId = 3;
+	const bgfx_view_id_t kHudViewId = bgfxHDR::kHudView;
 
 	extern "C" void bgfxRenderHudPass()
 	{

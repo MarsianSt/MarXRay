@@ -7,6 +7,7 @@
 #include "../bgfxShaderCompiler.h"
 #include "../bgfxUIShader.h"
 #include "../bgfxUIProgram.h"
+#include "bgfxHDR.h"
 
 #include "../../../xrEngine/IGame_Level.h"
 #include "../../../xrEngine/IGame_Persistent.h"
@@ -629,7 +630,7 @@ namespace
 			if (bgfxIsValid(s_sampler))
 				bgfx_set_texture(0, s_sampler, tex, UINT32_MAX);
 			SetFogUniforms();
-			bgfx_submit(0, s_prog, 0, BGFX_DISCARD_ALL);
+			bgfx_submit(bgfxHDR::kSceneView, s_prog, 0, BGFX_DISCARD_ALL);
 
 			done += batch;
 		}

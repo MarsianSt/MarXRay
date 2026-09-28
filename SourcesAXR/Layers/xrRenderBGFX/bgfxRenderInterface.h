@@ -327,11 +327,6 @@ public:
         // value the sky, the high pass and the combine just used stays current for the
         // whole frame, the result of this frame's chain becomes it for the next one.
         bgfxHDR::EndFrameLuminance();
-        // Fog scattering (AXR combine_2_naa.ps fog-scatter block): blurred LDR
-        // copy bled over the fogged transition zone. SMAA then resolves from
-        // the scattered output (or plain combine output when scattering is
-        // unavailable); CombinePass falls back to direct backbuffer output.
-        bgfxHDR::FogScatterPass((u16)Device.dwWidth, (u16)Device.dwHeight);
         bgfxHDR::SMAAPass((u16)Device.dwWidth, (u16)Device.dwHeight);
         // Stage-1 G-buffer inspector. Off unless XRGBUF_DEBUG is set, in which
         // case it repaints the finished frame with one attachment view. It has

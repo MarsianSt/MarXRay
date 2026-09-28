@@ -336,13 +336,19 @@ void bgfxRenderDeviceRender::Begin()
         bgfx_set_view_clear(bgfxHDR::kSceneView, BGFX_CLEAR_COLOR | BGFX_CLEAR_DEPTH, 0x000000ff, 1.0f, 0);
         bgfx_set_view_mode(bgfxHDR::kSceneView, BGFX_VIEW_MODE_SEQUENTIAL);
         bgfx_touch(bgfxHDR::kSceneView);
+        bgfx_set_view_rect(bgfxHDR::kSceneFxView, 0, 0, (uint16_t)m_width, (uint16_t)m_height);
+        bgfx_set_view_mode(bgfxHDR::kSceneFxView, BGFX_VIEW_MODE_SEQUENTIAL);
+        bgfx_touch(bgfxHDR::kSceneFxView);
     }
 
-    bgfx_set_view_frame_buffer(1, BGFX_INVALID_HANDLE);
-    bgfx_set_view_rect(1, 0, 0, (uint16_t)m_width, (uint16_t)m_height);
-    bgfx_set_view_clear(1, BGFX_CLEAR_NONE, 0, 1.0f, 0);
-    bgfx_set_view_mode(1, BGFX_VIEW_MODE_SEQUENTIAL);
-    bgfx_touch(1);
+    // Intro video / second-viewport playback. The view always exists in the
+    // order; bgfxUISequenceVideoItem::Render submits into it only while an intro
+    // clip is playing, and an empty view draws nothing.
+    bgfx_set_view_frame_buffer(bgfxHDR::kIntroView, BGFX_INVALID_HANDLE);
+    bgfx_set_view_rect(bgfxHDR::kIntroView, 0, 0, (uint16_t)m_width, (uint16_t)m_height);
+    bgfx_set_view_clear(bgfxHDR::kIntroView, BGFX_CLEAR_NONE, 0, 1.0f, 0);
+    bgfx_set_view_mode(bgfxHDR::kIntroView, BGFX_VIEW_MODE_SEQUENTIAL);
+    bgfx_touch(bgfxHDR::kIntroView);
 
     bgfx_set_view_frame_buffer(bgfxHDR::kCombineView, BGFX_INVALID_HANDLE);
     bgfx_set_view_rect(bgfxHDR::kCombineView, 0, 0, (uint16_t)m_width, (uint16_t)m_height);
@@ -350,12 +356,15 @@ void bgfxRenderDeviceRender::Begin()
     bgfx_set_view_mode(bgfxHDR::kCombineView, BGFX_VIEW_MODE_SEQUENTIAL);
     bgfx_touch(bgfxHDR::kCombineView);
 
-    bgfx_set_view_frame_buffer(3, BGFX_INVALID_HANDLE);
-    bgfx_set_view_frame_buffer(4, BGFX_INVALID_HANDLE);
-    bgfx_set_view_rect(4, 0, 0, (uint16_t)m_width, (uint16_t)m_height);
-    bgfx_set_view_clear(4, BGFX_CLEAR_NONE, 0, 1.0f, 0);
-    bgfx_set_view_mode(4, BGFX_VIEW_MODE_SEQUENTIAL);
-    bgfx_touch(4);
+    // 2D UI: the default target of bgfxUISubmitView(). The video item switches that
+    // to the intro view while a clip plays (bgfxUISequenceVideoItem.cpp), which is
+    // why both views are bound here rather than at their submit sites.
+    bgfx_set_view_frame_buffer(bgfxHDR::kHudView, BGFX_INVALID_HANDLE);
+    bgfx_set_view_frame_buffer(bgfxHDR::kUiView, BGFX_INVALID_HANDLE);
+    bgfx_set_view_rect(bgfxHDR::kUiView, 0, 0, (uint16_t)m_width, (uint16_t)m_height);
+    bgfx_set_view_clear(bgfxHDR::kUiView, BGFX_CLEAR_NONE, 0, 1.0f, 0);
+    bgfx_set_view_mode(bgfxHDR::kUiView, BGFX_VIEW_MODE_SEQUENTIAL);
+    bgfx_touch(bgfxHDR::kUiView);
 
     // Screen-space ambient occlusion. The view always exists in the order so the
     // pass order stays stable; bgfxHDR::SSAOPass rebinds it to the half-res
@@ -396,6 +405,20 @@ void bgfxRenderDeviceRender::Begin()
     bgfx_set_view_mode(bgfxHDR::kGbufDebugView, BGFX_VIEW_MODE_SEQUENTIAL);
     bgfx_touch(bgfxHDR::kGbufDebugView);
 
+    // Rain (AXR render_rain, r4_R_render.cpp:505). It draws rain and
+    // thunderbolts, and the reference renders it forward with blending off
+    // (dx10RainBlender.cpp:13) straight into rt_Generic_0
+    // (r4_rendertarget_draw_rain.cpp), i.e. it is NOT deferred G-buffer geometry.
+    // The framebuffer here is still the scene one: moving the pass to the
+    // reference's own forward stage is the rain port's job, this renumbering
+    // only gave it a view of its own. It sits right after the wallmarks, where
+    // r4_R_render.cpp:505 calls it, and before the lighting accumulation.
+    bgfx_set_view_frame_buffer(bgfxHDR::kRainView, BGFX_INVALID_HANDLE);
+    bgfx_set_view_rect(bgfxHDR::kRainView, 0, 0, (uint16_t)m_width, (uint16_t)m_height);
+    bgfx_set_view_clear(bgfxHDR::kRainView, BGFX_CLEAR_NONE, 0, 1.0f, 0);
+    bgfx_set_view_mode(bgfxHDR::kRainView, BGFX_VIEW_MODE_SEQUENTIAL);
+    bgfx_touch(bgfxHDR::kRainView);
+
     // Wallmarks (AXR CRenderTarget::phase_wallmarks,
     // r4_rendertarget_phase_combine.cpp:791-804). The view always exists in the
     // order; bgfxWallMarks::Render rebinds it to the albedo+depth target and
@@ -428,85 +451,99 @@ void bgfxRenderDeviceRender::Begin()
     bgfx_set_view_clear(bgfxHDR::kSmaaResolveView, BGFX_CLEAR_NONE, 0, 1.0f, 0);
     bgfx_set_view_mode(bgfxHDR::kSmaaResolveView, BGFX_VIEW_MODE_SEQUENTIAL);
     bgfx_touch(bgfxHDR::kSmaaResolveView);
-    // Fog scattering (AXR combine_2_naa.ps fog-scatter block): blur chain +
-    // scatter resolve run after the combine and before SMAA. Views exist
-    // always; passes submit only when their targets are ready.
-    bgfx_set_view_frame_buffer(bgfxHDR::kFogBlurBuildView, BGFX_INVALID_HANDLE);
-    bgfx_set_view_rect(bgfxHDR::kFogBlurBuildView, 0, 0, (uint16_t)m_width, (uint16_t)m_height);
-    bgfx_set_view_clear(bgfxHDR::kFogBlurBuildView, BGFX_CLEAR_NONE, 0, 1.0f, 0);
-    bgfx_set_view_mode(bgfxHDR::kFogBlurBuildView, BGFX_VIEW_MODE_SEQUENTIAL);
-    bgfx_touch(bgfxHDR::kFogBlurBuildView);
-    bgfx_set_view_frame_buffer(bgfxHDR::kFogBlurHView, BGFX_INVALID_HANDLE);
-    bgfx_set_view_rect(bgfxHDR::kFogBlurHView, 0, 0, (uint16_t)m_width, (uint16_t)m_height);
-    bgfx_set_view_clear(bgfxHDR::kFogBlurHView, BGFX_CLEAR_NONE, 0, 1.0f, 0);
-    bgfx_set_view_mode(bgfxHDR::kFogBlurHView, BGFX_VIEW_MODE_SEQUENTIAL);
-    bgfx_touch(bgfxHDR::kFogBlurHView);
-    bgfx_set_view_frame_buffer(bgfxHDR::kFogBlurVView, BGFX_INVALID_HANDLE);
-    bgfx_set_view_rect(bgfxHDR::kFogBlurVView, 0, 0, (uint16_t)m_width, (uint16_t)m_height);
-    bgfx_set_view_clear(bgfxHDR::kFogBlurVView, BGFX_CLEAR_NONE, 0, 1.0f, 0);
-    bgfx_set_view_mode(bgfxHDR::kFogBlurVView, BGFX_VIEW_MODE_SEQUENTIAL);
-    bgfx_touch(bgfxHDR::kFogBlurVView);
-    bgfx_set_view_frame_buffer(bgfxHDR::kFogScatterView, BGFX_INVALID_HANDLE);
-    bgfx_set_view_rect(bgfxHDR::kFogScatterView, 0, 0, (uint16_t)m_width, (uint16_t)m_height);
-    bgfx_set_view_clear(bgfxHDR::kFogScatterView, BGFX_CLEAR_NONE, 0, 1.0f, 0);
-    bgfx_set_view_mode(bgfxHDR::kFogScatterView, BGFX_VIEW_MODE_SEQUENTIAL);
-    bgfx_touch(bgfxHDR::kFogScatterView);
 
-    // Frame order: scene -> scene FX -> SSAO -> lighting resolve -> split-HDR high
-    // -> bloom bright pass -> luminance -> bloom blur H/V -> combine -> SMAA
-    // (edge/weights/resolve) -> G-buffer inspector -> leftovers. The SSAO view
-    // sits right after the last writer into the G-buffer (the scene FX view) and
-    // right before the resolve, which is the one consumer of the occlusion buffer
-    // (combine_1.ps:183). The resolve view follows it; the high view right after
-    // the resolve, which produces the pre-tonemap image it encodes. The
-    // bright pass comes next because the high channel exists for it alone
-    // (blender_bloom_build.cpp:18), and the luminance chain follows it, measuring the
-    // bright-pass output (blender_luminance.cpp:18) before the two gaussian passes
-    // overwrite rt_Bloom_1 - the phase_bloom:131 placement. The blur views sit between
-    // the luminance chain and the combine so combine_bloom() reads this frame's
-    // rt_Bloom_1.
-    // SMAA resolves into the backbuffer (from the scatter output when fog
-    // scattering is up, otherwise straight from the combine); the inspector
-    // runs after the resolve because it repaints the finished frame.
+    // Forward rendering (AXR r4_rendertarget_phase_combine.cpp:374-388,
+    // RImplementation.render_forward() at :386): the geometry that cannot be
+    // deferred, i.e. the mixed and additive particles. The view always exists in
+    // the order so the pass order stays stable, and no pass submits into it yet,
+    // so it draws nothing.
+    bgfx_set_view_frame_buffer(bgfxHDR::kForwardView, BGFX_INVALID_HANDLE);
+    bgfx_set_view_rect(bgfxHDR::kForwardView, 0, 0, (uint16_t)m_width, (uint16_t)m_height);
+    bgfx_set_view_clear(bgfxHDR::kForwardView, BGFX_CLEAR_NONE, 0, 1.0f, 0);
+    bgfx_set_view_mode(bgfxHDR::kForwardView, BGFX_VIEW_MODE_SEQUENTIAL);
+    bgfx_touch(bgfxHDR::kForwardView);
+
+    // Frame order, 1:1 with AXR R4:
+    //
+    //   casters -> scene (level / lods / Details) -> world dynamics ->
+    //   wallmarks -> rain -> SSAO -> lighting resolve -> high -> sky + clouds ->
+    //   bloom bright pass -> luminance -> gauss H/V -> combine_1 -> forward ->
+    //   SMAA -> G-buffer inspector -> UI.
+    //
+    // References: r4_R_render.cpp:392-397 (level, lods, Details), :633
+    // (render_main / r_dsgraph_render_graph(1)), :538/:546
+    // (r_dsgraph_render_emissive), :472 (phase_wallmarks), :505 (render_rain),
+    // :509-521 (sun cascades + accum_direct_blend), :526-547 (phase_accumulator
+    // + emissive), :553-557 (phase_accumulator + render_lights), :574
+    // (phase_combine). Inside r4_rendertarget_accum_direct.cpp:685 the accum
+    // family writes rt_Accumulator, a target of its own, which is why
+    // r4_rendertarget_phase_combine.cpp:143-145 can clear rt_Generic_0/1 and
+    // draw the sky and the clouds over the lit result (:166, :170, CULL_NONE at
+    // :153, no stencil at :154) and still have combine_1 blend the sky over the
+    // light by the stencil >= 1 mask (:178). In this port the accumulator IS the
+    // lit target, so the resolve has to precede the sky and the high channel has
+    // to precede it too - sky2.ps:60 writes the high channel itself.
+    //
+    // The rest of the chain: the bright pass (r4_rendertarget_phase_bloom.cpp:74-127)
+    // reads the high channel (blender_bloom_build.cpp:18) and has to run after
+    // both of its writers; the luminance chain (:131 -> r4_rendertarget_phase_luminance.cpp:19-143)
+    // measures the bright-pass output (blender_luminance.cpp:18) before the two
+    // gaussian passes overwrite rt_Bloom_1 (:237, :317); the combine is the
+    // consumer of rt_Bloom_1 (combine_bloom); forward rendering follows
+    // combine_1 (r4_rendertarget_phase_combine.cpp:374-388, render_forward :386);
+    // SMAA (:470-473) resolves into the backbuffer and the inspector runs last
+    // because it repaints the finished frame.
     //
     // The array is not decoration: bgfx_set_viewOrder copies it verbatim into
     // m_viewRemap[0..count-1] (bgfx_p.h:7197 setViewOrder), i.e. entry k *is* the
     // internal slot of the raw view id k, and every id in [0, count) has to appear
     // exactly once. A missing id leaves m_viewOrder[slot] pointing at the other
     // view that shares the slot, and the two then share a sort bucket - the second
-    // view's draw items are then rendered with the first view's framebuffer and
-    // rect. The list therefore has to grow with the view ids in use: 25 entries
-    // for ids 0..24, with the SSAO view (21) and the high channel (23) included.
-    // The wallmark view (24) is placed by position and not by value: bgfx renders
-    // the remapped slots in array order, and 24 has to run after the last
-    // G-buffer writer (kSceneFxView) and before the SSAO view - the
-    // r4_R_render.cpp:464 placement of CRenderTarget::phase_wallmarks, which sits
-    // after the level/lods/Detail passes and before the lighting accumulations.
-    const bgfx_view_id_t order[] = { 0, bgfxHDR::kSceneFxView, bgfxHDR::kWallmarkView,
-        bgfxHDR::kSsaoView,
-        bgfxHDR::kResolveView, bgfxHDR::kHighView,
-        bgfxHDR::kBloomBuildView,
-        bgfxHDR::kLuminance64View,
-        bgfxHDR::kLuminance8View, bgfxHDR::kLuminance1View,
+    // one renders with the first one's framebuffer and rect, so the two passes
+    // land in one target. An id listed twice displaces another id, and that view
+    // is then never rendered at all.
+    //
+    // The ids in port/bgfxHDR.h are numbered in this reference order, so the table
+    // below is the identity and ascending id is the frame order. Two deliberate
+    // exceptions:
+    //   * kShadowView runs in front of the scene view even though its id is above
+    //     0, because the caster pass has to run before the geometry so the map
+    //     exists by the time the resolve samples it (r2_R_sun.cpp:722-741 is drawn
+    //     before r4_R_render.cpp:392-397).
+    //   * kSkyView runs inside the G-buffer block, before SSAO and the resolve,
+    //     which is NOT its id 8 slot. The reference draws the sky into rt_Generic_0
+    //     / rt_Generic_1 (r4_rendertarget_phase_combine.cpp:143-145, :166, :170)
+    //     and blends it in combine_1, because there the accumulator is a target of
+    //     its own (r4_rendertarget_accum_direct.cpp:685 rt_Accumulator). This port
+    //     has the opposite shape: the resolve writes the lit image in place, so a
+    //     sky drawn after it would be overwritten. Until the sky moves to the low
+    //     and high targets it therefore has to stay a G-buffer writer, and its id
+    //     8 slot becomes correct as soon as that move lands. TODO: move the submit
+    //     to the low/high targets, then restore the ascending order.
+    const bgfx_view_id_t order[] = { bgfxHDR::kShadowView, bgfxHDR::kSceneView, bgfxHDR::kSceneFxView,
+        bgfxHDR::kWallmarkView, bgfxHDR::kRainView, bgfxHDR::kSkyView,
+        bgfxHDR::kSsaoView, bgfxHDR::kResolveView,
+        bgfxHDR::kHighView, bgfxHDR::kBloomBuildView,
+        bgfxHDR::kLuminance64View, bgfxHDR::kLuminance8View, bgfxHDR::kLuminance1View,
         bgfxHDR::kBloomBlurHView, bgfxHDR::kBloomBlurVView,
-        bgfxHDR::kCombineView, bgfxHDR::kFogBlurBuildView, bgfxHDR::kFogBlurHView,
-        bgfxHDR::kFogBlurVView, bgfxHDR::kFogScatterView,
+        bgfxHDR::kCombineView, bgfxHDR::kForwardView,
         bgfxHDR::kSmaaEdgeView, bgfxHDR::kSmaaBlendView,
-        bgfxHDR::kSmaaResolveView, bgfxHDR::kGbufDebugView, 1, 3, 4, 5 };
-    bgfx_set_view_order(0, sizeof(order) / sizeof(order[0]), order);
+        bgfxHDR::kSmaaResolveView, bgfxHDR::kGbufDebugView,
+        bgfxHDR::kIntroView, bgfxHDR::kHudView, bgfxHDR::kUiView, bgfxHDR::kImguiView };
+    bgfx_set_view_order(bgfxHDR::kSceneView, sizeof(order) / sizeof(order[0]), order);
 }
 
 void bgfxRenderDeviceRender::Clear()
 {
-    bgfx_set_view_clear(0, BGFX_CLEAR_COLOR | BGFX_CLEAR_DEPTH, 0x000000ff, 1.0f, 0);
-    bgfx_touch(0);
+    bgfx_set_view_clear(bgfxHDR::kSceneView, BGFX_CLEAR_COLOR | BGFX_CLEAR_DEPTH, 0x000000ff, 1.0f, 0);
+    bgfx_touch(bgfxHDR::kSceneView);
 }
 
 void bgfxRenderDeviceRender::End()
 {
     // Reset the 2D UI view for the next frame: by default it renders after the
-    // HUD view; the video item switches it back to the world view per frame.
-    bgfxUISubmitView() = 4;
+    // HUD view; the video item switches it to the intro view per frame.
+    bgfxUISubmitView() = bgfxHDR::kUiView;
 }
 
 void bgfxRenderDeviceRender::ClearTarget()
@@ -563,10 +600,10 @@ bool bgfxRenderDeviceRender::InitBGFX(HWND hWnd, u32 width, u32 height)
         return false;
     }
 
-    bgfx_set_view_rect(0, 0, 0, width, height);
-    bgfx_set_view_clear(0, BGFX_CLEAR_COLOR | BGFX_CLEAR_DEPTH, 0x000000ff, 1.0f, 0);
-    bgfx_set_view_mode(0, BGFX_VIEW_MODE_SEQUENTIAL);
-    bgfx_touch(0);
+    bgfx_set_view_rect(bgfxHDR::kSceneView, 0, 0, width, height);
+    bgfx_set_view_clear(bgfxHDR::kSceneView, BGFX_CLEAR_COLOR | BGFX_CLEAR_DEPTH, 0x000000ff, 1.0f, 0);
+    bgfx_set_view_mode(bgfxHDR::kSceneView, BGFX_VIEW_MODE_SEQUENTIAL);
+    bgfx_touch(bgfxHDR::kSceneView);
 
     m_bInitialized = true;
     LogInfo("[BGFX] Initialized: %dx%d, renderer: %s", width, height, bgfx_get_renderer_name(bgfx_get_renderer_type()));

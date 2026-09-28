@@ -27,7 +27,10 @@ extern "C"
 
 namespace
 {
-    const bgfx_view_id_t kSkyView = 0;
+    // The view id lives in port/bgfxHDR.h (kSkyView, id 8 in the reference frame
+    // order, right after the lighting resolve and the high channel) so the
+    // renderer can order it; this file just uses it.
+    using bgfxHDR::kSkyView;
 
     Fvector3 hbox_verts[24] =
     {
