@@ -576,10 +576,10 @@ namespace
             bgfx_destroy_uniform(s_lowlandFogParams);
         if (bgfxIsValid(s_sunDir))
             bgfx_destroy_uniform(s_sunDir);
-    if (bgfxIsValid(s_sunColor))
-        bgfx_destroy_uniform(s_sunColor);
-    if (bgfxIsValid(s_sunSpec))
-        bgfx_destroy_uniform(s_sunSpec);
+        if (bgfxIsValid(s_sunColor))
+            bgfx_destroy_uniform(s_sunColor);
+        if (bgfxIsValid(s_sunSpec))
+            bgfx_destroy_uniform(s_sunSpec);
         s_combineProgram = BGFX_INVALID_HANDLE;
         s_hdrSampler = BGFX_INVALID_HANDLE;
         s_tonemapSampler = BGFX_INVALID_HANDLE;
@@ -589,11 +589,11 @@ namespace
         s_fogParams = BGFX_INVALID_HANDLE;
         s_fogColor = BGFX_INVALID_HANDLE;
         s_lowlandFogParams = BGFX_INVALID_HANDLE;
-    s_sunDir = BGFX_INVALID_HANDLE;
-    s_sunColor = BGFX_INVALID_HANDLE;
-    s_sunSpec = BGFX_INVALID_HANDLE;
-    s_combineLayoutReady = false;
-    }
+        s_sunDir = BGFX_INVALID_HANDLE;
+        s_sunColor = BGFX_INVALID_HANDLE;
+        s_sunSpec = BGFX_INVALID_HANDLE;
+        s_combineLayoutReady = false;
+        }
 
     void DestroyResolveProgram()
     {
