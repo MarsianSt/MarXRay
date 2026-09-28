@@ -83,6 +83,27 @@
 //   * USE_R2_STATIC_SUN's ms term (deffer_grass.vs:121-123) and the def_aref
 //     alpha-test threshold (deffer_grass.ps:46) are R4 per-material constants
 //     this port does not bind; the class keeps its own u_grassAlpha stand-in.
+//
+// The material id grass writes into the G-buffer, spelled out because two
+// similar-looking numbers are in play and confusing them is easy:
+//
+//   0.25 = xmaterial (common.h:17-18, float(1.0h/4.h) under USE_R2_STATIC_SUN).
+//          This is what the reference actually stores: deffer_grass.ps:113-121
+//          packs the same `ms` every other writer uses, `float ms = xmaterial` at
+//          deffer_base_flat.ps:21, because the flora assignment sits in an arm
+//          that never opens - deffer_grass.ps:99-105 is wrapped in
+//          `#ifdef SSFX_FLORAFIX` and that macro is defined nowhere in the
+//          shader tree or the engine, so `ms = 0.15f` on :101 never runs.
+//          grass_ps.sc's GBUF_MTL is this value.
+//
+//   0.15 = MAT_FLORA (common_brdf.h:16), a DIFFERENT quantity: it is read only
+//          on the lighting side, to recognise foliage and drop its specular -
+//          lmodel.h:34 and :158 `if (abs(mat_id - MAT_FLORA) <= MAT_FLORA_ELIPSON)`,
+//          hmodel.h:28, combine_1.ps:97. It is never written by the grass pixel
+//          stage. With 0.25 in the G-buffer those flora branches stay dormant
+//          for grass, exactly as in the reference; putting 0.15 there would light
+//          up the SSS arm and the plant gloss fix that the reference never runs
+//          on this class.
 
 void	bgfxDetailsLoad();
 void	bgfxDetailsUnload();
