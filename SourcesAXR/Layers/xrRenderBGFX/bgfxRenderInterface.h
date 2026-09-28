@@ -18,6 +18,7 @@
 #include "port\bgfxDetails.h"
 #include "port\bgfxHDR.h"
 #include "port\bgfxWallMarks.h"
+#include "port\bgfxParticleRender.h"
 
 // xr_ioc_cmd.cpp:478, the live engine flag CCC_r2 drives (xr_ioc_cmd.cpp:564). Imported
 // from AdvancedXRay.exe like every other engine global this layer reads.
@@ -323,6 +324,13 @@ public:
         // so the luminance chain runs after the bright pass and before the gaussians.
         bgfxHDR::LuminancePass();
         bgfxHDR::CombinePass((u16)Device.dwWidth, (u16)Device.dwHeight);
+        // render_forward (r4_rendertarget_phase_combine.cpp:374-388, call at :386 ->
+        // r4_R_render.cpp:617-640) runs after combine_1 and before phase_bloom, into
+        // rt_Generic_0 with the scene depth attached (u_setrt(rt_Generic_0,0,0,HW.pBaseZB)).
+        // Only blend/add particle materials take this path in the reference; the SET
+        // ones still go through the deferred G-buffer (Blender_Particle.cpp:126).
+        bgfxParticles::SetForwardFrameBuffer(bgfxHDR::GetForwardFrameBuffer());
+        bgfxParticles::RenderForwardPass();
         // r2_RT_luminance_cur / _dest swap (r4_rendertarget_phase_combine.cpp:678): the
         // value the sky, the high pass and the combine just used stays current for the
         // whole frame, the result of this frame's chain becomes it for the next one.
