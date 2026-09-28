@@ -159,10 +159,13 @@ void bgfxUISequenceVideoItem::RenderVideoFrame()
     bgfx_set_state(BGFX_STATE_WRITE_RGB | BGFX_STATE_WRITE_A, 0);
     bgfx_set_transient_vertex_buffer(0, &tvb, 0, 4);
     bgfx_set_transient_index_buffer(&tib, 0, 6);
-    // View 1 draws after all view 0 (UI) submits so the video is on top.
-    // Any 2D UI submitted later in this frame (the fullscreen menu/intro
-    // backdrop goes through bgfxUIShader after Render->Render()) must fall
-    // back to the world view to keep the video visible.
-    bgfxUISubmitView() = bgfxHDR::kIntroView;
+    // The video goes to its own view, kIntroView, which order[] puts after the
+    // whole post chain, so it lands on the finished frame. The 2D UI is pushed
+    // back to the world view (kSceneView, 0) for the rest of this frame: it is
+    // submitted after Render->Render(), i.e. after this video quad, and the
+    // fullscreen intro backdrop it carries is opaque, so in a view ordered after
+    // kIntroView it would cover the video. In the world view it renders first and
+    // the video still wins.
+    bgfxUISubmitView() = bgfxHDR::kSceneView;
     bgfx_submit(bgfxHDR::kIntroView, prog, 0, BGFX_DISCARD_ALL);
 }
