@@ -123,16 +123,15 @@ vec4 gbuf_pack_gbuffer(vec3 norm, float viewZ, float hemi, float mtl)
     return vec4(gbuf_pack_normal(norm), viewZ, gbuf_pack_hemi_mtl(hemi, mtl));
 }
 
-// The three-argument form the writers that were written before the material id
-// reached the G-buffer still call. It forwards with xmaterial, which is the value
-// the reference gives those classes anyway: `float ms = xmaterial`
-// (deffer_base_flat.ps:21, deffer_base_aref_flat.ps:72, deffer_particle.ps:66),
-// i.e. float(1.0h/4.h) under USE_R2_STATIC_SUN (common.h:17-18). It is a
-// compatibility shim, not the general case - a class with a different id must
-// pass it, and grass_ps.sc is the one class that has to (0.15,
-// deffer_grass.ps:101). Every writer in this port is expected to migrate to the
-// four-argument form; this overload exists so a class that has not yet does not
-// break the whole render.
+// The three-argument form any writer that has not been migrated yet still calls.
+// It forwards with xmaterial, which is the value the reference gives every class
+// except terrain: `float ms = xmaterial` (deffer_base_flat.ps:21,
+// deffer_base_aref_flat.ps:72, deffer_particle.ps:66, and the grass writer at
+// deffer_grass.ps:113), i.e. float(1.0h/4.h) under USE_R2_STATIC_SUN
+// (common.h:17-18). It is a compatibility shim, not the general case: a class
+// with a different id must pass it explicitly - terrain is the only one in this
+// port, and it does. Every writer is expected to migrate to the four-argument
+// form; this overload exists so one that has not yet does not break the render.
 vec4 gbuf_pack_gbuffer(vec3 norm, float viewZ, float hemi)
 {
     return gbuf_pack_gbuffer(norm, viewZ, hemi, 0.25);
@@ -142,7 +141,13 @@ vec4 gbuf_pack_gbuffer(vec3 norm, float viewZ, float hemi)
 //   xmaterial = float(1.0h/4.h) when USE_R2_STATIC_SUN is defined (common.h:17-18),
 //   otherwise float(L_material.w) (common.h:20) - an R4 constant this port does
 //   not bind, hence the 0.25 static value;
-//   MAT_FLORA = 0.15f (common_brdf.h:16) for grass (deffer_grass.ps:99-102);
+//   MAT_FLORA = 0.15f (common_brdf.h:16) exists, but no class carries it in this
+//   build: the one writer that would, deffer_grass.ps:99-101, assigns it inside
+//   `#ifdef SSFX_FLORAFIX`, a macro that is tested in eight places under
+//   game_unpacked\shaders (deffer_grass.ps:11 and :99, deffer_tree_bump.vs:67,
+//   model_env_lq.vs:26, accum_base.ps:40/:78/:85, accum_omni_unshadowed.ps:
+//   :32/:43) and defined in none, so the arm is dead and grass keeps the
+//   xmaterial of deffer_grass.ps:113-121. See grass_ps.sc for the same note;
 //   0.95f for terrain (deffer_terrain_low_flat.ps:24, deffer_terrain_mid_flat.ps:
 //   57, deffer_impl_flat.ps:210);
 //   0 for LOD geometry (lod.ps:103);

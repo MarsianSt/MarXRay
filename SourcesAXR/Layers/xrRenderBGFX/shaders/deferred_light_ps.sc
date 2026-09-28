@@ -181,10 +181,18 @@ vec3 compute_colored_ao(float ao, vec3 albedo)
 // combine_1.ps:106. Every writer packs its own class value - 0.25 xmaterial for
 // static/decal/skin/particle (common.h:17-18 with USE_R2_STATIC_SUN,
 // deffer_base_flat.ps:21, deffer_base_aref_flat.ps:72, deffer_particle.ps:66),
-// 0.15 MAT_FLORA for grass (deffer_grass.ps:101), 0.95 for terrain
-// (deffer_terrain_mid_flat.ps:57, deffer_terrain_low_flat.ps:24) - so the
-// terrain's `m = 0` override of hmodel.h:27-30 and the flora test of lmodel.h:158
-// / combine_1.ps:97 are live here exactly as in the reference.
+// 0.95 for terrain (deffer_terrain_mid_flat.ps:57, deffer_terrain_low_flat.ps:
+// :24), so hmodel.h:27-30's `m_terrain = abs(m - 0.95) <= 0.04` is live here
+// exactly as in the reference.
+//
+// Grass is NOT one of the values: deffer_grass.ps:99-102 would have set 0.15,
+// but the assignment is inside `#ifdef SSFX_FLORAFIX` and that macro is defined
+// nowhere in the reference shader tree (the uses are accum_base.ps:40/:78/:85,
+// accum_omni_unshadowed.ps:32/:43, deffer_grass.ps:11/:99, deffer_tree_bump.vs:
+// :67, model_env_lq.vs:26; there is no #define), so grass falls through to
+// xmaterial 0.25 like the rest. The m_flora test of hmodel.h:28 and the flora
+// branch of combine_1.ps:97 / lmodel.h:158 therefore cannot fire in the
+// reference either, and with 0.25 in the G-buffer they do not fire here.
 //
 // xmaterial itself, common.h:17-18: `float(1.0h/4.h)` under USE_R2_STATIC_SUN,
 // which r4.cpp:1150-1153 defines when o.sunstatic is set. The one term that still
@@ -474,10 +482,13 @@ vec3 Amb_BRDF(float rough, vec3 albedo, vec3 f0, vec3 env_d, vec3 env_s, vec3 V,
 // The SSS is left out for a second, harder reason: it calls SSS(), which is not
 // in the r3 tree at all - a grep of game_unpacked/shaders/r3 for `float3 SSS`
 // finds nothing, and pbr_brdf.h only mentions SSS inside the ES_PSEUDO_PBR
-// Lit_BRDF arm, which is not the branch that compiles here. The flora test
-// lmodel.h:158 is therefore live (mat_id 0.15 reaches it now) but its body has
-// no definition in the reference to port, so it stays out rather than being
-// approximated. The test itself is kept below so the reachability is visible.
+// Lit_BRDF arm, which is not the branch that compiles here.
+//
+// And the branch is doubly dead here: the flora id it keys off is the
+// deffer_grass.ps:101 value that never reaches the G-buffer, because its
+// `#ifdef SSFX_FLORAFIX` is never defined (see the material block above). So
+// mat_id 0.15 is not reachable from any writer in this build and lmodel.h:158
+// is false for every pixel, exactly as it is in the reference.
 vec3 compute_lighting_lmodel(vec3 N, vec3 V, vec3 L, vec4 alb_gloss, float mat_id, float lightW)
 {
     // lmodel.h:114-120
@@ -604,7 +615,7 @@ const vec2 POISSON_7 = vec2(0.1592735, -0.9686295);
 // depth, so the tap contributes 1 (lit) exactly when ref <= stored.
 float shadow_smap_test(vec2 tc, float ref)
 {
-    return step(texture2D(s_smap, tc).r, ref);
+    return step(ref, texture2D(s_smap, tc).r);
 }
 
 // shadow.h:215-228, the no-blocker-search arm, with the loop written out:

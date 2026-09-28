@@ -8,10 +8,37 @@ uniform vec4 u_fogColor;
 
 SAMPLER2D(u_texture, 0);
 
-// MAT_FLORA, the material deffer_grass.ps:99-102 assigns to grass under
-// SSFX_FLORAFIX (common_brdf.h:16 MAT_FLORA 0.15f); combine_1.ps:97 and the
-// screen-space AO/IL passes branch on exactly this id.
-const float GBUF_MTL = 0.15;
+// xmaterial, the value the reference actually gives grass.
+//
+// deffer_grass.ps:99-102 would have set the flora id here, but the assignment
+// sits inside a preprocessor branch that never opens:
+//     L99  #ifdef SSFX_FLORAFIX
+//     L100 // Material value ( MAT_FLORA )
+//     L101     ms = 0.15f;
+//     L102 #endif
+// SSFX_FLORAFIX is not defined anywhere in the reference shader tree - grepping
+// every .h / .ps / .vs under game_unpacked\shaders finds `#ifdef SSFX_FLORAFIX`
+// and `#if defined(ENCHANTED_SHADERS_ENABLED) && defined(SSFX_FLORAFIX)` uses
+// (accum_base.ps:40/:78/:85, accum_omni_unshadowed.ps:32/:43, deffer_grass.ps:11
+// and :99, deffer_tree_bump.vs:67, model_env_lq.vs:26) and not one `#define`, and
+// the C++ that could add one as a shader option never mentions the name either
+// (archive_sourse: the only hits are the ssfx_florafixes_1 / _2 constant
+// bindings, Blender_Recorder_StandartBinding.cpp:579-580/:720-736/:1002-1003).
+// So the arm is dead and the class falls through to the xmaterial every other
+// writer uses - `float ms = xmaterial` at deffer_base_flat.ps:21, i.e.
+// float(1.0h/4.h) under USE_R2_STATIC_SUN (common.h:17-18) - which is what
+// deffer_grass.ps:113-121 then packs, through the same `ms` variable the dead
+// branch would have written.
+//
+// The consequence is worth stating because the constants are still there:
+// MAT_FLORA is 0.15f in common_brdf.h:16 and hmodel.h:28 / combine_1.ps:97 still
+// test `abs(m - 0.15) <= 0.04`, but with 0.25 in the G-buffer neither can ever
+// fire for grass - m_flora stays false, the SSS arm at lmodel.h:158-163 stays
+// dormant, and the reference's own plant gloss fix at combine_1.ps:97-101 does
+// not run on grass either. Taking 0.15 from the dead arm would have made all
+// three light up, which is a fudge against the reference rather than a port of
+// it.
+const float GBUF_MTL = 0.25;
 
 void main()
 {
