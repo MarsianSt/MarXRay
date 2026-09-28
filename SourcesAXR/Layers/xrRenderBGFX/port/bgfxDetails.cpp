@@ -75,6 +75,15 @@ namespace
 		float	scale;
 		float	c_hemi;
 		float	c_sun;
+		// Terrain normal of the blade, world space. deffer_grass.vs:97
+		// float3 N = mul((float3x3)m_WV, data.xyz) with
+		// data = exdata[i/4] = (Instance.normal.xyz, Instance.alpha)
+		// (deffer_grass.vs:8, :24, :34), the CPU dumping it at
+		// dx10DetailManager_VS.cpp:264
+		//   c_ExData[dwBatch].set(Instance.normal.x, ..., Instance.alpha)
+		// and DetailManager_Decompress.cpp:227, :242
+		//   terrain_normal.mknormal(Tv[0], Tv[1], Tv[2]); Item.normal = terrain_normal
+		Fvector	normal;
 	};
 
 	struct Decompressed
@@ -114,6 +123,7 @@ namespace
 	bgfx_program_handle_t		s_prog		= BGFX_INVALID_HANDLE;
 	bgfx_uniform_handle_t		s_sampler	= BGFX_INVALID_HANDLE;
 	bgfx_uniform_handle_t		s_alphaCtrl	= BGFX_INVALID_HANDLE;
+	bgfx_uniform_handle_t		s_grassAlign	= BGFX_INVALID_HANDLE;
 	bgfx_uniform_handle_t		s_grassParams	= BGFX_INVALID_HANDLE;
 	bgfx_uniform_handle_t		s_grassInt	= BGFX_INVALID_HANDLE;
 	bgfx_uniform_handle_t		s_bendersPos	= BGFX_INVALID_HANDLE;
@@ -320,6 +330,8 @@ namespace
 				it.M.translate_over(itemP);
 				it.c_hemi = DS.r_qclr(DS.c_hemi, 15);
 				it.c_sun = DS.r_qclr(DS.c_dir, 15);
+				// Item.normal = terrain_normal (DetailManager_Decompress.cpp:242)
+				it.normal = normal;
 
 				D.items[index].push_back(it);
 				D.partId[index] = objId;
@@ -426,6 +438,11 @@ namespace
 			bgfx_vertex_layout_add(&s_layoutDesc, BGFX_ATTRIB_COLOR0, 4, BGFX_ATTRIB_TYPE_UINT8, true, false);
 			bgfx_vertex_layout_add(&s_layoutDesc, BGFX_ATTRIB_TEXCOORD0, 2, BGFX_ATTRIB_TYPE_FLOAT, false, false);
 			bgfx_vertex_layout_add(&s_layoutDesc, BGFX_ATTRIB_TEXCOORD1, 2, BGFX_ATTRIB_TYPE_FLOAT, false, false);
+			// Per-blade constant the reference keeps in the vertex-constant store:
+			// exdata[dwBatch] = (Item.normal.xyz, Item.alpha)
+			// (dx10DetailManager_VS.cpp:264). The port expands every blade into
+			// its own vertices, so the per-blade value is carried per vertex.
+			bgfx_vertex_layout_add(&s_layoutDesc, BGFX_ATTRIB_TEXCOORD2, 4, BGFX_ATTRIB_TYPE_FLOAT, false, false);
 			bgfx_vertex_layout_end(&s_layoutDesc);
 			s_layout = bgfx_create_vertex_layout(&s_layoutDesc);
 			s_layoutReady = true;
@@ -457,6 +474,7 @@ namespace
 		s_alphaCtrl    = bgfx_create_uniform("u_grassAlpha", BGFX_UNIFORM_TYPE_VEC4, 1);
 		s_grassParams  = bgfx_create_uniform("u_grassParams", BGFX_UNIFORM_TYPE_VEC4, 1);
 		s_grassInt     = bgfx_create_uniform("u_grassInt", BGFX_UNIFORM_TYPE_VEC4, 1);
+		s_grassAlign   = bgfx_create_uniform("u_grassAlign", BGFX_UNIFORM_TYPE_VEC4, 1);
 		s_bendersPos   = bgfx_create_uniform("benders_pos", BGFX_UNIFORM_TYPE_VEC4, kMaxBenders * 2);
 		s_bendersSetup = bgfx_create_uniform("benders_setup", BGFX_UNIFORM_TYPE_VEC4, 1);
 		s_fogParams    = bgfx_create_uniform("u_fogParams", BGFX_UNIFORM_TYPE_VEC4, 1);
@@ -511,6 +529,10 @@ namespace
 		float	u, v;
 		float	height;
 		float	pad;
+		// exdata[dwBatch] of deffer_grass.vs:8, fed by
+		// dx10DetailManager_VS.cpp:264 - world-space terrain normal and the
+		// per-blade alpha.
+		float	nx, ny, nz, alpha;
 	};
 
 	u32 BakeColor(float c_hemi, float c_sun)
@@ -567,7 +589,11 @@ namespace
 					const float px = sv.P.x * scale;
 					const float py = sv.P.y * scale;
 					const float pz = sv.P.z * scale;
-					const float h = M._21 * px + M._22 * py + M._23 * pz;
+					// deffer_grass.vs:43  float H = P.y - m1.w; with
+					// m1 = array[i+1] = (M._12*scale, M._22*scale, M._32*scale, M._42)
+					// (DetailManager_VS.cpp:280), i.e. the scaled rotated Y of the
+					// vertex - row 1 of the matrix, not row 2.
+					const float h = M._12 * px + M._22 * py + M._32 * pz;
 					vdst->x = M._11 * px + M._21 * py + M._31 * pz + M._41;
 					vdst->y = M._12 * px + M._22 * py + M._32 * pz + M._42;
 					vdst->z = M._13 * px + M._23 * py + M._33 * pz + M._43;
@@ -576,6 +602,10 @@ namespace
 					vdst->v = sv.v;
 					vdst->height = h;
 					vdst->pad = 0.f;
+					vdst->nx = it.normal.x;
+					vdst->ny = it.normal.y;
+					vdst->nz = it.normal.z;
+					vdst->alpha = 1.f;
 					vdst++;
 				}
 
@@ -620,6 +650,13 @@ namespace
 			{
 				const float gi[4] = { (float)qty, 0.f, 0.f, 0.f };
 				bgfx_set_uniform(s_grassInt, gi, 1);
+			}
+			// deffer_grass.vs:46 grass_align - the reference binds
+			// ps_ssfx_terrain_grass_align per draw (dx10DetailManager_VS.cpp:178).
+			if (bgfxIsValid(s_grassAlign))
+			{
+				const float ga[4] = { (float)ps_ssfx_terrain_grass_align, 0.f, 0.f, 0.f };
+				bgfx_set_uniform(s_grassAlign, ga, 1);
 			}
 
 			const uint64_t st = BGFX_STATE_WRITE_RGB | BGFX_STATE_WRITE_A | BGFX_STATE_WRITE_Z
