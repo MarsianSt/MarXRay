@@ -15,6 +15,15 @@ $output v_color0, v_texcoord0, v_fog
 // (Blender_Recorder_StandartBinding.cpp:138-162) - NOT the port's screen-space
 // u_fogParams of combine_ps.sc, which is a different quantity. It is
 // per-vertex, so it interpolates across the quad, exactly as in the reference.
+//
+// The USE_SOFT_PARTICLES block of r3/particle.vs:16-18 and :36-39 (tctexgen
+// through mVPTexgen) is deliberately absent: the port never defines the macro
+// (grep over SourcesAXR\Layers\xrRenderBGFX finds no USE_SOFT_PARTICLES, no
+// R2FLAG_SOFT_PARTICLES and no ps_r2_ls_flags), and the reference defines it only
+// when o.advancedpp && ps_r2_ls_flags.test(R2FLAG_SOFT_PARTICLES)
+// (r4.cpp:1308-1318) - its else branch writes sh_name[len]='0' into the shader
+// hash but no define. Off in the reference by default, off here for the same
+// reason, not by omission.
 uniform vec4 u_fogPlane;
 
 void main()

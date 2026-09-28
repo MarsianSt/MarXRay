@@ -5,6 +5,11 @@ $input v_color0, v_texcoord0, v_fog
 // particles_xadd.s:2 - the same pair, particles_xadd.s adds : distort(true) for
 // its l_special slot). One SV_Target (r3/particle_add.ps:20), drawn in the
 // forward pass after the combine, exactly as the blend variant.
+//
+// USE_SOFT_PARTICLES (r3/particle_add.ps:9-11 and :25-39) is deliberately
+// absent for the same reason as in particle_fwd_ps.sc: the port never defines it
+// and the reference only does when o.advancedpp &&
+// ps_r2_ls_flags.test(R2FLAG_SOFT_PARTICLES) (r4.cpp:1308-1318).
 #include <bgfx_shader.sh>
 
 SAMPLER2D(s_base, 0);

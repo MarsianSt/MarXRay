@@ -6,6 +6,16 @@ $input v_color0, v_texcoord0, v_fog
 // (r3/particle.ps:22 ": SV_Target"): the forward pass runs after the combine
 // (r4_rendertarget_phase_combine.cpp:374-388 -> r4_R_render.cpp:617-640), so
 // there is no G-buffer to write and no deferred resolve behind it.
+//
+// USE_SOFT_PARTICLES (r3/particle.ps:9-11 and :28-46, the gbuffer_load_data
+// fade) is deliberately absent: the port never defines it (grep over
+// SourcesAXR\Layers\xrRenderBGFX finds no USE_SOFT_PARTICLES, no
+// R2FLAG_SOFT_PARTICLES and no ps_r2_ls_flags), and the reference only adds the
+// define when o.advancedpp && ps_r2_ls_flags.test(R2FLAG_SOFT_PARTICLES)
+// (r4.cpp:1308-1318) - the else branch writes only sh_name[len]='0' into the
+// shader hash, no define. So the branch is off in the reference by default and
+// off here for the same reason, not by omission. The nested GBUFFER_OPTIMIZATION
+// test (r3/particle.ps:31) is inside it and is off with it.
 #include <bgfx_shader.sh>
 
 SAMPLER2D(s_base, 0);

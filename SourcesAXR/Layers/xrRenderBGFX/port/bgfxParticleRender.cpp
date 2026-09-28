@@ -477,24 +477,36 @@ bool Submit(bgfx_texture_handle_t tex, const Vertex* quads, u32 quadCount,
 
 ForwardPixel ForwardPixelForShader(LPCSTR shaderName)
 {
-    // The AXR particle material set is three .s files, and only they carry a PS
-    // name: particles_add.s:2 and particles_xadd.s:2 both begin
-    // ("particle", "particle_add"), the rest of the shipped materials (and every
-    // CBlender_Particle pass but SET, Blender_Particle.cpp:127-131) use
-    // ("particle", "particle"). So the pixel stage is chosen by the material name
-    // and not by the blend state: BLEND_ADD reaches both stages, particle.ps
-    // through the blender's oBlend==2 and particle_add.ps through particles\add.
+    // The pixel stage is whatever the material's own shader:begin names, and the
+    // shipped particle material set is three files
+    // (game_unpacked\shaders\r3\particles_*.s), of which exactly two name
+    // particle_add: particles_add.s:2 and particles_xadd.s:2. There is no
+    // particles_alpha_add.s, no particles_aadd.s and no particles_set.s in r3, so
+    // every other particle material - and every CBlender_Particle pass but SET
+    // (Blender_Particle.cpp:127-131) - names "particle".
+    //
+    // The test is therefore the material name and NOT "does it contain add": a
+    // particles\alpha_add effect binds particle.ps in the reference, because
+    // oBlend==5 is one of the five passes that use ("particle","particle"), and a
+    // substring test on "add" would have handed it particle_add.ps.
+    //
+    // SET is not decided here: it is the blender's oBlend==0, which arrives as
+    // m_BlendMode and is handled by the caller (Blender_Particle.cpp:126).
     if (!shaderName || !shaderName[0])
         return FWD_PIXEL_BLEND;
 
     std::string s(shaderName);
     for (char& c : s)
+    {
         c = (char)std::tolower((unsigned char)c);
-    const char* n = s.c_str();
-    if (strstr(n, "xadd") || strstr(n, "add"))
+        // _lua_Create undecorates the shader name before looking the script up:
+        // '\\' becomes '_' (dx10ResourceManager_Scripting.cpp:339-342), so
+        // "particles\xadd" and "particles_xadd" are the same material.
+        if (c == '\\')
+            c = '_';
+    }
+    if (s == "particles_add" || s == "particles_xadd")
         return FWD_PIXEL_ADD;
-    if (strstr(n, "set"))
-        return FWD_PIXEL_NONE;
     return FWD_PIXEL_BLEND;
 }
 
@@ -565,6 +577,10 @@ bool SubmitPAPI(PAPI::Particle* particles, u32 count, PS::CPEDef* def,
 
     bool framed = def->m_Flags.is(PS::CPEDef::dfFramed);
     bool velScale = def->m_Flags.is(PS::CPEDef::dfVelocityScale);
+    // The three flags that pick the quad's axes (ParticleEffect.cpp:734-814).
+    const bool alignToPath = def->m_Flags.is(PS::CPEDef::dfAlignToPath);
+    const bool worldAlign  = def->m_Flags.is(PS::CPEDef::dfWorldAlign);
+    const bool faceAlign   = def->m_Flags.is(PS::CPEDef::dfFaceAlign);
 
     std::vector<Vertex> quads;
     quads.resize((size_t)count * 4);
@@ -591,19 +607,92 @@ bool SubmitPAPI(PAPI::Particle* particles, u32 count, PS::CPEDef* def,
             r_y += speed * def->m_VelocityScale.y;
         }
 
-        Fvector center;
-        center.set(m.pos.x, m.pos.y, m.pos.z);
-        if (xformOrNull)
-        {
-            Fvector src = center;
-            xformOrNull->transform_tiny(center, src);
-        }
-
+        // The reference packs the particle colour into the vertex the same way
+        // (m.color straight into FVF::LIT::color, ParticleEffect.cpp:747/773/794
+        // pass m.color through FillSprite), and the port's PackColor keeps the
+        // swizzle that unpack_D3DCOLOR undoes in the vertex stage
+        // (r3/particle.vs:33).
         u32 color;
         PackColor(m.color, color);
 
         Vertex* out = &quads[(size_t)i * 4];
-        BuildCameraBillboard(out, center, r_x, r_y, sina, cosa, lt, rb, color);
+
+        // The reference picks the quad's axes from three CPEDef flags
+        // (CParticleEffect::Render, ParticleEffect.cpp:734-814): a material that
+        // is not dfAlignToPath gets the camera billboard, and one that is gets
+        // its quad aligned to the path, either from the definition's default
+        // rotation (dfWorldAlign) or from the particle's velocity (dfFaceAlign).
+        // The port drew the camera billboard for all of them, so an aligned
+        // effect came out facing the camera instead of its path.
+        Fvector pos = m.pos;
+        if (xformOrNull)
+            xformOrNull->transform_tiny(pos, m.pos);
+
+        if (alignToPath)
+        {
+            const float speed = m.vel.magnitude();
+            if (worldAlign && (speed < EPS_S))
+            {
+                // ParticleEffect.cpp:737-753: the definition's own rotation.
+                Fmatrix M;
+                M.setXYZ(def->m_APDefaultRotation);
+                if (xformOrNull)
+                    M.mulA_43(*xformOrNull);
+                BuildBillboardQuad(out, M.k, M.i, pos, r_x, r_y, sina, cosa, lt, rb, color);
+            }
+            else if (faceAlign && (speed >= EPS_S))
+            {
+                // ParticleEffect.cpp:754-779: an orthonormal frame whose k axis is
+                // the velocity, with the same 0.99 degeneracy guard.
+                Fmatrix M;
+                M.identity();
+                M.k.div(m.vel, speed);
+                M.j.set(0, 1, 0);
+                if (_abs(M.j.dotproduct(M.k)) > 0.99f)
+                    M.j.set(0, 0, 1);
+                M.i.crossproduct(M.j, M.k);
+                M.i.normalize();
+                M.j.crossproduct(M.k, M.i);
+                M.j.normalize();
+                if (xformOrNull)
+                    M.mulA_43(*xformOrNull);
+                BuildBillboardQuad(out, M.j, M.i, pos, r_x, r_y, sina, cosa, lt, rb, color);
+            }
+            else
+            {
+                // ParticleEffect.cpp:780-800: a single direction, with the right
+                // axis taken as the cross product of that direction and the view
+                // direction (FillSprite_fpu, ParticleEffect.cpp:370-418, whose
+                // commented-out R.crossproduct(T, vCameraDirection) is the
+                // scalar form of the SSE code below it).
+                Fvector dir;
+                if (speed >= EPS_S)
+                    dir.div(m.vel, speed);
+                else
+                    dir.setHP(-def->m_APDefaultRotation.y, -def->m_APDefaultRotation.x);
+
+                Fvector right;
+                right.crossproduct(dir, Device.vCameraDirection);
+                if (xformOrNull)
+                {
+                    // ParticleEffect.cpp:789-795: the parent transform moves the
+                    // position and turns the direction, and the right axis is
+                    // then taken from the transformed direction.
+                    Fvector d;
+                    xformOrNull->transform_dir(d, dir);
+                    dir = d;
+                    d.crossproduct(dir, Device.vCameraDirection);
+                    right = d;
+                }
+                right.normalize_safe();
+                BuildBillboardQuad(out, dir, right, pos, r_x, r_y, sina, cosa, lt, rb, color);
+            }
+        }
+        else
+        {
+            // ParticleEffect.cpp:802-814, the camera billboard.
+            BuildCameraBillboard(out, pos, r_x, r_y, sina, cosa, lt, rb, color);
+        }
     }
 
     if (forward)
