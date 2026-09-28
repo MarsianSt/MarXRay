@@ -32,3 +32,12 @@ vec3  v_viewNormal : TEXCOORD6 = vec3(0.0, 0.0, 1.0);
 // reads back as `h`, deffer_terrain_flat_d.vs:19 / deffer_terrain_mid_flat.ps:53
 // the same way. Only the classes whose reference hemi is that byte declare it.
 float v_hemi       : TEXCOORD4 = 0.0;
+// AXR r3/particle.vs:41 - o.fog = saturate(calc_fogging(v.P)), the per-vertex
+// linear fog_near/fog_far factor of the forward particle pair (calc_fogging is
+// dot(w_pos, fog_plane), r2/common.h:72 with the cl_fog_plane binder,
+// Blender_Recorder_StandartBinding.cpp:138-162). The forward particle pixel
+// stages spend it on coverage (particle.ps:50) and on colour
+// (particle_add.ps:43); nothing else declares it, so it stays free for the
+// screen-space fog the world and post passes use instead. TEXCOORD7 is the next
+// free semantic after v_viewNormal's TEXCOORD6.
+float v_fog        : TEXCOORD7 = 0.0;

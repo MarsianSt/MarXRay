@@ -210,8 +210,14 @@ void CParticleEffect::Render(float)
 	u32 p_cnt;
 	ParticleManager()->GetParticles(m_HandleEffect, particles, p_cnt);
 	if (p_cnt && m_Def)
+		// m_ShaderName picks the forward pixel stage, exactly as the material's
+		// shader:begin() pair does in the reference (particles_add.s:2 pairs the
+		// "particle" vertex stage with "particle_add"; Blender_Particle.cpp:127-131
+		// pairs the blend modes with "particle"). Only oBlend==0 (SET) is
+		// deferred, the rest is drawn after the combine.
 		bgfxParticles::SubmitPAPI(particles, p_cnt, m_Def, m_BlendMode,
-			m_RT_Flags.is(flRT_XFORM) ? &m_XFORM : nullptr);
+			m_RT_Flags.is(flRT_XFORM) ? &m_XFORM : nullptr, nullptr,
+			m_Def->m_ShaderName.c_str());
 }
 
 void CParticleEffect::OnDeviceCreate()
