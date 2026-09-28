@@ -6,7 +6,10 @@
 #include "FBasicVisual.h"
 
 #include "../../../xrEngine/Render.h"
+#include "../../../xrEngine/device.h"
 #include "../bgfx_capi.h"
+
+#include <algorithm>
 
 // ============================================================================
 // Dynamic-visual submission hook.
@@ -21,6 +24,42 @@
 //     TEnumBoneVertices -> dynamic-VB pipeline exists.
 //
 // It is intentionally safe to call every frame with arbitrary counts.
+//
+// Order. AXR walks the dynamic renderables front-to-back: render_main fills
+// lstRenderablesMain with g_SpatialSpace->q_frustum(..., O_ORDERED, ...)
+// (r4_R_render.cpp:59-65) and then std::sort's it with pred_sp_sort
+// (r4_R_render.cpp:68), whose predicate is `d1 < d2` on
+// spatial.sphere.P.distance_to_sqr(Device.vCameraPosition)
+// (r4_R_render.cpp:9-14) - the nearest object first. The walk then calls
+// renderable_Render() in that order, so every visual it produces enters the
+// graph in front-to-back order, and the graph keeps that order for everything
+// that is not re-sorted itself: add_leafs_Dynamic's default branch feeds
+// r_dsgraph_insert_dynamic (r__dsgraph_build.cpp:793-801), and a particle
+// material's `: sorting (3, false)` clears bStrictB2F
+// (dx10ResourceManager_Scripting.cpp:93 -> CBlender_Compile::SetParams,
+// Blender_Recorder.cpp:147-155, Shader.cpp:71), so the effect lands in
+// mapMatrixPasses (r__dsgraph_build.cpp:203-209) instead of mapSorted and is
+// drawn in insertion order by r_dsgraph_render_graph
+// (r__dsgraph_render.cpp:397-449, whose std::sort only permutes the
+// VS/PS/state/constant buckets by SSA, never the items inside one bucket,
+// r__dsgraph_build.cpp:248). Sorting the accumulator by the same key therefore
+// reproduces the reference's draw order exactly - which is why this is the only
+// distance sort the particle path needs.
+//
+// The key is the renderable's spatial sphere centre, i.e. the object position,
+// not the visual's transformed bounding sphere. The accumulator's world matrix
+// translation (Fmatrix.m.c, row 3) is that same point: CParticlesObject hands
+// add_Visual its object transform (CParticlesObject::renderable_Render ->
+// set_Transform), and its ROS centre is derived from it.
+//
+// HUD visuals are not part of lstRenderablesMain - the reference collects them
+// through g_hud->Render_Last (bgfxRenderCompat.cpp, bgfxRenderHudPass) - so they
+// keep their collection order and are emitted after the world list, as the
+// separate HUD pass does.
+//
+// Ties: the reference uses std::sort, so its order for equal distances is
+// unspecified. stable_sort keeps the query order for those, which is the one
+// observable choice that cannot drift from frame to frame.
 // ============================================================================
 extern "C" void bgfxSubmitSkinnedFrame(const bgfxDynamicVisualEntry* entries,
 					unsigned int count)
@@ -38,8 +77,37 @@ extern "C" void bgfxSubmitSkinnedFrame(const bgfxDynamicVisualEntry* entries,
 	unsigned int skipped    = 0;
 	unsigned int hudSeen    = 0;
 
+	// The walk order the reference's std::sort(lstRenderablesMain, pred_sp_sort)
+	// produces: world entries front-to-back, HUD entries after them untouched.
+	static thread_local std::vector<unsigned int> s_order;
+	s_order.clear();
+	s_order.reserve(count);
 	for (unsigned int i = 0; i < count; ++i)
+		if (!entries[i].hud)
+			s_order.push_back(i);
+	if (s_order.size() > 1)
 	{
+		const Fvector camPos = Device.vCameraPosition;
+		std::stable_sort(s_order.begin(), s_order.end(),
+			[&entries, &camPos](unsigned int a, unsigned int b)
+			{
+				// pred_sp_sort, r4_R_render.cpp:9-14 - squared distance from the
+				// camera to the object position (the renderable's spatial sphere
+				// centre), nearest first.
+				const float* ma = entries[a].transform;
+				const float* mb = entries[b].transform;
+				const float ax = ma[12] - camPos.x, ay = ma[13] - camPos.y, az = ma[14] - camPos.z;
+				const float bx = mb[12] - camPos.x, by = mb[13] - camPos.y, bz = mb[14] - camPos.z;
+				return (ax*ax + ay*ay + az*az) < (bx*bx + by*by + bz*bz);
+			});
+	}
+	for (unsigned int i = 0; i < count; ++i)
+		if (entries[i].hud)
+			s_order.push_back(i);
+
+	for (unsigned int order = 0; order < count; ++order)
+	{
+		const unsigned int i = s_order[order];
 		const bgfxDynamicVisualEntry& e = entries[i];
 		if (!e.visual)
 		{
