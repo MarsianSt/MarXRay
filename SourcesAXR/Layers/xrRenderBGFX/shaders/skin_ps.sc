@@ -8,7 +8,13 @@ uniform vec4 u_fogColor;
 SAMPLER2D(u_texture, 0);
 
 // Dynamic models are the deffer_model_* / deffer_base_* pair in the reference
-// and take xmaterial like any other static geometry (deffer_base_flat.ps:19).
+// and take xmaterial like any other static geometry: deffer_base_flat.ps:21
+//     float ms = xmaterial;
+// i.e. float(1.0h/4.h) under USE_R2_STATIC_SUN (common.h:17-18). The same value
+// deffer_model_flat.vs:27-29 would override with L_material.y when
+// USE_R2_STATIC_SUN && !USE_LM_HEMI, which that VS spells out; it is the R4
+// per-object constant the port has no binding for, and the reference's own
+// default for the class is the xmaterial above.
 const float GBUF_MTL = 0.25;
 
 void main()
@@ -40,5 +46,6 @@ void main()
     // brightness fudge, not the reference. The hemi therefore stays the
     // normal's world-space up factor (gbuf_pack.h, calc_model_hemi_r1) until
     // the CROS hemi cube is ported.
-    gl_FragData[2] = gbuf_pack_gbuffer(normalize(v_viewNormal), v_viewPos.z, gbuf_calc_hemi(v_viewNormal));
+    gl_FragData[2] = gbuf_pack_gbuffer(normalize(v_viewNormal), v_viewPos.z,
+                                       gbuf_calc_hemi(v_viewNormal), GBUF_MTL);
 }

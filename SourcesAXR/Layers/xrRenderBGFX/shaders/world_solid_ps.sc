@@ -21,8 +21,12 @@ SAMPLER2D(u_texture, 0);
 // - the two never share a draw.
 SAMPLER2D(u_lmap, 1);
 
-// xmaterial with USE_R2_STATIC_SUN (common.h:17-18); the static and decal
-// classes share it in the reference (deffer_base_flat.ps:19, :54).
+// xmaterial with USE_R2_STATIC_SUN (common.h:17-18) = float(1.0h/4.h). The
+// static and decal classes share it in the reference - `float ms = xmaterial`
+// at deffer_base_flat.ps:21 and deffer_base_aref_flat.ps:72 - and it is the
+// pos.w both pack with (deffer_base_flat.ps:54, deffer_base_aref_flat.ps:92-95),
+// so 0.25 goes into the G-buffer here and the resolve reads it back with
+// gbuf_unpack_mtl (gbuffer_stage.h:88-93) instead of assuming it.
 const float GBUF_MTL = 0.25;
 
 void main()
@@ -76,5 +80,5 @@ void main()
     // the mix reproduces the fallback exactly.
     vec4 lm = texture2D(u_lmap, v_texcoord1);
     float hemi = mix(v_hemi, lm.a, u_lmapValid.x);
-    gl_FragData[2] = gbuf_pack_gbuffer(normalize(v_viewNormal), v_viewPos.z, hemi);
+    gl_FragData[2] = gbuf_pack_gbuffer(normalize(v_viewNormal), v_viewPos.z, hemi, GBUF_MTL);
 }

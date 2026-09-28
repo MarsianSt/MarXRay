@@ -15,8 +15,16 @@ SAMPLER2D(u_dt1,    3);
 SAMPLER2D(u_dt2,    4);
 SAMPLER2D(u_dt3,    5);
 
-// Terrain material id, deffer_terrain_mid_flat.ps:56 / deffer_terrain_low_flat.ps:22
-// / deffer_impl_flat.ps:210 all pass a literal 0.95f as the mtl of pack_gbuffer.
+// Terrain material id, the literal the reference's own terrain writers pass as
+// the mtl of pack_gbuffer: deffer_terrain_low_flat.ps:24
+// (float4(I.position.xyz + Ne.xyz*def_virtualh/2.h, 0.95f)),
+// deffer_terrain_mid_flat.ps:57 (the same literal), deffer_impl_flat.ps:210.
+// It is the value hmodel.h:27-30 keys its terrain override off -
+//     bool m_terrain = abs(m - 0.95) <= 0.04f;
+//     if (m_terrain) m = 0;
+// - so with it actually in the G-buffer the resolve now reads a terrain pixel as
+// a terrain pixel instead of as the 0.25 static class, and that override becomes
+// live where before it could never fire.
 const float GBUF_MTL = 0.95;
 
 void main()
@@ -43,5 +51,5 @@ void main()
     // (deffer_terrain_flat_d.vs:19 / :26 -> deffer_terrain_mid_flat.ps:53
     // float4 Ne = float4(normalize(N), D.w)), which the vertex stage hands over
     // in v_hemi.
-    gl_FragData[2] = gbuf_pack_gbuffer(normalize(v_viewNormal), v_viewPos.z, v_hemi);
+    gl_FragData[2] = gbuf_pack_gbuffer(normalize(v_viewNormal), v_viewPos.z, v_hemi, GBUF_MTL);
 }

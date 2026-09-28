@@ -68,12 +68,27 @@ SAMPLER2D(s_occ, 6);
 //   u_sunDir   normalize(mView * CEnvDescriptor::sun_dir) - already view space,
 //              the same vector Ldynamic_dir is (Ldynamic_dir is view space too).
 //   u_sunColor CEnvDescriptor::sun_color
+//   u_sunSpec  Ldynamic_color.w of the SUN, i.e. u_diffuse2s(sun colour) - the
+//              gloss weight lmodel.h:116 and pbr_brdf.h:116 spend (see the
+//              L_DYNAMIC_W note below). CEnvDescriptor::sun_color is a
+//              Fvector3 (Environment.h:186) and has no .w of its own, so it
+//              travels in its own uniform, exactly as the reference carries it
+//              in the dynamic_light cbuffer's alpha.
 //   u_hemiColor CEnvDescriptor::hemi_color, i.e. L_hemi_color
 //   u_ambient  CEnvDescriptor::ambient, i.e. L_ambient, with .w =
 //              CEnvDescriptorMixer::weight, i.e. env_color.w: the factor the two
 //              ambient cubes are lerped with (hmodel.h:105)
 uniform vec4 u_sunDir;
 uniform vec4 u_sunColor;
+// Ldynamic_color.w for the sun, i.e. L_spec = u_diffuse2s(CEnvDescriptor:
+// :sun_color). The reference builds exactly that vector for the combine
+// (r4_rendertarget_phase_combine.cpp:245-254, bound at :306) and for the sun
+// accumulator (r4_rendertarget_accum_direct.cpp:59-61, bound at :226), and both
+// of its consumers read the .w: lmodel.h:116 and pbr_brdf.h:116. CEnvDescriptor:
+// :sun_color is a Fvector3 with nothing to put in the fourth slot, so the port
+// carries the reference's own alpha in a uniform of its own; see the long note
+// at the calc_rough block below.
+uniform vec4 u_sunSpec;
 uniform vec4 u_hemiColor;
 uniform vec4 u_ambient;
 // 1 while both env cubes are bound, 0 on a level without an env cube. Then the
@@ -160,12 +175,22 @@ vec3 compute_colored_ao(float ao, vec3 albedo)
     return max(ao, ((ao * a + b) * ao + c) * ao);
 }
 
-// xmaterial with USE_R2_STATIC_SUN (common.h:17-18) = float(1.0h/4.h). The port
-// keeps the material id as a per-program constant instead of packing it into the
-// G-buffer (gbuf_pack.h:85-95) because the bit-packed slot does not survive an
-// RGBA16F attachment, so the resolve resolves every pixel with the static value
-// the reference uses for the same draw classes.
-const float GBUF_MTL = 0.25;
+// The material id is NOT a constant here any more: it is read per pixel out of
+// the G-buffer with gbuf_unpack_mtl() (gbuffer_stage.h:88-93, the call
+// gbuffer_load_data() makes at :134), i.e. exactly the `float mtl = P.w` of
+// combine_1.ps:106. Every writer packs its own class value - 0.25 xmaterial for
+// static/decal/skin/particle (common.h:17-18 with USE_R2_STATIC_SUN,
+// deffer_base_flat.ps:21, deffer_base_aref_flat.ps:72, deffer_particle.ps:66),
+// 0.15 MAT_FLORA for grass (deffer_grass.ps:101), 0.95 for terrain
+// (deffer_terrain_mid_flat.ps:57, deffer_terrain_low_flat.ps:24) - so the
+// terrain's `m = 0` override of hmodel.h:27-30 and the flora test of lmodel.h:158
+// / combine_1.ps:97 are live here exactly as in the reference.
+//
+// xmaterial itself, common.h:17-18: `float(1.0h/4.h)` under USE_R2_STATIC_SUN,
+// which r4.cpp:1150-1153 defines when o.sunstatic is set. The one term that still
+// wants the constant rather than the G-buffer value is combine_1.ps:111, the
+// sun lobe, which overwrites mtl with it; see the sun block in main().
+const float XMATERIAL = 0.25;
 
 // hmodel.h:9 CUBE_MIPS - the mip the reference asks the sky cube for. The env
 // cube is <sky_texture>#small.dds, a single-level 32x32 DXT1 cube (no mip chain
@@ -239,15 +264,36 @@ vec3 sampleSpecCube1(vec3 dir, float mip) { return textureCubeLod(s_env1, dir, m
 
 // common_cbuffers.h:8 - Ldynamic_color, the dynamic light cbuffer. Only its
 // alpha reaches the shading: lmodel.h:116 (spec *= Ldynamic_color.w) and
-// pbr_brdf.h:116 (calc_rough, through 1 - Ldynamic_color.w). The reference
-// binder feeds it the sun colour, whose alpha has no port-side counterpart -
-// CEnvDescriptor::sun_color is a Fvector3 (Environment.h:186), and the only
-// R4 path that would bind it, R_hemi::set_material, is never called
-// (R_Backend_hemi.cpp). 1.0 is the reference's own value: the identical
-// multiply appears a second time, commented out, at lmodel.h:122. It is a
-// constant, not a strength knob - lmodel.h:116 with 0.0 would zero the entire
-// specular term, and the reference plainly does not mean that.
-const float L_DYNAMIC_W = 1.0;
+// pbr_brdf.h:116 (calc_rough, through 1 - Ldynamic_color.w).
+//
+// That alpha is L_spec = u_diffuse2s(L_clr), the sun colour's own gloss weight -
+// r4_rendertarget_accum_direct.cpp:60-61/:226 and
+// r4_rendertarget_phase_combine.cpp:247-252/:306 both build Ldynamic_color as
+// (L_clr.rgb, u_diffuse2s(L_clr)). u_diffuse2s (r2_types.h:160-172) with its
+// method-0 arm and the reference console defaults ps_r2_gloss_min = 0.0f /
+// ps_r2_gloss_factor = 0.001f (xrRender_console.cpp:373-374) is
+//
+//     v   = (r + g + b) / 3
+//     out = 0.0 + 0.001 * (v < 1 ? v^(2/3) : v)
+//
+// i.e. ~1e-3 for any sun colour of magnitude 1, NOT 1.0. It reaches the shading
+// twice, and both times hard:
+//
+//   pbr_brdf.h:116  roughpow = 0.5 / max(0.001, 1 - Ldynamic_color.w)
+//                  -> 0.5 / 0.999 ~= 0.5, not 0.5 / max(0.001, 0) = 500.
+//                  500 is not a mild difference: pow(lerp(1, 0.5, g), 500)
+//                  saturates to 0 for every gloss below 1, so calc_rough
+//                  returned 0 (a mirror) everywhere and the whole ambient
+//                  specular arm was computed at RoughMip = CUBE_MIPS - CUBE_MIPS
+//                  = 0, i.e. the sharpest cube level.
+//   lmodel.h:116   spec *= Ldynamic_color.w then :120 SRGBToLinear(spec)
+//                  -> the sun's specular lobe is scaled by ~1e-3 before the
+//                  gamma, exactly as the reference scales it.
+//
+// The value is therefore the sun's own u_diffuse2s, fed in as u_sunSpec (the
+// .w slot CEnvDescriptor::sun_color has no use for; bgfxHDR feeds 0.0 there
+// today). It is the same quantity the accumulators pass as Ldynamic_color.w
+// per light, i.e. bgfxHDR's u_diffuse2s() of the light colour.
 
 // common_defines.h:6 - def_gloss, the gloss every G-buffer writer packs into
 // the diffuse alpha: deffer_base_flat.ps:51/:54 (static, terrain, decals),
@@ -332,11 +378,16 @@ vec3 calc_specular(vec4 alb_gloss, float material_ID)
 
 // pbr_brdf.h:110-122 calc_rough, the roughness the ambient cube is filtered
 // with (hmodel.h:39, :44, :78) and the roughness Amb_BRDF integrates against.
-float calc_rough(vec4 alb_gloss, float material_ID)
+// Ldynamic_color.w is a parameter, not a constant, because in the reference the
+// combine binds the SUN into the dynamic-light cbuffer
+// (r4_rendertarget_phase_combine.cpp:306) and calc_rough is reached from
+// hmodel.h:35 through that same cbuffer - so the exponent it computes is the
+// sun's own u_diffuse2s, not a literal. See the note on the constant.
+float calc_rough(vec4 alb_gloss, float material_ID, float Ldynamic_w)
 {
     float metalness = calc_metalness(alb_gloss, material_ID);
     alb_gloss.a = pow(alb_gloss.a, ROUGHNESS_POW - (metalness * METAL_BOOST));
-    float roughpow = 0.5 / max(0.001, 1.0 - L_DYNAMIC_W);
+    float roughpow = 0.5 / max(0.001, 1.0 - Ldynamic_w);
     float rough = pow(lerp(ROUGHNESS_HIGH, ROUGHNESS_LOW, alb_gloss.a), roughpow);
     return saturate(rough * rough);
 }
@@ -406,17 +457,27 @@ vec3 Amb_BRDF(float rough, vec3 albedo, vec3 f0, vec3 env_d, vec3 env_s, vec3 V,
 // with nothing folded away, so the sun and both accumulators can share it. The two
 // inputs the reference reads from globals become arguments:
 //   mat_id   `m`, i.e. xmaterial with USE_R2_STATIC_SUN = 1/4 (common.h:17-18)
+//            for the sun (combine_1.ps:111) and the per-pixel G-buffer value for
+//            the accumulators (combine_1.ps:106)
 //   lightW   the Ldynamic_color.w factor of lmodel.h:116 - `spec *= Ldynamic_color.w`
-//            then lmodel.h:120 linearises it. The sun passes L_DYNAMIC_W (see the
-//            comment on that constant); the accumulators pass L_spec, i.e.
+//            then lmodel.h:120 linearises it. The sun passes u_sunSpec, i.e.
+//            u_diffuse2s of the sun colour (r4_rendertarget_phase_combine.cpp:247-252,
+//            bound at :306); the accumulators pass L_spec, i.e.
 //            u_diffuse2s of the light colour (r2_types.h:160-172, bound at
 //            r4_rendertarget_accum_point.cpp:37/:105 and accum_spot.cpp:125/:151),
 //            so a point light really does scale its own specular the way the
 //            reference does.
 // Not ported, both for the reason already given on the material block above: the
 // s_material lookup at lmodel.h:133 (its result is overwritten at :147 and :151
-// before it is read) and the grass SSS at lmodel.h:158-163 (GBUF_MTL is 0.25, not
-// the flora id, so it is a no-op for the class this resolve lights).
+// before it is read) and the grass SSS at lmodel.h:158-163.
+//
+// The SSS is left out for a second, harder reason: it calls SSS(), which is not
+// in the r3 tree at all - a grep of game_unpacked/shaders/r3 for `float3 SSS`
+// finds nothing, and pbr_brdf.h only mentions SSS inside the ES_PSEUDO_PBR
+// Lit_BRDF arm, which is not the branch that compiles here. The flora test
+// lmodel.h:158 is therefore live (mat_id 0.15 reaches it now) but its body has
+// no definition in the reference to port, so it stays out rather than being
+// approximated. The test itself is kept below so the reachability is visible.
 vec3 compute_lighting_lmodel(vec3 N, vec3 V, vec3 L, vec4 alb_gloss, float mat_id, float lightW)
 {
     // lmodel.h:114-120
@@ -467,7 +528,7 @@ vec3 compute_lighting_lmodel(vec3 N, vec3 V, vec3 L, vec4 alb_gloss, float mat_i
 // The ES_PSEUDO_PBR arm of lmodel.h:56-84 - the one that is not compiled in this
 // build - carries an extra rsqr = max(rsqr, 0.1) clamp; the branch that runs does
 // not, so it is not here either.
-vec3 plight_local(vec3 pnt, vec3 normal, vec4 alb_gloss, vec4 Ldynamic_pos, vec4 Ldynamic_color)
+vec3 plight_local(vec3 pnt, vec3 normal, vec4 alb_gloss, vec4 Ldynamic_pos, vec4 Ldynamic_color, float mtl)
 {
     vec3 L2P = pnt - Ldynamic_pos.xyz;
     float rsqr = dot(L2P, L2P);
@@ -482,7 +543,12 @@ vec3 plight_local(vec3 pnt, vec3 normal, vec4 alb_gloss, vec4 Ldynamic_pos, vec4
     // accum_omni_unshadowed.ps:50 / accum_base.ps:88: Ldynamic_color * light, with
     // the lightmap (spot) and the shadow (off in both unshadowed elements) at their
     // own reference defaults of 1 - accum_base.ps:69 and :63.
-    return Ldynamic_color.rgb * (att * compute_lighting_lmodel(N, V, L, alb_gloss, GBUF_MTL, Ldynamic_color.w));
+    //
+    // The material id is the per-pixel one, the same value combine_1.ps:166 hands
+    // hmodel: the accumulators in the reference read `m` from the G-buffer
+    // themselves (gbuffer_load_data().mtl, combine_1.ps:106), and only the sun's
+    // own call is overridden with the xmaterial constant (combine_1.ps:111).
+    return Ldynamic_color.rgb * (att * compute_lighting_lmodel(N, V, L, alb_gloss, mtl, Ldynamic_color.w));
 }
 
 // ---------------------------------------------------------------- shadow term
@@ -577,9 +643,13 @@ void main()
         return;
     }
 
-    // gbuffer_stage.h:59-65 / :83-86, the reference unpack stage.
+    // gbuffer_stage.h:59-65, :83-86 and :88-93 - the reference unpack stage, the
+    // three reads gbuffer_load_data() makes at :131/:134/:137. The material id is
+    // the `float mtl = P.w` of combine_1.ps:106 and is what hmodel's `m` and
+    // plight_infinity's `m` are below; it is per-pixel now, not a constant.
     vec3 N = gbuf_unpack_normal(G.xy);
     float hemi = gbuf_unpack_hemi(G.w);
+    float mtl = gbuf_unpack_mtl(G.w);
 
     // combine_1.ps:128-159, the SSAO member of the combine. In the reference the
     // factor is either computed inline by calc_ssao() (combine_1.ps:148) or read
@@ -610,10 +680,19 @@ void main()
     // plight_infinity (lmodel.h:180-183): L = -normalize(light_direction) with
     // light_direction = Ldynamic_dir, which the port's u_sunDir already is in
     // view space; V = -normalize(pnt) with pnt the view-space position. The whole
-    // lobe is lmodel.h:110-176 with Ldynamic_color.w = L_DYNAMIC_W.
+    // lobe is lmodel.h:110-176 with Ldynamic_color.w = u_sunSpec.
     vec3 L = -normalize(u_sunDir.xyz);
     vec3 V = -normalize(P);
-    vec3 sun = compute_lighting_lmodel(N, V, L, alb_gloss, GBUF_MTL, L_DYNAMIC_W);
+    // combine_1.ps:111/:116 - `mtl = xmaterial` and the lobe runs on it. The
+    // reference overwrites the G-buffer's mtl with the xmaterial constant for
+    // this one call (that line is inside `#ifdef USE_R2_STATIC_SUN`), while
+    // hmodel at :166 keeps the G-buffer value - so the sun passes the class
+    // constant and the ambient passes the per-pixel id, exactly as here. Under
+    // USE_R2_STATIC_SUN xmaterial is float(1.0h/4.h) (common.h:17-18), which is
+    // what the static/decal writers pack, so for those classes the two are the
+    // same number; for terrain (0.95) and grass (0.15) the reference's split is
+    // what keeps the sun lobe and the ambient BRDF apart.
+    vec3 sun = compute_lighting_lmodel(N, V, L, alb_gloss, XMATERIAL, u_sunSpec.x);
 
     // accum_sun.ps:26-32 / accum_sun_near.ps:69-72 - the shadow term s, which
     // multiplies the whole sun lobe.
@@ -695,7 +774,7 @@ void main()
         // is exactly the region where att is non-zero, so the geometry and the
         // attenuation describe the same solid and the shader is free of it.
 
-        dynamic += plight_local(P, N, alb_gloss, LdynPos, LdynColor);
+        dynamic += plight_local(P, N, alb_gloss, LdynPos, LdynColor, mtl);
     }
 
     // ----- hemi ambient: hmodel.h, the diffuse half of combine_1.ps:166
@@ -712,6 +791,11 @@ void main()
     //   hmodel.h:130  env_d += L_ambient
     //   hmodel.h:133  env_d  = SRGBToLinear(env_d)
     //   hmodel.h:147  hdiffuse += env_d * albedo
+    // hmodel.h:33-35 first overwrite the material: `m_terrain = abs(m - 0.95) <=
+    // 0.04; if (m_terrain) m = 0;` - the whole of hmodel's albedo / specular /
+    // rough then runs at the terrain's 0 id, not 0.95. The test is only reachable
+    // now that m is the per-pixel G-buffer value, so it is ported here.
+    float mAmbient = (abs(mtl - 0.95) <= 0.04) ? 0.0 : mtl;
     vec3 nw = mul(u_invView, vec4(N, 0.0)).xyz;
     vec3 cubeD = mix(sampleAmbientCube0(nw), sampleAmbientCube1(nw), u_ambient.w);
     // No cube on this level: fall back to the constant the port used before the
@@ -720,11 +804,19 @@ void main()
     vec3 env_d = SRGBToLinearC(cubeD * u_hemiColor.rgb * hemi + u_ambient.rgb);
 
     // ----- ambient specular: hmodel.h:39-44, :64-78, :101-106, :121-134
-    // The reflection direction. combine_1.ps:166 hands hmodel the view-space
-    // position, which hmodel.h:52 normalises, so v2Pnt is this pass's P and the
-    // m_inv_V multiply of hmodel.h:53 is the same rotate-only view inverse nw
-    // went through above.
-    vec3 v2Pnt = normalize(P);
+    // The reflection vector, in the same space as the normal it is reflected
+    // about. hmodel.h:52-53 is two lines, and both matter:
+    //     Pnt     = normalize(Pnt);
+    //     v2Pnt   = mul(m_inv_V, Pnt);
+    // combine_1.ps:166 hands hmodel the view-space P, so hmodel.h:53 unprojects
+    // it - and v2Pnt is WORLD space from there on: hmodel.h:64 reflects it
+    // against nw (the unprojected normal of hmodel.h:48), and hmodel.h:145 hands
+    // -v2Pnt to Amb_BRDF as the V of the N.V pair. Keeping P itself here - a
+    // view-space vector - reflects the world normal in a view-space view vector
+    // and then measures dot(N, V) across two different spaces, so the whole
+    // ambient-specular arm was computed from a reflection direction the surface
+    // never has.
+    vec3 v2Pnt = mul(u_invView, vec4(normalize(P), 0.0)).xyz;
     // hmodel.h:64 - reflect(view vector, world normal), then the identical
     // remap + renormalise pair the diffuse taps use (hmodel.h:66-75).
     vec3 vreflect = reflect(v2Pnt, nw);
@@ -732,8 +824,10 @@ void main()
 
     // hmodel.h:35, :39 - the roughness, and hmodel.h:44 the mip it filters the
     // cube with. calc_rough reads the raw gloss of alb_gloss, not the
-    // linearised spec the light model makes.
-    float roughCube = calc_rough(alb_gloss, GBUF_MTL);
+    // linearised spec the light model makes. hmodel.h:35 runs it inside the
+    // combine, where Ldynamic_color is the sun's (phase_combine.cpp:306), so
+    // the exponent is the sun's own u_diffuse2s.
+    float roughCube = calc_rough(alb_gloss, mAmbient, u_sunSpec.x);
     float roughMip = CUBE_MIPS - ((1.0 - roughCube) * CUBE_MIPS);
 
     // hmodel.h:78 - blend the reflection vector toward the normal by roughness
@@ -753,24 +847,41 @@ void main()
     // hmodel.h:150 then throws it away ("do not use hspec at all").
     vec3 env_s = SRGBToLinearC(cubeS * u_hemiColor.rgb * hemi + u_ambient.rgb);
 
-    // hmodel.h:145 - Amb_BRDF(roughCube, 0, specular, env_d, env_s*!m_flora,
-    // -v2Pnt, nw). `env_s * !m_flora` is env_s itself here: hmodel.h:28 tests
-    // abs(m - MAT_FLORA) <= MAT_FLORA_ELIPSON and GBUF_MTL is 0.25, not the
-    // 0.15 flora id, and the same test at lmodel.h:158 makes the grass SSS a
-    // no-op for the static class this resolve lights.
-    vec3 f0Ambient = calc_specular(alb_gloss, GBUF_MTL);
-    vec3 ambientSpecular = Amb_BRDF(roughCube, 0.0, f0Ambient, env_d, env_s, -v2Pnt, nw);
+    // hmodel.h:28 / :145 - m_flora, the `env_s * !m_flora` of the Amb_BRDF call:
+    //     bool m_flora = abs(m - 0.15) <= 0.04;
+    //     Amb_BRDF(roughCube, 0, specular, env_d, env_s * !m_flora, -v2Pnt, nw)
+    // The test is against the per-pixel material id, so it is only reachable
+    // now that the id comes out of the G-buffer: for the grass class (0.15,
+    // deffer_grass.ps:101) it is true and the whole ambient specular is zeroed.
+    bool m_flora = abs(mAmbient - MAT_FLORA) <= MAT_FLORA_ELIPSON;
+    // hmodel.h:145 - the BRDF itself. albedo is the literal 0 of the reference,
+    // so its diffuse arm drops out and the result is the specular arm alone.
+    vec3 f0Ambient = calc_specular(alb_gloss, mAmbient);
+    vec3 ambientSpecular = Amb_BRDF(roughCube, 0.0, f0Ambient, env_d,
+                                    m_flora ? vec3(0.0) : env_s, -v2Pnt, nw);
 
     // hmodel.h:143, :146 - the ambient's own copy of the gloss channel (no
     // Ldynamic_color.w factor on this side) and the reference's spec*2 gain.
     float specAmbient = SRGBToLinearF(DEF_GLOSS);
-    // hmodel.h:145-147 - the BRDF result scaled, then the env_d*albedo the
-    // zeroed albedo argument of Amb_BRDF could not supply. env_d*albedo is
-    // hdiffuse, the only term combine_1.ps:183 scales (`hdiffuse *= occ`); the
-    // `hspecular *= occ` of the next line stays commented out in the reference
-    // (combine_1.ps:185), so the ambient specular keeps its unoccluded value -
-    // which is why occ multiplies only the first product here.
-    vec3 ambient = (env_d * albedo) * occ + ambientSpecular * (specAmbient * 2.0);
+    // hmodel.h:145-147, assembled in the reference's own order:
+    //     hdiffuse = float4(Amb_BRDF(roughCube, 0, specular, env_d, env_s*!m_flora,
+    //                                 -v2Pnt, nw), 0);
+    //     hdiffuse *= spec*2.0f;
+    //     hdiffuse += float4(env_d*(albedo*1.0f), 0);
+    // so the BRDF half is scaled by spec*2 and the env_d*albedo half is added on
+    // top unscaled - the sum of the two is the reference's hdiffuse.
+    vec3 hdiffuse = ambientSpecular * (specAmbient * 2.0) + env_d * albedo;
+
+    // combine_1.ps:183 - `hdiffuse *= occ`. It is the WHOLE hdiffuse the factor
+    // multiplies, not only the env_d*albedo half of it: by the time this line
+    // runs, hdiffuse holds both products of hmodel.h:146-147. The port applied
+    // occ to env_d*albedo alone, on the reading that hspecular is the only
+    // unoccluded term - but hspecular is a *different* output of hmodel (its
+    // second out parameter, hmodel.h:22, which hmodel.h:150 sets to 0 and never
+    // writes into hdiffuse). The commented-out `//hspecular *= occ` of
+    // combine_1.ps:185 is about that second output, not about the BRDF term
+    // inside hdiffuse, so the ambient specular in this sum is occluded too.
+    hdiffuse *= occ;
 
     // combine_1.ps:187-188 sums the two halves into the linear accumulator and
     // then gamma-corrects it: color = LinearTosRGB(L.rgb + hdiffuse.rgb). L is the
@@ -781,5 +892,5 @@ void main()
     // hands the value to tonemap(), whose first act is SRGBToLinear (see the
     // comment on tonemap() there) - so the resolve has to close the same round
     // trip the reference does.
-    gl_FragColor = vec4(LinearTosRGB(sun + dynamic + ambient), 1.0);
+    gl_FragColor = vec4(LinearTosRGB(sun + dynamic + hdiffuse), 1.0);
 }
