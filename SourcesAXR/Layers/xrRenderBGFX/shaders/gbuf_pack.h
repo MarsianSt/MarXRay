@@ -140,19 +140,47 @@ vec4 gbuf_pack_gbuffer(vec3 norm, float viewZ, float hemi)
 // Material id, resolved per draw class by the reference:
 //   xmaterial = float(1.0h/4.h) when USE_R2_STATIC_SUN is defined (common.h:17-18),
 //   otherwise float(L_material.w) (common.h:20) - an R4 constant this port does
-//   not bind, hence the 0.25 static value;
-//   MAT_FLORA = 0.15f (common_brdf.h:16) exists, but no class carries it in this
-//   build: the one writer that would, deffer_grass.ps:99-101, assigns it inside
-//   `#ifdef SSFX_FLORAFIX`, a macro that is tested in eight places under
-//   game_unpacked\shaders (deffer_grass.ps:11 and :99, deffer_tree_bump.vs:67,
-//   model_env_lq.vs:26, accum_base.ps:40/:78/:85, accum_omni_unshadowed.ps:
-//   :32/:43) and defined in none, so the arm is dead and grass keeps the
-//   xmaterial of deffer_grass.ps:113-121. See grass_ps.sc for the same note;
+//   not bind, hence the 0.25 static value. Static geometry, aref decals,
+//   particles AND GRASS all take it (deffer_base_flat.ps:21,
+//   deffer_base_aref_flat.ps:72, deffer_particle.ps:66, deffer_grass.ps:113);
 //   0.95f for terrain (deffer_terrain_low_flat.ps:24, deffer_terrain_mid_flat.ps:
 //   57, deffer_impl_flat.ps:210);
-//   0 for LOD geometry (lod.ps:103);
-//   deffer_particle.ps:66 and the aref decals (deffer_base_aref_flat.ps:92) use
-//   xmaterial like the other static geometry.
+//   0 for LOD geometry (lod.ps:103).
+//
+// The two constants below are different quantities and must not be swapped:
+//
+//   0.25  xmaterial (common.h:17-18) is the G-BUFFER half of the material id -
+//         what a writer packs into pack_gbuffer's pos.w and what gbuf_unpack_mtl
+//         hands back to the resolve.
+//   0.15  MAT_FLORA (common_brdf.h:16) is NOT a G-buffer value at all. It is read
+//         only on the lighting side, as a classifier that recognises a flora
+//         surface: lmodel.h:34 and :158 test
+//             if (abs(mat_id - MAT_FLORA) <= MAT_FLORA_ELIPSON)
+//                 ... += SSS(...);        // the subsurface arm
+//         and hmodel.h:28 runs the same test to gate `env_s * !m_flora`,
+//         combine_1.ps:97 to reapply a distance factor to the gloss. Those three
+//         sites consume whatever the writer packed; they do not supply a value.
+//
+// deffer_grass.ps:99-102 does contain `ms = 0.15f`, which is exactly why the two
+// look interchangeable, but the arm is dead in this build:
+//
+//     L99  #ifdef SSFX_FLORAFIX
+//     L100 // Material value ( MAT_FLORA )
+//     L101     ms = 0.15f;
+//     L102     S.gloss = lerp(ssfx_florafixes_1.x, ssfx_florafixes_1.y,
+//                             rain_params.y);
+//     L103 #endif
+//
+// SSFX_FLORAFIX is defined nowhere. It is *tested* in eight places under
+// game_unpacked\shaders - deffer_grass.ps:11 and :99, deffer_tree_bump.vs:67,
+// model_env_lq.vs:26, accum_base.ps:40, :78 and :85, accum_omni_unshadowed.ps:32
+// and :43 - and has no #define in that tree; nor does any C++ pass it as a
+// shader option, the only florafix hits there being the ssfx_florafixes_1 / _2
+// constant bindings (Blender_Recorder_StandartBinding.cpp:579-580, :720-736,
+// :1002-1003), which are uniforms. So the branch never executes, the grass
+// writer falls through to deffer_grass.ps:113-121 carrying the xmaterial of
+// deffer_base_flat.ps:21, and with 0.25 in the buffer all three of the tests
+// above are false for every pixel - in the reference exactly as here.
 // Every G-buffer writer passes it as the fourth argument of
 // gbuf_pack_gbuffer() above, and the resolve reads it back with
 // gbuf_unpack_mtl() (gbuffer_stage.h:88-93, gbuffer_stage.h:134) - so the sun
