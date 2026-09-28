@@ -43,6 +43,13 @@ namespace
     bgfx_uniform_handle_t s_lowlandFogParams = BGFX_INVALID_HANDLE;
     bgfx_uniform_handle_t s_sunDir = BGFX_INVALID_HANDLE;
     bgfx_uniform_handle_t s_sunColor = BGFX_INVALID_HANDLE;
+    // L_spec for the sun, i.e. Ldynamic_color.w in the accumulators
+    // (accum_point.cpp:105 / accum_spot.cpp:151, r2_types.h:160-172, defaults
+    // xrRender_console.cpp:373-374). combine_1.ps:106 hands the same Ldynamic
+    // colour to calc_rough through this slot (pbr_brdf.h:116), and
+    // lmodel.h:116 multiplies specular by it - so a zero here silently kills
+    // the sun's specular while leaving roughpow at the reference 0.5.
+    bgfx_uniform_handle_t s_sunSpec = BGFX_INVALID_HANDLE;
 
     // Sun shadow map (AXR r2_RT_smap_depth, r4_rendertarget.cpp:636: smapsize x
     // smapsize, HW_smap_FORMAT = D32F_LOCKABLE under r4.cpp:221). bgfx has no
@@ -569,8 +576,10 @@ namespace
             bgfx_destroy_uniform(s_lowlandFogParams);
         if (bgfxIsValid(s_sunDir))
             bgfx_destroy_uniform(s_sunDir);
-        if (bgfxIsValid(s_sunColor))
-            bgfx_destroy_uniform(s_sunColor);
+    if (bgfxIsValid(s_sunColor))
+        bgfx_destroy_uniform(s_sunColor);
+    if (bgfxIsValid(s_sunSpec))
+        bgfx_destroy_uniform(s_sunSpec);
         s_combineProgram = BGFX_INVALID_HANDLE;
         s_hdrSampler = BGFX_INVALID_HANDLE;
         s_tonemapSampler = BGFX_INVALID_HANDLE;
@@ -580,9 +589,10 @@ namespace
         s_fogParams = BGFX_INVALID_HANDLE;
         s_fogColor = BGFX_INVALID_HANDLE;
         s_lowlandFogParams = BGFX_INVALID_HANDLE;
-        s_sunDir = BGFX_INVALID_HANDLE;
-        s_sunColor = BGFX_INVALID_HANDLE;
-        s_combineLayoutReady = false;
+    s_sunDir = BGFX_INVALID_HANDLE;
+    s_sunColor = BGFX_INVALID_HANDLE;
+    s_sunSpec = BGFX_INVALID_HANDLE;
+    s_combineLayoutReady = false;
     }
 
     void DestroyResolveProgram()
@@ -1497,7 +1507,7 @@ namespace
         if (bgfxIsValid(s_combineProgram) && bgfxIsValid(s_hdrSampler) && bgfxIsValid(s_tonemapSampler) &&
             bgfxIsValid(s_positionSampler) && bgfxIsValid(s_bloomSampler) && bgfxIsValid(s_exposure) &&
             bgfxIsValid(s_fogParams) && bgfxIsValid(s_fogColor) && bgfxIsValid(s_lowlandFogParams) &&
-            bgfxIsValid(s_sunDir) && bgfxIsValid(s_sunColor))
+            bgfxIsValid(s_sunDir) && bgfxIsValid(s_sunColor) && bgfxIsValid(s_sunSpec))
             return true;
 
         if (!s_combineLayoutReady)
@@ -1550,12 +1560,14 @@ namespace
         s_lowlandFogParams = bgfx_create_uniform("u_lowlandFogParams", BGFX_UNIFORM_TYPE_VEC4, 1);
         s_sunDir = bgfx_create_uniform("u_sunDir", BGFX_UNIFORM_TYPE_VEC4, 1);
         s_sunColor = bgfx_create_uniform("u_sunColor", BGFX_UNIFORM_TYPE_VEC4, 1);
+    s_sunSpec = bgfx_create_uniform("u_sunSpec", BGFX_UNIFORM_TYPE_VEC4, 1);
         if (!bgfxIsValid(s_hdrSampler) || !bgfxIsValid(s_tonemapSampler) || !bgfxIsValid(s_positionSampler) ||
             !bgfxIsValid(s_bloomSampler) ||
             !bgfxIsValid(s_exposure) || !bgfxIsValid(s_fogParams) || !bgfxIsValid(s_fogColor) ||
-            !bgfxIsValid(s_lowlandFogParams) || !bgfxIsValid(s_sunDir) || !bgfxIsValid(s_sunColor))
-        {
-            LogError("[BGFX] Combine uniforms create failed");
+    !bgfxIsValid(s_lowlandFogParams) || !bgfxIsValid(s_sunDir) || !bgfxIsValid(s_sunColor) ||
+    !bgfxIsValid(s_sunSpec))
+    {
+        LogError("[BGFX] Combine uniforms create failed");
             DestroyCombineProgram();
             return false;
         }
@@ -1744,14 +1756,23 @@ namespace
     //                  Blender_Recorder_StandartBinding.cpp:390 feeds L_ambient.w
     // CurrentEnv is a CEnvDescriptorMixer, which derives from CEnvDescriptor
     // (Environment.h:258), so all four live there.
+    // Defined further down, with the reference walkthrough: r2_types.h:160-172
+    float u_diffuse2s(float _x, float _y, float _z);
+
     void SetEnvironmentUniforms()
     {
         float params[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
         float fogColor[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
         float lowland[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
         float sunDir[4] = { 0.0f, -1.0f, 0.0f, 0.0f };
-        float sunColor[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
-        float hemiColor[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
+    float sunColor[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
+    // Ldynamic_color.w of the sun: r4_rendertarget_phase_combine.cpp:247-252 fills
+    // L_spec = u_diffuse2s(L_dir.L_clr) into the same slot the colour goes to
+    // (:306 binds the sun there), and lmodel.h:116 multiplies spec by it, while
+    // calc_rough (pbr_brdf.h:116) needs 1-L_spec ~ 0.999 instead of the 0 that
+    // an unbound uniform would give.
+    float sunSpec[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
+    float hemiColor[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
         float ambient[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
 
         CEnvDescriptorMixer* env = g_pGamePersistent
@@ -1811,10 +1832,15 @@ namespace
             sunDir[2] = vd.z;
             sunDir[3] = 0.0f;
 
-            sunColor[0] = env->sun_color.x;
-            sunColor[1] = env->sun_color.y;
-            sunColor[2] = env->sun_color.z;
-            sunColor[3] = 0.0f;
+    sunColor[0] = env->sun_color.x;
+    sunColor[1] = env->sun_color.y;
+    sunColor[2] = env->sun_color.z;
+    sunColor[3] = 0.0f;
+
+    sunSpec[0] = u_diffuse2s(env->sun_color.x, env->sun_color.y, env->sun_color.z);
+    sunSpec[1] = 0.0f;
+    sunSpec[2] = 0.0f;
+    sunSpec[3] = 0.0f;
 
             // env_color, r4_rendertarget_phase_combine.cpp:222-231: the SoC weather
             // path takes sky_color, everything else hemi_color, both scaled by *2 + EPS
@@ -1861,8 +1887,10 @@ namespace
         if (bgfxIsValid(s_sunDir))
             bgfx_set_uniform(s_sunDir, sunDir, 1);
         if (bgfxIsValid(s_sunColor))
-            bgfx_set_uniform(s_sunColor, sunColor, 1);
-        if (bgfxIsValid(s_hemiColor))
+    bgfx_set_uniform(s_sunColor, sunColor, 1);
+    if (bgfxIsValid(s_sunSpec))
+        bgfx_set_uniform(s_sunSpec, sunSpec, 1);
+    if (bgfxIsValid(s_hemiColor))
             bgfx_set_uniform(s_hemiColor, hemiColor, 1);
         if (bgfxIsValid(s_ambientColor))
             bgfx_set_uniform(s_ambientColor, ambient, 1);
